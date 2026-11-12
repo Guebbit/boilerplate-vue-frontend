@@ -143,6 +143,15 @@ export const useAccountTwoFactorStore = defineStore('account-two-factor', () => 
         );
 
     /**
+     * Re-reads the status, then hands back the value a write produced. A named step so the write
+     * wrappers stay inside the nesting cap.
+     *
+     * @param value - What the write returned.
+     * @returns A promise resolving with that same value once `status` is fresh.
+     */
+    const refetchStatusThen = <T>(value: T) => fetchStatus().then(() => value);
+
+    /**
      * Begins — or restarts — enrollment of one method. Calling this on an already-armed method
      * disarms it and starts over; the caller (`TwoFactorEnroll.vue`) is the one that has to say so
      * before the click reaches here.
@@ -209,9 +218,8 @@ export const useAccountTwoFactorStore = defineStore('account-two-factor', () => 
         fetchAny(
             () =>
                 apiConfirmTwoFactorMethod(method, { code }).then((data) => {
-                    const result = data;
                     resendAvailableAt.value = undefined;
-                    return fetchStatus().then(() => result);
+                    return refetchStatusThen(data);
                 }),
             { key: ['confirm'], forced: true }
         );
@@ -253,14 +261,10 @@ export const useAccountTwoFactorStore = defineStore('account-two-factor', () => 
      *  caller holds the result in a component-local ref for the one-time reveal screen.
      */
     const regenerateBackupCodes = (code: string) =>
-        fetchAny(
-            () =>
-                apiRegenerateBackupCodes({ code }).then((data) => {
-                    const result = data;
-                    return fetchStatus().then(() => result);
-                }),
-            { key: ['regenerate'], forced: true }
-        );
+        fetchAny(() => apiRegenerateBackupCodes({ code }).then(refetchStatusThen), {
+            key: ['regenerate'],
+            forced: true
+        });
 
     /**
      * Whether a code is being sent — {@link setupMethod}, whether that is the enrollment panel's
@@ -372,6 +376,17 @@ export const useAccountTwoFactorStore = defineStore('account-two-factor', () => 
     };
 
     /**
+     * Closes a login challenge that ended in a session. A named step so `submitLoginCode` stays
+     * inside the nesting cap.
+     *
+     * @returns `session`, the outcome the caller branches on.
+     */
+    const finishSession = () => {
+        clearChallenge();
+        return 'session' as const;
+    };
+
+    /**
      * Submits a code (or an unused backup code) against the live login challenge. On success,
      * adopts the session exactly as a plain login does — token, `isAuth` cookie, and the freshly
      * fetched profile — then clears the challenge. An account in the grace of its own deletion gets
@@ -409,10 +424,7 @@ export const useAccountTwoFactorStore = defineStore('account-two-factor', () => 
                 useSessionStore().adoptSession(data, remember);
                 return useAccountProfileStore()
                     .fetchProfile(true, data.account)
-                    .then(() => {
-                        clearChallenge();
-                        return 'session' as const;
-                    });
+                    .then(finishSession);
             })
         );
     };

@@ -100,11 +100,7 @@ export const useAccountDeletionRestoreStore = defineStore('account-deletion-rest
                 remember: remember ? RememberTier.long : undefined
             }).then((data) => {
                 useSessionStore().adoptSession(data, remember ?? false);
-                return useAccountProfileStore()
-                    .fetchProfile(true, data.account)
-                    .then(() => {
-                        clear();
-                    });
+                return useAccountProfileStore().fetchProfile(true, data.account).then(clear);
             })
         );
     };

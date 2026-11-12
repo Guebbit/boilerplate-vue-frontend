@@ -187,6 +187,16 @@ export const useDeliveryStore = defineStore('delivery', () => {
         );
 
     /**
+     * Re-reads the fulfillment a write touched, then hands the write's response back untouched.
+     * A named step so the write wrappers stay inside the nesting cap.
+     *
+     * @param response - A write's response; its `orderId` names the order to re-read.
+     * @returns A promise resolving with that same response, after the lists are replaced.
+     */
+    const rereadAfterWrite = <T extends { orderId: string }>(response: T) =>
+        readFulfillment(response.orderId).then(() => response);
+
+    /**
      * Loads an order's fulfillment orders and shipments. Both come back empty until the order is
      * paid — absence is an answer, never a 404.
      *
@@ -251,7 +261,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
             shipFulfillmentOrder(fulfillmentOrderId, input, keeper.withKey()).then(
                 (response) => {
                     keeper.settle();
-                    return readFulfillment(response.orderId).then(() => response);
+                    return rereadAfterWrite(response);
                 },
                 (error: unknown) => failKeyedWrite(keeper, fulfillmentOrderId, error)
             )
@@ -270,7 +280,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
             fulfillFulfillmentOrder(fulfillmentOrderId, keeper.withKey()).then(
                 (response) => {
                     keeper.settle();
-                    return readFulfillment(response.orderId).then(() => response);
+                    return rereadAfterWrite(response);
                 },
                 (error: unknown) => failKeyedWrite(keeper, fulfillmentOrderId, error)
             )
@@ -285,11 +295,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * @returns A promise resolving with the held fulfillment order, after the lists are re-read.
      */
     const hold = (fulfillmentOrderId: string, input: HoldFulfillmentOrderRequest) =>
-        fetchAny(() =>
-            holdFulfillmentOrder(fulfillmentOrderId, input).then((response) =>
-                readFulfillment(response.orderId).then(() => response)
-            )
-        );
+        fetchAny(() => holdFulfillmentOrder(fulfillmentOrderId, input).then(rereadAfterWrite));
 
     /**
      * Lifts a staff hold (admin). The server refuses `awaiting_stock`: the stock's own arrival
@@ -299,11 +305,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * @returns A promise resolving with the released fulfillment order, after the re-read.
      */
     const release = (fulfillmentOrderId: string) =>
-        fetchAny(() =>
-            releaseFulfillmentOrder(fulfillmentOrderId).then((response) =>
-                readFulfillment(response.orderId).then(() => response)
-            )
-        );
+        fetchAny(() => releaseFulfillmentOrder(fulfillmentOrderId).then(rereadAfterWrite));
 
     /**
      * Records one shipment's arrival (admin). The order moves to `delivered` only once every
@@ -313,11 +315,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * @returns A promise resolving with the shipment, after the lists are re-read.
      */
     const deliver = (shipmentId: string) =>
-        fetchAny(() =>
-            deliverShipment(shipmentId).then((response) =>
-                readFulfillment(response.orderId).then(() => response)
-            )
-        );
+        fetchAny(() => deliverShipment(shipmentId).then(rereadAfterWrite));
 
     /**
      * Reports a shipment lost or damaged in transit (admin). Its units reopen on the same
@@ -328,11 +326,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * @returns A promise resolving with the shipment, after the lists are re-read.
      */
     const markLost = (shipmentId: string, input: MarkShipmentLostRequest) =>
-        fetchAny(() =>
-            markShipmentLost(shipmentId, input).then((response) =>
-                readFulfillment(response.orderId).then(() => response)
-            )
-        );
+        fetchAny(() => markShipmentLost(shipmentId, input).then(rereadAfterWrite));
 
     /**
      * Corrects a shipment's tracking code (admin), whatever its status.
@@ -342,11 +336,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * @returns A promise resolving with the shipment, after the lists are re-read.
      */
     const editTracking = (shipmentId: string, trackingCode: string) =>
-        fetchAny(() =>
-            updateShipment(shipmentId, { trackingCode }).then((response) =>
-                readFulfillment(response.orderId).then(() => response)
-            )
-        );
+        fetchAny(() => updateShipment(shipmentId, { trackingCode }).then(rereadAfterWrite));
 
     return {
         loading,

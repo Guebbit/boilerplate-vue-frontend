@@ -172,6 +172,15 @@ export const useInventoryStore = defineStore('inventory', () => {
         });
 
     /**
+     * Reloads the board, then hands back the value a write produced. A named step so the write
+     * wrappers stay inside the nesting cap.
+     *
+     * @param value - What the write returned.
+     * @returns A promise resolving with that same value once the levels are fresh.
+     */
+    const refetchLevelsThen = <T>(value: T) => fetchLevels().then(() => value);
+
+    /**
      * Sets how many units of a product may be backordered at once, then reloads the board.
      *
      * @param productId - The product.
@@ -180,11 +189,7 @@ export const useInventoryStore = defineStore('inventory', () => {
      * @returns A promise resolving with the level after the write.
      */
     const setLimit = (productId: string, backorderLimit: number | null) =>
-        fetchAny(() =>
-            updateInventoryLevel(productId, { backorderLimit }).then((response) =>
-                fetchLevels().then(() => response)
-            )
-        );
+        fetchAny(() => updateInventoryLevel(productId, { backorderLimit }).then(refetchLevelsThen));
 
     /**
      * After a stock write that failed with a server fault or an unknown outcome, reloads what the
@@ -261,13 +266,7 @@ export const useInventoryStore = defineStore('inventory', () => {
      * @returns A promise resolving with how many holds this run released.
      */
     const sweep = () =>
-        fetchAny(() =>
-            sweepReservations().then((response) =>
-                fetchMovements()
-                    .then(() => fetchLevels())
-                    .then(() => response.expired)
-            )
-        );
+        fetchAny(() => sweepReservations().then((response) => reloadAfterWrite(response.expired)));
 
     /**
      * Both counter writes change the same two things, so they refresh the same two things.
@@ -278,7 +277,7 @@ export const useInventoryStore = defineStore('inventory', () => {
      * @param level - The counters the write answered with.
      * @returns A promise resolving with those counters, once the views agree with them.
      */
-    const reloadAfterWrite = (level: InventoryLevel | undefined) =>
+    const reloadAfterWrite = <T>(level: T) =>
         fetchMovements()
             .then(() => fetchLevels())
             .then(() => level);

@@ -233,6 +233,20 @@ export const usePaymentsStore = defineStore('payments', () => {
         );
 
     /**
+     * Re-reads a payment into state and pairs it with the refund just written. A named step so
+     * `refundPayment` stays inside the nesting cap.
+     *
+     * @param paymentId - The refunded payment.
+     * @param refund - The refund record the write answered with.
+     * @returns A promise resolving with the refreshed payment and that refund.
+     */
+    const readPaymentWithRefund = <TRefund>(paymentId: string, refund: TRefund) =>
+        getPayment(paymentId).then((response) => {
+            payment.value = response;
+            return { payment: response, refund };
+        });
+
+    /**
      * Returns a payment's money without touching its order's status — the operator's standalone
      * refund. Admin-only at the API; a caller without the role gets the 403 this rethrows.
      *
@@ -255,10 +269,7 @@ export const usePaymentsStore = defineStore('payments', () => {
             createRefund(target.id, amount === undefined ? undefined : { amount }, keeper.withKey())
                 .then((created) => {
                     keeper.settle();
-                    return getPayment(target.id).then((response) => {
-                        payment.value = response;
-                        return { payment: response, refund: created };
-                    });
+                    return readPaymentWithRefund(target.id, created);
                 })
                 .catch((error: unknown) => {
                     keeper.settle(error);

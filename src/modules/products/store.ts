@@ -145,6 +145,17 @@ const idBatches = (ids: string[]): string[][] =>
     );
 
 /**
+ * Loads one batch of products by id, in one search request.
+ *
+ * @param batch - At most {@link SEARCH_ID_BATCH} ids.
+ * @returns A promise resolving with the products that came back.
+ */
+const searchBatch = (batch: string[]) =>
+    searchProducts({ id: batch, page: 1, pageSize: batch.length }).then(
+        (response) => response.items
+    );
+
+/**
  * Products CRUD, paginated search and image upload.
  *
  * The endpoints are declared once, up front, and `useStructureCrudApi` derives the whole store
@@ -430,13 +441,9 @@ export const useProductsStore = defineStore('products', () => {
     const fetchProductsByIds = (productIds: string[]) =>
         fetchMultiple(
             (missing) =>
-                Promise.all(
-                    idBatches(missing).map((batch) =>
-                        searchProducts({ id: batch, page: 1, pageSize: batch.length }).then(
-                            (response) => response.items
-                        )
-                    )
-                ).then((batches) => batches.flat()),
+                Promise.all(idBatches(missing).map((batch) => searchBatch(batch))).then((batches) =>
+                    batches.flat()
+                ),
             [...new Set(productIds)],
             { forced: true }
         );

@@ -453,6 +453,20 @@ export const useCartStore = defineStore('cart', () => {
     };
 
     /**
+     * Settles a failed checkout, then rethrows it. A refusal (out of stock, a changed basket) is
+     * the server saying what the cached products said differently, so their cache goes too.
+     *
+     * @param error - What the checkout call rejected with.
+     * @returns A promise that always rejects with `error`.
+     * @throws The same `error`, once the attempt is settled.
+     */
+    const rejectFailedCheckout = (error: unknown) =>
+        settleFailedCheckout(error).then(() => {
+            if (!isRetryableFailure(error)) invalidateProductsCache();
+            throw error;
+        });
+
+    /**
      * Turns the authenticated user's cart into an order.
      *
      * Emits nothing: every checkout outcome the API saw is reported by the backend from the
@@ -502,14 +516,7 @@ export const useCartStore = defineStore('cart', () => {
                     invalidateProductsCache();
                     return response;
                 })
-                .catch((error: unknown) =>
-                    settleFailedCheckout(error).then(() => {
-                        // A refusal (out of stock, a changed basket) is the server saying what the
-                        // cached products said differently.
-                        if (!isRetryableFailure(error)) invalidateProductsCache();
-                        throw error;
-                    })
-                );
+                .catch(rejectFailedCheckout);
         });
 
     /**

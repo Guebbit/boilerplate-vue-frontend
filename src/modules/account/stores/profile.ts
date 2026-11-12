@@ -180,6 +180,22 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
     };
 
     /**
+     * Forces a profile reload and drops its value: the tail of a write that only needs the store
+     * fresh. A named step so the write wrappers stay inside the nesting cap.
+     *
+     * @returns A promise resolving once the profile is refetched.
+     */
+    const refetchProfile = () => fetchProfile(true).then(() => undefined);
+
+    /**
+     * {@link refetchProfile}, but only for a signed-in tab: the public email links may be followed
+     * by a visitor who holds no session here.
+     *
+     * @returns A promise resolving once the profile is refetched, or at once when signed out.
+     */
+    const refetchProfileIfSignedIn = () => (session.isAuth ? refetchProfile() : undefined);
+
+    /**
      * What a profile write may carry: the record's own fields, widened where the wire accepts
      * `null` (a clear) but the local `Account` never holds one.
      */
@@ -338,10 +354,7 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
      */
     const requestEmailChange = (email: string) =>
         fetchAny(
-            () =>
-                apiRequestEmailChange({ email }).then(() =>
-                    fetchProfile(true).then(() => undefined)
-                ),
+            () => apiRequestEmailChange({ email }).then(refetchProfile),
             // The same bucket as the resend and cancel buttons: one email change in flight at a time.
             { key: ['pending-email'], forced: true }
         );
@@ -355,8 +368,7 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
      */
     const cancelPendingEmailChange = () =>
         fetchAny(
-            () =>
-                apiCancelPendingEmailChange().then(() => fetchProfile(true).then(() => undefined)),
+            () => apiCancelPendingEmailChange().then(refetchProfile),
             // Own bucket so the Resend/Cancel buttons spin apart from the form; `forced` skips the
             // keyed cache a write must never be served from.
             { key: ['pending-email'], forced: true }
@@ -408,11 +420,7 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
      * @returns A promise resolving once the address is verified.
      */
     const confirmEmailVerification = (token: string) =>
-        fetchAny(() =>
-            apiConfirmEmailVerification({ token }).then(() =>
-                session.isAuth ? fetchProfile(true).then(() => undefined) : undefined
-            )
-        );
+        fetchAny(() => apiConfirmEmailVerification({ token }).then(refetchProfileIfSignedIn));
 
     /**
      * Spends the emailed email-change token — the other half of `updateProfile`'s `pendingEmail`
@@ -424,11 +432,7 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
      * @returns A promise resolving once the address has swapped in.
      */
     const confirmEmailChange = (token: string) =>
-        fetchAny(() =>
-            apiConfirmEmailChange({ token }).then(() =>
-                session.isAuth ? fetchProfile(true).then(() => undefined) : undefined
-            )
-        );
+        fetchAny(() => apiConfirmEmailChange({ token }).then(refetchProfileIfSignedIn));
 
     /**
      * Spends the undo link mailed to the OLD address when an email change was requested — public,
@@ -451,14 +455,24 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
         }
     );
 
+    /**
+     * Persists a consent answer to the account; a failed save is logged, never thrown, because the
+     * banner has already closed.
+     *
+     * @param granted - `true` for grant, `false` for deny.
+     */
+    const saveAnalyticsConsent = (granted: boolean) => {
+        updateProfile({ analyticsConsent: granted }).catch((error: unknown) => {
+            warn('analytics consent was not saved to the account', error);
+        });
+    };
+
     // The consent banner's buttons (and the "Privacy choices" link) answer for the account while
     // signed in: persist the answer, whose refetch re-applies Umami and the account choice.
     useAnalyticsConsentStore().$onAction(({ name, after }) => {
         if ((name !== 'grant' && name !== 'deny') || !session.isAuth) return;
         after(() => {
-            updateProfile({ analyticsConsent: name === 'grant' }).catch((error: unknown) => {
-                warn('analytics consent was not saved to the account', error);
-            });
+            saveAnalyticsConsent(name === 'grant');
         });
     });
 

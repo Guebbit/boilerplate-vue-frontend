@@ -323,6 +323,16 @@ export const useLocalesStore = defineStore('locales', () => {
         fetchAny(() => deactivateLocale(tag).then((response) => upsertLanguage(response)));
 
     /**
+     * Drops a language from the local capability list. A named step so `removeLanguage` stays
+     * inside the nesting cap.
+     *
+     * @param tag - Which language.
+     */
+    const forgetLanguage = (tag: string) => {
+        capabilities.value = capabilities.value.filter((language) => language.tag !== tag);
+    };
+
+    /**
      * Removes a language and every entry translated into it, then updates the list.
      *
      * The API deletes an active language directly; the confirm that guards it belongs to the page.
@@ -333,7 +343,7 @@ export const useLocalesStore = defineStore('locales', () => {
     const removeLanguage = (tag: string) =>
         fetchAny(() =>
             deleteLocale(tag).then(() => {
-                capabilities.value = capabilities.value.filter((language) => language.tag !== tag);
+                forgetLanguage(tag);
             })
         );
 
