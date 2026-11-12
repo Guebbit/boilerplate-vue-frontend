@@ -31,6 +31,13 @@ titles look similar. Use the evidence, in this order:
 - `reports/mutation/mutation.json` — which
   mutants each test kills is the ground truth for "what does this test discriminate"
 - `reports/test-report.json` — per-test duration, for the cost ranking
+- Stryker stops at the first test that kills a mutant, so every `killedBy` list in a regular report
+  holds ONE test and "killed uniquely" cannot be read off it. For an audit run, scope Stryker to the
+  files under audit and pass `--disableBail` (`npx stryker run --mutate <files> --disableBail`), so
+  every killing test is recorded. The regular runs stay as fast as they are. That run writes
+  `reports/mutation/`, so ask first (RULES.md rule 2). At `whole-repo` it is a full mutation run: on
+  "no", use the existing mutation report, mark "killed uniquely" UNVERIFIED, and offer per-module
+  runs. https://stryker-mutator.io/docs/stryker-js/configuration/#disablebail-boolean
 
 ### 2 — find the passengers
 
@@ -43,6 +50,11 @@ Distinguish two kinds and say which:
 - **redundant** — a strictly weaker copy of a sibling. Safe to remove.
 - **cheap insurance** — kills nothing extra today but pins a documented rule or a
   regression that already bit once. Keep it, and say why.
+
+Stryker does not run Cypress specs or Lighthouse, and never mutates a `.vue` SFC's own script, so
+a duplicate where both sides sit in one of those gets the verdict **by construction**, never
+"unverified": same view or branch, same input partition, subset assertions, each cited. The same goes
+for two component tests whose only subject is a `.vue` script: no mutant can tell them apart.
 
 ### 3 — rank by CI cost
 
@@ -66,7 +78,8 @@ Rules:
 - If `reports/mutation/mutation.json` is missing or older than the code under
   audit, say so at the top of the report and downgrade every verdict to
   "unverified". A guess here deletes real coverage.
-- A test whose only job is to pin a rule the contract states is never bloat, even
-  at zero unique mutants. Redundancy is measured against other TESTS, not against
-  the value of the rule.
+- A rule the contract states is never bloat while this test is its only owner. When a cross-cutting
+  sweep (axe `a11y-coverage`, the layout sweep) pins the same rule on the same view with an equal or
+  stronger assertion, the per-view copy is redundant unless it checks more than the sweep does
+  (`docs/tools/accessibility-testing.md`).
 - `reports/` is gitignored. These files are working evidence, not deliverables.
