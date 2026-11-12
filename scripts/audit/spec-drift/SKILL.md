@@ -42,7 +42,8 @@ implementation can contaminate them. Two passes, two files, in this order.
 
 Read ONLY, for everything in scope:
 
-- Contracts: the root `openapi.yaml` and `asyncapi.yaml` (synced from the backend), plus every
+- Contracts: the root `openapi.yaml` and `asyncapi.yaml` (synced from the backend), this repo's
+  own `contracts/*.yaml` (`cookies`, `frontend-links`, `authorization-keys`), plus every
   `src/modules/<module>/module.yaml`.
 - Docs: `docs/modules/<module>*.md`, `docs/theory/*.md`, `docs/api/*.md`, `docs/tools/*.md`.
 - Shared: `shared/rules/*.yaml`.
@@ -86,7 +87,7 @@ spec-derived expectation. That is the drift: implementation and test share one
 wrong reading, and CI is green anyway.
 
 Also flag the inverse — a spec rule with no test at all is NOT this audit's
-finding, it belongs to `/audit:spec-gaps`. The row gets `NOT-COVERED`; a code divergence seen on it
+finding, it belongs to `audit-spec-gaps`. The row gets `NOT-COVERED`; a code divergence seen on it
 goes to Leads.
 
 ## Verdicts
@@ -100,7 +101,7 @@ the test(s). A row pass 2 corrects is graded against the correction and marked a
 | `TAUTOLOGY`     | the expected value comes from the code under test. A finding                   |
 | `SPEC-CONFLICT` | two spec sources disagree: name both and the side code and test took. Beats OK |
 | `SPEC-SILENT`   | no spec line decides it                                                        |
-| `NOT-COVERED`   | no test; belongs to `/audit:spec-gaps`                                         |
+| `NOT-COVERED`   | no test; belongs to `audit-spec-gaps`                                          |
 | `OK`            | they agree. A count, never a row                                               |
 
 `fix side` is `contract`, `docs`, `shared` (`shared/**` YAML), `code` or `test`.
@@ -142,9 +143,17 @@ the individual mismatches.
 
 ## Priors worth using
 
-- `reports/stryker-incremental.json` — a surviving mutant on a line whose rule the
-  docs state explicitly is a strong candidate. Use it to order the work, never as
-  a finding on its own.
+- `reports/mutation/mutation.json`, see `docs/tools/mutation-testing.md`. A surviving mutant on a
+  line whose rule the docs state explicitly is a strong candidate. Use it to order the work, never
+  as a finding on its own. Never read `reports/stryker-incremental.json`: it is Stryker's cache,
+  not a result. A `.vue` file has no mutants: its Stryker entry never exists.
+    - A file's entry is stale when that source changed after the report was written
+      (`git log -1 --format=%cI -- <file>` against the report's date). An entry for a file that no
+      longer exists is stale too.
+    - Missing or stale for the scope: say so in one line at the top of the findings ("no mutation
+      prior, work ordered by spec risk; `npm run test:mutation:pull` fixes it") and carry on. Do not
+      mark the run partial for this: no finding here rests on a mutant. (PARTIAL differs on purpose
+      from test-honesty and suite-bloat, where the report is the oracle.)
 - Tests whose expected value is produced by the system under test
   (`expect(f(x)).toEqual(g(x))` with `g` a sibling export, `SCHEMA.parse(actual)`
   compared to `actual`, an expectation imported from the module under test,
