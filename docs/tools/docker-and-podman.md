@@ -112,6 +112,38 @@ That is deliberate: a lone container is loudly broken rather than quietly faked.
 silently answered its own requests while the backend you just started sat unreachable would look
 like it works and would not.
 
+## Hardening the production container {#hardening}
+
+`docker-compose.production.yml` runs the image the way a hardened deployment should, and the image
+is built so that it still works:
+
+| Setting                                        | What it does                                                                                                                                                                                                      |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nginx/nginx-unprivileged` base image          | nginx, master process included, runs as uid 101. Nothing in the container is root.                                                                                                                                |
+| `read_only: true`                              | The root filesystem is immutable: a compromised nginx cannot rewrite the app it serves.                                                                                                                           |
+| `cap_drop: [ALL]`                              | No Linux capability. Serving a port above 1024 needs none.                                                                                                                                                        |
+| `security_opt: no-new-privileges:true`         | A setuid binary cannot regain privileges.                                                                                                                                                                         |
+| `tmpfs: /tmp:mode=1777,size=16m,noexec,nosuid` | The one writable place: nginx's pid and temp files, and `/tmp/runtime`, where the entrypoint writes `config.js`, `robots.txt`, `security.txt` and the robots `map` at every start. Nothing written there can run. |
+| port `8080` inside the container               | uid 101 may not bind below 1024. The published host port stays `${FRONTEND_PORT:-8080}`.                                                                                                                          |
+
+These map to the CIS Docker Benchmark: a container user (section 4); capabilities, a read-only root
+filesystem and `no-new-privileges` (section 5).
+
+**Why 8080 and not 80.** Rootless podman refuses a non-root bind on port 80 even inside the
+container's own network namespace unless the host lowers `net.ipv4.ip_unprivileged_port_start`, so
+the unprivileged image cannot serve on 80 there. A proxy in front reaches the container on 8080.
+
+Running the image by hand, give it the same flags or the entrypoint has nowhere to write:
+
+```bash
+docker run --read-only --cap-drop ALL --security-opt no-new-privileges \
+  --tmpfs /tmp:mode=1777,size=16m,noexec,nosuid \
+  -e VITE_API_URL=https://api.example.com -p 8080:8080 boilerplate-frontend:production
+```
+
+CI boots the image exactly like this and checks that it runs as uid 101, that a write under the web
+root is refused, and that a redirect carries a relative `Location`.
+
 ## Sub-path deployments
 
 Serving the app under a sub-path (`VITE_APP_BASE_URL=/shop/`) needs no change to this container or

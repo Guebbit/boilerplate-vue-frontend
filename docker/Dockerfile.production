@@ -21,7 +21,7 @@
 # `runtimeValue('API_URL') ?? import.meta.env.VITE_API_URL ?? ''`. So:
 #
 #   docker build -f docker/Dockerfile.production -t boilerplate-frontend:production .
-#   docker run -e VITE_API_URL=https://api.example.com -p 8080:80 boilerplate-frontend:production
+#   docker run -e VITE_API_URL=https://api.example.com -p 8080:8080 boilerplate-frontend:production
 #
 # One image, promoted staging → production; a config change is a restart, not a rebuild.
 
@@ -71,7 +71,16 @@ RUN find dist -name '*.map' -type f -delete
 # ────────────────────────────────────────────────────────────────────────────────────────────────
 # Stage 2 — serve: nginx and a directory of files. No Node, no npm, no source.
 # ────────────────────────────────────────────────────────────────────────────────────────────────
-FROM docker.io/library/nginx:1.31.8-alpine@sha256:713fc2ebfd92e8217db451477182ee91944b123d2b1ee9fd5a8c6e91ca6c3a11 AS runtime
+# `nginx-unprivileged`: nginx's own build that runs as uid 101 end to end, master process included,
+# and listens on 8080. Same nginx version as `library/nginx:1.31.8`.
+# https://hub.docker.com/r/nginxinc/nginx-unprivileged
+FROM docker.io/nginx/nginx-unprivileged:1-alpine@sha256:26277f4923331a5ecda9096c0e378de65a30a5037129a8036c3ef5d9feee833d AS runtime
+
+# The entrypoint scripts write their files (`config.js`, `robots.txt`, `security.txt`, the robots
+# `map`) from this container's environment at every start. uid 101 cannot write the image's web
+# root and must not be able to, so they go to `/tmp/runtime`, a tmpfs when the container runs
+# with a read-only filesystem. `nginx.conf` serves those three files from there.
+ENV NGINX_HTML_ROOT=/tmp/runtime/html NGINX_CONF_DIR=/tmp/runtime/conf
 
 # `nginx.conf` carries the SPA fallback, the cache policy and the security headers. Kept as a file
 # in the repo rather than a heredoc here so it is diffable and can be linted.
@@ -91,17 +100,14 @@ COPY docker/docker-entrypoint.d/42-generate-robots.sh /docker-entrypoint.d/
 # Only the build output. Nothing that produced it comes along.
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# The nginx image ships an unprivileged `nginx` user, and the alpine variant is already set up to
-# run as it: the master process binds port 80 as root and drops privileges for the workers. Ports
-# below 1024 need that root bind, which is why this does NOT switch to `USER nginx` — doing so
-# fails to bind unless the listen port moves too. Publish it behind a proxy and the distinction
-# stops mattering; the containers here are not reachable from outside the network.
-EXPOSE 80
+# 8080, not 80: the image runs as uid 101, which may not bind a port below 1024. Map it on the
+# host side (`-p 8080:8080`); a proxy in front reaches the container on 8080.
+EXPOSE 8080
 
 # Serving static files has no application health to speak of, so the check asks the only question
 # that matters: is nginx answering, and is index.html where it should be.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://127.0.0.1/ || exit 1
+    CMD wget --quiet --tries=1 --spider http://127.0.0.1:8080/ || exit 1
 
 # `daemon off;` keeps nginx in the foreground so the container lives as long as the server does and
 # Docker can see it exit. This is the base image's own default command, restated because a future

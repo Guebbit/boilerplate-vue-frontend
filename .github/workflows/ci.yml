@@ -129,7 +129,8 @@ jobs:
         # break, or a build arg silently dropped from `docker/Dockerfile.production`, first
         # surfaced on whoever tried to deploy. This builds it and proves the running container
         # actually serves the app at the domain root — the sub-path case is NOT covered here: it
-        # needs a design call first, see the note on `docker/nginx.conf`.
+        # needs a design call first, see the note on `docker/nginx.conf`. It runs hardened, with
+        # the flags `docker-compose.production.yml` sets: the image has to work under them.
         runs-on: ubuntu-latest
         timeout-minutes: 15
         permissions:
@@ -143,9 +144,14 @@ jobs:
             - name: Build the production image
               run: docker build -f docker/Dockerfile.production -t boilerplate-frontend:ci .
 
-            - name: Run it and prove it serves the app
+            - name: Run it hardened and prove it serves the app
               run: |
-                  docker run -d --name frontend-smoke -p 8080:80 \
+                  # The same flags as `docker-compose.production.yml`: uid 101 from the image, a
+                  # read-only root filesystem, no capability, and a noexec tmpfs as the only
+                  # writable place (the entrypoint writes `config.js` and friends under it).
+                  docker run -d --name frontend-smoke -p 8080:8080 \
+                    --read-only --cap-drop ALL --security-opt no-new-privileges \
+                    --tmpfs /tmp:mode=1777,size=16m,noexec,nosuid \
                     -e VITE_API_URL=http://localhost:3000 \
                     -e VITE_APP_NAME='CI Smoke Test' \
                     boilerplate-frontend:ci
@@ -161,6 +167,23 @@ jobs:
                   curl --fail --silent --show-error http://localhost:8080/config.js \
                     | tee /tmp/config.js
                   grep -q 'CI Smoke Test' /tmp/config.js
+
+                  echo 'nginx runs as uid 101, not root:'
+                  test "$(docker exec frontend-smoke id -u)" = '101'
+
+                  echo 'a write under the web root is refused (read-only filesystem):'
+                  if docker exec frontend-smoke touch /usr/share/nginx/html/should-not-exist; then
+                    exit 1
+                  fi
+
+                  echo 'redirects are relative: the setting is live, and no answer names an absolute Location:'
+                  docker exec frontend-smoke nginx -T 2>&1 | grep -q 'absolute_redirect off;'
+                  for path in /assets /en /en/ /index.html; do
+                    # A directory asked for without its slash is the redirect nginx would make
+                    # absolute, naming the container's port 8080 instead of the visitor's.
+                    if curl --silent --include "http://localhost:8080$path" \
+                      | grep -qi '^location: https\?://'; then exit 1; fi
+                  done
 
                   echo 'a missing asset is a 404, not the SPA fallback:'
                   status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
@@ -185,7 +208,9 @@ jobs:
 
             - name: Run it with indexing on and prove the header goes and the sitemap is named
               run: |
-                  docker run -d --name frontend-indexed -p 8081:80 \
+                  docker run -d --name frontend-indexed -p 8081:8080 \
+                    --read-only --cap-drop ALL --security-opt no-new-privileges \
+                    --tmpfs /tmp:mode=1777,size=16m,noexec,nosuid \
                     -e VITE_API_URL=http://localhost:3000 \
                     -e VITE_ROBOTS_INDEX=true \
                     boilerplate-frontend:ci

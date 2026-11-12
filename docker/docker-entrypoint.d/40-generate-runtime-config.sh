@@ -1,8 +1,8 @@
 #!/bin/sh
-# Writes config.js under the web root (/usr/share/nginx/html) from this container's own
-# environment, every time it starts — a config change is a restart, not a rebuild. Runs
-# automatically: the official nginx
-# image sources every executable *.sh under /docker-entrypoint.d/ before starting nginx itself.
+# Writes config.js under the web root (NGINX_HTML_ROOT; /usr/share/nginx/html unless set) from
+# this container's own environment, every time it starts — a config change is a restart, not a
+# rebuild. Runs automatically: the official nginx image sources every executable *.sh under
+# /docker-entrypoint.d/ before starting nginx itself.
 # https://github.com/nginxinc/docker-nginx/blob/master/entrypoint/docker-entrypoint.sh
 #
 # `src/infrastructure/runtime-config.ts` is the one reader; `index.html` loads this file before
@@ -14,6 +14,9 @@ set -eu
 # build (`scripts/lighthouse/build.ts`) runs these same scripts into its own folder.
 HTML_ROOT="${NGINX_HTML_ROOT:-/usr/share/nginx/html}"
 CONFIG_FILE="$HTML_ROOT/config.js"
+
+# The image points NGINX_HTML_ROOT at /tmp/runtime/html, a tmpfs that holds nothing at first start.
+mkdir -p "$HTML_ROOT"
 
 # JSON-escapes one value: backslash and double-quote, then strips control characters (newlines
 # above all — an operator-supplied env var with one would otherwise break the generated script).

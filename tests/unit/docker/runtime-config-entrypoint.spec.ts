@@ -60,6 +60,14 @@ describe('40-generate-runtime-config.sh', () => {
         expect(config).not.toContain('FARO_URL');
     });
 
+    it('creates a missing NGINX_HTML_ROOT', () => {
+        // The image's web root is a tmpfs path that does not exist at first start.
+        rmSync(root, { recursive: true, force: true });
+        root = path.join(root, 'runtime', 'html');
+
+        expect(generate({ VITE_API_URL: 'http://localhost:3100' })).toContain('"API_URL"');
+    });
+
     it('omits a blank key', () => {
         expect(generate({ VITE_API_URL: '' })).not.toContain('API_URL');
     });

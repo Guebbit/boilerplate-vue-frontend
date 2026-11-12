@@ -57,10 +57,29 @@ services:
 
         restart: unless-stopped
 
+        # Hardening, in the order the CIS Docker Benchmark asks for it (container user in section
+        # 4; capabilities, read-only root filesystem and no new privileges in section 5):
+        #   - the image runs as uid 101 (`nginx-unprivileged`), so nothing here is root;
+        #   - `read_only` makes the root filesystem immutable, so a compromised nginx cannot
+        #     rewrite the app it serves;
+        #   - `cap_drop: [ALL]`: serving a port above 1024 needs no capability;
+        #   - `no-new-privileges` stops a setuid binary from regaining any.
+        # What must stay writable is a small tmpfs: nginx's pid and temp files, and
+        # `/tmp/runtime`, where the entrypoint writes `config.js` and friends at every start.
+        # `noexec,nosuid`: nothing written there can be run or elevate.
+        read_only: true
+        cap_drop:
+            - ALL
+        security_opt:
+            - no-new-privileges:true
+        tmpfs:
+            - /tmp:mode=1777,size=16m,noexec,nosuid
+
         ports:
             # Loopback only. Terminate TLS in a reverse proxy in front of this — the API sets
-            # authentication cookies, and those must not cross a plain-HTTP hop.
-            - '127.0.0.1:${FRONTEND_PORT:-8080}:80'
+            # authentication cookies, and those must not cross a plain-HTTP hop. The container
+            # side is 8080: uid 101 may not bind a port below 1024.
+            - '127.0.0.1:${FRONTEND_PORT:-8080}:8080'
 # ── WHY THE API IS NOT A SERVICE HERE ────────────────────────────────────────────────────────────
 # The two repositories deploy independently: the frontend is a bundle on a CDN or an nginx
 # container, the API is a long-running process next to its databases. Declaring the API here would

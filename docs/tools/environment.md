@@ -43,8 +43,11 @@ How a running container changes a value, with no rebuild:
 1. At start, `docker/docker-entrypoint.d/40-generate-runtime-config.sh` reads the container's own
    environment and writes `/config.js`: `window.__APP_CONFIG = { "API_URL": "...", ... }`.
    A variable that is unset or blank is left out of the file. Every generator under
-   `docker/docker-entrypoint.d/` writes under `NGINX_HTML_ROOT` (default `/usr/share/nginx/html`),
-   which is how the [Lighthouse](./lighthouse.md) audit build runs the very same scripts into its own folder.
+   `docker/docker-entrypoint.d/` writes under `NGINX_HTML_ROOT` (default `/usr/share/nginx/html`;
+   the image sets it to `/tmp/runtime/html`, because the container runs as uid 101 on a read-only
+   root filesystem and `/tmp` is its tmpfs), which is how the [Lighthouse](./lighthouse.md) audit
+   build runs the very same scripts into its own folder. `NGINX_CONF_DIR` moves the robots `map` the
+   same way, to `/tmp/runtime/conf`, and `nginx.conf` includes it from there.
 2. `index.html` loads `config.js` (anchored to the base with `%BASE_URL%`, so a deep link finds it) **before** the app bundle. nginx serves it with
    `Cache-Control: no-store`, so a restart shows up on the next page load.
 3. Each read goes through `runtimeValue(name)` (`src/infrastructure/runtime-config.ts`):
@@ -55,7 +58,7 @@ How a running container changes a value, with no rebuild:
    everywhere; there is no central config object.
 
 ```sh
-docker run -e VITE_API_URL=https://api.example.com -p 8080:80 boilerplate-frontend:production
+docker run -e VITE_API_URL=https://api.example.com -p 8080:8080 boilerplate-frontend:production
 ```
 
 **Never put a secret here.** Every value ships to every browser, with or without `config.js`.
