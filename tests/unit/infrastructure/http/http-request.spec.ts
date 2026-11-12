@@ -60,7 +60,7 @@ vi.mock('@/i18n', () => ({
 }));
 
 /** The interceptors under test, imported after the mocks are in place. */
-const { onRequest, onRequestReject } = await import('@/infrastructure/http');
+const { onRequest, onRequestReject } = await import('@/infrastructure/http/interceptors.ts');
 
 /** Minimal outgoing config — `onRequest` only writes to `headers`. */
 const makeConfig = (headers: Record<string, string> = {}) =>

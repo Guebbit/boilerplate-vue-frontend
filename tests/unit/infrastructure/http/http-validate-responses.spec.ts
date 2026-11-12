@@ -4,6 +4,7 @@
  * adapter wouldn't exercise the interceptor chain the mutator actually runs through.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { installInterceptors } from '../../../support/unit/install-interceptors.ts';
 import { http, HttpResponse } from 'msw';
 import { server } from '../../../support/unit/msw-server.ts';
 import { z } from 'zod';
@@ -42,7 +43,9 @@ const loadHttp = () => {
             // Awaited: the rows load lazily now, so every test below must wait for
             // them to be in place before it fires a request, exactly like `wireModulesIntoCore`
             // waits when a spec actually stubs `VITE_VALIDATE_RESPONSES`.
-            loadResponseSchemas(collectModuleResponseSchemas(enabledModules)).then(() => httpModule)
+            loadResponseSchemas(collectModuleResponseSchemas(enabledModules))
+                .then(installInterceptors)
+                .then(() => httpModule)
     );
 };
 
@@ -399,7 +402,8 @@ describe('orvalMutator contract validation', () => {
             import('@/infrastructure/http'),
             import('@/infrastructure/http/response-schema-map'),
             import('@/kernel/registry'),
-            import('@/modules')
+            import('@/modules'),
+            installInterceptors()
         ]).then(
             ([
                 { orvalMutator },

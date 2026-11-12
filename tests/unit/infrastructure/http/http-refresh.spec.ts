@@ -19,6 +19,7 @@
  * refresh attempt is not observable from the caller's side without stubbing the code under test.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { installInterceptors } from '../../../support/unit/install-interceptors.ts';
 import { http, HttpResponse } from 'msw';
 import { server } from '../../../support/unit/msw-server.ts';
 import { deleteCookie } from '@guebbit/js-toolkit';
@@ -233,7 +234,7 @@ const handlers = [
 const loadHttp = () => {
     vi.resetModules();
     vi.stubEnv('VITE_API_URL', API);
-    return import('@/infrastructure/http');
+    return import('@/infrastructure/http').then((http) => installInterceptors().then(() => http));
 };
 
 /**

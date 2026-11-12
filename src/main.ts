@@ -32,6 +32,7 @@ import { logger } from '@/infrastructure/utils/logger.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { loadResponseSchemas } from '@/infrastructure/http/response-schema-map.ts';
 import { shouldValidateResponses } from '@/infrastructure/http/validate.ts';
+import { installHttpInterceptors } from '@/infrastructure/http/install.ts';
 import { registerLocaleContributors } from '@/i18n';
 import {
     collectModuleLocales,
@@ -59,6 +60,9 @@ import { enabledModules } from '@/modules.ts';
  * mount below.
  */
 registerLocaleContributors(collectModuleLocales(enabledModules));
+// The axios interceptors (auth, etag, download, step-up) read the session store, so the http tier
+// cannot register them itself without a cycle: this is where they are wired, before any request.
+installHttpInterceptors();
 // How each notification code reads and links: declared by the module that owns the code.
 registerNotices(collectModuleNotices(enabledModules));
 

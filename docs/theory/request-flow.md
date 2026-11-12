@@ -93,14 +93,14 @@ flowchart LR
 
 ## What each layer does
 
-| Layer                                        | Responsibility                                                                                                                                    |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| View / template                              | Renders data, captures user events, delegates to composables                                                                                      |
-| Composable                                   | Encapsulates form state, validation, and list logic for one domain                                                                                |
-| Pinia store                                  | Orchestrates API calls, holds reactive data, exposes actions                                                                                      |
-| Generated client (`contracts/rest/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml`                                                                              |
-| `src/infrastructure/http/index.ts`           | Single axios instance; request/response interceptors; shapes errors into `AxiosResponseErrorData`                                                 |
-| Router guards                                | `tryRestoreAuth` then `enforceRouteAccess` (`beforeEach`), `localeChoice` (`beforeResolve`) — run before the view is entered; redirect on failure |
+| Layer                                        | Responsibility                                                                                                                                                          |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| View / template                              | Renders data, captures user events, delegates to composables                                                                                                            |
+| Composable                                   | Encapsulates form state, validation, and list logic for one domain                                                                                                      |
+| Pinia store                                  | Orchestrates API calls, holds reactive data, exposes actions                                                                                                            |
+| Generated client (`contracts/rest/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml`                                                                                                    |
+| `src/infrastructure/http/install.ts`         | Registers the request/response interceptors on the single axios instance (`client.ts`); `src/main.ts` calls it at boot; they shape errors into `AxiosResponseErrorData` |
+| Router guards                                | `tryRestoreAuth` then `enforceRouteAccess` (`beforeEach`), `localeChoice` (`beforeResolve`) — run before the view is entered; redirect on failure                       |
 
 ## Cross-cutting strategies
 
@@ -110,7 +110,7 @@ Route guards run on every navigation. A guard that refuses a guest redirects to 
 
 ### Interceptors own error shape
 
-All HTTP errors flow through `src/infrastructure/http/index.ts` interceptors. Every failed request produces an `AxiosResponseErrorData`: the server's problem details (`application/problem+json`), or one the client builds with the same members when nothing answered with one — a transport failure included, as `status: 0`. The text a person reads is `errors[0].message`, then `detail`; `title` is the English status phrase and is never shown. Views and stores never parse raw axios errors; the call site decides whether the visitor sees a toast or an in-place alert, and reports a real failure to Faro (see below).
+All HTTP errors flow through the interceptors `src/infrastructure/http/install.ts` registers. Every failed request produces an `AxiosResponseErrorData`: the server's problem details (`application/problem+json`), or one the client builds with the same members when nothing answered with one — a transport failure included, as `status: 0`. The text a person reads is `errors[0].message`, then `detail`; `title` is the English status phrase and is never shown. Views and stores never parse raw axios errors; the call site decides whether the visitor sees a toast or an in-place alert, and reports a real failure to Faro (see below).
 
 ### Analytics is not this repo's call to make
 

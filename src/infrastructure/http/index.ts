@@ -1,18 +1,13 @@
 /**
  * @module
- * Composition root of the http tier: imports the leaf modules, wires the interceptors onto the
- * shared axios instance, and exposes `orvalMutator` as the one function every generated client
- * call goes through.
+ * The http tier's public surface: `orvalMutator`, the one function every generated client call
+ * goes through. `orval.config.ts` points every generated client at it.
  *
- * This file is the tier's public surface — `orval.config.ts` points every generated client at
- * `orvalMutator` here, and the request interceptors are re-exported beside it because their specs
- * exercise them through this module. Everything else is imported from its own leaf file.
+ * It registers no interceptors: they read the session store, which reads the generated client,
+ * which imports this file — a cycle. `install.ts` registers them and `src/main.ts` calls it, so
+ * the wiring sits at the composition root. Everything else is imported from its own leaf file.
  */
 import { instance } from './client.ts';
-import { onRequest, onRequestReject } from './interceptors.ts';
-import { onEtagRequest, onEtagResponse } from './etag.ts';
-import { onDownloadResponse } from './download.ts';
-import { onResponseRejectWithStepUp } from './step-up.ts';
 import {
     shouldValidateRequests,
     shouldValidateResponses,
@@ -20,22 +15,6 @@ import {
     validateResponseAgainstContract
 } from './validate.ts';
 import type { AxiosRequestConfig } from 'axios';
-
-// axios `interceptors.<side>.use(onFulfilled, onRejected)`: a handler is skipped by passing
-// `undefined`. Request interceptors run last-registered first; response ones in registration order.
-// https://axios-http.com/docs/interceptors
-instance.interceptors.request.use(onRequest, onRequestReject);
-// After `onRequest`: only reads and adds a header, so the order with auth is not load-bearing —
-// kept beside it so both request-side wirings are found together.
-instance.interceptors.request.use(onEtagRequest);
-// Observes every success without unwrapping it (see the note in `interceptors.ts`); failures pass
-// on untouched to the step-up wrapper below.
-instance.interceptors.response.use(onEtagResponse);
-// A blob the server named (`Content-Disposition`) becomes a `File`, so call sites save `file.name`.
-instance.interceptors.response.use(onDownloadResponse);
-// Step-up wraps refresh: a `REAUTH_REQUIRED` 401 has to be caught before the refresh branch would
-// "fix" it by renewing a cookie that was never the problem — see `step-up.ts`'s own module doc.
-instance.interceptors.response.use(undefined, onResponseRejectWithStepUp);
 
 /**
  * Sends one already-merged request and unwraps the response, validating it when enabled.
@@ -93,5 +72,3 @@ export const orvalMutator = <T>(
               .then(() => send<T>(request))
         : send<T>(request);
 };
-
-export { onRequest, onRequestReject, onResponseReject } from './interceptors.ts';

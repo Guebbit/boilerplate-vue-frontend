@@ -9,6 +9,7 @@
  * rules on the two interceptors alone.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { installInterceptors } from '../../../support/unit/install-interceptors.ts';
 import { http, HttpResponse } from 'msw';
 import { server } from '../../../support/unit/msw-server.ts';
 import { createPinia, setActivePinia } from 'pinia';
@@ -66,7 +67,7 @@ const handlers = [
 const loadHttp = () => {
     vi.resetModules();
     vi.stubEnv('VITE_API_URL', API);
-    return import('@/infrastructure/http');
+    return import('@/infrastructure/http').then((http) => installInterceptors().then(() => http));
 };
 
 beforeEach(() => {

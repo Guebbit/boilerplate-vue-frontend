@@ -152,7 +152,7 @@ this diagram exists to prevent.
 
 **Problem it solves.** `fetch` requires manual error checking, JSON parsing, and has no interceptor system. Axios makes it easy to attach auth headers on every request and intercept errors globally.
 
-**In this repo.** A single axios instance lives in `src/infrastructure/http/index.ts`. Request interceptors attach the Bearer token; response interceptors shape errors into `AxiosResponseErrorData`, renew an expired token and replay the request once on a `401`, and park a `REAUTH_REQUIRED` for the step-up prompt. Nothing redirects: what a failure looks like is the call site's decision.
+**In this repo.** A single axios instance lives in `src/infrastructure/http/client.ts`; `install.ts` registers its interceptors and `src/main.ts` calls it at boot. Request interceptors attach the Bearer token; response interceptors shape errors into `AxiosResponseErrorData`, renew an expired token and replay the request once on a `401`, and park a `REAUTH_REQUIRED` for the step-up prompt. Nothing redirects: what a failure looks like is the call site's decision.
 
 → [Runtime](./runtime.md)
 

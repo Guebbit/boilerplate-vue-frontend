@@ -38,7 +38,7 @@ const makeAxiosError = (status: number, data: unknown, headers: Record<string, s
 
 describe('onResponseReject', () => {
     it('passes problem details through unchanged', () => {
-        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+        return import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) => {
             const problem = aProblem(400, [{ code: 'FIELD_REQUIRED', message: 'field required' }]);
             return expect(
                 onResponseReject(makeAxiosError(400, problem) as never)
@@ -47,7 +47,7 @@ describe('onResponseReject', () => {
     });
 
     it('lifts a validation item`s details.field to where the forms read it', () => {
-        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+        return import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) => {
             const error = makeAxiosError(
                 422,
                 aProblem(422, [
@@ -75,7 +75,7 @@ describe('onResponseReject', () => {
     });
 
     it('enriches problem details with the x-request-id and traceparent headers', () => {
-        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+        return import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) => {
             const error = makeAxiosError(
                 422,
                 aProblem(422, [{ code: 'NAME_REQUIRED', message: 'name required' }]),
@@ -94,7 +94,7 @@ describe('onResponseReject', () => {
      * whichever branch produced the rejection.
      */
     it('carries the request method and path for every rejection', () => {
-        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+        return import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) => {
             const error = {
                 response: { status: 422, statusText: 'Error', data: {}, headers: {} },
                 message: 'Request failed',
@@ -108,7 +108,7 @@ describe('onResponseReject', () => {
     });
 
     it('captures x-request-id on a fallback transport error', () => {
-        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+        return import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) => {
             const error = makeAxiosError(
                 503,
                 {},
@@ -124,7 +124,7 @@ describe('onResponseReject', () => {
     });
 
     it('normalizes 401 responses as authentication state errors', () => {
-        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+        return import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) => {
             const error = makeAxiosError(401, {});
             return expect(onResponseReject(error as never)).rejects.toMatchObject({
                 type: 'about:blank',
@@ -136,7 +136,7 @@ describe('onResponseReject', () => {
     });
 
     it('normalizes 403 responses as authorization state errors', () => {
-        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+        return import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) => {
             const error = makeAxiosError(403, {});
             return expect(onResponseReject(error as never)).rejects.toMatchObject({
                 type: 'about:blank',
@@ -148,7 +148,7 @@ describe('onResponseReject', () => {
     });
 
     it('omits requestId and traceparent when headers are absent', () => {
-        return import('@/infrastructure/http')
+        return import('@/infrastructure/http/interceptors.ts')
             .then(({ onResponseReject }) => {
                 const error = makeAxiosError(500, {});
                 return onResponseReject(error as never).catch((error_: unknown) => error_);
@@ -161,7 +161,7 @@ describe('onResponseReject', () => {
 
     // axios parses any `+json` body into an object, so the media type changes nothing here.
     it('reads a body served as application/problem+json like any other JSON', () => {
-        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+        return import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) => {
             const problem = aProblem(404, [{ code: 'NOT_FOUND', message: 'no such order' }]);
             const error = {
                 ...makeAxiosError(404, problem, { 'content-type': 'application/problem+json' })
@@ -182,7 +182,7 @@ describe('onResponseReject', () => {
  */
 describe('onResponseReject — fallback normalisation', () => {
     it('canonicalises any 5xx to a single safe message', () => {
-        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+        return import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) => {
             return expect(onResponseReject(makeAxiosError(503, {}) as never)).rejects.toMatchObject(
                 {
                     status: 503,
@@ -195,7 +195,7 @@ describe('onResponseReject — fallback normalisation', () => {
     it('treats exactly 500 as a server error', () =>
         // The `>= 500` boundary. With `> 500` a plain 500 would fall through and surface the raw
         // statusText instead — the single most common server failure, mis-messaged.
-        import('@/infrastructure/http').then(({ onResponseReject }) =>
+        import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) =>
             expect(onResponseReject(makeAxiosError(500, {}) as never)).rejects.toMatchObject({
                 detail: enMessages['api-errors']['internal-server-error']
             })
@@ -203,7 +203,7 @@ describe('onResponseReject — fallback normalisation', () => {
 
     it('leaves a 4xx below the server range on its own message', () =>
         // The other side of the same boundary: 499 must NOT be canonicalised.
-        import('@/infrastructure/http').then(({ onResponseReject }) =>
+        import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) =>
             expect(onResponseReject(makeAxiosError(499, {}) as never)).rejects.toMatchObject({
                 status: 499,
                 detail: 'Error'
@@ -212,7 +212,7 @@ describe('onResponseReject — fallback normalisation', () => {
 
     it('carries exactly one error item for any status, because the contract never sends none', () =>
         // `errors` is `minItems: 1` in the contract, so the synthesized problem keeps that promise.
-        import('@/infrastructure/http')
+        import('@/infrastructure/http/interceptors.ts')
             .then(({ onResponseReject }) =>
                 onResponseReject(makeAxiosError(404, {}) as never).catch(
                     (error_: unknown) => error_
@@ -230,7 +230,7 @@ describe('onResponseReject — fallback normalisation', () => {
      * these apart from an answered request.
      */
     it('reports status 0 and NETWORK_ERROR when there is no response at all', () =>
-        import('@/infrastructure/http').then(({ onResponseReject }) =>
+        import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) =>
             expect(
                 onResponseReject({ message: 'Network Error', config: { url: '/x' } } as never)
             ).rejects.toMatchObject({
@@ -245,7 +245,7 @@ describe('onResponseReject — fallback normalisation', () => {
         ['ETIMEDOUT', 'TIMEOUT'],
         ['ERR_CANCELED', 'CANCELED']
     ])('maps axios code %s to %s when there is no response', (axiosCode, expectedCode) =>
-        import('@/infrastructure/http').then(({ onResponseReject }) =>
+        import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) =>
             expect(
                 onResponseReject({
                     code: axiosCode,
@@ -257,7 +257,7 @@ describe('onResponseReject — fallback normalisation', () => {
     );
 
     it('prefers statusText over the axios message', () => {
-        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+        return import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) => {
             const error = {
                 response: { status: 418, statusText: "I'm a teapot", data: {}, headers: {} },
                 message: 'Request failed',
@@ -273,7 +273,7 @@ describe('onResponseReject — fallback normalisation', () => {
     it('falls back to the axios message when statusText is empty', () =>
         // `||`, not `??`: axios sets `statusText` to '' rather than undefined on many adapters,
         // and an empty message would render as a blank error toast.
-        import('@/infrastructure/http').then(({ onResponseReject }) =>
+        import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) =>
             expect(
                 onResponseReject({
                     response: { status: 418, statusText: '', data: {}, headers: {} },
@@ -284,7 +284,7 @@ describe('onResponseReject — fallback normalisation', () => {
         ));
 
     it('falls back to a generic message when neither is available', () => {
-        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+        return import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) => {
             const error = {
                 response: { status: 418, statusText: '', data: {}, headers: {} },
                 message: '',
@@ -303,7 +303,7 @@ describe('onResponseReject — fallback normalisation', () => {
          * so the server's own sentence surviving is the proof it was not rebuilt from
          * `statusText`.
          */
-        import('@/infrastructure/http').then(({ onResponseReject }) =>
+        import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) =>
             expect(
                 onResponseReject(
                     makeAxiosError(

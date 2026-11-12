@@ -66,7 +66,7 @@ vi.mock('@api', () => ({
 
 ### The exception — a real HTTP server for the transport specs
 
-`tests/unit/infrastructure/http/http-refresh.spec.ts` (and, on the same approach, `step-up.spec.ts` and the two `http-validate-*.spec.ts`) is deliberately **not** stubbed at the module boundary. The 401 → refresh → replay flow lives entirely inside axios's interceptor chain (`src/infrastructure/http/index.ts`), so a hand-rolled stub would never actually exercise it — there'd be nothing to intercept. It registers handlers on the shared `msw/node` server and asserts on the request sequence. Any spec mocks an API read the same way, and the handlers are dropped after each test:
+`tests/unit/infrastructure/http/http-refresh.spec.ts` (and, on the same approach, `step-up.spec.ts` and the two `http-validate-*.spec.ts`) is deliberately **not** stubbed at the module boundary. The 401 → refresh → replay flow lives entirely inside axios's interceptor chain (registered by `src/infrastructure/http/install.ts`, which each of these specs calls through `tests/support/unit/install-interceptors.ts`), so a hand-rolled stub would never actually exercise it — there'd be nothing to intercept. It registers handlers on the shared `msw/node` server and asserts on the request sequence. Any spec mocks an API read the same way, and the handlers are dropped after each test:
 
 ```ts
 import { http, HttpResponse } from 'msw';
