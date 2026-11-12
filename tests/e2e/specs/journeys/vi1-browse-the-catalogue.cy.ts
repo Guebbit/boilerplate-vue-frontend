@@ -35,7 +35,7 @@ const pickTag = (products: readonly Listed[]): { tag: string; carrying: Listed[]
     const counts = new Map<string, number>();
     for (const product of products)
         for (const tag of product.tags ?? []) counts.set(tag, (counts.get(tag) ?? 0) + 1);
-    const [tag] = [...counts.entries()]
+    const [tag] = [...counts]
         .filter(([, count]) => count >= 4 && count < products.length)
         .toSorted((a, b) => b[1] - a[1])
         .map(([name]) => name);

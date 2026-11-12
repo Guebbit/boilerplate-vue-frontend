@@ -108,7 +108,7 @@ describe('imageUploadSchema', () => {
         expect(messagesOf(fileOfSize(MAX_UPLOAD_BYTES + 1))).toEqual([
             enMessages['image-upload-form']['size-exceeded'].replace(
                 '{size}',
-                MAX_UPLOAD_SIZE_LABEL
+                () => MAX_UPLOAD_SIZE_LABEL
             )
         ]);
     });

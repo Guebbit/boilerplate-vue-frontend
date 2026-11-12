@@ -49,7 +49,7 @@ const lastLoginStep = new Map<string, number>();
  * answers the challenge with the current step, and that mark survives in the backend's data, where
  * the demo backend's restore wipes it. Nothing at or before it is minted again.
  */
-let seededThrough = Number.NEGATIVE_INFINITY;
+let seededThrough = -Infinity;
 
 /**
  * Waits `ms` — a seam of its own so the unit test can pass a fake instead of a real 30 seconds.
@@ -84,9 +84,8 @@ export const loginTotpCode = (
     const reading = now() - CLOCK_MARGIN_MS;
     const current = Math.floor(reading / 1000 / STEP_SECONDS);
     // A mark from the future belongs to a clock that has since been put back (a restore): forget it.
-    if ((lastLoginStep.get(secret) ?? Number.NEGATIVE_INFINITY) > current + 1)
-        lastLoginStep.delete(secret);
-    const used = Math.max(lastLoginStep.get(secret) ?? Number.NEGATIVE_INFINITY, seededThrough);
+    if ((lastLoginStep.get(secret) ?? -Infinity) > current + 1) lastLoginStep.delete(secret);
+    const used = Math.max(lastLoginStep.get(secret) ?? -Infinity, seededThrough);
     const step = [current, current + 1].find((candidate) => candidate > used);
 
     if (step === undefined) {
@@ -110,7 +109,7 @@ export const forgetLoginCodes = (seededAt?: number): null => {
     lastLoginStep.clear();
     seededThrough =
         seededAt === undefined
-            ? Number.NEGATIVE_INFINITY
+            ? -Infinity
             : Math.floor((seededAt - CLOCK_MARGIN_MS) / 1000 / STEP_SECONDS);
     return null;
 };
@@ -128,7 +127,7 @@ export const loginTotpCodeFor = (secret: string, apiUrl: string): Promise<string
     fetch(`${apiUrl}/__test/clock`)
         .then((response) => (response.ok ? response.json() : null))
         .then((body: { now?: string } | null) => {
-            const served = body?.now === undefined ? Number.NaN : Date.parse(body.now);
+            const served = body?.now === undefined ? NaN : Date.parse(body.now);
             return Number.isNaN(served) ? 0 : served - Date.now();
         })
         .catch(() => 0)

@@ -74,7 +74,7 @@ describe('coming back to the cart page', () => {
     it('reads the cart when the window gets focus', async () => {
         const store = openPage();
 
-        globalThis.dispatchEvent(new Event('focus'));
+        dispatchEvent(new Event('focus'));
         await vi.waitFor(() => {
             expect(store.cartItems).toHaveLength(1);
         });
@@ -106,7 +106,7 @@ describe('coming back to the cart page', () => {
         const step = await issue(store, ACTIONS.update);
         vi.mocked(getCart).mockClear();
 
-        globalThis.dispatchEvent(new Event('focus'));
+        dispatchEvent(new Event('focus'));
         step.answer(aCart([['p1', 5]]));
         await step.settled;
 
@@ -118,7 +118,7 @@ describe('coming back to the cart page', () => {
         openPage();
         scope?.stop();
 
-        globalThis.dispatchEvent(new Event('focus'));
+        dispatchEvent(new Event('focus'));
         setVisibility('visible');
 
         expect(getCart).not.toHaveBeenCalled();

@@ -56,7 +56,7 @@ describe('Product write surface', () => {
             cy.url().should('include', '/products/').and('not.include', '/create');
 
             cy.url().then((url) => {
-                const id = url.split('/products/')[1]?.replace(/\/$/, '');
+                const id = url.split('/products/', 2)[1]?.replace(/\/$/, '');
 
                 cy.visit(`/en/products/${id}`);
                 cy.contains(enTitle).should('exist');

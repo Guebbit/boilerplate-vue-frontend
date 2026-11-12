@@ -10,7 +10,6 @@
  * and `SSR` — declared here as an extension of `ImportMetaEnv`, per Vite's own module-augmentation
  * pattern, not a replacement of it.
  */
-// eslint-disable-next-line unicorn/prevent-abbreviations -- fixed Vite ambient-type name; renaming it stops the declaration merge that makes it work
 interface ViteTypeOptions {
     strictImportMetaEnv: unknown;
 }
@@ -20,7 +19,6 @@ interface ViteTypeOptions {
  * entry is `undefined` at runtime, not a missing property — every read already chains a fallback
  * (`?? '10000'`, `|| 'Guebbit'`) for exactly that reason.
  */
-// eslint-disable-next-line unicorn/prevent-abbreviations -- fixed Vite ambient-type name; renaming it stops the declaration merge that makes it work
 interface ImportMetaEnv {
     readonly VITE_API_SSE?: string;
     readonly VITE_API_URL?: string;

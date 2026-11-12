@@ -39,7 +39,7 @@ describe('useObservabilityStore', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
         vi.clearAllMocks();
-        document.head.innerHTML = '';
+        document.head.replaceChildren();
     });
 
     describe('setUmamiConsent', () => {

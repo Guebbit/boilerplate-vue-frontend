@@ -22,27 +22,24 @@ class ResizeObserverStub {
     unobserve() {}
     disconnect() {}
 }
-globalThis.ResizeObserver = globalThis.ResizeObserver ?? ResizeObserverStub;
+globalThis.ResizeObserver ??= ResizeObserverStub;
 
 // matchMedia — used by the "system" default theme
-globalThis.matchMedia =
-    globalThis.matchMedia ??
-    ((query: string) =>
-        ({
-            matches: false,
-            media: query,
-            onchange: null,
-            addListener: () => {},
-            removeListener: () => {},
-            addEventListener: () => {},
-            removeEventListener: () => {},
-            dispatchEvent: () => false
-        }) as MediaQueryList);
+globalThis.matchMedia ??= (query: string) =>
+    ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false
+    }) as MediaQueryList;
 
 // Pointer capture — used by v-number-input hold-to-repeat buttons
-HTMLElement.prototype.setPointerCapture = HTMLElement.prototype.setPointerCapture ?? (() => {});
-HTMLElement.prototype.releasePointerCapture =
-    HTMLElement.prototype.releasePointerCapture ?? (() => {});
+HTMLElement.prototype.setPointerCapture ??= () => {};
+HTMLElement.prototype.releasePointerCapture ??= () => {};
 
 // visualViewport — used by v-overlay positioning
 Object.defineProperty(globalThis, 'visualViewport', {

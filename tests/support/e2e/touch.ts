@@ -218,7 +218,7 @@ Cypress.Commands.add(
             // The topmost element must be the subject or inside it; anything else covers it.
             if (!hit || !(element === hit || element.contains(hit)))
                 throw new Error(
-                    `shouldBeTappable: ${element.tagName.toLowerCase()} is covered by ${hit ? hit.tagName.toLowerCase() + (hit.getAttribute('class') ? `.${(hit.getAttribute('class') ?? '').split(' ').join('.')}` : '') : 'nothing'}`
+                    `shouldBeTappable: ${element.tagName.toLowerCase()} is covered by ${hit ? hit.tagName.toLowerCase() + (hit.getAttribute('class') ? `.${(hit.getAttribute('class') ?? '').replaceAll(' ', '.')}` : '') : 'nothing'}`
                 );
             return $element;
         });

@@ -174,7 +174,7 @@ watch(
         }
         const added =
             addingHere && previous?.length
-                ? list.find((address) => !previous.some(({ id }) => id === address.id))
+                ? list.find((address) => previous.every(({ id }) => id !== address.id))
                 : undefined;
         if (added) {
             addressId.value = added.id;

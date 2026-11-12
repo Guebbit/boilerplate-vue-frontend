@@ -58,10 +58,13 @@ export default defineConfig(({ mode }) => ({
             transformIndexHtml: (html: string) =>
                 html.replaceAll(
                     '%APP_NAME%',
-                    (loadEnv(mode, process.cwd(), 'VITE_').VITE_APP_NAME || 'Guebbit')
-                        .replaceAll('&', '&amp;')
-                        .replaceAll('<', '&lt;')
-                        .replaceAll('"', '&quot;')
+                    // A function replacer: the escaped name is inserted verbatim, never read
+                    // for `$&`-style patterns.
+                    () =>
+                        (loadEnv(mode, process.cwd(), 'VITE_').VITE_APP_NAME || 'Guebbit')
+                            .replaceAll('&', '&amp;')
+                            .replaceAll('<', '&lt;')
+                            .replaceAll('"', '&quot;')
                 )
         },
         vue({

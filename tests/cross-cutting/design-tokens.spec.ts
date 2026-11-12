@@ -31,8 +31,8 @@ const parsed = cssSources().map(({ file, css }) => ({ file, root: postcss.parse(
 const declarations = (): { file: string; decl: Declaration }[] =>
     parsed.flatMap(({ file, root }) => {
         const found: { file: string; decl: Declaration }[] = [];
-        root.walkDecls((decl) => {
-            found.push({ file, decl });
+        root.walkDecls((declaration) => {
+            found.push({ file, decl: declaration });
         });
         return found;
     });
@@ -99,8 +99,8 @@ describe('design tokens, the stylesheet half', () => {
     it('uses only declared breakpoints in a width media query', () => {
         const root = parsed[0]?.root;
         const declared = new Set<number>();
-        root?.walkDecls(/^--breakpoint-/, (decl) => {
-            declared.add(Number.parseFloat(decl.value));
+        root?.walkDecls(/^--breakpoint-/, (declaration) => {
+            declared.add(Number.parseFloat(declaration.value));
         });
         expect(declared.size).toBeGreaterThanOrEqual(4);
 
@@ -186,7 +186,7 @@ describe('design tokens, the boot surfaces', () => {
 const luminance = (hex: string): number => {
     const [red, green, blue] = [1, 3, 5].map((at) => {
         const channel = Number.parseInt(hex.slice(at, at + 2), 16) / 255;
-        return channel <= 0.039_28 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+        return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
     });
     return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 };

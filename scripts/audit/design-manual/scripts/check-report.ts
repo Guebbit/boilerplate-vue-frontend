@@ -154,7 +154,7 @@ export const checkReport = (markdown: string, sources: CitationSources): CheckRe
     let rowNumber = 0;
 
     for (const line of markdown.split('\n')) {
-        if (!line.trim().startsWith('|')) {
+        if (!line.trimStart().startsWith('|')) {
             columns = undefined;
             continue;
         }

@@ -103,19 +103,19 @@ describe('useLeaveGuard', () => {
 
     it('asks the browser to confirm closing the tab only while the form holds work', async () => {
         const event = new Event('beforeunload', { cancelable: true });
-        globalThis.dispatchEvent(event);
+        dispatchEvent(event);
         expect(event.defaultPrevented).toBe(false);
 
         dirty.value = true;
         await nextTick();
         const dirtyEvent = new Event('beforeunload', { cancelable: true });
-        globalThis.dispatchEvent(dirtyEvent);
+        dispatchEvent(dirtyEvent);
         expect(dirtyEvent.defaultPrevented).toBe(true);
 
         guard.markSaved();
         await nextTick();
         const savedEvent = new Event('beforeunload', { cancelable: true });
-        globalThis.dispatchEvent(savedEvent);
+        dispatchEvent(savedEvent);
         expect(savedEvent.defaultPrevented).toBe(false);
     });
 });

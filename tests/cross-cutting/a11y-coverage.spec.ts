@@ -174,7 +174,7 @@ const unsweptRoutes = ({ name, routes, swept }: RoutedUnit) =>
         .filter((route) => !EXEMPT.has(route))
         .filter((route) => {
             const matches = routeMatcher(route);
-            return !swept.some((visited) => matches.test('/' + visited));
+            return swept.every((visited) => !matches.test('/' + visited));
         })
         .map((route) => `${name}: ${route}`);
 
@@ -218,7 +218,7 @@ describe('accessibility coverage', () => {
         const dead = routedModules.flatMap(({ name, routes, swept }) => {
             const matchers = routes.map((route) => routeMatcher(route));
             return swept
-                .filter((visited) => !matchers.some((matches) => matches.test('/' + visited)))
+                .filter((visited) => matchers.every((matches) => !matches.test('/' + visited)))
                 .map((visited) => `${name}: /en/${visited}`);
         });
 

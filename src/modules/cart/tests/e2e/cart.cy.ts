@@ -36,10 +36,12 @@ describe('Cart', () => {
             cy.loginAs('user');
             cy.visit('/en/cart');
             cy.get('body').then((bodyElement) => {
-                if (bodyElement.find('[data-test=cart-clear]').length > 0) {
-                    cy.wrap(bodyElement).find('[data-test=cart-clear]').first().click();
-                    cy.get('[data-test=app-dialog-confirm]').click();
+                if (bodyElement.find('[data-test=cart-clear]').length === 0) {
+                    return;
                 }
+
+                cy.wrap(bodyElement).find('[data-test=cart-clear]').first().click();
+                cy.get('[data-test=app-dialog-confirm]').click();
             });
             cy.contains('Your cart is empty').should('be.visible');
         });

@@ -140,10 +140,10 @@ describe('SalesSection', () => {
             .then(() => {
                 const [csv, name] = downloadBlob.mock.calls[0] as [string, string];
                 expect(name).toBe('revenue-EUR.csv');
-                expect(csv.split('\r\n')[0]).toBe(
+                expect(csv.split('\r\n', 1)[0]).toBe(
                     'Period,Orders,Gross,Reversals,Net,Taxes,Shipping,Total'
                 );
-                expect(csv.split('\r\n')[1]).toBe('Oct 1,1,80.00,10.00,70.00,15.40,5.00,100.00');
+                expect(csv.split('\r\n', 2)[1]).toBe('Oct 1,1,80.00,10.00,70.00,15.40,5.00,100.00');
             });
     });
 

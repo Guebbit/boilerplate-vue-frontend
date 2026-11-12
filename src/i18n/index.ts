@@ -154,7 +154,7 @@ export const i18n = createI18n({
         import.meta.env.VITE_APP_FALLBACK_LOCALE ||
         'en',
     modifiers: {
-        customSnakeCase: (value) => (typeof value === 'string' ? value.split(' ').join('_') : value)
+        customSnakeCase: (value) => (typeof value === 'string' ? value.replaceAll(' ', '_') : value)
     }
 });
 

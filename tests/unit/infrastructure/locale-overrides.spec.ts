@@ -112,7 +112,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    supportedLanguages.splice(0, Number.POSITIVE_INFINITY, ...snapshot);
+    supportedLanguages.splice(0, Infinity, ...snapshot);
 });
 
 describe('fetchRemoteLocales', () => {

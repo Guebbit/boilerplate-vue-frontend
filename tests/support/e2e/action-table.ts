@@ -283,10 +283,12 @@ const runEmpty = (row: ActionRow): void => {
     cy.get(empty.copy).should('be.visible');
     cy.get(empty.rows).should('not.exist');
     if (empty.pager) cy.get(empty.pager).should('not.exist');
-    if (empty.cta) {
-        cy.get(empty.cta.selector).click();
-        cy.location('pathname').should('equal', empty.cta.path);
+    if (!empty.cta) {
+        return;
     }
+
+    cy.get(empty.cta.selector).click();
+    cy.location('pathname').should('equal', empty.cta.path);
 };
 
 /** How long a `slow` row holds the page's own read back. */

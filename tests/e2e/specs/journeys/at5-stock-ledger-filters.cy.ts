@@ -26,7 +26,7 @@ const movement = (productId: string, verb: string, body: Record<string, unknown>
 const onlyReasons = (reason: string): void => {
     cy.get('[data-test=movement-reason]').should(($chips) => {
         expect($chips.length).to.be.greaterThan(0);
-        for (const chip of $chips.toArray()) expect(chip.textContent).to.contain(reason);
+        for (const chip of $chips) expect(chip.textContent).to.contain(reason);
     });
 };
 
@@ -71,7 +71,7 @@ describe('AT5 · Stock ledger filters', () => {
                     // ledger loaded does not hold it — either way it is this product.
                     cy.get('[data-test=movement-row]').should(($rows) => {
                         expect($rows.length).to.be.greaterThan(0);
-                        for (const row of $rows.toArray())
+                        for (const row of $rows)
                             expect(
                                 [title, productId].some((name) => row.textContent?.includes(name))
                             ).to.equal(true);

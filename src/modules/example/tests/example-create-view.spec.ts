@@ -84,7 +84,7 @@ const fillAndSubmit = (
 
 beforeEach(() => {
     setActivePinia(createPinia());
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
     return loadLocale('en').then(() =>
         router.push('/en/examples/create').then(() => router.isReady())
     );

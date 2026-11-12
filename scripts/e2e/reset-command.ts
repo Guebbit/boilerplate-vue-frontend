@@ -36,5 +36,5 @@ export const withScenario = (command: string, scenario?: string): string => {
         throw new Error(
             `restore("${scenario}"): LIVE_RESET_COMMAND has no ${SCENARIO_PLACEHOLDER} placeholder, so the live reset cannot seed it. Add the placeholder where the backend takes the scenario name.`
         );
-    return command.replaceAll(SCENARIO_PLACEHOLDER, scenario);
+    return command.replaceAll(SCENARIO_PLACEHOLDER, () => scenario);
 };

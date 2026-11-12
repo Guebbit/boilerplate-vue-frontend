@@ -284,7 +284,7 @@ const trackedTargets = (root: string): { targets: Set<string>; roots: Set<string
     const targets = new Set<string>();
     // What actually sits at the root, taken from the file list rather than from `targets` — that
     // set holds every TAIL, so `products/create.vue` would make `products` look top-level.
-    const roots = new Set(files.map((file) => file.split('/')[0]));
+    const roots = new Set(files.map((file) => file.split('/', 1)[0]));
 
     const addTails = (candidate: string) => {
         const segments = candidate.split('/');
@@ -339,9 +339,9 @@ const toPath = (span: string): { path: string; anchor?: string } | undefined => 
     // A route, not a file.
     if (span.startsWith('/')) return undefined;
 
-    const [beforeAnchor, anchor] = span.split('#');
+    const [beforeAnchor, anchor] = span.split('#', 2);
     const path = beforeAnchor
-        .split(':')[0]
+        .split(':', 1)[0]
         .replaceAll(/[,.;]+$/g, '')
         .replaceAll(/\/+$/g, '');
     if (!path || path.startsWith('-') || path.startsWith('$')) return undefined;
@@ -377,7 +377,7 @@ const throughAliases = (
 const claimsAPath = (roots: Set<string>, token: string): boolean =>
     // Anchored on the LAST segment, so `.visual.cy.ts` — a suffix convention, not a file — is not
     // read as one because a filename happens to sit inside it.
-    FILENAME.test(token.split('/').at(-1) ?? '') || roots.has(token.split('/')[0]);
+    FILENAME.test(token.split('/').at(-1) ?? '') || roots.has(token.split('/', 1)[0]);
 
 /** Whether any spelling of this token is the tail of something git tracks. */
 const resolves = (targets: Set<string>, token: string): boolean =>
@@ -534,7 +534,7 @@ const run = (): number => {
     const aliases = readAliases();
     const own = trackedTargets(ROOT);
     /* The tracked roots, plus the generated ones git never sees. */
-    const roots = new Set([...own.roots, ...ALLOWED.map((entry) => entry.prefix.split('/')[0])]);
+    const roots = new Set([...own.roots, ...ALLOWED.map((entry) => entry.prefix.split('/', 1)[0])]);
 
     const peerRoot = resolveBackendPath();
     // Absent in a bare checkout or a worktree; the cross-repo half is skipped rather than fatal.

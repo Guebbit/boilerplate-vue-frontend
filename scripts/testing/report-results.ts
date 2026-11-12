@@ -162,7 +162,7 @@ const isLayer = (label: string) => label.startsWith('(');
 /**
  * Modules first and alphabetically, then the layer buckets (see {@link isLayer}).
  */
-const rows = [...buckets.entries()].toSorted(([a], [b]) =>
+const rows = [...buckets].toSorted(([a], [b]) =>
     isLayer(a) === isLayer(b) ? a.localeCompare(b) : isLayer(a) ? 1 : -1
 );
 
@@ -245,7 +245,7 @@ const failures = report.testResults.flatMap((suite) =>
             file: path.relative(REPO_ROOT, suite.name),
             name: assertion.fullName ?? assertion.title,
             // First line only: the whole stack is in the runner's own output, and this is an index.
-            reason: (assertion.failureMessages?.[0] ?? '').split('\n')[0]
+            reason: (assertion.failureMessages?.[0] ?? '').split('\n', 1)[0]
         }))
 );
 

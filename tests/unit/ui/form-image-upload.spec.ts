@@ -55,13 +55,13 @@ beforeEach(() => {
     created.length = 0;
     revoked.length = 0;
     let counter = 0;
-    globalThis.URL.createObjectURL = vi.fn(() => {
+    URL.createObjectURL = vi.fn(() => {
         counter += 1;
         const url = `blob:mock/${counter}`;
         created.push(url);
         return url;
     });
-    globalThis.URL.revokeObjectURL = vi.fn((url: string) => {
+    URL.revokeObjectURL = vi.fn((url: string) => {
         revoked.push(url);
     });
 });

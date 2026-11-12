@@ -91,7 +91,7 @@ export const moduleOfSpec = (specRelative: string): string =>
 export const withLocale = (route: string, locale: string): string =>
     locale === DEFAULT_LOCALE
         ? route
-        : route.replace(new RegExp(`^/${DEFAULT_LOCALE}(?=/|$)`), `/${locale}`);
+        : route.replace(new RegExp(`^/${DEFAULT_LOCALE}(?=/|$)`), () => `/${locale}`);
 
 /**
  * The shots one case becomes.

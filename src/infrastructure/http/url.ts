@@ -17,6 +17,6 @@ export const toPathname = (url: string | undefined): string => {
     if (!url) return '/';
     const pathname =
         url.startsWith('http://') || url.startsWith('https://') ? new URL(url).pathname : url;
-    const [withoutQuery] = pathname.split('?');
+    const [withoutQuery] = pathname.split('?', 1);
     return withoutQuery.startsWith('/') ? withoutQuery : `/${withoutQuery}`;
 };

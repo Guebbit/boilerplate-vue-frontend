@@ -284,9 +284,9 @@ const mountNav = (contributions: Slots = {}) => {
  * means "absent from the DOM" — an `a` or a `button`, whichever Vuetify renders for a `to`.
  */
 const isHidden = (wrapper: ReturnType<typeof mountNav>['wrapper'], label: string) =>
-    !wrapper
+    wrapper
         .findAll('header a, header button')
-        .some((candidate) => candidate.text().includes(label));
+        .every((candidate) => !candidate.text().includes(label));
 
 describe('Navigation', () => {
     beforeEach(() => {
@@ -298,7 +298,7 @@ describe('Navigation', () => {
         memberCount.value = 0;
         pinnedCount.value = 0;
         pinnedDetail.value = undefined;
-        document.body.innerHTML = '';
+        document.body.replaceChildren();
         pushSpy.mockClear();
     });
 

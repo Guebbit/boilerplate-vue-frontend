@@ -80,7 +80,7 @@ export const listedPackages = (text: string): string[] => {
     const names = new Set<string>();
     for (const line of text.split('\n')) {
         if (!line.startsWith('|')) continue;
-        const cell = line.split('|')[2] ?? '';
+        const cell = line.split('|', 3)[2] ?? '';
         for (const [, span] of cell.matchAll(/`([^`]+)`/g))
             if (/^(@[\w.-]+\/)?[\w.-]+$/.test(span)) names.add(span);
     }
@@ -118,7 +118,7 @@ export const fencedContractImports = (text: string): { from: string; name: strin
                         part
                             .trim()
                             .replace(/^type\s+/, '')
-                            .split(/\s+as\s+/)[0]
+                            .split(/\s+as\s+/, 1)[0]
                 )
                 .filter(Boolean)
                 .map((name) => ({ from, name }))

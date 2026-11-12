@@ -54,8 +54,8 @@ const { providers: offeredProviders } = storeToRefs(useAccountOAuthProvidersStor
  * The offered providers this account has not connected yet.
  */
 const connectable = computed(() =>
-    unref(offeredProviders).filter(
-        (name) => !unref(links).some(({ provider }) => provider === name)
+    unref(offeredProviders).filter((name) =>
+        unref(links).every(({ provider }) => provider !== name)
     )
 );
 
@@ -124,11 +124,11 @@ const handleConnect = (provider: string) => {
     connecting.value = provider;
     clearActionError();
     return startProviderLink(provider, {
-        continueTo: globalThis.location.pathname,
+        continueTo: location.pathname,
         locale: locale.value
     })
         .then((authorizeUrl) => {
-            globalThis.location.assign(authorizeUrl);
+            location.assign(authorizeUrl);
         })
         .catch((error: unknown) => {
             reportActionError(error);

@@ -196,7 +196,7 @@ const filteredKeys = computed(() => {
     return allKeys.value.filter((key) => {
         if (
             incompleteOnly.value &&
-            !languages.value.some((language) => isMissing(language.tag, key))
+            languages.value.every((language) => !isMissing(language.tag, key))
         )
             return false;
         if (needle === '') return true;

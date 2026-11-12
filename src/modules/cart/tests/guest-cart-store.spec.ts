@@ -196,7 +196,7 @@ const otherTabSaves = (lines: unknown[], key: string | null = GUEST_CART_STORAGE
             JSON.stringify({ savedAt: Date.now(), lines })
         );
     else localStorage.removeItem(GUEST_CART_STORAGE_KEY);
-    globalThis.dispatchEvent(new StorageEvent('storage', { key }));
+    dispatchEvent(new StorageEvent('storage', { key }));
 };
 
 describe('another tab changing the guest cart', () => {

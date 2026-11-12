@@ -48,10 +48,10 @@ import { logger } from '@/infrastructure/utils/logger.ts';
 export const stripSensitiveUrlParts = (url: string): string => {
     // eslint-disable-next-line no-restricted-syntax -- `new URL()` has no non-throwing form (no `URL.canParse` fallback here), and an already-relative or malformed value is a real, expected input this function must tolerate rather than propagate
     try {
-        const parsed = new URL(url, globalThis.location.origin);
+        const parsed = new URL(url, location.origin);
         return `${parsed.origin}${parsed.pathname}`;
     } catch {
-        return url.split(/[#?]/)[0] ?? url;
+        return url.split(/[#?]/, 1)[0] ?? url;
     }
 };
 

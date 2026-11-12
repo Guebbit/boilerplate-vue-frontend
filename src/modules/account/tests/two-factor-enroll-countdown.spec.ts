@@ -47,7 +47,7 @@ const mountEnroll = () => {
 };
 
 beforeEach(() => {
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
     return loadLocale('en');
 });
 

@@ -41,7 +41,8 @@ export const useNotificationLink = () => {
             // The STRING form is resolved: a `{ path }` object would drop the query.
             const link = routerLinkI18n(target.path);
             const { matched } = router.resolve(link);
-            return matched.length > 0 && !matched.some((record) => record.path.includes('catchAll'))
+            return matched.length > 0 &&
+                matched.every((record) => !record.path.includes('catchAll'))
                 ? link
                 : undefined;
         }

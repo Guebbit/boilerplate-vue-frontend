@@ -86,7 +86,7 @@ const importClauseNames = (clause: string): string[] =>
         .split(',')
         .map((name) => name.trim().replace(/^type\s+/, ''))
         .filter(Boolean)
-        .map((name) => name.split(/\s+as\s+/)[0].trim());
+        .map((name) => name.split(/\s+as\s+/, 1)[0].trim());
 
 /**
  * Every name `src/` imports from `@api` anywhere — the generated REST client's function barrel —
@@ -149,7 +149,7 @@ const SPEC_OPERATIONS: [method: string, path: string, name: string][] = (() => {
             .map(([method, operation]): [string, string, string] => [
                 method.toUpperCase(),
                 // `{id}`, `{productId}`, `{locale}` — the map matches a SEGMENT, not a name.
-                specPath.replaceAll(/{[^}]+}/g, ID),
+                specPath.replaceAll(/{[^}]+}/g, () => ID),
                 `${operation.operationId.charAt(0).toUpperCase()}${operation.operationId.slice(1)}Response`
             ])
     );

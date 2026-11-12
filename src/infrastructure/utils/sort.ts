@@ -28,7 +28,7 @@ export interface SingleSort {
  * @returns The first field and its direction, or `undefined` when there is none.
  */
 export const firstSortOf = (csv: string | undefined): SingleSort | undefined => {
-    const token = csv?.split(',').at(0)?.trim();
+    const token = csv?.split(',', 1).at(0)?.trim();
     if (token === undefined || token === '' || token === '-') return undefined;
     return token.startsWith('-')
         ? { key: token.slice(1), descending: true }

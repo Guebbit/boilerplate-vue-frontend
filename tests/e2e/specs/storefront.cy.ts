@@ -27,7 +27,7 @@ describe('Storefront', () => {
                     for (const category of product.categories ?? [])
                         counts.set(category, (counts.get(category) ?? 0) + 1);
 
-                const [category, count] = [...counts.entries()].toSorted((a, b) => a[1] - b[1])[0];
+                const [category, count] = [...counts].toSorted((a, b) => a[1] - b[1])[0];
 
                 cy.visit('/en/products');
                 cy.get('[data-test=category-chip]')

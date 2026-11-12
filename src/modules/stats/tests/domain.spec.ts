@@ -173,7 +173,7 @@ describe('escapeCsvCell', () => {
 
     it('writes nothing for an absent or non-finite value', () => {
         expect(escapeCsvCell(undefined)).toBe('');
-        expect(escapeCsvCell(Number.NaN)).toBe('');
+        expect(escapeCsvCell(NaN)).toBe('');
     });
 });
 
@@ -217,7 +217,7 @@ const CHART: ChartModel = {
     labels: ['1 Oct', '2 Oct', 'x"]; pie'],
     yTitle: 'EUR',
     series: [
-        { name: 'Total', kind: 'bar', values: [1.234, 2, Number.NaN] },
+        { name: 'Total', kind: 'bar', values: [1.234, 2, NaN] },
         { name: 'Orders', kind: 'line', values: [1, 2, 3] }
     ]
 };
@@ -234,7 +234,7 @@ describe('xyChartSource', () => {
     it('lets no label add a line of its own', () => {
         const source = xyChartSource(CHART);
         expect(source.split('\n')).toHaveLength(6);
-        expect(source.split('\n')[2]).toBe('    x-axis ["1 Oct", "2 Oct", "x pie"]');
+        expect(source.split('\n', 3)[2]).toBe('    x-axis ["1 Oct", "2 Oct", "x pie"]');
     });
 });
 
@@ -256,7 +256,7 @@ describe('chartTable', () => {
             rows: [
                 ['1 Oct', 1.234, 1],
                 ['2 Oct', 2, 2],
-                ['x"]; pie', Number.NaN, 3]
+                ['x"]; pie', NaN, 3]
             ]
         });
     });

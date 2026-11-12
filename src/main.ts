@@ -69,7 +69,7 @@ registerNotices(collectModuleNotices(enabledModules));
  * @returns A promise resolving once the app is mounted, the initial navigation
  *  has resolved and `globalThis._appReady` has been set for test runners.
  */
-const bootstrapApplication = () =>
+const bootstrapApp = () =>
     Promise.resolve()
         .then(() => {
             /*
@@ -178,6 +178,6 @@ const bootstrapApplication = () =>
             });
         });
 
-void bootstrapApplication().catch((error) => {
+void bootstrapApp().catch((error) => {
     logger.error('[Bootstrap] Fatal error during application initialization:', error);
 });

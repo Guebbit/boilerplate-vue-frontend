@@ -59,7 +59,7 @@ describe('AT5 · Users list filters', () => {
                         cy.step(
                             "text: matches the email's local part, and only users that hold it"
                         );
-                        cy.get('[data-test=filter-text] input').type(email.split('@')[0]);
+                        cy.get('[data-test=filter-text] input').type(email.split('@', 1)[0]);
                         submitSearch();
                         listedIds().should('include', customerId);
                         listedIds().should('have.length.lessThan', all.length);

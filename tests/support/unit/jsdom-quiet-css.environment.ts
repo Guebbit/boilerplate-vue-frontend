@@ -27,7 +27,7 @@ const createFilteredConsole = () => {
     // jsdom swaps `globalThis.console` for its own on boot, and that one routes back
     // into this virtual console — resolve it lazily below and the message loops instead
     // of printing. Grab the real one while it is still the real one.
-    const realConsole = globalThis.console;
+    const realConsole = console;
 
     const virtualConsole = new VirtualConsole();
 

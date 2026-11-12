@@ -160,7 +160,7 @@ beforeEach(() => {
 afterEach(() => {
     wrapper?.unmount();
     wrapper = undefined;
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
 });
 
 describe('the bell for a guest', () => {

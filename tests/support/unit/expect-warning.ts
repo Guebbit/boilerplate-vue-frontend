@@ -79,8 +79,10 @@ export const createWarningWatcher = (target: ConsoleTarget) => {
             if (originals) Object.assign(target, originals);
             originals = undefined;
 
-            const unexpected = seen.filter((warning) => !declared.some((m) => matches(m, warning)));
-            const unfired = declared.filter((m) => !seen.some((warning) => matches(m, warning)));
+            const unexpected = seen.filter((warning) =>
+                declared.every((m) => !matches(m, warning))
+            );
+            const unfired = declared.filter((m) => seen.every((warning) => !matches(m, warning)));
             if (unexpected.length === 0 && unfired.length === 0) return;
 
             throw new Error(

@@ -89,7 +89,7 @@ describe('Users', () => {
             cy.url().should('include', '/users/').and('not.include', '/create');
 
             cy.url().then((url) => {
-                const id = url.split('/users/')[1]?.replace(/\/$/, '');
+                const id = url.split('/users/', 2)[1]?.replace(/\/$/, '');
 
                 cy.visit(`/en/users/${id}/edit`);
                 // Waits for the form to hydrate from the fetched record — and doubles as proof the

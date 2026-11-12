@@ -21,7 +21,7 @@ export const useMediaQuery = (query: string): Readonly<Ref<boolean>> => {
      * The browser's `MediaQueryList` for the query: its `matches` is live, its `change` event tells.
      * https://developer.mozilla.org/en-US/docs/Web/API/Window/matchMedia
      */
-    const list = globalThis.matchMedia(query);
+    const list = matchMedia(query);
 
     /**
      * Whether the query matches.

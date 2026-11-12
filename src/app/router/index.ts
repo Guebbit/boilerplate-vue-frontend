@@ -125,7 +125,7 @@ const prefersReducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)'
 const localeLessRedirects = [
     ...new Set(
         [...shellChildRoutes, ...moduleRoutes]
-            .map(({ path }) => path.split('/')[0])
+            .map(({ path }) => path.split('/', 1)[0])
             .filter((segment) => segment !== '' && !segment.startsWith(':'))
     )
 ].map((segment): RouteRecordRaw => ({

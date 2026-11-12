@@ -151,7 +151,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
 });
 
 describe('isAnchorVisible', () => {

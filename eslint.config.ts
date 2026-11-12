@@ -392,10 +392,68 @@ const unicornTuningRules = {
     'unicorn/no-nested-ternary': 'off',
     'unicorn/prefer-top-level-await': 'off',
 
-    // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/consistent-destructuring.md
-    'unicorn/better-regex': 'error',
+    // `unicorn/recommended` rules turned off, the same set the backend turns off (its
+    // `eslint.config.ts` explains each group): rules that contradict a house rule, a deliberate
+    // pattern here, or an opinion with hundreds of hits and no bug behind it.
+    'unicorn/prefer-await': 'off',
+    'unicorn/single-line-block-comment-style': 'off',
+    'unicorn/prefer-then-catch': 'off',
+    'unicorn/prefer-https': 'off',
+    'unicorn/no-error-property-assignment': 'off',
+    'unicorn/no-exports-in-scripts': 'off',
+    'unicorn/prefer-string-repeat': 'off',
+    'unicorn/prefer-combined-guards': 'off',
+    'unicorn/no-top-level-side-effects': 'off',
+    'unicorn/no-top-level-assignment-in-function': 'off',
+    'unicorn/consistent-boolean-name': 'off',
+    'unicorn/consistent-conditional-object-spread': 'off',
+    'unicorn/prefer-ternary': 'off',
+    'unicorn/max-nested-calls': 'off',
+    'unicorn/no-unreadable-for-of-expression': 'off',
+    'unicorn/require-array-sort-compare': 'off',
+    'unicorn/prefer-iterator-to-array': 'off',
+    'unicorn/no-computed-property-existence-check': 'off',
+    'unicorn/prefer-simple-condition-first': 'off',
+    'unicorn/no-non-function-verb-prefix': 'off',
+    'unicorn/prefer-promise-try': 'off',
+    'unicorn/prefer-promise-with-resolvers': 'off',
+    'unicorn/prefer-logical-operator-over-ternary': 'off',
+    'unicorn/prefer-minimal-ternary': 'off',
+    'unicorn/prefer-else-if': 'off',
+    'unicorn/prefer-includes-over-repeated-comparisons': 'off',
+    'unicorn/prefer-number-is-safe-integer': 'off',
+    'unicorn/no-return-array-push': 'off',
+    'unicorn/no-this-outside-of-class': 'off',
+    'unicorn/no-duplicate-loops': 'off',
+    'unicorn/no-break-in-nested-loop': 'off',
+    'unicorn/no-unsafe-promise-all-settled-values': 'off',
+    'unicorn/no-declarations-before-early-exit': 'off',
+    'unicorn/prefer-number-coercion': 'off',
+    'unicorn/no-incorrect-template-string-interpolation': 'off',
+    'unicorn/no-global-object-property-assignment': 'off',
+    'unicorn/consistent-class-member-order': 'off',
+    'unicorn/prefer-queue-microtask': 'off',
+    'unicorn/prefer-smaller-scope': 'off',
+    'unicorn/prefer-unicode-code-point-escapes': 'off',
+    'unicorn/prefer-iterator-helpers': 'off',
+    'unicorn/prefer-set-methods': 'off',
 
-    // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/better-regex.md
+    // Off here only (the backend has no hits):
+    //   no-optional-chaining-on-undeclared-variable — flags `process.env.X?.trim()` and
+    //     `process.getuid?.()` in Node scripts: `process` is declared, so it is a false positive.
+    //   prefer-iterator-to-array-at-end — Cypress hands back jQuery sets, whose `.toArray()` is an
+    //     Array, not an iterator; there is no iterator chain to reorder.
+    //   prefer-scoped-selector — `document.body.querySelector(...)` in tests already starts at a
+    //     fixed root; a `:scope` prefix there adds noise and no isolation.
+    'unicorn/no-optional-chaining-on-undeclared-variable': 'off',
+    'unicorn/prefer-iterator-to-array-at-end': 'off',
+    'unicorn/prefer-scoped-selector': 'off',
+    //   require-css-escape — its autofix wraps every interpolated selector in `CSS.escape`, which
+    //     jsdom does not implement, so every unit test touching one would throw; the values are constants and `data-test`
+    //     names, never user input.
+    'unicorn/require-css-escape': 'off',
+
+    // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/consistent-destructuring.md
     'unicorn/consistent-destructuring': 'error',
 
     // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/filename-case.md
@@ -422,8 +480,8 @@ const unicornTuningRules = {
         }
     ],
 
-    // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/prevent-abbreviations.md
-    'unicorn/prevent-abbreviations': [
+    // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/name-replacements.md
+    'unicorn/name-replacements': [
         'error',
         {
             replacements: {
@@ -438,7 +496,12 @@ const unicornTuningRules = {
                 },
                 ref: {
                     reference: false
-                }
+                },
+                // 76 added `repository -> repo` and `configuration -> config`. Both are spelled
+                // out on purpose, as in the backend: `repository` is a DDD term and `config` is
+                // ambiguous here.
+                repository: false,
+                configuration: false
             }
         }
     ]
@@ -1171,7 +1234,9 @@ export default defineConfigWithVueTs(
             'unicorn/filename-case': [
                 'error',
                 {
-                    case: 'pascalCase'
+                    case: 'pascalCase',
+                    // Only the file name is PascalCase: the folders above a component are kebab.
+                    checkDirectories: false
                 }
             ]
         }

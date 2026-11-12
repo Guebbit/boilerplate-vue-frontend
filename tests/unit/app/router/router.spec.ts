@@ -61,7 +61,7 @@ beforeAll(async () => {
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    globalThis.history.replaceState({}, '', '/');
+    history.replaceState({}, '', '/');
 });
 
 /**

@@ -40,7 +40,7 @@ const clauseNames = (clause: string): string[] =>
         .split(',')
         .map((name) => name.trim().replace(/^type\s+/, ''))
         .filter(Boolean)
-        .map((name) => name.split(/\s+as\s+/)[0].trim());
+        .map((name) => name.split(/\s+as\s+/, 1)[0].trim());
 
 /** Every module's folder name. */
 const moduleNames = (): string[] =>

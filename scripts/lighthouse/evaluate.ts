@@ -214,7 +214,7 @@ const auditFailures = (
         if (failed && !(id in exceptions)) failures.push(`${rules.name}: ${id} failed`);
     }
     for (const id of Object.keys(rules.exceptions ?? {}))
-        if (!runs.some((run) => !passed(run, id)))
+        if (runs.every((run) => passed(run, id)))
             failures.push(`${rules.name}: stale exception ${id}, it passed in every run`);
     return failures;
 };

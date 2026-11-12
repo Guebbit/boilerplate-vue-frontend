@@ -40,7 +40,7 @@ const createWithFlag = (
     cy.url().should('include', '/products/').and('not.include', '/create');
     return cy
         .location('pathname')
-        .then((path) => (path.split('/products/')[1] ?? '').replace(/\/$/, ''));
+        .then((path) => (path.split('/products/', 2)[1] ?? '').replace(/\/$/, ''));
 };
 
 describe('OP10b · The product flags through the form', () => {

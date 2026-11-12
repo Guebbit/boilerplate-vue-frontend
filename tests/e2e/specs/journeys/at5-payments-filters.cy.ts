@@ -32,7 +32,7 @@ const listedOrders = (link: string): Cypress.Chainable<string[]> =>
         .then(($links) =>
             $links
                 .toArray()
-                .map((anchor) => (anchor.getAttribute('href') ?? '').split('/orders/')[1] ?? '')
+                .map((anchor) => (anchor.getAttribute('href') ?? '').split('/orders/', 2)[1] ?? '')
         );
 
 /**

@@ -1005,7 +1005,7 @@ describe('a reload in the middle of checkout', () => {
                 .get('[data-test=cart-increase]')
                 .trigger('click')
                 .then(() => {
-                    globalThis.dispatchEvent(new Event('pagehide'));
+                    dispatchEvent(new Event('pagehide'));
 
                     expect(sendKeepalive).toHaveBeenCalledWith('PATCH', '/cart/items/p1', {
                         quantity: 3

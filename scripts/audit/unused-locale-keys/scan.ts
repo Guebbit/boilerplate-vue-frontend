@@ -60,7 +60,7 @@ export const unusedPaths = (
     prefixes: readonly string[]
 ): string[] =>
     leafPathsOf(dictionary).filter(
-        (leaf) => !haystack.includes(leaf) && !prefixes.some((prefix) => leaf.startsWith(prefix))
+        (leaf) => !haystack.includes(leaf) && prefixes.every((prefix) => !leaf.startsWith(prefix))
     );
 
 /**

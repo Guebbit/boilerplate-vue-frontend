@@ -18,7 +18,7 @@ interface OrderLike {
     id: string;
     notes?: string;
     paymentMethod?: string;
-    shippingMethod?: { id?: string } | string;
+    shippingMethod?: string | { id?: string };
     shippingAddress?: { city?: string };
 }
 

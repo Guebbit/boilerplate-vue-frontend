@@ -91,7 +91,7 @@ beforeEach(() => {
 // Vuetify's overlay container is appended to <body> once per mount; clearing it keeps one test's
 // dialog out of the next test's document queries.
 afterEach(() => {
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
 });
 
 describe('ReauthDialog — a failed attempt', () => {

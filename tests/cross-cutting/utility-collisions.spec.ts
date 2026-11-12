@@ -114,7 +114,10 @@ const tailwindBuild = async (candidates: string[]) => {
     const rules = new Map<string, ChildNode[]>();
     built.walkRules((rule) => {
         if (rule.selector.startsWith(':root'))
-            rule.walkDecls(/^--/, (decl) => void themeVariables.set(decl.prop, decl.value));
+            rule.walkDecls(
+                /^--/,
+                (declaration) => void themeVariables.set(declaration.prop, declaration.value)
+            );
         const name = /^\.([\w\\-]+)$/.exec(rule.selector)?.[1]?.replaceAll('\\', '');
         if (name !== undefined) rules.set(name, rule.nodes);
     });
@@ -151,7 +154,7 @@ describe('utility class collisions', () => {
         const collisions = await measuredCollisions();
         const listed = DESIGN_POLICY.ambiguousUtilities.map((entry) => new RegExp(entry.pattern));
         expect(
-            collisions.filter((name) => !listed.some((pattern) => pattern.test(name))),
+            collisions.filter((name) => listed.every((pattern) => !pattern.test(name))),
             'a collision nobody listed: add it to ambiguousUtilities in scripts/design-policy.ts'
         ).toEqual([]);
     });

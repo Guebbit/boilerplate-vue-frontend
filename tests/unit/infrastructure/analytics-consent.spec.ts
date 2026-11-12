@@ -77,7 +77,7 @@ describe('promptOpen, reopen and the Umami tracker', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
         localStorage.clear();
-        document.head.innerHTML = '';
+        document.head.replaceChildren();
     });
 
     it('prompts while unknown, stops once answered, and prompts again after reopen()', () => {
@@ -153,7 +153,7 @@ describe('promptOpen, reopen and the Umami tracker', () => {
 
     it('syncTracker() on a fresh load honours a stored grant', () => {
         useAnalyticsConsentStore().grant();
-        document.head.innerHTML = '';
+        document.head.replaceChildren();
         setActivePinia(createPinia());
 
         useAnalyticsConsentStore().syncTracker();
@@ -182,7 +182,7 @@ describe('syncTracker while a signed-in account answer is still on its way', () 
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
         localStorage.clear();
-        document.head.innerHTML = '';
+        document.head.replaceChildren();
     });
 
     afterEach(() => {
@@ -192,7 +192,7 @@ describe('syncTracker while a signed-in account answer is still on its way', () 
     it('starts no tracker from a stale guest grant when the isAuth hint cookie is present', async () => {
         const store = useAnalyticsConsentStore();
         store.grant();
-        document.head.innerHTML = '';
+        document.head.replaceChildren();
         localStorage.clear();
         setCookie('isAuth', 'true', { path: '/' });
         setActivePinia(createPinia());

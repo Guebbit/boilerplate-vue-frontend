@@ -89,7 +89,7 @@ describe('FR23 · A busy staff session still ends after a day', () => {
             const errorCodes: string[] = [];
             cy.intercept('**/account/**', (request) => {
                 request.continue((response) => {
-                    const body = response.body as { errors?: { code?: string }[] } | string;
+                    const body = response.body as string | { errors?: { code?: string }[] };
                     if (typeof body === 'object') {
                         for (const error of body.errors ?? []) errorCodes.push(error.code ?? '');
                     }

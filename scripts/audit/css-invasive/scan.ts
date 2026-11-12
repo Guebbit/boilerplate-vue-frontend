@@ -234,7 +234,7 @@ const compoundsOf = (
 /** Whether a compound is a bare element: a tag and no class, id or attribute. */
 const isBareElement = (compound: selectorParser.Node[]): boolean =>
     compound.some((node) => node.type === 'tag') &&
-    !compound.some((node) => ['class', 'id', 'attribute'].includes(node.type));
+    compound.every((node) => !['class', 'id', 'attribute'].includes(node.type));
 
 /**
  * Whether a `:deep()` argument names a bare element (`td`, `input::placeholder`): it reaches into
@@ -284,12 +284,12 @@ type RuleCheck = (
 ) => string[];
 
 /** The rule's own declarations. */
-const declsOf = (rule: Rule): Declaration[] =>
+const declarationsOf = (rule: Rule): Declaration[] =>
     rule.nodes.filter((node): node is Declaration => node.type === 'decl');
 
 /** A declaration as written, for a snippet. */
-const declText = (decl: Declaration): string =>
-    `${decl.prop}: ${decl.value}${decl.important ? ' !important' : ''}`;
+const declarationText = (declaration: Declaration): string =>
+    `${declaration.prop}: ${declaration.value}${declaration.important ? ' !important' : ''}`;
 
 /** Whether a `z-index` value is local stacking, a token, or a keyword. */
 const isAllowedZIndex = (value: string): boolean => {
@@ -344,23 +344,28 @@ const RULE_CHECKS: readonly (readonly [CheckId, RuleCheck])[] = [
     [
         'vuetify-variable',
         (rule) =>
-            declsOf(rule)
-                .filter((decl) => decl.prop.startsWith('--v-'))
-                .map((decl) => declText(decl))
+            declarationsOf(rule)
+                .filter((declaration) => declaration.prop.startsWith('--v-'))
+                .map((declaration) => declarationText(declaration))
     ],
     [
         'z-index',
         (rule) =>
-            declsOf(rule)
-                .filter((decl) => decl.prop === 'z-index' && !isAllowedZIndex(decl.value))
-                .map((decl) => declText(decl))
+            declarationsOf(rule)
+                .filter(
+                    (declaration) =>
+                        declaration.prop === 'z-index' && !isAllowedZIndex(declaration.value)
+                )
+                .map((declaration) => declarationText(declaration))
     ],
     [
         'unit-disallowed-list',
         (rule) =>
-            declsOf(rule)
-                .filter((decl) => KNOBS.disallowedUnits.some((unit) => hasUnit(decl.value, unit)))
-                .map((decl) => declText(decl))
+            declarationsOf(rule)
+                .filter((declaration) =>
+                    KNOBS.disallowedUnits.some((unit) => hasUnit(declaration.value, unit))
+                )
+                .map((declaration) => declarationText(declaration))
     ]
 ];
 
@@ -544,7 +549,7 @@ const vuetifyProps = (): Map<string, Set<string>> => {
     ) as Record<string, unknown>;
     const props = new Map<string, Set<string>>();
     for (const key of Object.keys(attributes)) {
-        const [component = '', prop = ''] = key.split('/');
+        const [component = '', prop = ''] = key.split('/', 2);
         props.set(component, (props.get(component) ?? new Set<string>()).add(prop));
     }
     return props;
@@ -829,7 +834,9 @@ const rootOverrideHits = (
                 .astSync(rule.selector)
                 .nodes.flatMap((selector) => classesOf(selector))
                 .filter((name) => onVuetify.has(name));
-            const real = declsOf(rule).filter((decl) => !decl.prop.startsWith('--'));
+            const real = declarationsOf(rule).filter(
+                (declaration) => !declaration.prop.startsWith('--')
+            );
             if (named.length === 0 || real.length === 0) return;
             const line = style.loc.start.line + (rule.source?.start?.line ?? 1) - 1;
             found.push(
@@ -838,7 +845,7 @@ const rootOverrideHits = (
                     line,
                     check: 'vuetify-root-override',
                     anchor: squash(rule.selector),
-                    snippet: real.map((decl) => declText(decl)).join(' · '),
+                    snippet: real.map((declaration) => declarationText(declaration)).join(' · '),
                     target: `${file}:${String(line)}`
                 })
             );
@@ -1040,7 +1047,7 @@ const covers = (allowance: Allowance, hit: RawHit): boolean =>
  * @returns The findings.
  */
 export const applyAllowances = ({ hits, allowances }: Scan): CssFinding[] => {
-    const kept = hits.filter((hit) => !allowances.some((allowance) => covers(allowance, hit)));
+    const kept = hits.filter((hit) => allowances.every((allowance) => !covers(allowance, hit)));
     const own = allowances.flatMap((allowance): CssFinding[] => {
         const covered = hits.filter((hit) => covers(allowance, hit));
         const broad = covered.some(

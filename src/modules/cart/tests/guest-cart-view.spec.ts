@@ -121,7 +121,7 @@ beforeEach(() => {
 afterEach(() => {
     wrapper?.unmount();
     wrapper = undefined;
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
 });
 
 describe('an empty guest cart', () => {

@@ -28,7 +28,7 @@ const mountMainLandmark = () => {
 };
 
 beforeEach(() => {
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
     routeAnnouncement.value = '';
     // The pending flag is module state and a test that requested focus without consuming it would
     // leak into the next one. Draining it here makes each test start from "nothing pending".

@@ -72,7 +72,7 @@ const mountPage = (answer: () => Promise<Example | undefined>) => {
 
 beforeEach(() => {
     setActivePinia(createPinia());
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
     return loadLocale('en').then(() =>
         router.push(`/en/examples/published/${PUBLISHED.id}`).then(() => router.isReady())
     );

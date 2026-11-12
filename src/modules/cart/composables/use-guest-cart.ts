@@ -57,8 +57,8 @@ export const useGuestCart = () => {
             guestLines.value = readGuestCart();
     };
 
-    globalThis.addEventListener('storage', onStorage);
-    onScopeDispose(() => globalThis.removeEventListener('storage', onStorage));
+    addEventListener('storage', onStorage);
+    onScopeDispose(() => removeEventListener('storage', onStorage));
 
     /**
      * Adds units to the guest cart; a product already there grows, as `POST /cart/items` would.

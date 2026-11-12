@@ -750,7 +750,7 @@ describe('the refund key after a failure', () => {
 
 /** The body of the request whose key is `key`. */
 const bodyOf = (key: string): unknown => {
-    const [method, url] = key.split(' ');
+    const [method, url] = key.split(' ', 2);
     return vi
         .mocked(orvalMutator)
         .mock.calls.find(

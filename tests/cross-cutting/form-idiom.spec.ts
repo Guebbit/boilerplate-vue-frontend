@@ -167,11 +167,10 @@ describe('one form idiom', () => {
     it('gives every page form an element to focus into', () => {
         const missing = formComponents()
             .filter((file) => !file.includes(`${path.sep}components${path.sep}`))
-            .filter(
-                (file) =>
-                    !formValidationCallsOf(sourceOf(file)).some((call) =>
-                        optionKeysOf(call).includes('formElement')
-                    )
+            .filter((file) =>
+                formValidationCallsOf(sourceOf(file)).every(
+                    (call) => !optionKeysOf(call).includes('formElement')
+                )
             );
 
         expect(missing).toEqual([]);

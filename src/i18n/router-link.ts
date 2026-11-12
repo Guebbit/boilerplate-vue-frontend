@@ -23,7 +23,7 @@ import type { RouteLocationRaw } from 'vue-router';
  */
 function prefixLocalePath(path: string, locale: string) {
     const normalized = path.startsWith('/') ? path : `/${path}`;
-    const firstSegment = normalized.split('/')[1];
+    const firstSegment = normalized.split('/', 2)[1];
     return supportedLanguages.includes(firstSegment) ? normalized : `/${locale}${normalized}`;
 }
 

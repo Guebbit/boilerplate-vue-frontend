@@ -106,7 +106,7 @@ const fillAndSubmit = (wrapper: ReturnType<typeof mountPage>['wrapper'], url: st
 
 beforeEach(() => {
     setActivePinia(createPinia());
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
     return loadLocale('en').then(() =>
         router.push('/en/webhooks/subscriptions/create').then(() => router.isReady())
     );

@@ -55,7 +55,7 @@ describe('AT4 · Housekeeping on the admin page', () => {
         // the page from before it.
         cy.get('[data-test=list-row]').should(($rows) => {
             expect($rows.length).to.be.greaterThan(0);
-            for (const row of $rows.toArray()) expect(row.textContent).to.contain('auth.login');
+            for (const row of $rows) expect(row.textContent).to.contain('auth.login');
         });
         cy.get('[data-test=filter-action] input').clear();
         cy.get('[data-test=filter-action] input').type('no.such.action');

@@ -62,7 +62,7 @@ const mountPanel = (status: Record<string, unknown>) => {
 };
 
 beforeEach(() => {
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
     return loadLocale('en');
 });
 

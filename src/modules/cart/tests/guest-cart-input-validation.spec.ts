@@ -22,8 +22,7 @@ afterEach(() => {
  * Any number at all, with the special values named: the default generator reaches `NaN` too
  * rarely to rely on.
  */
-const anyNumber = () =>
-    fc.oneof(fc.double(), fc.constantFrom(Number.NaN, Infinity, -Infinity, 0, -0));
+const anyNumber = () => fc.oneof(fc.double(), fc.constantFrom(NaN, Infinity, -Infinity, 0, -0));
 
 describe('a quantity that is not a sensible number', () => {
     it('still leaves a line within the range, for any number `set` is given', () => {

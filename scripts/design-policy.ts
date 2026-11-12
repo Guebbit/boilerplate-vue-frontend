@@ -168,7 +168,8 @@ export const DESIGN_POLICY = {
                 'A bare z-index of 100 or more is improvised. Name it as a `--z-index-*` token in `main.css`.'
         },
         {
-            pattern: String.raw`(?:^|:)(?:group-|peer-)?hover:(?:underline|opacity-|visible|invisible|block|flex|grid|inline|hidden)`,
+            pattern:
+                '(?:^|:)(?:group-|peer-)?hover:(?:underline|opacity-|visible|invisible|block|flex|grid|inline|hidden)',
             message:
                 "Tailwind's `hover:` never fires on touch. Give the resting state the cue, and keep `hover:` for a refinement on top of it."
         },

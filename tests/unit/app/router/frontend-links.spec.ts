@@ -41,11 +41,11 @@ beforeAll(async () => {
 const resolvesToAPage = async (template: string): Promise<boolean> => {
     const { default: router } = await import('@/app/router');
     // The fragment and the query are the reader's business; only the path has to exist.
-    const [route] = template.replaceAll(/{\w+}/g, 'x').split(/[#?]/);
+    const [route] = template.replaceAll(/{\w+}/g, 'x').split(/[#?]/, 1);
     const resolved = router.resolve(route ? `/en/${route}` : '/en');
     return (
         resolved.matched.length > 0 &&
-        !resolved.matched.some((record) => record.path.includes('catchAll'))
+        resolved.matched.every((record) => !record.path.includes('catchAll'))
     );
 };
 
@@ -148,7 +148,7 @@ describe('the staff summary paths open the filtered list', () => {
         '%s: the list reads the query keys and values the path sets',
         (key, reader) => {
             const source = sourceOf(reader.file);
-            const query = new URLSearchParams(rules.staffPages[key].split('?')[1]);
+            const query = new URLSearchParams(rules.staffPages[key].split('?', 2)[1]);
 
             expect(query.size).toBeGreaterThan(0);
             for (const text of reader.declares) expect(source).toContain(text);

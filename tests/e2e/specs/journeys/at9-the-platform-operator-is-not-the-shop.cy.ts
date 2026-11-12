@@ -91,7 +91,7 @@ describe('AT9 · The platform operator is not the shop', () => {
             cy.get('[data-test=search-submit]').click();
             cy.get('[data-test=list-row]').should(($rows) => {
                 expect($rows.length).to.be.greaterThan(0);
-                for (const row of $rows.toArray())
+                for (const row of $rows)
                     expect(row.textContent, 'the address cell').to.not.match(IPV4);
             });
 

@@ -77,7 +77,7 @@ describe('CartLineCard', () => {
             .text();
 
         // The English locale is loaded: `,` groups thousands and `.` is the decimal mark.
-        expect(text.split('=')[1]).toContain(total);
+        expect(text.split('=', 2)[1]).toContain(total);
     });
 
     it('renders the badges slot beside the quantity', () => {

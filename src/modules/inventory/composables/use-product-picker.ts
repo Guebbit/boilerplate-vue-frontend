@@ -67,7 +67,7 @@ export const useProductPicker = () => {
      */
     const options = computed<ProductPickerOption[]>(() => {
         const products =
-            pinned.value && !results.value.some((product) => product.id === pinned.value?.id)
+            pinned.value && results.value.every((product) => product.id !== pinned.value?.id)
                 ? [pinned.value, ...results.value]
                 : results.value;
         return products.map((product) => ({ value: product.id, title: product.title }));

@@ -35,8 +35,8 @@ const BAR_COUNT = `${BAR_BADGE} .v-badge__badge`;
  * @returns the unit price and the line total in cents, and the quantity
  */
 const readLine = (text: string): { unit: number; quantity: number; total: number } => {
-    const [product = '', total = ''] = text.split('=');
-    const [unit = '', quantity = ''] = product.split('×');
+    const [product = '', total = ''] = text.split('=', 2);
+    const [unit = '', quantity = ''] = product.split('×', 2);
     return { unit: cents(unit), quantity: Number(quantity.trim()), total: cents(total) };
 };
 

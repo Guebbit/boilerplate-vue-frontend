@@ -38,7 +38,7 @@ const freshInstance = () => createI18n({ legacy: false, locale: 'en', fallbackLo
 /** Restores `loadedLanguages` to whatever it held before a test pushed to it. */
 const withLoadedLanguagesRestored = () => {
     const snapshot = [...loadedLanguages];
-    return () => loadedLanguages.splice(0, Number.POSITIVE_INFINITY, ...snapshot);
+    return () => loadedLanguages.splice(0, Infinity, ...snapshot);
 };
 
 describe('supportedLanguages', () => {
@@ -84,7 +84,7 @@ describe('_loadLocale', () => {
 
     it('imports and activates a supported locale that is not loaded yet', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0);
+        loadedLanguages.length = 0;
         return _loadLocale(instance, 'it').then(() => {
             expect(instance.global.locale.value).toBe('it');
             expect(loadedLanguages).toContain('it');
@@ -96,7 +96,7 @@ describe('_loadLocale', () => {
 
     it('short-circuits when the locale is already loaded', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0, Number.POSITIVE_INFINITY, 'it');
+        loadedLanguages.splice(0, Infinity, 'it');
         // Registered by hand rather than imported: if the short circuit is broken and the real
         // file is fetched, this sentinel is overwritten and the assertion fails.
         instance.global.setLocaleMessage('it', { sentinel: 'not-from-the-file' });
@@ -108,7 +108,7 @@ describe('_loadLocale', () => {
 
     it('falls back to the default locale for an unsupported one', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0);
+        loadedLanguages.length = 0;
         return _loadLocale(instance, 'kl').then(() => {
             expect(instance.global.locale.value).toBe(getDefaultLocale());
         });
@@ -121,7 +121,7 @@ describe('_loadLocale', () => {
      */
     it('falls back to the default locale when the import fails', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0);
+        loadedLanguages.length = 0;
         return expect(_loadLocale(instance, 'es'))
             .resolves.not.toThrow()
             .then(() => {
@@ -219,7 +219,7 @@ describe('_changeLanguage', () => {
      */
     it('keeps <html lang> in sync', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0, Number.POSITIVE_INFINITY, 'it');
+        loadedLanguages.splice(0, Infinity, 'it');
         return _changeLanguage(instance, 'it').then(() => {
             expect(document.documentElement.getAttribute('lang')).toBe('it');
         });
@@ -232,7 +232,7 @@ describe('_changeLanguage', () => {
      */
     it('keeps <html dir> in sync with the direction the manifest reported', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0, Number.POSITIVE_INFINITY, 'it', 'ar');
+        loadedLanguages.splice(0, Infinity, 'it', 'ar');
         localeDirections.ar = 'rtl';
         return _changeLanguage(instance, 'ar')
             .then(() => {
@@ -254,7 +254,7 @@ describe('_changeLanguage', () => {
      */
     it('loads the fallback dictionary too, so per-key fallback actually works', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0);
+        loadedLanguages.length = 0;
 
         // A locale with no local dictionary — the API-only case.
         return _updateLocale(instance, 'es', { api: { greeting: 'Hola' } })
@@ -271,13 +271,13 @@ describe('_changeLanguage', () => {
 
     it('does not try to load the fallback when it is the locale being activated', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0, Number.POSITIVE_INFINITY, 'en');
+        loadedLanguages.splice(0, Infinity, 'en');
         return expect(_ensureFallbackLoaded(instance, 'en')).resolves.toBeUndefined();
     });
 
     it('loads the dictionary first when the locale has never been loaded', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0);
+        loadedLanguages.length = 0;
         return _changeLanguage(instance, 'it').then(() => {
             expect(instance.global.locale.value).toBe('it');
             expect(instance.global.t('navigation.error-already-logged')).toBe(
@@ -483,7 +483,7 @@ describe('registerLocaleContributors', () => {
 
     it('merges a contributed dictionary on top of the shared one', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0);
+        loadedLanguages.length = 0;
         registerLocaleContributors({
             it: [() => Promise.resolve({ madeUpPage: { title: 'Titolo' } })]
         });
@@ -499,7 +499,7 @@ describe('registerLocaleContributors', () => {
 
     it('deep-merges two contributors into one shared namespace', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0);
+        loadedLanguages.length = 0;
         registerLocaleContributors({
             it: [
                 () => Promise.resolve({ navigation: { labelAlpha: 'Alfa' } }),
@@ -519,7 +519,7 @@ describe('registerLocaleContributors', () => {
 
     it('ignores contributors registered for a different locale', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0);
+        loadedLanguages.length = 0;
         registerLocaleContributors({
             en: [() => Promise.resolve({ madeUpPage: { title: 'Title' } })]
         });
@@ -531,7 +531,7 @@ describe('registerLocaleContributors', () => {
 
     it('replaces the previous registration instead of accumulating', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0);
+        loadedLanguages.length = 0;
         registerLocaleContributors({
             it: [() => Promise.resolve({ madeUpPage: { title: 'First' } })]
         });
@@ -557,7 +557,7 @@ describe('registerLocaleContributors', () => {
      */
     it('merges contributors when a locale is installed via _updateLocale, not just _loadLocale', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0);
+        loadedLanguages.length = 0;
         registerLocaleContributors({
             it: [() => Promise.resolve({ madeUpPage: { title: 'Titolo' } })]
         });
@@ -576,7 +576,7 @@ describe('registerLocaleContributors', () => {
 
     it('loads the shared dictionary alone when no module contributes', () => {
         const instance = freshInstance();
-        loadedLanguages.splice(0);
+        loadedLanguages.length = 0;
         registerLocaleContributors({});
 
         return _loadLocale(instance, 'it').then(() => {

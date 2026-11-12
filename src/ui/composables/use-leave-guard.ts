@@ -79,12 +79,12 @@ export const useLeaveGuard = (
     watch(
         () => holdsWork(),
         (holds) => {
-            if (holds) globalThis.addEventListener('beforeunload', warnOnUnload);
-            else globalThis.removeEventListener('beforeunload', warnOnUnload);
+            if (holds) addEventListener('beforeunload', warnOnUnload);
+            else removeEventListener('beforeunload', warnOnUnload);
         },
         { immediate: true }
     );
-    onScopeDispose(() => globalThis.removeEventListener('beforeunload', warnOnUnload));
+    onScopeDispose(() => removeEventListener('beforeunload', warnOnUnload));
 
     return {
         markSaved: () => {

@@ -94,8 +94,8 @@ export const resolveLiveResetCommand = (): string | undefined => {
     const command = process.env.LIVE_RESET_COMMAND?.trim();
     return command
         ? command
-              .replaceAll('{backend}', resolveBackendPath())
-              .replaceAll('{describeTo}', LIVE_SCENARIO_FILE)
+              .replaceAll('{backend}', () => resolveBackendPath())
+              .replaceAll('{describeTo}', () => LIVE_SCENARIO_FILE)
         : undefined;
 };
 
@@ -118,7 +118,9 @@ export const resolveLiveResetCommand = (): string | undefined => {
  */
 export const resolveBackendDemoCommand = (): readonly string[] | undefined => {
     const command = process.env.BACKEND_DEMO_COMMAND?.trim();
-    return command ? command.replaceAll('{backend}', resolveBackendPath()).split(/\s+/) : undefined;
+    return command
+        ? command.replaceAll('{backend}', () => resolveBackendPath()).split(/\s+/)
+        : undefined;
 };
 
 /**

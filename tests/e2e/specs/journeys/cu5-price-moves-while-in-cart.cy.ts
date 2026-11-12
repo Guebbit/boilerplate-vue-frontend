@@ -26,7 +26,7 @@ interface ProductLike {
  *
  * @param text - the line's `unit × quantity = total` text
  */
-const unitCents = (text: string): number => cents(text.split('×')[0] ?? '');
+const unitCents = (text: string): number => cents(text.split('×', 1)[0] ?? '');
 
 describe('CU5 · The price moves while it sits in the cart', () => {
     beforeEach(() => {

@@ -16,8 +16,8 @@ const BAR_COUNT = '[data-test=nav-badge] .v-badge__badge';
 
 /** One line's cart text, `unit × quantity = total`, split into cents. */
 const priceOf = (text: string): { unit: number; total: number } => {
-    const [product = '', total = ''] = text.split('=');
-    const [unit = ''] = product.split('×');
+    const [product = '', total = ''] = text.split('=', 2);
+    const [unit = ''] = product.split('×', 1);
     return { unit: cents(unit), total: cents(total) };
 };
 

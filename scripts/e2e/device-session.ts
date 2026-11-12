@@ -81,7 +81,7 @@ export const sessionCookieFrom = (headers: Headers): string | null => {
     const prefix = `${SESSION_COOKIE}=`;
     // `getSetCookie()` returns each Set-Cookie header on its own; `get('set-cookie')` would fold them into one string.
     const set = headers.getSetCookie().find((line) => line.startsWith(prefix));
-    const value = set?.slice(prefix.length).split(';')[0] ?? '';
+    const value = set?.slice(prefix.length).split(';', 1)[0] ?? '';
     return value === '' ? null : `${prefix}${value}`;
 };
 

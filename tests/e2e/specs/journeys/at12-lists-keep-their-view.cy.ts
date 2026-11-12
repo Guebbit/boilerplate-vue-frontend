@@ -47,7 +47,7 @@ const rowsSettleOn = (expected: string[]): void => {
 const onlyAdjusted = (): void => {
     cy.get('[data-test=movement-reason]').should(($chips) => {
         expect($chips.length).to.be.greaterThan(0);
-        for (const chip of $chips.toArray()) expect(chip.textContent).to.contain('Adjusted');
+        for (const chip of $chips) expect(chip.textContent).to.contain('Adjusted');
     });
 };
 

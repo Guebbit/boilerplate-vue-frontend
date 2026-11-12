@@ -108,7 +108,7 @@ const OUTBOX_FAMILY_TARGETS = new Map<string, { route: string }>([
  */
 const outboxDeadTarget = (eventName: string, id: string): NoticeTarget | undefined => {
     if (eventName === 'user.erased' || eventName === 'product.deleted') return undefined;
-    const target = OUTBOX_FAMILY_TARGETS.get(eventName.split('.')[0] ?? '');
+    const target = OUTBOX_FAMILY_TARGETS.get(eventName.split('.', 1)[0] ?? '');
     return target ? { ...target, params: { id } } : undefined;
 };
 

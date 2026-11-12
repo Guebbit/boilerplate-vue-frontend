@@ -91,7 +91,7 @@ describe("OP10 · An editor's product, cradle to grave", () => {
         cy.url().should('include', '/products/').and('not.include', '/create');
 
         cy.location('pathname').then((path) => {
-            const id = (path.split('/products/')[1] ?? '').replace(/\/$/, '');
+            const id = (path.split('/products/', 2)[1] ?? '').replace(/\/$/, '');
 
             cy.step('every field round-trips through the edit form');
             cy.visit(`/en/products/${id}/edit`);
@@ -195,7 +195,7 @@ describe("OP10 · An editor's product, cradle to grave", () => {
         cy.get('form').first().submit();
         cy.url().should('include', '/products/').and('not.include', '/create');
         cy.location('pathname').then((path) => {
-            const id = (path.split('/products/')[1] ?? '').replace(/\/$/, '');
+            const id = (path.split('/products/', 2)[1] ?? '').replace(/\/$/, '');
             cy.apiAs<{ items: MovementLike[] }>(
                 'admin',
                 'GET',

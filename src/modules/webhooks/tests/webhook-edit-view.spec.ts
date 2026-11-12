@@ -94,7 +94,7 @@ const mountPage = () => {
 
 beforeEach(() => {
     setActivePinia(createPinia());
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
     return loadLocale('en').then(() =>
         router
             .push(`/en/webhooks/subscriptions/${SUBSCRIPTION.id}/edit`)
