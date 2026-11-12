@@ -469,6 +469,8 @@ const cancelPendingEmail = () => {
                 </v-btn>
             </form>
 
+            <v-divider class="my-6" />
+
             <form novalidate data-test="email-change-form" @submit.prevent="submitEmailChange">
                 <v-text-field
                     :model-value="profile?.email"
@@ -496,7 +498,7 @@ const cancelPendingEmail = () => {
                 </v-btn>
                 <div
                     v-if="profile?.pendingEmail"
-                    class="mb-2 flex flex-wrap items-center gap-2 text-sm opacity-80"
+                    class="mt-3 mb-2 flex flex-wrap items-center gap-2 text-sm opacity-80"
                     data-test="pending-email-notice"
                 >
                     <span>
