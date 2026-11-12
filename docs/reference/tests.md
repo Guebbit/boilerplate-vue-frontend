@@ -34,6 +34,34 @@ components mounted with `@vue/test-utils`. **Cypress** owns everything needing a
 in this repo that means a real backend too, since the mock layer was retired in favour of the
 paired backend's demo profile.
 
+### What earns a test {#what-earns-a-test}
+
+A documented rule gets a test when all three hold:
+
+1. **A line of our own code enforces it today** — a branch, comparison, sort, constant, guard,
+   emitted event, route registration or storage write, so a change to existing code can break it.
+    - Skip a rule that holds **by absence** (no code path writes it, no second caller, no storage
+      call) or **by construction** (a value read back from the server's answer, or a check the
+      server makes and the client only renders). Breaking it means writing new code on purpose.
+    - Exception: a security stop that a **dependency** provides (the router guard, Zod's strict
+      parse) gets one learning test. Dependabot bumps dependencies weekly, unasked.
+2. **A break would be silent** — nothing fails at build, no type error, no other suite goes red.
+3. **Someone is hurt by the break** — a wrong price or total shown, data leaked into browser
+   storage, an accessibility block for a user, a broken journey, a state or precedence rule, a
+   promise to the server (retry and idempotency semantics included). A styling slip nobody can
+   act on is not hurt.
+
+How to build what passes:
+
+- If a sweep already owns the family, extend the sweep in `tests/cross-cutting/`; do not add a per-view copy.
+- Put the logic a test must see in a `.ts` file, not in a `.vue` script: Stryker mutates the
+  first and never the second. Write the test in a suite Stryker runs (unit, cross-cutting or a
+  co-located module spec). Cypress only when the claim needs a real browser and the real backend.
+- Read [Mutation Testing](../tools/mutation-testing.md) for what a surviving or `NoCoverage`
+  mutant means.
+
+---
+
 ## `tests/cross-cutting/` — rules that hold across every module
 
 One file per architectural rule, asserted over every module at once. A new module is
