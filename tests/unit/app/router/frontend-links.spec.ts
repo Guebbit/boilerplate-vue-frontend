@@ -41,7 +41,7 @@ beforeAll(async () => {
 const resolvesToAPage = async (template: string): Promise<boolean> => {
     const { default: router } = await import('@/app/router');
     // The fragment and the query are the reader's business; only the path has to exist.
-    const [route] = template.replaceAll(/{\w+}/g, 'x').split(/[#?]/, 1);
+    const [route] = template.replaceAll(/\{\w+\}/g, 'x').split(/[#?]/, 1);
     const resolved = router.resolve(route ? `/en/${route}` : '/en');
     return (
         resolved.matched.length > 0 &&

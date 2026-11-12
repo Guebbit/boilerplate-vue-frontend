@@ -82,7 +82,7 @@ export const listedPackages = (text: string): string[] => {
         if (!line.startsWith('|')) continue;
         const cell = line.split('|', 3)[2] ?? '';
         for (const [, span] of cell.matchAll(/`([^`]+)`/g))
-            if (/^(@[\w.-]+\/)?[\w.-]+$/.test(span)) names.add(span);
+            if (/^(?:@[\w.-]+\/)?[\w.-]+$/.test(span)) names.add(span);
     }
     return [...names];
 };
@@ -106,10 +106,10 @@ export const staleListings = (page: DocumentPage, installed: ReadonlySet<string>
  * @returns `{ from, name }` per imported binding; a `type` marker and `as` alias are dropped.
  */
 export const fencedContractImports = (text: string): { from: string; name: string }[] => {
-    const fences = [...text.matchAll(/```[^\n]*\n([\S\s]*?)```/g)].map(([, body]) => body);
+    const fences = [...text.matchAll(/```[^\n]*\n([\s\S]*?)```/g)].map(([, body]) => body);
     return fences.flatMap((body) =>
         [
-            ...body.matchAll(/import\s+(?:type\s+)?{([^}]*)}\s+from\s+'(@api(?:\/schemas)?)'/g)
+            ...body.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+'(@api(?:\/schemas)?)'/g)
         ].flatMap(([, names, from]) =>
             names
                 .split(',')

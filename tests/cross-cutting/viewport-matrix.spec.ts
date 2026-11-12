@@ -33,7 +33,7 @@ const SIZE_LITERAL = /\b(?:width|height|viewportWidth|viewportHeight):\s*\d{3,4}
  * is not enough, since `be.oneOf, [403, 404]` is a pair of status codes.
  */
 const SIZE_PAIR =
-    /(?:viewport|phone|tablet|desktop|screen|size)\w*\s*[(:=][^\n]*\[\s*\d{3,4}\s*,\s*\d{3,4}\s*]/i;
+    /(?:viewport|phone|tablet|desktop|screen|size)\w*\s*[(:=][^\n]*\[\s*\d{3,4}\s*,\s*\d{3,4}\s*\]/i;
 
 /** Every `.ts` file under `directory`, as repo-relative paths, skipping dependencies. */
 const sources = (directory: string): string[] =>

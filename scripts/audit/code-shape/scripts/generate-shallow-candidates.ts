@@ -45,7 +45,7 @@ const scriptOf = (text: string, file: string): string => {
         }
     }
     const template = descriptor.template?.content ?? '';
-    const names = [...new Set(template.match(/\b[$A-Z_a-z][\w$]*\b/g))];
+    const names = [...new Set(template.match(/\b[$A-Z_][\w$]*\b/gi))];
     return `${lines.join('\n')}\nvoid [${names.join(', ')}];\n`;
 };
 

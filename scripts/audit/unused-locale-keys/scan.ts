@@ -42,7 +42,7 @@ export const leafPathsOf = (dictionary: Dictionary, prefix = ''): string[] =>
  */
 export const dynamicPrefixesOf = (sourceText: string): string[] =>
     [
-        ...sourceText.matchAll(/`([\w.-]+)\${/g),
+        ...sourceText.matchAll(/`([\w.-]+)\$\{/g),
         ...sourceText.matchAll(/["']([a-z][\w.-]*[.-])["']/g)
     ].map(([, prefix]) => prefix);
 

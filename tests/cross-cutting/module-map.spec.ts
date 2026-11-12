@@ -32,7 +32,7 @@ const KIND_OF_ARROW: Record<string, string> = {
 };
 
 /** A node declaration, `id["label"]` or `id["<b>label</b>"]`. */
-const NODE = /([A-Za-z]\w*)\["(?:<b>)?([^"<]+)(?:<\/b>)?"]/g;
+const NODE = /([A-Za-z]\w*)\["(?:<b>)?([^"<]+)(?:<\/b>)?"\]/g;
 
 /**
  * One edge line: `from`, an optional node body, an arrow, an optional `|"kind"|` label, `to`. A
@@ -40,7 +40,7 @@ const NODE = /([A-Za-z]\w*)\["(?:<b>)?([^"<]+)(?:<\/b>)?"]/g;
  * context-map edge, and the line is skipped.
  */
 const EDGE =
-    /^\s*([A-Za-z]\w*)(?:\["[^"]*"])?\s*(-\.->|==>|-->)(?:\|"([^"|]*)"\|)?\s*([A-Za-z]\w*)(?:\["[^"]*"])?\s*$/;
+    /^\s*([A-Z]\w*)(?:\["[^"]*"\])?\s*(-\.->|==>|-->)(?:\|"[^"|]*"\|)?\s*([A-Z]\w*)(?:\["[^"]*"\])?\s*$/i;
 
 /**
  * The text of the first Mermaid block under a heading.
@@ -52,7 +52,7 @@ const EDGE =
 const mermaidUnder = (markdown: string, heading: string): string => {
     const start = markdown.indexOf(`## ${heading}`);
     if (start === -1) return '';
-    const block = /```mermaid\n([\S\s]*?)```/.exec(markdown.slice(start));
+    const block = /```mermaid\n([\s\S]*?)```/.exec(markdown.slice(start));
     return block?.[1] ?? '';
 };
 
@@ -68,7 +68,7 @@ const parseEdges = (mermaid: string): Edge[] => {
     return mermaid.split('\n').flatMap((line) => {
         const match = EDGE.exec(line);
         if (!match) return [];
-        const [, from, arrow, , to] = match;
+        const [, from, arrow, to] = match;
         return [
             { from: labels.get(from) ?? from, to: labels.get(to) ?? to, kind: KIND_OF_ARROW[arrow] }
         ];

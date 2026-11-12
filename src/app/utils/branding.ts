@@ -26,7 +26,7 @@ export const brandLogoSource = (baseUrl: string): string => {
     const configured = runtimeValue('APP_LOGO') || import.meta.env.VITE_APP_LOGO;
     if (!configured) return `${baseUrl}images/guebbit-logo-colored.png`;
     // A URL with a scheme, or a protocol-relative one, is already complete.
-    return /^([a-z][\d+.a-z-]*:|\/\/)/i.test(configured)
+    return /^(?:[a-z][\d+.a-z-]*:|\/\/)/i.test(configured)
         ? configured
         : `${baseUrl}${configured.replace(/^\/+/, '')}`;
 };

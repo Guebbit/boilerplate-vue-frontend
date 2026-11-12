@@ -123,7 +123,7 @@ describe('nginx.conf and the robots header', () => {
         const block = nginxConfig.slice(nginxConfig.indexOf('location = /robots.txt'));
 
         expect(block.slice(0, block.indexOf('}'))).toMatch(
-            /default_type text\/plain;[\S\s]*try_files \$uri =404;/
+            /default_type text\/plain;[\s\S]*try_files \$uri =404;/
         );
     });
 });

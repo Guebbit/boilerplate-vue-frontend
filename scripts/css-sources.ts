@@ -86,9 +86,9 @@ export const cssSources = (): CssSource[] => [
  */
 export const documentCssSources = (): CssSource[] => {
     const html = readRoot('index.html');
-    return [...html.matchAll(/(<style[^>]*>)([\S\s]*?)<\/style>/g)].map((match) => ({
+    return [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((match) => ({
         file: 'index.html',
-        css: match[2],
+        css: match[1],
         firstLine: html.slice(0, match.index).split('\n').length,
         scoped: false,
         sfc: false

@@ -71,7 +71,7 @@ describe('orvalMutator request validation', () => {
     it('rejects a body the contract refuses, naming the field, before anything is sent', () => {
         vi.stubEnv('VITE_VALIDATE_REQUESTS', 'true');
         return expect(patchAccount({ phone: '' })).rejects.toThrow(
-            /request body for PATCH \/account[\S\s]*phone/
+            /request body for PATCH \/account[\s\S]*phone/
         );
     });
 

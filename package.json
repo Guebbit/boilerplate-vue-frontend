@@ -128,6 +128,7 @@
         "eslint-plugin-boundaries": "^7.2.0",
         "eslint-plugin-cypress": "^6.1.0",
         "eslint-plugin-jsdoc": "^64.3.6",
+        "eslint-plugin-regexp": "^3.3.3",
         "eslint-plugin-unicorn": "^76.0.0",
         "eslint-plugin-vue": "~10.8.0",
         "eslint-plugin-vuejs-accessibility": "^2.6.0",

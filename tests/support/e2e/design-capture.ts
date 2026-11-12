@@ -435,7 +435,7 @@ Cypress.Commands.add('captureDesign', (request: CaptureRequest) => {
                     headings: measured.headings
                 };
                 const row: RecordShotRequest = {
-                    spec: spec.replaceAll(/[^\d.A-Za-z]+/g, '-'),
+                    spec: spec.replaceAll(/[^\d.A-Z]+/gi, '-'),
                     shot
                 };
                 return cy.task('recordDesignShot', row);

@@ -134,7 +134,7 @@ export const formatBucketStart = (value: string, timeZone: string, interval: Sta
 /**
  * A currency code `Intl` accepts: three letters (ISO 4217's shape).
  */
-const WELL_FORMED_CURRENCY = /^[A-Za-z]{3}$/;
+const WELL_FORMED_CURRENCY = /^[A-Z]{3}$/i;
 
 /**
  * Formats an API amount (a decimal string) as currency with locale-aware separators and symbol.

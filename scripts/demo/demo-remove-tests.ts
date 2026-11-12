@@ -25,6 +25,7 @@ export interface RemovalNote {
  * The header a cross-module spec carries. `none` is a valid value: the spec needs no module and
  * says so, which is what tells a header that was forgotten from one that was meant.
  */
+// eslint-disable-next-line regexp/no-super-linear-backtracking -- one header line of a spec this repo authors, never untrusted input; `\s*` is the same-line-or-wrapped whitespace the header accepts
 const REQUIRES_MODULE = /^\/\/ requires-module:\s*(.+)$/m;
 
 /**

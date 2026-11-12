@@ -58,7 +58,7 @@ const HREF_PATTERN = /href="([^"]+)"/g;
  */
 const visibleText = (html: string): string =>
     html
-        .replaceAll(/<style[\S\s]*?<\/style>/g, ' ')
+        .replaceAll(/<style[\s\S]*?<\/style>/g, ' ')
         .replaceAll(/<[^>]+>/g, ' ')
         .replaceAll('&amp;', '&')
         .replaceAll(/\s+/g, ' ')

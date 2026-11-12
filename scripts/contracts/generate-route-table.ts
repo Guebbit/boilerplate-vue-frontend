@@ -91,7 +91,7 @@ const REGEX_METACHARACTERS = /[$()*+.?[\\\]^{|}]/g;
  */
 const segmentToPatternSource = (segment: string): string =>
     segment
-        .split(/({[^}]+})/)
+        .split(/(\{[^}]+\})/)
         .map((part, index) =>
             // `split` with a capture group puts every `{param}` at an odd index.
             index % 2 === 1 ? '[^/]+' : part.replaceAll(REGEX_METACHARACTERS, String.raw`\$&`)
@@ -177,7 +177,8 @@ for (const [openApiPath, pathItem] of Object.entries(document.paths ?? {}))
         rows.push({
             method: method.toUpperCase(),
             patternSource: pathToPatternSource(openApiPath),
-            paramCount: openApiPath.split('/').filter((segment) => /{[^}]+}/.test(segment)).length,
+            paramCount: openApiPath.split('/').filter((segment) => /\{[^}]+\}/.test(segment))
+                .length,
             schemaName: schemaNameFor(operation.operationId),
             bodySchemaName: bodySchemaNameFor(operation),
             moduleName: operation['x-module'],

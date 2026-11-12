@@ -77,7 +77,7 @@ const listSourceFiles = (directory: string): string[] =>
         const entryPath = path.join(directory, entry);
         if (statSync(entryPath).isDirectory()) return listSourceFiles(entryPath);
         if (entryPath.includes(`${path.sep}tests${path.sep}`)) return [];
-        return /\.(ts|vue)$/.test(entryPath) ? [entryPath] : [];
+        return /\.(?:ts|vue)$/.test(entryPath) ? [entryPath] : [];
     });
 
 /** The names in one `{ … }` import clause, `type` prefixes and `as` aliases dropped. */
@@ -97,7 +97,7 @@ const importedApiFunctionNames = (): Set<string> => {
     const names = new Set<string>();
     for (const file of listSourceFiles(path.resolve(process.cwd(), 'src')))
         for (const match of readFileSync(file, 'utf8').matchAll(
-            /import\s+(?:type\s+)?{([^}]*)}\s+from\s+["']@api["']/g
+            /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+["']@api["']/g
         ))
             for (const name of importClauseNames(match[1])) names.add(name);
     return names;
@@ -149,7 +149,7 @@ const SPEC_OPERATIONS: [method: string, path: string, name: string][] = (() => {
             .map(([method, operation]): [string, string, string] => [
                 method.toUpperCase(),
                 // `{id}`, `{productId}`, `{locale}` — the map matches a SEGMENT, not a name.
-                specPath.replaceAll(/{[^}]+}/g, () => ID),
+                specPath.replaceAll(/\{[^}]+\}/g, () => ID),
                 `${operation.operationId.charAt(0).toUpperCase()}${operation.operationId.slice(1)}Response`
             ])
     );

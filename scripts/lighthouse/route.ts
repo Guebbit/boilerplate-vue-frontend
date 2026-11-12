@@ -5,7 +5,7 @@
  */
 
 /** Matches `{subject:<guarantee name>}`. */
-const PLACEHOLDER = /{subject:([^}]+)}/g;
+const PLACEHOLDER = /\{subject:([^}]+)\}/g;
 
 /**
  * Fills every `{subject:x}` in `route`.

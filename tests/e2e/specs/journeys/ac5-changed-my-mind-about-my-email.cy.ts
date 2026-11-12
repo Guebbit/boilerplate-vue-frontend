@@ -20,7 +20,7 @@ import { expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands
 import { carriesAnotherLink } from '../../../support/e2e/steps';
 
 /** The pending-email notice's text carries the address; this finds it without copying it here. */
-const ADDRESS_PATTERN = /\S+@\S+\.[^\s—]+/;
+const ADDRESS_PATTERN = /\S[^\s@]*@\S+\.[^\s—]+/;
 
 /** The resend's cooldown on the server, plus a second to be safely past it. */
 const PAST_THE_COOLDOWN_MS = 61_000;

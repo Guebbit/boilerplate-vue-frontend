@@ -691,7 +691,7 @@ const dynamicClassTokens = (
 };
 
 /** A class without its variants (`sm:hover:min-h-0` → `min-h-0`), brackets respected. */
-const bareClass = (token: string): string => token.replace(/^(?:(?:\[[^\]]*]|[^:[])*:)*/, '');
+const bareClass = (token: string): string => token.replace(/^(?:(?:\[[^\]]*\]|[^:[])*:)*/, '');
 
 /** Whether a native `title` on this tag reaches the DOM as the browser tooltip. */
 const hasNativeTitle = (tag: string, context: TemplateContext): boolean => {
@@ -726,7 +726,7 @@ const ELEMENT_CHECKS: readonly (readonly [CheckId, ElementCheck])[] = [
         'vuetify-arbitrary-variant',
         (node) =>
             classTokens(node)
-                .filter((token) => /\[[^\]]*\.v-[^\]]*]:/.test(token))
+                .filter((token) => /\[[^\]]*\.v-[^\]]*\]:/.test(token))
                 .map((token) => ({
                     anchor: `${node.tag}.${token}`,
                     snippet: `class="… ${token} …"`

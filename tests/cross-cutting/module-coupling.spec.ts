@@ -31,7 +31,7 @@ const listFiles = (directory: string): string[] =>
         const entryPath = path.join(directory, entry);
         if (statSync(entryPath).isDirectory()) return listFiles(entryPath);
         if (entryPath.includes(`${path.sep}tests${path.sep}`)) return [];
-        return /\.(ts|vue)$/.test(entryPath) ? [entryPath] : [];
+        return /\.(?:ts|vue)$/.test(entryPath) ? [entryPath] : [];
     });
 
 /** The names in one `{ … }` import clause, `type` prefixes and `as` aliases dropped. */
@@ -51,7 +51,7 @@ const moduleNames = (): string[] =>
 /** Every name one file imports from `@api` — the generated REST client's barrel. */
 const apiImportsOf = (file: string): string[] => {
     const source = readFileSync(file, 'utf8');
-    return [...source.matchAll(/import\s+(?:type\s+)?{([^}]*)}\s+from\s+["']@api["']/g)].flatMap(
+    return [...source.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+["']@api["']/g)].flatMap(
         (match) => clauseNames(match[1])
     );
 };

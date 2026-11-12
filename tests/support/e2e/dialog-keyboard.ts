@@ -20,7 +20,7 @@ const ACTIVE_OVERLAY = '.v-overlay--active';
  * The API's search doors answer a `POST` but only read (`/products/search`): the stock board
  * refreshes its names through one while a dialog is open, and that is not a write.
  */
-const READ_BY_POST = /\/search(\?|$)/;
+const READ_BY_POST = /\/search(?:\?|$)/;
 
 /** Options for {@link expectDialogKeyboardPattern}. */
 export interface DialogKeyboardOptions {

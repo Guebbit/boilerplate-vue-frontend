@@ -22,7 +22,7 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
  */
 const sourceFiles = (): string[] =>
     readdirSync(path.join(REPO_ROOT, 'src'), { withFileTypes: true, recursive: true })
-        .filter((entry) => entry.isFile() && /\.(vue|ts)$/.test(entry.name))
+        .filter((entry) => entry.isFile() && /\.(?:vue|ts)$/.test(entry.name))
         .map((entry) => path.relative(REPO_ROOT, path.join(entry.parentPath, entry.name)))
         .filter((file) => !file.split(path.sep).includes('tests'));
 

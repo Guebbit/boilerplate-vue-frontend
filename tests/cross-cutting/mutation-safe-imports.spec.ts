@@ -84,7 +84,7 @@ const UNSAFE_SPECIFIERS = [
     // backtrack over.
     {
         kind: 'dynamic import template',
-        pattern: /\bimport\s*\(\s*(?:\/\*(?:(?!\*\/)[\S\s])*\*\/\s*)*`/g
+        pattern: /\bimport\s*\(\s*(?:\/\*(?:(?!\*\/)[\s\S])*\*\/\s*)*`/g
     }
 ] as const;
 

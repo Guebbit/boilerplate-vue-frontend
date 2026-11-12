@@ -80,7 +80,8 @@ const badgeTagsOf = (source: string): string[] => {
 };
 
 /** Whether one badge tag carries something a screen reader can announce. */
-const isNamed = (tag: string): boolean => /(^|\s)(:?label|:?aria-label|aria-hidden)[\s=]/.test(tag);
+const isNamed = (tag: string): boolean =>
+    /(?:^|\s)(?::?label|:?aria-label|aria-hidden)[\s=]/.test(tag);
 
 /** Every badge tag in the shipped components, with its file. */
 const badgesInSource = (): { file: string; tag: string }[] =>

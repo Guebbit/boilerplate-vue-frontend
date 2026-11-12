@@ -52,7 +52,7 @@ const holdAndRecordWrites = (): string[] => {
         cy.intercept(
             { method: /^(POST|PUT|PATCH|DELETE)$/, url: `${String(apiUrl)}/**` },
             (request) => {
-                if (!/\/search(\?|$)/.test(request.url))
+                if (!/\/search(?:\?|$)/.test(request.url))
                     writes.push(`${request.method} ${request.url}`);
                 request.on('response', (response) => {
                     response.setDelay(WRITE_DELAY_MS);

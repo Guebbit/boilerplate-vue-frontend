@@ -18,7 +18,7 @@ interface SpecReport {
 
 /** `src/modules/users/tests/e2e/a11y.cy.ts` → `src-modules-users-tests-e2e-a11y-cy`. */
 export const specSafeName = (spec: string): string =>
-    spec.replace(/\.ts$/, '').replaceAll(/[^\dA-Za-z]+/g, '-');
+    spec.replace(/\.ts$/, '').replaceAll(/[^\dA-Z]+/gi, '-');
 
 /** Reads a spec's report, or a fresh empty one when there is none or it is unreadable. */
 const readReport = (file: string, spec: string): SpecReport => {

@@ -89,7 +89,7 @@ const isGuarded = (source: string, name: string): boolean => {
  * @param source - one file's full text.
  */
 const declaresNotices = (source: string): boolean =>
-    /import\s+type\s*{[^}]*\b(?:AppNotice|NoticeTarget)\b[^}]*}\s*from\s*["']@\/kernel\/registry/.test(
+    /import\s+type\s*\{[^}]*\b(?:AppNotice|NoticeTarget)\b[^}]*\}\s*from\s*["']@\/kernel\/registry/.test(
         source
     );
 
@@ -118,7 +118,7 @@ const sweptText = (source: string): string =>
  */
 const routeNameReferencesIn = (source: string): string[] => [
     ...new Set(
-        [...sweptText(source).matchAll(/["']([A-Za-z]\w*)["']/g)]
+        [...sweptText(source).matchAll(/["']([A-Z]\w*)["']/gi)]
             .map(([, name]) => name)
             .filter((name) => everyRouteName.has(name))
     )

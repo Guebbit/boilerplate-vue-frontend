@@ -78,7 +78,7 @@ const routePathsIn = (source: string): string[] => {
      * above sees `path: page` and no string. Read the list instead; a new page added there is a
      * new route to sweep.
      */
-    const mapped = /\(\[((?:'[\w-]+',?\s*)+)] as const\)\.map\(\(page\)/.exec(source);
+    const mapped = /\(\[((?:'[\w-]+',?\s*)+)\] as const\)\.map\(\(page\)/.exec(source);
     if (mapped) paths.push(...[...mapped[1].matchAll(/'([\w-]+)'/g)].map(([, page]) => page));
     return paths;
 };

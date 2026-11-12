@@ -29,16 +29,17 @@ export const headingSlugs = (markdown: string): Set<string> => {
 
     for (const line of markdown.split('\n')) {
         // A `#` line inside a fenced block is a code comment, not a heading.
-        if (/^\s*(```|~~~)/.test(line)) inFence = !inFence;
+        if (/^\s*(?:```|~~~)/.test(line)) inFence = !inFence;
+        // eslint-disable-next-line regexp/no-super-linear-backtracking -- one line of a tracked docs page, never untrusted input
         const heading = inFence ? undefined : /^#{1,6}\s+(.+)$/.exec(line)?.[1];
         if (!heading) continue;
 
-        const explicit = /{#([\w-]+)}\s*$/.exec(heading)?.[1];
+        const explicit = /\{#([\w-]+)\}\s*$/.exec(heading)?.[1];
         // The title VitePress slugs is the heading's text: link targets, code ticks and
         // emphasis marks are not part of it.
         const text = heading
-            .replace(/{#[\w-]+}\s*$/, '')
-            .replaceAll(/\[([^\]]*)]\([^)]*\)/g, '$1')
+            .replace(/\{#[\w-]+\}\s*$/, '')
+            .replaceAll(/\[([^\]]*)\]\([^)]*\)/g, '$1')
             .replaceAll(/[*`]/g, '');
         const base = explicit ?? slugify(text);
 
@@ -64,7 +65,7 @@ const isCitingFile = (file: string): boolean =>
         file === '.env-example') &&
     // The root bundles, `contracts/` and `shared/` are copies synced from the backend: their `docs/` links name the
     // BACKEND's pages, which this repo cannot resolve.
-    !/^(openapi|asyncapi[\w.]*)\.yaml$/.test(file) &&
+    !/^(?:openapi|asyncapi[\w.]*)\.yaml$/.test(file) &&
     !file.startsWith('contracts/') &&
     !file.startsWith('shared/') &&
     !file.startsWith('docs/') &&

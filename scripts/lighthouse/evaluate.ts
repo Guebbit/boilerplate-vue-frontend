@@ -166,7 +166,7 @@ export const foreignRequests = (report: Report): string[] =>
     (report.audits['network-requests']?.details?.items ?? [])
         .map((item) => item.url ?? '')
         .filter((url) => {
-            if (!/^[a-z][\d+.a-z-]*:/i.test(url) || /^(data|blob|about|chrome):/i.test(url))
+            if (!/^[a-z][\d+.a-z-]*:/i.test(url) || /^(?:data|blob|about|chrome):/i.test(url))
                 return false;
             const host = hostOf(url);
             return host === undefined || !(LOOPBACK_HOSTS as readonly string[]).includes(host);

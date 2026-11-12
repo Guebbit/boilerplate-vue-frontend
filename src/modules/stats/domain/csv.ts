@@ -19,7 +19,7 @@ const FORMULA_START = /^[\t\r+=@-]/;
 /**
  * A plain decimal as the API writes an amount (`"-5.00"`): a number in text form, not a formula.
  */
-const AMOUNT = /^-?\d+(\.\d+)?$/;
+const AMOUNT = /^-?\d+(?:\.\d+)?$/;
 
 /**
  * Escapes one cell for a CSV file.

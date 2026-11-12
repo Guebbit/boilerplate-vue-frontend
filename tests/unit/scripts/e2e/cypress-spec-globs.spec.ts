@@ -52,7 +52,7 @@ const scripts = (): Record<string, string> => {
  */
 const specArgumentOf = (scriptName: string): string[] => {
     const command = scripts()[scriptName];
-    const match = /--spec\s+["']?(?:\${E2E_SPEC:-)?([^"'}]+)/.exec(command);
+    const match = /--spec\s+["']?(?:\$\{E2E_SPEC:-)?([^"'}]+)/.exec(command);
     expect(match, `no --spec argument in ${scriptName}`).not.toBeNull();
     return match![1].split(',').map((glob) => glob.trim());
 };
@@ -120,7 +120,7 @@ describe('every spelling of the spec set resolves to the same files', () => {
 const codeLinesOf = (file: string): string[] =>
     readFileSync(path.join(REPO_ROOT, file), 'utf8')
         .split('\n')
-        .filter((line) => !/^\s*(\/\/|\/?\*)/.test(line));
+        .filter((line) => !/^\s*(?:\/\/|\/?\*)/.test(line));
 
 describe('nothing spells the spec set by hand', () => {
     it.each(['cypress.config.ts', 'eslint.config.ts', 'scripts/e2e/run-shards.ts'])(
@@ -129,7 +129,7 @@ describe('nothing spells the spec set by hand', () => {
             const lines = codeLinesOf(file);
             // A GLOB, not a mention: a `*` reaching a `.cy.ts`. `path.basename(file, '.cy.ts')`
             // is neither, and stripping an extension is not spelling the set.
-            const inlined = lines.filter((line) => /\*[^\s"']*\.cy\.ts|{cy,spec}/.test(line));
+            const inlined = lines.filter((line) => /\*[^\s"']*\.cy\.ts|\{cy,spec\}/.test(line));
 
             expect(inlined, `${file} inlines a spec glob`).toEqual([]);
             expect(lines.join('\n')).toMatch(/SPEC_GLOBS/);

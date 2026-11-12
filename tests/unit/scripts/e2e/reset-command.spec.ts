@@ -25,7 +25,7 @@ describe('withScenario', () => {
 
     it('refuses a named scenario when the command has no placeholder', () => {
         expect(() => withScenario('npm run host -- scenario:apply:reset', 'blank')).toThrow(
-            /no {scenario} placeholder/
+            /no \{scenario\} placeholder/
         );
     });
 

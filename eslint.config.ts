@@ -1,6 +1,7 @@
 import eslint from '@eslint/js';
 import globals from 'globals';
 import pluginUnicorn from 'eslint-plugin-unicorn';
+import pluginRegexp from 'eslint-plugin-regexp';
 import { globalIgnores } from 'eslint/config';
 import {
     configureVueProject,
@@ -811,6 +812,12 @@ export default defineConfigWithVueTs(
      * Unicorn plugin
      */
     pluginUnicorn.configs['flat/recommended'],
+
+    /**
+     * Regular expressions: ReDoS-prone and useless patterns, unneeded groups and escapes.
+     * https://ota-meshi.github.io/eslint-plugin-regexp/
+     */
+    pluginRegexp.configs['flat/recommended'],
 
     /**
      * Accessibility, at the template: the static half of what the axe sweeps check at runtime.

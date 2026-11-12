@@ -99,7 +99,7 @@ export const ALLOWED: { prefix: string; reason: string }[] = [
  * A filename: a non-empty stem and a known extension. `package.json` qualifies with no `/` in it;
  * a bare `.ts` naming the language does not.
  */
-const FILENAME = /^[^.][^/]*\.(ts|tsx|js|cjs|mjs|json|ya?ml|md|vue|css|scss|sh|conf|lock)$/;
+const FILENAME = /^[^.][^/]*\.(?:ts|tsx|js|cjs|mjs|json|ya?ml|md|vue|css|scss|sh|conf|lock)$/;
 
 /**
  * Characters that mean this span is prose, a glob, a type or a command — never one real path.

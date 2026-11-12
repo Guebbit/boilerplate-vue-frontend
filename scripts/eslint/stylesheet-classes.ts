@@ -20,7 +20,7 @@ export interface StylesheetClasses {
 }
 
 /** A class selector inside a selector list: `.name`, `:deep(.name)` included. */
-const CLASS_SELECTOR = /\.(-?[A-Z_a-z][\w-]*)/g;
+const CLASS_SELECTOR = /\.(-?[A-Z_][\w-]*)/gi;
 
 /**
  * Collects the class names a stylesheet's selectors define.
