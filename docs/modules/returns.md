@@ -148,7 +148,8 @@ State, getters and actions are exactly what the setup function of each store ret
 The list answers a `ReturnListItem`, not the whole return: the table's fields, and the full record comes
 from the audited detail read. The list view reads with `partial: true`, so a row merges over a full
 return the store already holds instead of replacing it, and the detail page still reads the whole
-record.
+record. A list row is a preview: the store types its records `Return | ReturnListItem`, and a
+detail-only part waits for `isWholeReturn` before it renders.
 
 ## Screens
 

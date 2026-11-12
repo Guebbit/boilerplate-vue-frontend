@@ -38,17 +38,6 @@ import type {
 type ReturnsFilters = Omit<ListReturnsParams, 'page' | 'pageSize'>;
 
 /**
- * Return list rows as the records the store caches. A list item is the part of a `Return` a table
- * renders; the list reads are stored with `partial: true` (see `ReturnsList.vue`), which merges
- * them over a full record already cached instead of replacing it. The one narrowing the compiler
- * cannot see: a list view reads list fields only.
- *
- * @param items - the rows a list answered
- * @returns the same rows, typed as the records the dictionary holds
- */
-const asRecords = (items: ReturnListItem[]): Return[] => items as Return[];
-
-/**
  * Returns and the withdrawal button.
  *
  * Which move is open on a return is the server's `actions`, never derived here — the same rule
@@ -79,7 +68,7 @@ export const useReturnsStore = defineStore('returns', () => {
         updateTarget,
         fetchAny,
         addRecord: addReturn
-    } = useStructureCrudApi<Return, string, ReturnsFilters, never, never>(
+    } = useStructureCrudApi<Return | ReturnListItem, string, ReturnsFilters, never, never>(
         {
             search: (filters, page, pageSize) =>
                 listReturns({
@@ -89,7 +78,7 @@ export const useReturnsStore = defineStore('returns', () => {
                     status: filters.status,
                     reason: filters.reason
                 }).then((response) => ({
-                    items: asRecords(response.items),
+                    items: response.items,
                     totalItems: response.meta.totalItems
                 })),
 

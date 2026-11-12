@@ -194,7 +194,7 @@ describe('recordProof', () => {
                     carrier: 'Poste Italiane',
                     reference: 'RR1IT'
                 });
-                expect(store.returns.r1?.proofCarrier).toBe('Poste Italiane');
+                expect(store.returns.r1).toMatchObject({ proofCarrier: 'Poste Italiane' });
             });
     });
 });

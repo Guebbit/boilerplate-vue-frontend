@@ -12,8 +12,8 @@ export default {
 /**
  * @module
  * One return: what comes back, who pays the postage, where it stands and — for staff — the moves
- * still open. Cache-first by route id, forced once when the cached row lacks `actions` (the list
- * seeds the cache with rows that carry none), so the detail read is always made once on arrival.
+ * still open. Cache-first by route id, forced once on arrival (the list seeds the cache with list
+ * items that carry no lines), so the detail read is always made once.
  */
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed, onMounted } from 'vue';
@@ -30,6 +30,7 @@ import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
+import { isWholeReturn } from '../domain/whole-return.ts';
 import ReturnStaffActions from '../components/ReturnStaffActions.vue';
 
 /**
@@ -80,8 +81,16 @@ const onMissingRecord = useMissingRecord();
 watchReturn(() => id, { onError: onMissingRecord });
 
 /**
- * Re-reads the return, forced past the cache — after a move, and once for a list-seeded row that
- * carries no `actions`.
+ * The routed return once the whole record is in. A list-seeded row is a `ReturnListItem`, a
+ * preview: the header and status render from it, everything else waits for this.
+ */
+const detail = computed(() =>
+    currentReturn.value && isWholeReturn(currentReturn.value) ? currentReturn.value : undefined
+);
+
+/**
+ * Re-reads the return, forced past the cache — after a move, and once on arrival, since a
+ * list-seeded row is only a list item.
  *
  * @returns A promise settling once the record is fresh; a missing record leaves for the Error page.
  */
@@ -101,7 +110,7 @@ onMounted(refresh);
                             ? t(`returns-form.reason-${currentReturn.reason}`)
                             : t('return-target-page.page-title')
                     "
-                    :description="formatText(currentReturn?.note)"
+                    :description="formatText(detail?.note)"
                     :eyebrow="currentReturn?.id"
                 >
                     <template #icon><Undo2 :size="32" /></template>
@@ -116,119 +125,117 @@ onMounted(refresh);
                         </v-chip>
                     </ItemDetailField>
                     <ItemDetailField
-                        :label="t('return-target-page.label-postage')"
-                        :value="t(`return-target-page.postage-${currentReturn.returnPostage}`)"
-                    />
-                    <ItemDetailField
                         :label="t('return-target-page.label-created')"
                         :value="formatDateTime(currentReturn.createdAt)"
                     />
-                    <ItemDetailField
-                        :label="
-                            currentReturn.statedVia
-                                ? t('return-target-page.label-stated')
-                                : t('return-target-page.label-requested')
-                        "
-                        :value="
-                            currentReturn.statedVia
-                                ? t('return-target-page.stated', {
-                                      date: formatDateTime(currentReturn.requestedAt),
-                                      channel: t(
-                                          `stated-at-fields.channel-${currentReturn.statedVia}`
-                                      )
-                                  })
-                                : formatDateTime(currentReturn.requestedAt)
-                        "
-                        data-test="return-stated"
-                    />
-                    <ItemDetailField
-                        v-if="currentReturn.openedBy === 'staff'"
-                        :label="t('return-target-page.label-opened-by')"
-                        :value="t('return-target-page.opened-by-staff')"
-                        data-test="return-opened-by"
-                    />
-                    <ItemDetailField
-                        v-if="
-                            session.can('read', 'Return') &&
-                            currentReturn.policyExceptions.length > 0
-                        "
-                        :label="t('return-target-page.label-exceptions')"
-                        full-width
-                        data-test="return-exceptions"
-                    >
-                        <v-chip
-                            v-for="exception in currentReturn.policyExceptions"
-                            :key="'exception-' + exception"
-                            size="small"
-                            variant="tonal"
-                            color="warning"
-                            class="mr-1"
+                    <template v-if="detail">
+                        <ItemDetailField
+                            :label="t('return-target-page.label-postage')"
+                            :value="t(`return-target-page.postage-${detail.returnPostage}`)"
+                        />
+                        <ItemDetailField
+                            :label="
+                                detail.statedVia
+                                    ? t('return-target-page.label-stated')
+                                    : t('return-target-page.label-requested')
+                            "
+                            :value="
+                                detail.statedVia
+                                    ? t('return-target-page.stated', {
+                                          date: formatDateTime(detail.requestedAt),
+                                          channel: t(`stated-at-fields.channel-${detail.statedVia}`)
+                                      })
+                                    : formatDateTime(detail.requestedAt)
+                            "
+                            data-test="return-stated"
+                        />
+                        <ItemDetailField
+                            v-if="detail.openedBy === 'staff'"
+                            :label="t('return-target-page.label-opened-by')"
+                            :value="t('return-target-page.opened-by-staff')"
+                            data-test="return-opened-by"
+                        />
+                        <ItemDetailField
+                            v-if="
+                                session.can('read', 'Return') && detail.policyExceptions.length > 0
+                            "
+                            :label="t('return-target-page.label-exceptions')"
+                            full-width
+                            data-test="return-exceptions"
                         >
-                            {{ t(`return-target-page.exception-${exception}`) }}
-                        </v-chip>
-                    </ItemDetailField>
-                    <ItemDetailField
-                        v-if="currentReturn.preferredRemedy"
-                        :label="t('return-target-page.label-preferred-remedy')"
-                        :value="t(`return-target-page.remedy-${currentReturn.preferredRemedy}`)"
-                        data-test="return-preferred-remedy"
-                    />
-                    <ItemDetailField
-                        v-if="currentReturn.remedy"
-                        :label="t('return-target-page.label-remedy')"
-                        :value="t(`return-target-page.remedy-${currentReturn.remedy}`)"
-                        data-test="return-remedy"
-                    />
-                    <ItemDetailField
-                        v-if="currentReturn.receivedAt"
-                        :label="t('return-target-page.label-received')"
-                        :value="formatDateTime(currentReturn.receivedAt)"
-                    />
-                    <ItemDetailField
-                        v-if="currentReturn.refundAmount !== undefined"
-                        :label="t('return-target-page.label-refund')"
-                        :value="formatCurrency(currentReturn.refundAmount, currentReturn.currency)"
-                        data-test="return-refund"
-                    />
-                    <ItemDetailField
-                        v-if="compareDecimals(currentReturn.handlingDeduction ?? '0', '0') > 0"
-                        :label="t('return-target-page.label-deduction')"
-                        :value="
-                            formatCurrency(currentReturn.handlingDeduction, currentReturn.currency)
-                        "
-                        data-test="return-deduction"
-                    />
-                    <ItemDetailField
-                        v-if="currentReturn.declineReason"
-                        :label="t('return-target-page.label-decline-reason')"
-                        :value="
-                            t(`return-staff-actions.decline-reason-${currentReturn.declineReason}`)
-                        "
-                        full-width
-                        data-test="return-decline-reason-text"
-                    />
-                    <ItemDetailField
-                        v-if="currentReturn.declineMessage"
-                        :label="t('return-target-page.label-decline-message')"
-                        :value="currentReturn.declineMessage"
-                        full-width
-                        data-test="return-decline-message-text"
-                    />
+                            <v-chip
+                                v-for="exception in detail.policyExceptions"
+                                :key="'exception-' + exception"
+                                size="small"
+                                variant="tonal"
+                                color="warning"
+                                class="mr-1"
+                            >
+                                {{ t(`return-target-page.exception-${exception}`) }}
+                            </v-chip>
+                        </ItemDetailField>
+                        <ItemDetailField
+                            v-if="detail.preferredRemedy"
+                            :label="t('return-target-page.label-preferred-remedy')"
+                            :value="t(`return-target-page.remedy-${detail.preferredRemedy}`)"
+                            data-test="return-preferred-remedy"
+                        />
+                        <ItemDetailField
+                            v-if="detail.remedy"
+                            :label="t('return-target-page.label-remedy')"
+                            :value="t(`return-target-page.remedy-${detail.remedy}`)"
+                            data-test="return-remedy"
+                        />
+                        <ItemDetailField
+                            v-if="detail.receivedAt"
+                            :label="t('return-target-page.label-received')"
+                            :value="formatDateTime(detail.receivedAt)"
+                        />
+                        <ItemDetailField
+                            v-if="detail.refundAmount !== undefined"
+                            :label="t('return-target-page.label-refund')"
+                            :value="formatCurrency(detail.refundAmount, detail.currency)"
+                            data-test="return-refund"
+                        />
+                        <ItemDetailField
+                            v-if="compareDecimals(detail.handlingDeduction ?? '0', '0') > 0"
+                            :label="t('return-target-page.label-deduction')"
+                            :value="formatCurrency(detail.handlingDeduction, detail.currency)"
+                            data-test="return-deduction"
+                        />
+                        <ItemDetailField
+                            v-if="detail.declineReason"
+                            :label="t('return-target-page.label-decline-reason')"
+                            :value="
+                                t(`return-staff-actions.decline-reason-${detail.declineReason}`)
+                            "
+                            full-width
+                            data-test="return-decline-reason-text"
+                        />
+                        <ItemDetailField
+                            v-if="detail.declineMessage"
+                            :label="t('return-target-page.label-decline-message')"
+                            :value="detail.declineMessage"
+                            full-width
+                            data-test="return-decline-message-text"
+                        />
+                    </template>
                 </div>
 
-                <h3 class="mt-6 text-base font-semibold">
+                <!-- A list-seeded row has no lines yet: the block waits for the full record. -->
+                <h3 v-if="detail" class="mt-6 text-base font-semibold">
                     {{ t('return-target-page.label-lines') }}
                 </h3>
                 <p
-                    v-if="currentReturn && currentReturn.lines.length === 0"
+                    v-if="detail && detail.lines.length === 0"
                     class="m-0 mt-2 text-sm opacity-75"
                     data-test="return-no-lines"
                 >
                     {{ t('return-target-page.no-lines') }}
                 </p>
-                <ul v-if="currentReturn" class="m-0 mt-2 flex list-none flex-col gap-2 p-0">
+                <ul v-if="detail" class="m-0 mt-2 flex list-none flex-col gap-2 p-0">
                     <li
-                        v-for="line in currentReturn.lines"
+                        v-for="line in detail.lines"
                         :key="'return-line-' + line.productId"
                         class="flex items-center justify-between gap-3"
                         data-test="return-line"
@@ -238,7 +245,7 @@ onMounted(refresh);
                             {{
                                 formatCurrency(
                                     multiplyDecimal(line.unitPrice, line.quantity),
-                                    currentReturn.currency
+                                    detail.currency
                                 )
                             }}
                         </strong>
@@ -247,7 +254,8 @@ onMounted(refresh);
             </CardDetail>
 
             <template #actions>
-                <ReturnStaffActions v-if="currentReturn" :item="currentReturn" @changed="refresh" />
+                <!-- Its setup reads `item.lines`, so it mounts only on the full record. -->
+                <ReturnStaffActions v-if="detail" :item="detail" @changed="refresh" />
                 <v-btn v-if="orderTo" variant="tonal" data-test="return-order-link" :to="orderTo">
                     {{ t('return-target-page.button-order') }}
                 </v-btn>

@@ -12,6 +12,7 @@
  */
 
 export * from './store';
+export * from './domain/whole-return';
 export { default as CancelRemainderDialog } from './components/CancelRemainderDialog.vue';
 export { default as RecordWithdrawalDialog } from './components/RecordWithdrawalDialog.vue';
 export { default as ReturnRequestForm } from './components/ReturnRequestForm.vue';
