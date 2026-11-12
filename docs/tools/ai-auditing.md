@@ -97,7 +97,15 @@ This repo's delta: `design-manual` needs a model that can read images; the scree
 
 Owned by the backend: [test-honesty: a test is innocent once it has failed](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#test-honesty-a-test-is-innocent-once-it-has-failed).
 
-This repo's delta: two blind spots are marked `UNVERIFIED` because Stryker cannot see them, Cypress specs and logic inside `.vue` files. A whole-component `toMatchSnapshot()` is a named shape, the "snapshot dump".
+This repo's delta:
+
+- Two blind spots are marked `UNVERIFIED` because Stryker cannot see them: Cypress specs and
+  Lighthouse (`(suite skipped)`), and logic inside `.vue` files or any file outside
+  `stryker.config.json`'s `mutate` (`(not mutated)`, a tag the backend does not have).
+- A whole-component `toMatchSnapshot()` is a named shape, the "snapshot dump"; `wrapper.vm.*` reads
+  are "The Inspector".
+- The first cut is `npm run audit:test-candidates`, which also lists a test whose only assertion is
+  `expect(<x>.exists())` (Vue Test Utils puts `exists()` inside the `expect`).
 
 ## Reading the output
 

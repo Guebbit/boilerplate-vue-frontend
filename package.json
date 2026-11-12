@@ -24,6 +24,7 @@
         "audit:shallow": "tsx scripts/audit/code-shape/scripts/generate-shallow-candidates.ts",
         "audit:unused": "knip --no-progress --no-exit-code",
         "audit:duplicates": "jscpd",
+        "audit:test-candidates": "eslint --no-config-lookup -c scripts/audit/test-honesty/eslint.candidates.config.ts -f json",
         "audit:check-clean": "tsx scripts/audit/run-check-clean.ts",
         "prettier:check": "prettier --check .",
         "prettier:fix": "prettier . --write",
