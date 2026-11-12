@@ -39,6 +39,15 @@ export const EMPTY_VALUE =
 const getLocale = () => getCurrentLocale() || undefined;
 
 /**
+ * The short reference of a record: the last eight characters of its id, the same `#ref` the
+ * backend writes in a mail subject, so two records of one kind can be told apart on sight.
+ *
+ * @param id - The record's id.
+ * @returns The id's last eight characters.
+ */
+export const shortRef = (id: string): string => id.slice(-8);
+
+/**
  * Converts empty strings and nullish values to the shared fallback glyph.
  *
  * @param value - Raw text to display, possibly empty or nullish.

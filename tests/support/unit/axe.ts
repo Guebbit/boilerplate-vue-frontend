@@ -9,8 +9,9 @@ import axe, { type RunOptions } from 'axe-core';
 /**
  * What jsdom cannot judge, switched off; plus one AAA rule switched on.
  * `color-contrast` needs computed styles and layout. `region` wants a whole page, not a mounted part.
- * `identical-links-same-purpose` (WCAG 2.4.9, AAA) is outside axe's default tags, so it is named here
- * and in the Cypress rule set: same link text, same destination.
+ * `identical-links-same-purpose` (WCAG 2.4.9, AAA) is outside axe's default tags, so it is named here.
+ * axe answers it only with "pass" or "incomplete", never a violation, so this helper (which reads
+ * violations) cannot fail on it: that two notices read differently is asserted by the bell spec.
  */
 const JSDOM_OPTIONS: RunOptions = {
     rules: {

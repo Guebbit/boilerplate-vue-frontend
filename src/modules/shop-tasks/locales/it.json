@@ -1,7 +1,7 @@
 {
     "shop-tasks": {
         "staff": {
-            "purchase-hold-placed": "Il checkout di un acquirente è sospeso fino al {until} dopo ripetuti annullamenti. Controlla l'account se sospetti un abuso.",
+            "purchase-hold-placed": "Il checkout di un acquirente è sospeso fino al {until} dopo ripetuti annullamenti. Controlla l'account se sospetti un abuso. · #{ref}",
             "return-requested": "Un acquirente ha chiesto di restituire della merce dell'ordine n. {order}. La richiesta attende una decisione.",
             "outcome-unknown": "L'operazione {what} su {subject} è iniziata {since} e il server non ha mai riportato come è finita. Non è stata rieseguita. Controlla il risultato prima di agire di nuovo.",
             "transfers-due": "{n} bonifici sono in scadenza. Apri gli ordini per sollecitarli.",

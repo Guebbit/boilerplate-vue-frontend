@@ -323,7 +323,7 @@ describe('a work notice for staff', () => {
     } as const;
 
     it('says when the pause ends, in the reader’s date format', () => {
-        expect(describeOf(hold)).toBe('shop-tasks.staff.purchase-hold-placed|until=U!');
+        expect(describeOf(hold)).toBe('shop-tasks.staff.purchase-hold-placed|until=U!|ref=u9');
     });
 
     it('points a hold at the buyer’s account', () => {

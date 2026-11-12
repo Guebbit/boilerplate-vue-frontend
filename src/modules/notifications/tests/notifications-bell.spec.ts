@@ -240,8 +240,8 @@ describe('opening the panel', () => {
             (element) => element.textContent
         );
         expect(texts).toEqual([
-            'An event (event.n2) could not be delivered after every retry and was parked. Look at the record it was about.',
-            'An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about.'
+            'An event (event.n2) could not be delivered after every retry and was parked. Look at the record it was about. · #a1',
+            'An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about. · #a1'
         ]);
     });
 
@@ -279,7 +279,7 @@ describe('inside the panel', () => {
             .getAttribute('aria-label');
 
         expect(label).toBe(
-            'Delete notification: An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about.'
+            'Delete notification: An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about. · #a1'
         );
     });
 
@@ -381,6 +381,37 @@ describe('two notices about two orders', () => {
         expect(texts[0]).toContain('2026-000041');
         expect(texts[1]).toContain('2026-000042');
         expect(new Set(texts).size).toBe(2);
+    });
+});
+
+describe('two notices of the same code about two records', () => {
+    it('read as different links and carry different delete-button names', async () => {
+        signIn();
+        useSessionStore().tenantAbility = createMongoAbility([
+            { action: 'read', subject: 'WebhookSubscription' }
+        ]);
+        inboxOnServer = ['aaaa1111', 'bbbb2222'].map((subscriptionId, index) => ({
+            ...holdNotice,
+            id: `w${String(index)}`,
+            params: { subscriptionId }
+        }));
+        await mountBell();
+        await openPanel();
+        await openWorkTab();
+
+        const linkTexts = [
+            ...document.body.querySelectorAll('[data-test=notification-target-link]')
+        ].map((link) => link.textContent.trim());
+        const deleteNames = [
+            ...document.body.querySelectorAll('[data-test=notification-delete]')
+        ].map((button) => button.getAttribute('aria-label'));
+
+        // Not axe: it reports identical-links-same-purpose as "needs review", never a violation.
+        expect(linkTexts).toHaveLength(2);
+        expect(new Set(linkTexts).size).toBe(2);
+        expect(linkTexts[0]).toContain('#aaaa1111');
+        expect(deleteNames).toHaveLength(2);
+        expect(new Set(deleteNames).size).toBe(2);
     });
 });
 

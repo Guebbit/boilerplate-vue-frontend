@@ -17,6 +17,7 @@ import {
     describeProduct
 } from './describe';
 import type { ShopNotice } from './describe';
+import { shortRef } from '@/infrastructure/utils/formatters.ts';
 
 /**
  * The code of every staff summary row: a count and no id.
@@ -134,7 +135,12 @@ export const shopNotices: Record<string, AppNotice> = {
         describe: (
             notice: ShopNotice<'shop-tasks.staff.purchase-hold-placed'>,
             { translate, formatDate }
-        ) => translate(notice.code, { until: formatDate(notice.params.until) }),
+        ) =>
+            translate(notice.code, {
+                until: formatDate(notice.params.until),
+                // Two holds read alike; the buyer's ref tells them apart.
+                ref: shortRef(notice.params.userId)
+            }),
         target: (notice: ShopNotice<'shop-tasks.staff.purchase-hold-placed'>) => ({
             route: 'UserTarget',
             params: { id: notice.params.userId }

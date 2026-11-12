@@ -1,7 +1,7 @@
 {
     "shop-tasks": {
         "staff": {
-            "purchase-hold-placed": "A buyer's checkout was paused until {until} after repeated cancellations. Review the account if you suspect abuse.",
+            "purchase-hold-placed": "A buyer's checkout was paused until {until} after repeated cancellations. Review the account if you suspect abuse. · #{ref}",
             "return-requested": "A buyer asked to return goods from order no. {order}. The request is waiting for a decision.",
             "outcome-unknown": "The {what} on {subject} began {since} and the server never reported how it ended. It was not run again. Check the result before acting again.",
             "transfers-due": "{n} bank transfers are due soon. Open the orders to chase them.",
