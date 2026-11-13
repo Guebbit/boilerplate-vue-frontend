@@ -14,6 +14,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { requiredPath } from '../cli';
 import {
     readPermissionVocabulary,
     renderPermissionVocabulary
@@ -22,24 +23,11 @@ import {
 /** The repo root. `import.meta.url` rather than `__dirname`: this script runs as ESM. */
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-/*
- * Reads a required `--flag <value>` argument.
- *
- * @param flag The flag name, with its dashes.
- * @returns Absolute path the value names.
- */
-const requiredPath = (flag: string): string => {
-    const value = process.argv[process.argv.indexOf(flag) + 1];
-    if (process.argv.includes(flag) && value) return path.resolve(ROOT, value);
-    console.error(`Missing required argument: ${flag} <path>`);
-    process.exit(1);
-};
-
 /** The permission-key YAML to read, from `--in`. */
-const INPUT = requiredPath('--in');
+const INPUT = requiredPath('in', ROOT);
 
 /** The file to generate, from `--out`. */
-const OUTPUT = requiredPath('--out');
+const OUTPUT = requiredPath('out', ROOT);
 
 /** The whole generated file's text. */
 const output = renderPermissionVocabulary(readPermissionVocabulary(readFileSync(INPUT, 'utf8')));

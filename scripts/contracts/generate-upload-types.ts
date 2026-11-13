@@ -16,6 +16,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
+import { requiredPath } from '../cli';
 
 /** The slice of an OpenAPI media type this generator reads. */
 interface MediaType {
@@ -36,23 +37,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 /** The bundled root contract this generator reads. */
 const INPUT = path.resolve(ROOT, 'openapi.yaml');
 
-/*
- * Reads the required `--out` argument.
- *
- * @returns Absolute path of the file to generate.
- */
-const resolveOutputPath = (): string => {
-    const flagIndex = process.argv.indexOf('--out');
-    const value = flagIndex === -1 ? undefined : process.argv[flagIndex + 1];
-    if (!value) {
-        console.error('Missing required argument: --out <path>');
-        process.exit(1);
-    }
-    return path.resolve(ROOT, value);
-};
-
 /** Absolute path of the file to generate, from `--out`. */
-const OUTPUT = resolveOutputPath();
+const OUTPUT = requiredPath('out', ROOT);
 
 /**
  * The bundled contract, parsed. `parse` is the `yaml` package's YAML 1.2 loader; the `as` narrows
