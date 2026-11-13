@@ -35,8 +35,13 @@ Every rule in this section is machine-checked: `strictTypeChecked` plus the proj
   - Fix the type at its source: a typed factory, a type guard, or a parse through the generated
     Zod schemas in `contracts/rest/`.
   - One exception, for hand-built test stubs only: `asStub<T>()` from `tests/support/stub.ts`.
-- A single `as X` is fine where it narrows something the compiler cannot see into. Say why in a
-  comment. `!` likewise: never to quiet a type error.
+- `as X` only **narrows**: it names which type a value already can be, proven by a check the
+  compiler cannot follow (`unknown` after a Zod parse, a union after a discriminant, an `Element`
+  after a selector check). Say which check, in a comment.
+- `as X` never **widens or claims**: no list item cast to a full record, no partial to a whole,
+  no `{}` to `T`. Model it with a union, a separate type or a parse. (An object literal cast to a
+  type is lint-enforced: `consistent-type-assertions`.)
+- `!` likewise: never to quiet a type error.
 - MUST NOT use `@ts-ignore`. `@ts-expect-error` only where the type error is the thing under test,
   always with a description.
 - Every `eslint-disable`, in a script or a template, carries ` -- <why>`. An unused one fails.
@@ -361,6 +366,10 @@ Conventional Commits, enforced by commitlint on the `commit-msg` hook.
   `complete:light:gates` (`check`, `vue-tsc`, unit).
 - A lane merges on `complete:light`, plus every Cypress spec it adds or changes, run by file.
   CI on push is authoritative.
+- Before the commit, run every test the hook does not run that the change touches: a new Cypress
+  journey or live e2e, AND every existing one whose screen, flow or response shape the change
+  alters, by file. If the stack cannot run it, the change does not merge until it has. The commit
+  message names what ran; "not run here" is not allowed.
 - **NEVER** use `--no-verify` unless a `complete` (regular or `:fix`) has just passed on the
   current tree.
 
