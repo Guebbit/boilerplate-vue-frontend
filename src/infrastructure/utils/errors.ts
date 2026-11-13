@@ -27,10 +27,11 @@ import { translate } from '@/i18n';
  */
 const firstApiMessage = (error: unknown): string | undefined => {
     if (!error || typeof error !== 'object') return undefined;
-    const { errors, detail } = error as { errors?: unknown; detail?: unknown };
+    const errors: unknown = 'errors' in error ? error.errors : undefined;
+    const detail: unknown = 'detail' in error ? error.detail : undefined;
     const first: unknown = Array.isArray(errors) ? errors[0] : undefined;
-    const itemMessage =
-        first && typeof first === 'object' ? (first as { message?: unknown }).message : undefined;
+    const itemMessage: unknown =
+        first && typeof first === 'object' && 'message' in first ? first.message : undefined;
     return [itemMessage, detail].find(
         (candidate): candidate is string => typeof candidate === 'string' && candidate !== ''
     );
@@ -60,6 +61,45 @@ export const getErrorMessage = (
 ): string => firstApiMessage(error) ?? extractErrorMessage(error, fallback);
 
 /**
+ * A rejection the API answered: the reject envelope `onResponseReject` builds, read for the two
+ * fields every helper below needs. `errors` is `unknown` because the guard does not look inside it.
+ */
+interface AnsweredRejection {
+    /** The HTTP status the API replied with; never `0`, which marks "no reply". */
+    status: number;
+    /** The envelope's error list, when the reply carried one. */
+    errors?: unknown;
+}
+
+/**
+ * Whether a rejected API call got an answer, whatever the answer was.
+ *
+ * Checked, not claimed: the one place a rejection's `status` is proved a number, so the helpers
+ * below read it without a cast of their own.
+ *
+ * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
+ * @returns `true` when a response arrived.
+ */
+export const isAnswered = (error: unknown): error is AnsweredRejection =>
+    !!error &&
+    typeof error === 'object' &&
+    'status' in error &&
+    typeof error.status === 'number' &&
+    // `onResponseReject` (`http/interceptors.ts`) writes `status: 0` exactly for the case where no
+    // `response` arrived at all — never for an answered request.
+    error.status !== 0;
+
+/**
+ * The code of the first error in an answered rejection's envelope, when it has one.
+ *
+ * @param error - An answered rejection.
+ */
+const firstErrorCode = (error: AnsweredRejection): unknown => {
+    const first: unknown = Array.isArray(error.errors) ? error.errors[0] : undefined;
+    return first && typeof first === 'object' && 'code' in first ? first.code : undefined;
+};
+
+/**
  * Whether a rejected API call never got an answer at all.
  *
  * The reject envelope `onResponseReject` builds carries the HTTP status whenever the API replied,
@@ -73,13 +113,7 @@ export const getErrorMessage = (
  * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
  * @returns `true` when no response was received.
  */
-export const isTransportFailure = (error: unknown): boolean =>
-    !error ||
-    typeof error !== 'object' ||
-    typeof (error as { status?: unknown }).status !== 'number' ||
-    // `onResponseReject` (`http/interceptors.ts`) writes `status: 0` exactly for this case — no
-    // `response` arrived at all — never for an answered request.
-    (error as { status: number }).status === 0;
+export const isTransportFailure = (error: unknown): boolean => !isAnswered(error);
 
 /**
  * Whether a rejected API call failed with one of the statuses the caller treats as an ANSWER.
@@ -93,7 +127,7 @@ export const isTransportFailure = (error: unknown): boolean =>
  * @returns `true` when the API answered with one of them.
  */
 export const absentIs = (error: unknown, ...statuses: number[]): boolean =>
-    !isTransportFailure(error) && statuses.includes((error as { status: number }).status);
+    isAnswered(error) && statuses.includes(error.status);
 
 /**
  * Whether a rejected API call is safe to retry under the SAME idempotency key.
@@ -108,7 +142,7 @@ export const absentIs = (error: unknown, ...statuses: number[]): boolean =>
  * @returns `true` when the failure carries no server verdict worth treating as final.
  */
 export const isRetryableFailure = (error: unknown): boolean =>
-    isTransportFailure(error) || (error as { status: number }).status >= 500;
+    !isAnswered(error) || error.status >= 500;
 
 /**
  * Whether the SAME `Idempotency-Key` should go out again after this failure.
@@ -124,9 +158,8 @@ export const isRetryableFailure = (error: unknown): boolean =>
  * @returns `true` when the next attempt is the same attempt.
  */
 export const keepsIdempotencyKey = (error: unknown): boolean => {
-    if (isTransportFailure(error)) return true;
-    const { status, errors } = error as { status: number; errors?: { code?: unknown }[] };
-    return status === 409 && errors?.[0]?.code === ERROR_CODES.IDEMPOTENCY_IN_FLIGHT;
+    if (!isAnswered(error)) return true;
+    return error.status === 409 && firstErrorCode(error) === ERROR_CODES.IDEMPOTENCY_IN_FLIGHT;
 };
 
 /**
@@ -139,9 +172,10 @@ export const keepsIdempotencyKey = (error: unknown): boolean => {
  * @returns `true` when the first attempt's outcome is unknown.
  */
 export const isOutcomeUnknown = (error: unknown): boolean => {
-    if (isTransportFailure(error)) return false;
-    const { status, errors } = error as { status: number; errors?: { code?: unknown }[] };
-    return status === 409 && errors?.[0]?.code === ERROR_CODES.IDEMPOTENCY_OUTCOME_UNKNOWN;
+    if (!isAnswered(error)) return false;
+    return (
+        error.status === 409 && firstErrorCode(error) === ERROR_CODES.IDEMPOTENCY_OUTCOME_UNKNOWN
+    );
 };
 
 /**
@@ -155,9 +189,19 @@ export const isOutcomeUnknown = (error: unknown): boolean => {
  * @returns `true` when the API answered with at least one of them.
  */
 export const hasErrorCode = (error: unknown, ...codes: string[]): boolean => {
-    if (isTransportFailure(error)) return false;
-    const { errors } = error as { errors?: { code?: unknown }[] };
-    return (errors ?? []).some(({ code }) => typeof code === 'string' && codes.includes(code));
+    if (!isAnswered(error)) return false;
+    const { errors } = error;
+    return (
+        Array.isArray(errors) &&
+        errors.some(
+            (item: unknown) =>
+                !!item &&
+                typeof item === 'object' &&
+                'code' in item &&
+                typeof item.code === 'string' &&
+                codes.includes(item.code)
+        )
+    );
 };
 
 /**
@@ -200,7 +244,7 @@ export const notifyErrorMessages = (
  * @returns `true` when the API answered 412.
  */
 export const isPreconditionFailed = (error: unknown): boolean =>
-    !isTransportFailure(error) && (error as { status: number }).status === 412;
+    isAnswered(error) && error.status === 412;
 
 /**
  * Whether a rejected call was refused because a rate-limit budget ran out (HTTP 429).
@@ -208,5 +252,4 @@ export const isPreconditionFailed = (error: unknown): boolean =>
  * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
  * @returns `true` when the API answered 429.
  */
-export const isRateLimited = (error: unknown): boolean =>
-    !isTransportFailure(error) && (error as { status: number }).status === 429;
+export const isRateLimited = (error: unknown): boolean => isAnswered(error) && error.status === 429;

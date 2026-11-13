@@ -77,6 +77,26 @@ const errorMessage = computed(() => {
 });
 
 /**
+ * Whether a value read from the page URL is a list of the contract's 2-factor method summaries.
+ *
+ * Only the two required fields are checked, which is all the challenge screen cannot do without;
+ * the optional ones (`target`, `resendAfter`, ...) are read defensively where they are shown.
+ *
+ * @param value - The parsed `methods` query parameter.
+ */
+const isMethodSummaryList = (value: unknown): value is TwoFactorMethodSummary[] =>
+    Array.isArray(value) &&
+    value.every(
+        (entry: unknown) =>
+            !!entry &&
+            typeof entry === 'object' &&
+            'method' in entry &&
+            typeof entry.method === 'string' &&
+            'delivers' in entry &&
+            typeof entry.delivers === 'boolean'
+    );
+
+/**
  * The 2FA step's own metadata, when the callback redirected here with `?mfaRequired=1` instead of
  * a session — `<paired-backend>/src/modules/account/oauth/config.ts#oauthFrontendMfaCallbackUrl` on the backend is what wrote
  * this query string. The challenge TOKEN itself is never in it: that travels in an httpOnly
@@ -91,13 +111,12 @@ const oauthChallenge = computed(() => {
     if (mfaRequired !== '1' || typeof expiresAt !== 'string' || typeof methods !== 'string')
         return undefined;
 
-    // A hand-edited or truncated URL leaves `methods` unparseable, or not a list at all.
+    // A hand-edited or truncated URL leaves `methods` unparseable, not a list, or a list of anything.
     const parsedMethods = parseJsonSafe(methods);
-    if (!Array.isArray(parsedMethods)) return undefined;
+    if (!isMethodSummaryList(parsedMethods)) return undefined;
     return {
         expiresAt,
-        // The backend wrote this list; its entries are read as the contract's summaries.
-        methods: parsedMethods as TwoFactorMethodSummary[],
+        methods: parsedMethods,
         ...(typeof defaultMethod === 'string' && { defaultMethod })
     };
 });

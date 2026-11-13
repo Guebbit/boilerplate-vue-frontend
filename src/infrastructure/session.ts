@@ -527,9 +527,9 @@ export const useSessionStore = defineStore('session', () => {
             // Captured before the request goes out, not read again after: this attempt answers
             // for the session as it was when it started, not as it is when the response lands.
             const epochAtStart = sessionEpoch.value;
-            refreshInFlight = apiRefreshToken(
-                asPassive({ _refreshed: true } as AxiosRequestConfigWithRetry)
-            )
+            // `_refreshed` marks the call so the 401 interceptor never answers it with a refresh.
+            const refreshCall: AxiosRequestConfigWithRetry = { _refreshed: true };
+            refreshInFlight = apiRefreshToken(asPassive(refreshCall))
                 .then((data) => {
                     const { token, abilities } = data;
                     if (epochAtStart === sessionEpoch.value) {
