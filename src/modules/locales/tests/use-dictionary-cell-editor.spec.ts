@@ -12,9 +12,10 @@ import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 import { useDictionaryCellEditor } from '../composables/use-dictionary-cell-editor.ts';
 import type { Language, LocaleEntry } from '@types';
+import { asStub } from '../../../../tests/support/stub.ts';
 
 /** The column every test writes into. */
-const ENGLISH = { tag: 'en', nativeName: 'English', source: 'dynamic' } as Language;
+const ENGLISH = asStub<Language>({ tag: 'en', nativeName: 'English', source: 'dynamic' });
 
 /** The app a NEW entry is created in. */
 const OWN_APP = 'demo-fe';
@@ -391,8 +392,8 @@ describe('handleBoardFocusin', () => {
         const input = document.querySelector<HTMLInputElement>('#cell')!;
         const keyCell = document.querySelector<HTMLElement>('td')!;
         scroller.scrollBy = vi.fn();
-        keyCell.getBoundingClientRect = () => ({ right: 192 }) as DOMRect;
-        input.getBoundingClientRect = () => ({ left: 150 }) as DOMRect;
+        keyCell.getBoundingClientRect = () => asStub<DOMRect>({ right: 192 });
+        input.getBoundingClientRect = () => asStub<DOMRect>({ left: 150 });
         const { editor } = editorWith();
         editor.boardElement.value = scroller;
 

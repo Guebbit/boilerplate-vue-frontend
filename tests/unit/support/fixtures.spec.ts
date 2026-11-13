@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { aProduct, aShop, aUser } from '../../support/unit/fixtures.ts';
+import { asStub } from '../../support/stub.ts';
 
 describe('fixture factories', () => {
     it('refuse an override the contract refuses', () => {
@@ -13,7 +14,9 @@ describe('fixture factories', () => {
 
     it('refuse a field the contract does not declare', () => {
         // The schemas are strict objects; the cast is the point: a typed override cannot name it.
-        expect(() => aUser({ shoeSize: 42 } as Parameters<typeof aUser>[0])).toThrow();
+        expect(() =>
+            aUser(asStub<NonNullable<Parameters<typeof aUser>[0]>>({ shoeSize: 42 }))
+        ).toThrow();
     });
 
     it('hand back what the test wrote, with no schema default filled in', () => {

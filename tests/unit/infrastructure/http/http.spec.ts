@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import enMessages from '@/locales/en.json';
 import { aProblem } from '../../../support/unit/fixtures.ts';
+import { asStub } from '../../../support/stub.ts';
 
 vi.mock('@/infrastructure/session', () => ({
     useSessionStore: vi.fn(() => ({
@@ -232,7 +233,7 @@ describe('onResponseReject — fallback normalisation', () => {
     it('reports status 0 and NETWORK_ERROR when there is no response at all', () =>
         import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) =>
             expect(
-                onResponseReject({ message: 'Network Error', config: { url: '/x' } } as never)
+                onResponseReject(asStub<never>({ message: 'Network Error', config: { url: '/x' } }))
             ).rejects.toMatchObject({
                 type: 'about:blank',
                 status: 0,
@@ -247,11 +248,13 @@ describe('onResponseReject — fallback normalisation', () => {
     ])('maps axios code %s to %s when there is no response', (axiosCode, expectedCode) =>
         import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) =>
             expect(
-                onResponseReject({
-                    code: axiosCode,
-                    message: 'boom',
-                    config: { url: '/x' }
-                } as never)
+                onResponseReject(
+                    asStub<never>({
+                        code: axiosCode,
+                        message: 'boom',
+                        config: { url: '/x' }
+                    })
+                )
             ).rejects.toMatchObject({ status: 0, errors: [{ code: expectedCode }] })
         )
     );
@@ -275,11 +278,13 @@ describe('onResponseReject — fallback normalisation', () => {
         // and an empty message would render as a blank error toast.
         import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) =>
             expect(
-                onResponseReject({
-                    response: { status: 418, statusText: '', data: {}, headers: {} },
-                    message: 'Request failed',
-                    config: { url: '/x' }
-                } as never)
+                onResponseReject(
+                    asStub<never>({
+                        response: { status: 418, statusText: '', data: {}, headers: {} },
+                        message: 'Request failed',
+                        config: { url: '/x' }
+                    })
+                )
             ).rejects.toMatchObject({ detail: 'Request failed' })
         ));
 

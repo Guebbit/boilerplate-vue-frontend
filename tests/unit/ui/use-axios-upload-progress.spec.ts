@@ -8,6 +8,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
+import { asStub } from '../../support/stub.ts';
 
 describe('useAxiosUploadProgress — trackUpload', () => {
     it('runs the call with tracking options when a file is attached', () => {
@@ -47,7 +48,7 @@ describe('useAxiosUploadProgress — progress', () => {
         // The toolkit sets progress to 0 the instant tracking starts, before any real event.
         expect(progress.value).toBe(0);
 
-        capturedOptions?.onUploadProgress?.({ progress: 0.42 } as AxiosProgressEvent);
+        capturedOptions?.onUploadProgress?.(asStub<AxiosProgressEvent>({ progress: 0.42 }));
         expect(progress.value).toBe(42);
 
         return settled;
@@ -62,7 +63,7 @@ describe('useAxiosUploadProgress — progress', () => {
             return Promise.resolve();
         });
 
-        capturedOptions?.onUploadProgress?.({} as AxiosProgressEvent);
+        capturedOptions?.onUploadProgress?.(asStub<AxiosProgressEvent>({}));
         expect(progress.value).toBe(0);
 
         return settled;

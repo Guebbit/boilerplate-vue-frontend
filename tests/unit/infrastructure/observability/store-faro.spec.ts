@@ -326,12 +326,12 @@ describe('stripSensitiveUrlParts', () => {
  * few of its fields.
  */
 const fakeTransportItem = (overrides: Record<string, unknown>): TransportItem =>
-    ({
+    asStub<TransportItem>({
         type: 'exception',
         payload: {},
         meta: {},
         ...overrides
-    }) as TransportItem;
+    });
 
 describe('stripTokensFromTelemetry', () => {
     it('strips the page URL every item carries', () => {

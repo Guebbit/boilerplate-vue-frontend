@@ -14,6 +14,7 @@ import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { Example } from '@types';
 import type { ExampleEvent } from '../store';
+import { asStub } from '../../../../tests/support/stub.ts';
 
 wireModulesIntoCore();
 
@@ -32,7 +33,7 @@ const mountUnder = (
             provideExample({
                 example: ref(
                     open
-                        ? ({
+                        ? asStub<Example>({
                               id: 'a',
                               status: 'draft',
                               actions: {
@@ -42,7 +43,7 @@ const mountUnder = (
                                   update: true,
                                   delete: true
                               }
-                          } as Example)
+                          })
                         : undefined
                 ),
                 changeStatus

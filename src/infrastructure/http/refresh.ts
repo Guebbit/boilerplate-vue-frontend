@@ -96,11 +96,12 @@ const replayAsGuest = (
     if (!originalRequest || originalRequest._refreshed || !headers.has('Authorization'))
         return onResponseReject(error);
     headers.delete('Authorization');
-    return instance.request({
+    const replay: AxiosRequestConfigWithRetry = {
         ...originalRequest,
         headers,
         _refreshed: true
-    } as AxiosRequestConfigWithRetry);
+    };
+    return instance.request(replay);
 };
 
 /**
@@ -154,10 +155,8 @@ export const onResponseRejectWithRefresh = (
             // guest. One that failed in passing (network, 5xx) keeps the session, so no replay.
             if (!token && !session.hasSession) return replayAsGuest(error, originalRequest);
             if (!token || !originalRequest) return onResponseReject(error);
-            return instance.request({
-                ...originalRequest,
-                _refreshed: true
-            } as AxiosRequestConfigWithRetry);
+            const replay: AxiosRequestConfigWithRetry = { ...originalRequest, _refreshed: true };
+            return instance.request(replay);
         });
     }
     // A 403 on a signed-in request may mean the rules changed under the session (a role taken

@@ -21,6 +21,7 @@ import {
 } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 import * as schemas from '@api/schemas';
+import { asStub } from '../../../../tests/support/stub.ts';
 
 wireModulesIntoCore();
 
@@ -206,7 +207,7 @@ describe('useExampleStore', () => {
     describe('transitionExample', () => {
         it('posts to the event’s own door and replaces the cached record with the answer', () => {
             const store = useExampleStore();
-            store.addExampleRecord({ ...EXAMPLE } as never);
+            store.addExampleRecord(asStub<never>({ ...EXAMPLE }));
             vi.mocked(orvalMutator).mockImplementationOnce(
                 (config: { url?: string; method?: string }) =>
                     Promise.resolve(
@@ -238,7 +239,7 @@ describe('useExampleStore', () => {
     describe('updateExample', () => {
         it('merges with a PATCH, never a PUT, so an omitted field stays as it is', () => {
             const store = useExampleStore();
-            store.addExampleRecord({ ...EXAMPLE } as never);
+            store.addExampleRecord(asStub<never>({ ...EXAMPLE }));
 
             return store.updateExample(EXAMPLE.id, { title: 'Renamed' }).then(() => {
                 expect(lastRequest()).toMatchObject({
@@ -279,7 +280,7 @@ describe('useExampleStore', () => {
 
         it('replaces the cached example with the one the server answers with', () => {
             const store = useExampleStore();
-            store.addExampleRecord({ ...EXAMPLE } as never);
+            store.addExampleRecord(asStub<never>({ ...EXAMPLE }));
             vi.mocked(orvalMutator).mockImplementationOnce(
                 (config: { url?: string; method?: string }) =>
                     Promise.resolve(

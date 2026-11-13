@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { foundationNotices } from '../notices';
 import type { Notification } from '@types';
 import type { NoticeContext } from '@/kernel/registry';
+import { asStub } from '../../../../tests/support/stub.ts';
 
 /**
  * Prints the key and its named values, in the order they were given.
@@ -43,10 +44,10 @@ const entryOf = (notice: Pick<Notification, 'code'>) => {
  * @param parameters - the kind, and a contact message's category
  */
 const opened = (parameters: { kind: string; category?: string }) =>
-    ({
+    asStub<Notification>({
         code: 'notifications.staff.task-opened',
         params: { taskId: 't1', ...parameters }
-    }) as Notification;
+    });
 
 describe('the foundation declares exactly its six codes', () => {
     it('lists them', () => {
@@ -62,10 +63,10 @@ describe('the foundation declares exactly its six codes', () => {
 });
 
 describe('a webhook switched off', () => {
-    const disabled = {
+    const disabled = asStub<Notification>({
         code: 'notifications.staff.webhook-disabled',
         params: { subscriptionId: 's1' }
-    } as Notification;
+    });
 
     it('needs no facts to be said, and opens the subscription', () => {
         expect(entryOf(disabled).describe(disabled, context)).toBe(
@@ -84,10 +85,10 @@ describe('a webhook switched off', () => {
  * @param eventName - The parked event (`user.registered`).
  */
 const dead = (eventName: string) =>
-    ({
+    asStub<Notification>({
         code: 'notifications.staff.outbox-dead',
         params: { eventName, aggregateId: 'x1' }
-    }) as Notification;
+    });
 
 describe('a dead event', () => {
     it('names the parked event, and opens the account it was about', () => {
@@ -168,10 +169,10 @@ describe('a task notice', () => {
         'notifications.staff.task-due-soon',
         'notifications.staff.task-assigned'
     ])('says %s the way the opener does, and opens the task page', (code) => {
-        const notice = {
+        const notice = asStub<Notification>({
             code,
             params: { taskId: 't2', kind: 'dispute' }
-        } as Notification;
+        });
 
         expect(said(notice)).toBe(`${code}|what=task-kind.dispute|ref=t2`);
         expect(entryOf(notice).target?.(notice)).toEqual({
@@ -181,10 +182,10 @@ describe('a task notice', () => {
     });
 
     it('links the screen the opener names for the work, query kept, over the task page', () => {
-        const withWork = {
+        const withWork = asStub<Notification>({
             code: 'notifications.staff.task-opened',
             params: { taskId: 't1', kind: 'dispute', work: 'payments?tab=disputes' }
-        } as Notification;
+        });
 
         expect(entryOf(withWork).target?.(withWork)).toEqual({ path: 'payments?tab=disputes' });
     });

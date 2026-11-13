@@ -50,6 +50,7 @@ import {
     isAcceptedImageType,
     isWithinUploadSizeLimit
 } from '@/infrastructure/utils/uploads';
+import { asStub } from '../../../support/stub.ts';
 
 /**
  * One seed for the whole file, and one place to change it.
@@ -267,7 +268,7 @@ describe('formatDate', () => {
 });
 
 /** A File whose `type` and `size` are the only fields the upload predicates read. */
-const makeFile = (type: string, size: number) => ({ type, size }) as File;
+const makeFile = (type: string, size: number) => asStub<File>({ type, size });
 
 describe('upload predicates', () => {
     it('accepts a type if and only if it is on the shared list', () =>

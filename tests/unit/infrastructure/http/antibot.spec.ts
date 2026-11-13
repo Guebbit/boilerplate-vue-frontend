@@ -15,6 +15,7 @@ import {
 } from '@/infrastructure/http/antibot.ts';
 import { getAntibotChallenge } from '@api';
 import { loadConfig } from '@/infrastructure/config.ts';
+import { asStub } from '../../../support/stub.ts';
 
 vi.mock('@api', () => ({
     getAntibotChallenge: vi.fn()
@@ -75,7 +76,7 @@ describe('isAntibotVerificationFailed', () => {
 
 describe('fetchAntibotConfig', () => {
     it('answers the antibot member of the public config', () => {
-        vi.mocked(loadConfig).mockResolvedValue({ antibot: 'antibot-config' } as never);
+        vi.mocked(loadConfig).mockResolvedValue(asStub<never>({ antibot: 'antibot-config' }));
         return expect(fetchAntibotConfig()).resolves.toBe('antibot-config');
     });
 

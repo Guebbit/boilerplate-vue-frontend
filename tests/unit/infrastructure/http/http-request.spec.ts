@@ -186,7 +186,7 @@ describe('onRequest in cookie mode', () => {
 
 describe('onRequestReject', () => {
     it('forwards a setup failure untouched', () => {
-        const error = { message: 'Network Error' } as AxiosError;
+        const error = asStub<AxiosError>({ message: 'Network Error' });
 
         return expect(onRequestReject(error)).rejects.toBe(error);
     });

@@ -50,7 +50,8 @@ export const useListSearch = <TFilters extends object>(
     },
     handleReset: () => {
         // `TFilters` is a search-filter shape: every field optional, so `{}` is a `TFilters`.
-        options.filters.value = {} as TFilters;
+        const cleared = {};
+        options.filters.value = cleared as TFilters;
         options.page.value = 1;
         options.onApplied?.();
         return options.search(true);

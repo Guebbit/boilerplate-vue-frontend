@@ -15,6 +15,7 @@ import { server } from './msw-server.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { warnings } from './expect-warning.ts';
 import { PROPERTY_RUNS } from './knobs.ts';
+import { asStub } from '../stub.ts';
 
 // ResizeObserver — used by v-app-bar, v-number-input & friends
 class ResizeObserverStub {
@@ -26,7 +27,7 @@ globalThis.ResizeObserver ??= ResizeObserverStub;
 
 // matchMedia — used by the "system" default theme
 globalThis.matchMedia ??= (query: string) =>
-    ({
+    asStub<MediaQueryList>({
         matches: false,
         media: query,
         onchange: null,
@@ -35,7 +36,7 @@ globalThis.matchMedia ??= (query: string) =>
         addEventListener: () => {},
         removeEventListener: () => {},
         dispatchEvent: () => false
-    }) as MediaQueryList;
+    });
 
 // Pointer capture — used by v-number-input hold-to-repeat buttons
 HTMLElement.prototype.setPointerCapture ??= () => {};

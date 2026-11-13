@@ -14,11 +14,12 @@ import { i18n, loadLocale } from '@/i18n';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { Example } from '@types';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
+import { asStub } from '../../../../tests/support/stub.ts';
 
 wireModulesIntoCore();
 
 /** An example the store answers with. */
-const MOVED = { id: 'ex-1', status: 'published' } as Example;
+const MOVED = asStub<Example>({ id: 'ex-1', status: 'published' });
 
 /** What the composable gave back to the host that is mounted right now. */
 const hosted: { current?: ReturnType<typeof useExampleTransition> } = {};

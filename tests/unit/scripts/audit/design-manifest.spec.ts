@@ -7,9 +7,10 @@ import {
     type DesignShot,
     mergeManifests
 } from '../../../../scripts/audit/design-manual/scripts/manifest';
+import { asStub } from '../../../support/stub.ts';
 
 /** A shot with only what the merge looks at. */
-const shotNamed = (id: string): DesignShot => ({ id }) as DesignShot;
+const shotNamed = (id: string): DesignShot => asStub<DesignShot>({ id });
 
 /** A manifest part holding the given shots. */
 const part = (

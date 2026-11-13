@@ -11,6 +11,7 @@ import { productName } from '../describe';
 import { shopNotices } from '../notices';
 import type { Notification } from '@types';
 import type { NoticeContext } from '@/kernel/registry';
+import { asStub } from '../../../../tests/support/stub.ts';
 
 /**
  * Prints the key and its named values, in the order they were given.
@@ -47,13 +48,13 @@ interface Facts {
  */
 // One cast: the case's literals are checked by the contract's own types at the entries, not here.
 const full = (facts: Facts) =>
-    ({
+    asStub<Notification>({
         id: 'n1',
         audience: 'own',
         severity: 'info',
         createdAt: '2026-10-04T10:00:00.000Z',
         ...facts
-    }) as Notification;
+    });
 
 /**
  * The entry a code was declared with.

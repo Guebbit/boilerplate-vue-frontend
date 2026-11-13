@@ -6,7 +6,7 @@
  */
 import { checkout as apiCheckout } from '@api';
 import type { CheckoutRequest } from '@types';
-import { isTransportFailure } from '@/infrastructure/utils/errors';
+import { isAnswered } from '@/infrastructure/utils/errors';
 import { classifyCheckoutError } from './domain';
 
 /**
@@ -35,7 +35,7 @@ const MERGE_REFUSED_FOR_GOOD: ReadonlySet<number> = new Set([400, 413, 422]);
  * @returns `true` for an answered 400, 413 or 422.
  */
 export const isMergeRefusedForGood = (error: unknown): boolean =>
-    !isTransportFailure(error) && MERGE_REFUSED_FOR_GOOD.has((error as { status: number }).status);
+    isAnswered(error) && MERGE_REFUSED_FOR_GOOD.has(error.status);
 
 /**
  * Waits.

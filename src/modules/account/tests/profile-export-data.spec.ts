@@ -15,6 +15,7 @@ import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { server } from '../../../../tests/support/unit/msw-server.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
+import { asStub } from '../../../../tests/support/stub.ts';
 
 wireModulesIntoCore();
 
@@ -110,7 +111,7 @@ describe('ProfileExportData', () => {
 
     it('asks for the export, and says a link will be mailed', () => {
         const { wrapper, request } = mountComponent();
-        request.mockResolvedValue({ ...EXPORT, status: 'building' } as never);
+        request.mockResolvedValue(asStub<never>({ ...EXPORT, status: 'building' }));
 
         return press(wrapper).then(() => {
             expect(request).toHaveBeenCalledOnce();
@@ -138,7 +139,7 @@ describe('ProfileExportData', () => {
     it('keeps saying where the export stands when asking again is refused', () => {
         const { wrapper, request } = mountComponent();
         request
-            .mockResolvedValueOnce({ ...EXPORT, status: 'building' } as never)
+            .mockResolvedValueOnce(asStub<never>({ ...EXPORT, status: 'building' }))
             .mockRejectedValueOnce(
                 aProblem(500, [{ code: 'INTERNAL_SERVER_ERROR', message: 'Something went wrong.' }])
             );

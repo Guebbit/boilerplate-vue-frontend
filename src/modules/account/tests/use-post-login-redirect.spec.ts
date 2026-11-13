@@ -11,12 +11,13 @@
  * called, not only that navigation happened.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { asStub } from '../../../../tests/support/stub.ts';
 
 /** Stub for the router's `push`. */
 const push = vi.fn(() => Promise.resolve());
 
 /** The mocked current route; a test sets its query. */
-const currentRoute = { query: {} as Record<string, unknown> };
+const currentRoute = { query: asStub<Record<string, unknown>>({}) };
 
 /** Stub for `changeLanguage`, which the composable must never call. */
 const changeLanguageMock = vi.fn(() => Promise.resolve());

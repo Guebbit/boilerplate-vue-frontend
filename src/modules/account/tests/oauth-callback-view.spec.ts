@@ -9,6 +9,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import OAuthCallback from '../views/OAuthCallback.vue';
 import { useAccountDeletionRestoreStore } from '../stores/deletion-restore.ts';
+import { useAccountTwoFactorStore } from '../stores/two-factor.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -94,6 +95,40 @@ describe('OAuthCallback — an account in its deletion grace', () => {
         await flushPromises();
 
         expect(useAccountDeletionRestoreStore().pending).toBeUndefined();
+        expect(redirectAfterLogin).toHaveBeenCalledOnce();
+    });
+});
+
+describe('OAuthCallback — a second-factor challenge in the redirect', () => {
+    it('opens the challenge from the redirect and goes to its page', async () => {
+        query = {
+            mfaRequired: '1',
+            expiresAt: '2026-10-24T10:05:00.000Z',
+            methods: JSON.stringify([{ method: 'totp', delivers: false }])
+        };
+
+        mountPage();
+        await flushPromises();
+
+        expect(useAccountTwoFactorStore().challenge?.methods).toEqual([
+            { method: 'totp', delivers: false }
+        ]);
+        expect(push).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ name: 'TwoFactorChallenge' })
+        );
+    });
+
+    it.each([
+        ['not a list', '{"method":"totp"}'],
+        ['entries missing a required field', '[{"method":"totp"}]'],
+        ['entries of the wrong type', '[{"method":1,"delivers":false}]']
+    ])('treats a hand-edited list (%s) as no challenge at all', async (_title, methods) => {
+        query = { mfaRequired: '1', expiresAt: '2026-10-24T10:05:00.000Z', methods };
+
+        mountPage();
+        await flushPromises();
+
+        expect(useAccountTwoFactorStore().challenge).toBeUndefined();
         expect(redirectAfterLogin).toHaveBeenCalledOnce();
     });
 });

@@ -14,13 +14,14 @@ import {
     answered
 } from '../../../../tests/support/unit/async-answers.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { asStub } from '../../../../tests/support/stub.ts';
 
 vi.mock('@api', () => ({ checkout: vi.fn() }));
 
 /**
  * A body the calls never read; only the key and the retry count matter here.
  */
-const BODY = {} as CheckoutRequest;
+const BODY = asStub<CheckoutRequest>({});
 
 afterEach(() => {
     vi.resetAllMocks();

@@ -12,6 +12,7 @@ import { mount } from '@vue/test-utils';
 import { provideExample, providedExampleKey, useProvidedExample } from '../provided';
 import type { ProvidedExample } from '../provided';
 import type { Example } from '@types';
+import { asStub } from '../../../../tests/support/stub.ts';
 
 /**
  * What the last mount's descendant captured, written by the child as it sets up. Module-level
@@ -50,7 +51,7 @@ const mountPair = (provided: ProvidedExample) => {
 };
 
 /** A minimal example for the ref to hold. */
-const AN_EXAMPLE = { id: 'a', title: 'Hello' } as Example;
+const AN_EXAMPLE = asStub<Example>({ id: 'a', title: 'Hello' });
 
 describe('provideExample', () => {
     it('hands the descendant the same ref and the same mutation', () => {

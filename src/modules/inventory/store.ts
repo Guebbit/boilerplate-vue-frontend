@@ -10,7 +10,7 @@ import { listPreorderLevelsQueryPageSizeMax } from '@api/schemas';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
-import { isOutcomeUnknown, isTransportFailure } from '@/infrastructure/utils/errors.ts';
+import { isAnswered, isOutcomeUnknown } from '@/infrastructure/utils/errors.ts';
 import {
     adjustStock,
     listInventoryLevels,
@@ -203,8 +203,7 @@ export const useInventoryStore = defineStore('inventory', () => {
      * @throws The original error, once the views have been reloaded.
      */
     const rereadAfterFault = (error: unknown): Promise<never> =>
-        (!isTransportFailure(error) &&
-        ((error as { status: number }).status >= 500 || isOutcomeUnknown(error))
+        (isAnswered(error) && (error.status >= 500 || isOutcomeUnknown(error))
             ? reloadAfterWrite(undefined).then(
                   () => undefined,
                   () => undefined

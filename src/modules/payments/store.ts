@@ -34,7 +34,7 @@ import type {
     SearchPaymentsRequest
 } from '@types';
 import { ERROR_CODES } from '@api/error-codes';
-import { hasErrorCode, isTransportFailure } from '@/infrastructure/utils/errors';
+import { hasErrorCode, isAnswered } from '@/infrastructure/utils/errors';
 import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 
 /**
@@ -134,8 +134,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         error: unknown,
         ...staleCodes: string[]
     ): Promise<never> =>
-        (!isTransportFailure(error) &&
-        ((error as { status: number }).status >= 500 || hasErrorCode(error, ...staleCodes))
+        (isAnswered(error) && (error.status >= 500 || hasErrorCode(error, ...staleCodes))
             ? fetchPaymentForOrder(orderId).then(
                   () => undefined,
                   () => undefined

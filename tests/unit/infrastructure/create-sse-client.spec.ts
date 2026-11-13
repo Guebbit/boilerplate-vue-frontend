@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { asStub } from '../../support/stub.ts';
 
 // Reusable EventSource mock that captures all registered listeners
 class EventSourceMock {
@@ -63,9 +64,12 @@ describe('createSseClient', () => {
                 { onEvent }
             );
 
-            source.emit('observability.metrics.snapshot', {
-                data: JSON.stringify({ timestamp: '2026-01-01T00:00:00.000Z' })
-            } as MessageEvent);
+            source.emit(
+                'observability.metrics.snapshot',
+                asStub<MessageEvent>({
+                    data: JSON.stringify({ timestamp: '2026-01-01T00:00:00.000Z' })
+                })
+            );
 
             expect(onEvent).toHaveBeenCalledWith('observability.metrics.snapshot', {
                 timestamp: '2026-01-01T00:00:00.000Z'
@@ -113,9 +117,12 @@ describe('createSseClient', () => {
                 { onEvent }
             );
 
-            source.emit('observability.metrics.snapshot', {
-                data: 'NOT VALID JSON'
-            } as MessageEvent);
+            source.emit(
+                'observability.metrics.snapshot',
+                asStub<MessageEvent>({
+                    data: 'NOT VALID JSON'
+                })
+            );
 
             expect(onEvent).not.toHaveBeenCalled();
         }));
@@ -138,15 +145,24 @@ describe('createSseClient', () => {
             const updatedPayload = { timestamp: '2026-01-01T00:01:00.000Z' };
             const heartbeatPayload = { timestamp: '2026-01-01T00:02:00.000Z' };
 
-            source.emit('observability.metrics.snapshot', {
-                data: JSON.stringify(snapshotPayload)
-            } as MessageEvent);
-            source.emit('observability.metrics.updated', {
-                data: JSON.stringify(updatedPayload)
-            } as MessageEvent);
-            source.emit('observability.heartbeat', {
-                data: JSON.stringify(heartbeatPayload)
-            } as MessageEvent);
+            source.emit(
+                'observability.metrics.snapshot',
+                asStub<MessageEvent>({
+                    data: JSON.stringify(snapshotPayload)
+                })
+            );
+            source.emit(
+                'observability.metrics.updated',
+                asStub<MessageEvent>({
+                    data: JSON.stringify(updatedPayload)
+                })
+            );
+            source.emit(
+                'observability.heartbeat',
+                asStub<MessageEvent>({
+                    data: JSON.stringify(heartbeatPayload)
+                })
+            );
 
             expect(onEvent).toHaveBeenCalledTimes(3);
             expect(onEvent).toHaveBeenNthCalledWith(
@@ -185,9 +201,12 @@ describe('createSseClient', () => {
                 const onEvent = vi.fn();
                 createSseClient('/observability/events', ['observability.heartbeat'], { onEvent });
 
-                source.emit('observability.heartbeat', {
-                    data: JSON.stringify(VALID_METRICS)
-                } as MessageEvent);
+                source.emit(
+                    'observability.heartbeat',
+                    asStub<MessageEvent>({
+                        data: JSON.stringify(VALID_METRICS)
+                    })
+                );
 
                 expect(onEvent).toHaveBeenCalledWith('observability.heartbeat', VALID_METRICS);
             }));
@@ -201,9 +220,12 @@ describe('createSseClient', () => {
                 const onEvent = vi.fn();
                 createSseClient('/observability/events', ['observability.heartbeat'], { onEvent });
 
-                source.emit('observability.heartbeat', {
-                    data: JSON.stringify({ ...VALID_METRICS, uptimeSeconds: 'soon' })
-                } as MessageEvent);
+                source.emit(
+                    'observability.heartbeat',
+                    asStub<MessageEvent>({
+                        data: JSON.stringify({ ...VALID_METRICS, uptimeSeconds: 'soon' })
+                    })
+                );
 
                 expect(onEvent).not.toHaveBeenCalled();
                 expect(logged).toHaveBeenCalledWith(expect.stringContaining('uptimeSeconds'));
@@ -220,9 +242,12 @@ describe('createSseClient', () => {
                 const onEvent = vi.fn();
                 createSseClient('/observability/events', ['observability.heartbeat'], { onEvent });
 
-                source.emit('observability.heartbeat', {
-                    data: JSON.stringify({ ...VALID_METRICS, uptimeSeconds: 'soon' })
-                } as MessageEvent);
+                source.emit(
+                    'observability.heartbeat',
+                    asStub<MessageEvent>({
+                        data: JSON.stringify({ ...VALID_METRICS, uptimeSeconds: 'soon' })
+                    })
+                );
 
                 expect(onEvent).not.toHaveBeenCalled();
                 expect(logged).toHaveBeenCalledWith(expect.stringContaining('uptimeSeconds'));
@@ -240,9 +265,12 @@ describe('createSseClient', () => {
                 createSseClient('/observability/events', ['observability.heartbeat'], { onEvent });
                 const frame = { ...VALID_METRICS, uptimeSeconds: 'soon' };
 
-                source.emit('observability.heartbeat', {
-                    data: JSON.stringify(frame)
-                } as MessageEvent);
+                source.emit(
+                    'observability.heartbeat',
+                    asStub<MessageEvent>({
+                        data: JSON.stringify(frame)
+                    })
+                );
 
                 expect(logged).toHaveBeenCalledWith(expect.stringContaining('uptimeSeconds'));
                 expect(onEvent).toHaveBeenCalledWith('observability.heartbeat', frame);

@@ -82,12 +82,13 @@ export const onResponseRejectWithStepUp = (
         ) {
             demandedMethods = methodsOf(details);
             return requestFreshSession()
-                .then(() =>
-                    instance.request({
+                .then(() => {
+                    const replay: AxiosRequestConfigWithRetry = {
                         ...originalRequest,
                         _steppedUp: true
-                    } as AxiosRequestConfigWithRetry)
-                )
+                    };
+                    return instance.request(replay);
+                })
                 .catch(() => onResponseReject(error));
         }
 
