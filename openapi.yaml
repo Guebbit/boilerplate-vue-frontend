@@ -1672,6 +1672,7 @@ paths:
           - FORBIDDEN
           - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
+          - LOCALE_ENTITY_TYPE_UNKNOWN
           - LOCALE_ENTITY_NOT_FOUND
       security:
         - bearerAuth:
