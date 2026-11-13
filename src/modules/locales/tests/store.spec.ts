@@ -12,7 +12,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useLocalesStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import type { AxiosResponse } from 'axios';
-import { clearEtags, onEtagResponse } from '@/infrastructure/http/etag.ts';
+import { clearEtags, knownEtag, onEtagResponse } from '@/infrastructure/http/etag.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
@@ -260,56 +260,34 @@ const readAllAppsList = (tag: string) =>
         })
     );
 
-describe('importEntries If-Match', () => {
+describe('importEntries and If-Match', () => {
     beforeEach(() => clearEtags());
 
-    it('sends the tag of the all-apps list, the one the export reads', () => {
-        readAllAppsList('"4.abc"');
+    it.each(['merge', 'replace'] as const)(
+        'sends no If-Match on a %s import, even with a tag held',
+        (mode) => {
+            readAllAppsList('"4.abc"');
+            return useLocalesStore()
+                .importEntries('es', mode, 'demo-fe', [{ key: 'a', value: 'b' }])
+                .then(() => {
+                    const call = vi.mocked(orvalMutator).mock.calls[0][1] as
+                        { headers?: Record<string, string> } | undefined;
+                    expect(call?.headers?.['If-Match']).toBeUndefined();
+                });
+        }
+    );
+
+    it('drops the tag the transport holds for the target app, so it cannot re-add one', () => {
+        onEtagResponse(
+            asStub<AxiosResponse>({
+                config: { method: 'get', url: '/locales/es/apps/demo-fe/entries' },
+                headers: { etag: '"9.app"' }
+            })
+        );
         return useLocalesStore()
             .importEntries('es', 'merge', 'demo-fe', [{ key: 'a', value: 'b' }])
             .then(() => {
-                const call = vi.mocked(orvalMutator).mock.calls[0][1] as {
-                    headers?: Record<string, string>;
-                };
-                expect(call.headers?.['If-Match']).toBe('"4.abc"');
-            });
-    });
-
-    it.each([
-        [
-            'an add',
-            (store: ReturnType<typeof useLocalesStore>) =>
-                store.addEntry('es', 'demo-fe', { key: 'a.b', value: 'c' })
-        ],
-        [
-            'an edit',
-            (store: ReturnType<typeof useLocalesStore>) =>
-                store.editEntry('es', 'demo-fe', ENTRY.id, 'Cercar')
-        ],
-        [
-            'a removal',
-            (store: ReturnType<typeof useLocalesStore>) =>
-                store.removeEntry('es', 'demo-fe', ENTRY.id)
-        ]
-    ])('sends the NEW tag after %s moved the revision', (_name, write) => {
-        readAllAppsList('"4.old"');
-        // The server's read of the all-apps list answers with the bumped revision's tag.
-        vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
-            const key = `${config.method?.toUpperCase()} ${config.url}`;
-            if (key === 'GET /locales/es/entries') readAllAppsList('"5.new"');
-            return Promise.resolve(
-                parseOrvalFixture(config.method, config.url, responses[key]) as never
-            );
-        });
-        const store = useLocalesStore();
-        return write(store)
-            .then(() => store.importEntries('es', 'merge', 'demo-fe', [{ key: 'a', value: 'b' }]))
-            .then(() => {
-                const importCall = vi
-                    .mocked(orvalMutator)
-                    .mock.calls.map((call) => call[1] as { headers?: Record<string, string> })
-                    .find((options) => options?.headers?.['If-Match']);
-                expect(importCall?.headers?.['If-Match']).toBe('"5.new"');
+                expect(knownEtag('/locales/es/apps/demo-fe/entries')).toBeUndefined();
             });
     });
 

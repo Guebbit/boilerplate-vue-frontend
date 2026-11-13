@@ -49,6 +49,16 @@ const resourceKey = (url: string | undefined): string => toPathname(url).replace
 export const knownEtag = (url: string): string | undefined => tags.get(resourceKey(url));
 
 /**
+ * Forgets the tag held for one resource, so the next write of it goes out unconditionally.
+ * For a write that deliberately carries no fence (a bulk import warns instead).
+ *
+ * @param url - The resource's path, e.g. `/locales/es/apps/demo-fe/entries`.
+ */
+export const forgetEtag = (url: string): void => {
+    tags.delete(resourceKey(url));
+};
+
+/**
  * Forgets every held tag — for a sign-out, where the next person must not inherit the last one's
  * versions, and for specs.
  */

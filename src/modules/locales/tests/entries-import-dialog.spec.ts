@@ -132,20 +132,43 @@ describe('a dictionary that names one key twice once flattened', () => {
 });
 
 describe('a merge-mode import', () => {
-    it('emits immediately, asking no confirmation — merge deletes nothing', () =>
+    it('warns about overwriting a colleague, then emits once it is accepted', () =>
         mountDialog()
             .then((wrapper) => fillForm(wrapper, 'merge').then(() => wrapper))
             .then((wrapper) =>
                 wrapper
                     .get('form')
                     .trigger('submit')
+                    .then(() => wrapper)
+            )
+            .then((wrapper) => {
+                const { queue } = useDialogStore();
+                expect(queue).toHaveLength(1);
+                expect(queue[0]?.message).toContain("colleague's recent edits");
+                expect(wrapper.emitted('import')).toBeUndefined();
+                useDialogStore().answer(true);
+                return nextRenderTick(wrapper)
+                    .then(() => nextRenderTick(wrapper))
                     .then(() => {
                         const emitted = wrapper.emitted('import');
                         expect(emitted).toHaveLength(1);
                         expect(emitted?.[0]?.[0]).toMatchObject({ mode: 'merge' });
-                        // A confirmation on the safe path trains people to click through the
-                        // dangerous one — nothing should be left waiting in the queue.
-                        expect(useDialogStore().queue).toHaveLength(0);
-                    })
-            ));
+                    });
+            }));
+
+    it('emits nothing when the warning is dismissed', () =>
+        mountDialog()
+            .then((wrapper) => fillForm(wrapper, 'merge').then(() => wrapper))
+            .then((wrapper) =>
+                wrapper
+                    .get('form')
+                    .trigger('submit')
+                    .then(() => wrapper)
+            )
+            .then((wrapper) => {
+                useDialogStore().answer(false);
+                return nextRenderTick(wrapper).then(() => {
+                    expect(wrapper.emitted('import')).toBeUndefined();
+                });
+            }));
 });

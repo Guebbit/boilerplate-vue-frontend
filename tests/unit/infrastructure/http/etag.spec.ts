@@ -10,6 +10,7 @@ import { AxiosHeaders, type AxiosResponse, type InternalAxiosRequestConfig } fro
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
     clearEtags,
+    forgetEtag,
     knownEtag,
     onEtagRequest,
     onEtagResponse
@@ -44,6 +45,18 @@ const outgoing = (method: string, url: string, headers: Record<string, string> =
 const ifMatchOf = (config: InternalAxiosRequestConfig) => config.headers.get('If-Match');
 
 beforeEach(clearEtags);
+
+describe('forgetEtag', () => {
+    it('drops one resource tag so its next write goes out unconditionally', () => {
+        onEtagResponse(answered('get', '/products/p1', '"100"'));
+        onEtagResponse(answered('get', '/products/p2', '"200"'));
+
+        forgetEtag('/products/p1');
+
+        expect(knownEtag('/products/p1')).toBeUndefined();
+        expect(knownEtag('/products/p2')).toBe('"200"');
+    });
+});
 
 describe('onEtagResponse', () => {
     it('remembers the tag a read answered with, by the resource path without its query', () => {

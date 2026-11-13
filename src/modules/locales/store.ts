@@ -44,7 +44,7 @@ import { flattenDictionary, type DictionaryRow } from './dictionaries.ts';
 import { loadBundledDictionary, type TranslationDictionaries } from '@/i18n';
 import { localeApp } from '@/infrastructure/locale-overrides.ts';
 import { queryClient as sharedQueryClient } from '@/infrastructure/query-client.ts';
-import { knownEtag } from '@/infrastructure/http/etag.ts';
+import { forgetEtag } from '@/infrastructure/http/etag.ts';
 
 /**
  * Search criteria for one language's entries.
@@ -426,15 +426,14 @@ export const useLocalesStore = defineStore('locales', () => {
      * body carries — what is not sent is DELETED. The choice lives in the HTTP method on purpose,
      * so this wrapper keeps the two words rather than a boolean someone can pass inverted.
      *
-     * The `If-Match` fence means "no dictionary write since this screen last read the list":
-     * the screen's own entry writes refresh the tag, so only someone else's write trips it.
+     * Sent without `If-Match` on purpose: the import dialog warns that a colleague's recent edits
+     * are overwritten, then the write goes out unconditionally.
      *
      * @param tag - Which language.
      * @param mode - `merge` or `replace`.
      * @param app - Whose dictionary the batch belongs to.
      * @param rows - The rows, flat and dotted; sent as a key-to-text map.
-     * @returns A promise resolving with what the import actually did, counted. Rejects with the
-     *  412 envelope when a dictionary write landed since the all-apps list was read.
+     * @returns A promise resolving with what the import actually did, counted.
      */
     const importEntries = (
         tag: string,
@@ -445,17 +444,14 @@ export const useLocalesStore = defineStore('locales', () => {
         // The body is a key-to-text map. The dialog has already refused a key named twice, so
         // `fromEntries` loses nothing.
         const entries = Object.fromEntries(rows.map(({ key, value }) => [key, value]));
-        // The tag of the all-apps list (the one the export reads): its version is the language's
-        // dictionary counter, which fences every import whatever app it targets. The transport
-        // would send the target app's own list tag; this one is named because the export, not that
-        // list, is what the file was made from. Unset when no list was read: the import then
-        // goes out unconditionally.
-        const heldTag = knownEtag(`/locales/${tag}/entries`);
-        const options = heldTag ? { headers: { 'If-Match': heldTag } } : undefined;
+        // No `If-Match`: a whole-dictionary tag cannot say WHICH key a colleague changed, so the
+        // dialog warns before the import instead. The transport would still attach the tag it
+        // holds for the target app's list URL, so that one is dropped first.
+        forgetEtag(`/locales/${tag}/apps/${app}/entries`);
         return fetchAny(() =>
             (mode === 'replace'
-                ? replaceLocaleEntries(tag, app, { entries }, options)
-                : updateLocaleEntries(tag, app, { entries }, options)
+                ? replaceLocaleEntries(tag, app, { entries })
+                : updateLocaleEntries(tag, app, { entries })
             ).then((response) => {
                 // An import rewrote an unknown slice of the table; every cached page is stale.
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises -- invalidateQueries resolves even when a refetch fails (no throwOnError)

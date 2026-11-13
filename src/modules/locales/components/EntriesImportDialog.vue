@@ -26,7 +26,7 @@ import { useDialogStore } from '@/ui/dialog.ts';
  * and flattens it before emitting. The merge/replace choice is worded with the contract's own
  * words — the METHOD carries the semantics server-side, and this radio is the last place a person
  * can pick the wrong one, so "what is not sent is DELETED" is written on the option itself and
- * confirmed once more before a replace fires.
+ * confirmed once, with a per-mode warning, before any import fires.
  */
 const props = defineProps<{
     /**
@@ -151,17 +151,15 @@ const modeOptions = computed(() => [
 const handleImport = () => {
     const entries = parsedEntries.value;
     if (!entries) return;
-    // The second look a replace deserves, naming the app it is allowed to delete from.
-    const secondLook =
-        mode.value === 'replace'
-            ? useDialogStore().confirm({
-                  message: t('entries-import.confirm-replace', {
-                      app: app.value,
-                      count: entries.length
-                  }),
-                  color: 'error'
-              })
-            : Promise.resolve(true);
+    // The one confirmation, worded per mode: no `If-Match` guards the import, so this warning is
+    // what tells the person a colleague's recent edits are overwritten.
+    const secondLook = useDialogStore().confirm({
+        message: t(`entries-import.confirm-${mode.value}`, {
+            app: app.value,
+            count: entries.length
+        }),
+        color: 'error'
+    });
     return secondLook.then((accepted) => {
         if (!accepted) return;
         emit('import', { mode: mode.value, app: app.value, entries });

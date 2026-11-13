@@ -64,11 +64,16 @@ The trap worth carrying over from the server: a language existing in the databas
 the API can answer in it. `GET /locales` reports scopes per language rather than a bare list of tags,
 so _may I request this language_ and _may I download a dictionary for it_ stay two questions.
 
-**A stale save says so.** A language's record, its entries, a translation set and an entries import
+**A stale save says so.** A language's record, its entries and a translation set
 are versioned writes: when someone saved first, the server answers `412`, the screen shows a warning
 (not an error) and offers "reload latest" instead of resending (`useStaleRecord`, see
-[Request Flow](../theory/request-flow.md#conditional-writes)). The import also sends the
-dictionary's tag, so a file built from an old list is refused rather than merged over newer rows.
+[Request Flow](../theory/request-flow.md#conditional-writes)).
+
+**An import warns instead of fencing.** A whole-dictionary tag cannot say which key a colleague
+changed, so the entries import (merge or replace) sends no `If-Match`. The dialog asks one
+confirmation first: a replace deletes every key not in the file, a merge overwrites current values,
+and either one loses a colleague's recent edits. The API still accepts an optional `If-Match` from
+other clients.
 
 ## State
 

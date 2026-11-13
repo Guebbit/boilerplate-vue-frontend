@@ -138,6 +138,7 @@ describe('AT1 · Launch a new language', () => {
         cy.get('[data-test=import-preview]').should('exist');
         // Forced: the toast from the entry just saved floats over the dialog's button.
         cy.get('[data-test=import-submit]').click({ force: true });
+        cy.get('[data-test=app-dialog-confirm]').click();
         cy.get('[data-test=entries-import]').should('not.exist');
         cy.get('[data-test=entry-value-field]').should('have.length', 3);
 

@@ -373,7 +373,7 @@ const handleImport = (payload: {
                 addMessage(t('locale-entries-page.error-merge-removed'));
             return Promise.all([
                 search(true),
-                // The next import's `If-Match` is this list's tag, which the write just moved.
+                // Holds the all-apps list's new tag for the entry writes' `If-Match`.
                 localesStore.refreshDictionaryTag(tag.value),
                 localesStore.fetchLanguage(tag.value),
                 refreshRunningLocale(tag.value)
