@@ -31,7 +31,6 @@ import { expandEntries } from '../dictionaries.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import EntryFormDialog from '../components/EntryFormDialog.vue';
 import EntriesImportDialog from '../components/EntriesImportDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -134,7 +133,6 @@ const {
     message: importError,
     type: importErrorType,
     report: reportImportError,
-    warn: warnImportError,
     clear: clearImportError
 } = useBlockingError();
 
@@ -335,19 +333,6 @@ const handleDelete = singleFlight((entry: LocaleEntry) => {
 });
 
 /**
- * The import came back 412: a dictionary write landed since the list was read, so the file could
- * overwrite someone's edit. "Reload latest" re-reads the list (and the tag the next attempt sends)
- * and leaves the dialog open on the same file — the import is never resent on its own.
- */
-const {
-    isStale: importStale,
-    handle: handleStaleImport,
-    reloadLatest: reloadImportLatest
-} = useStaleRecord({ warn: warnImportError, clear: clearImportError }, () =>
-    Promise.all([localesStore.refreshDictionaryTag(tag.value), search(true)])
-);
-
-/**
  * Runs the import dialog's batch, then refreshes the page, the manifest and the running app.
  *
  * @param payload - The dialog's own confirmed mode, destination app and parsed rows.
@@ -380,7 +365,6 @@ const handleImport = (payload: {
             ]);
         })
         .catch((error: unknown) => {
-            if (handleStaleImport(error)) return;
             reportImportError(error);
         });
 };
@@ -625,15 +609,6 @@ const handleExport = () => {
                     :type="importErrorType"
                     data-test="entries-import-error"
                 />
-                <v-btn
-                    v-if="importStale"
-                    variant="tonal"
-                    color="warning"
-                    data-test="entries-import-reload-latest"
-                    @click="reloadImportLatest"
-                >
-                    {{ t('generic.action-reload-latest') }}
-                </v-btn>
             </template>
         </EntriesImportDialog>
     </div>
