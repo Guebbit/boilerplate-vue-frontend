@@ -127,7 +127,7 @@ exception is browsing: a product page opened and a search made are reported to t
 `POST /analytics/events` relay (`trackBrowsing` on the consent store), because the response cache
 hides most reads from the server. Nothing is sent, and nothing queued, before the visitor accepts
 analytics. The rule, in the backend's words, is in
-`boilerplate-node-backend/docs/tools/analytics.md` under "Who sends which event".
+`boilerplate-node-backend/docs/understand/analytics.md` under "Who sends which event".
 Two things cover the rest of the ground:
 
 - **Pageviews**, including SPA route changes, are written by the Umami tag itself. There is nothing
@@ -187,4 +187,4 @@ obs.captureException(error);
 
 - [Umami](./umami.md)
 - [Request Flow](../theory/request-flow.md)
-- [Observability endpoints](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/observability.md) — the backend's page for the reads
+- [Observability endpoints](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/observability.md) — the backend's page for the reads

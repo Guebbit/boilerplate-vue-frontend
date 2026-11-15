@@ -14,7 +14,7 @@ import { checkPasswordBreached } from '@api';
  * endpoint on every keystroke.
  *
  * @param delayMs - How long typing must pause before a check fires. The endpoint's own budget is
- *  roughly 20 requests per window per caller (`boilerplate-node-backend/docs/api/regenerating.md`'s contract notes) — a
+ *  roughly 20 requests per window per caller (`boilerplate-node-backend/docs/build/regenerating.md`'s contract notes) — a
  *  half-second pause comfortably stays under it for anyone typing at a human pace.
  * @returns `breached`, `checking`, and `check(password)` to call on every input event.
  */

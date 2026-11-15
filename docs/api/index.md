@@ -33,14 +33,14 @@ flowchart LR
 
 ## Read by task
 
-| Need                                          | Go to                                                                                                                                                                                                          |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Change the contract or regenerate the client  | [OpenAPI Workflow](./openapi-workflow.md)                                                                                                                                                                      |
-| Change SSE event contracts                    | [AsyncAPI Workflow](./asyncapi-workflow.md)                                                                                                                                                                    |
-| Find where an endpoint is listed              | [Endpoints](./endpoints.md)                                                                                                                                                                                    |
-| Understand the Admin Dashboard's backend data | [Observability endpoints (backend)](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/observability.md) and [the dashboard's reads](../modules/observability-dashboard.md#the-five-reads) |
-| Understand how the FE handles HTTP errors     | [Request Flow](../theory/request-flow.md)                                                                                                                                                                      |
-| Understand the layer behind stores            | [Theory / Layers](../theory/layers.md)                                                                                                                                                                         |
+| Need                                          | Go to                                                                                                                                                                                                                |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Change the contract or regenerate the client  | [OpenAPI Workflow](./openapi-workflow.md)                                                                                                                                                                            |
+| Change SSE event contracts                    | [AsyncAPI Workflow](./asyncapi-workflow.md)                                                                                                                                                                          |
+| Find where an endpoint is listed              | [Endpoints](./endpoints.md)                                                                                                                                                                                          |
+| Understand the Admin Dashboard's backend data | [Observability endpoints (backend)](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/observability.md) and [the dashboard's reads](../modules/observability-dashboard.md#the-five-reads) |
+| Understand how the FE handles HTTP errors     | [Request Flow](../theory/request-flow.md)                                                                                                                                                                            |
+| Understand the layer behind stores            | [Theory / Layers](../theory/layers.md)                                                                                                                                                                               |
 
 ## Consuming the generated client
 

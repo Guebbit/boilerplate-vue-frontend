@@ -4,7 +4,7 @@ An ordinary test says _"for this input, expect that output."_ A property says _"
 
 ## The idea
 
-Owned by the backend: [The idea](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/property-testing.md#the-idea).
+Owned by the backend: [The idea](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/property-testing.md#the-idea).
 
 ## What makes a good target
 
@@ -39,7 +39,7 @@ A fact asserted twice is a fact maintained twice — and it costs more than it l
 
 ## What it has actually caught
 
-Owned by the backend: [What it has actually caught](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/property-testing.md#what-it-has-actually-caught).
+Owned by the backend: [What it has actually caught](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/property-testing.md#what-it-has-actually-caught).
 
 ## Running budget
 

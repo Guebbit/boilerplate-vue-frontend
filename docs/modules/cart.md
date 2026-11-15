@@ -307,7 +307,7 @@ a late read can neither wipe a pick nor leave a method the server dropped.
 
 `POST /cart/checkout` carries an `Idempotency-Key`. What the server does with a key (it binds it to
 the body, answers 409 while the first attempt runs, replays a recorded outcome) is the backend's:
-`boilerplate-node-backend/docs/tools/idempotency.md`. The consequence for this client is that a key
+`boilerplate-node-backend/docs/understand/idempotency.md`. The consequence for this client is that a key
 may travel again only with the same order.
 
 Checkout and the merge keep their own key logic here. Add-to-cart and reorder take one key per intent

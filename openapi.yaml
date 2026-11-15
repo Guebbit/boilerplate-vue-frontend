@@ -30,7 +30,7 @@ info:
     Successes: a 2xx answers the resource itself, with no wrapper. A list is an object, never a
     top-level array: `{ items, meta }` when paged (`meta` is `PaginationMeta`), or a named key
     (`{ methods }`). An answer with nothing to say is `204` and has no body. A create is `201`
-    with a `Location` header. See `docs/api/responses.md`.
+    with a `Location` header. See `docs/reference/responses.md`.
 
     Errors: every 4xx and 5xx the application answers is RFC 9457 problem details as `application/problem+json`,
     whatever `Accept` says: `type` (always `about:blank`), `title` (the English status
@@ -8105,7 +8105,7 @@ paths:
       tags:
         - Orders
       summary: Replace order
-      description: Replaces the order identified by `{id}` in the path (RFC 9110 §9.3.4). `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+      description: Replaces the order identified by `{id}` in the path (RFC 9110 §9.3.4). `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/understand/tactical-ddd.md#who-writes-the-status`.
       operationId: replaceOrderById
       security:
         - bearerAuth:
@@ -8171,7 +8171,7 @@ paths:
       tags:
         - Orders
       summary: Edit order
-      description: Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+      description: Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/understand/tactical-ddd.md#who-writes-the-status`.
       operationId: updateOrderById
       security:
         - bearerAuth:
@@ -11611,7 +11611,7 @@ paths:
         `asyncapi.webhooks.yaml` — the same files `asyncapi.public.yaml` is generated from —
         so this list and what can actually fire can never drift apart. A module that is
         not deployed lists nothing. Each entry's `actions.subscribe` says whether the caller holds
-        the event's read rule and so may put it in a filter. See `docs/api/asyncapi-workflow.md`.
+        the event's read rule and so may put it in a filter. See `docs/build/asyncapi-workflow.md`.
 
         Unpaged: the event catalogue of the deployed modules.
       operationId: listWebhookEvents
@@ -11727,7 +11727,7 @@ paths:
         that ever carries it. `permissions` must be a non-empty subset of the CALLER's own
         currently-held tenant permissions: a key can never reach further than the person
         who minted it, and that floor is re-checked on every request the key later makes,
-        not just at mint time — see `docs/tools/security.md#machine-to-machine-credentials`.
+        not just at mint time — see `docs/understand/security.md#machine-to-machine-credentials`.
         A key whose minter is banned, soft-deleted or erased is refused with 401 like a
         revoked one; an unban or a restore brings it back.
         A permission no credential can use is refused with 422 too: one that demands a freshly
@@ -14790,7 +14790,7 @@ paths:
         instant), after which it stops signing and disappears from `secretIds`. A ring holds at
         most two: adding a third drops the oldest, which is already superseded. A secret is a
         line of the subscription, so adding one is a `POST` on the line collection and answers
-        200 with the whole subscription (docs/api/write-methods.md).
+        200 with the whole subscription (docs/understand/write-methods.md).
 
         A secret signs for the subscription's stored filter, so the caller needs the read rule
         of every event in it (`actions.createSecret` is false otherwise): 403
@@ -16430,7 +16430,7 @@ components:
           - "true"
     RateLimit-Policy:
       required: false
-      description: "The rate-limit budgets this request passed, as a list in the current IETF draft's syntax (`draft-ietf-httpapi-ratelimit-headers`): `\"global\";q=100;w=60, \"credentials-identity\";q=10;w=900` is two budgets, each allowing `q` requests per `w` seconds. One list item per budget the request passed, named by the budget's `namespace` (the budget table in `docs/tools/security.md`). Any response may carry it; no identifier of the caller is ever included."
+      description: "The rate-limit budgets this request passed, as a list in the current IETF draft's syntax (`draft-ietf-httpapi-ratelimit-headers`): `\"global\";q=100;w=60, \"credentials-identity\";q=10;w=900` is two budgets, each allowing `q` requests per `w` seconds. One list item per budget the request passed, named by the budget's `namespace` (the budget table in `docs/understand/security.md`). Any response may carry it; no identifier of the caller is ever included."
       schema:
         type: string
     RateLimit:
@@ -17105,7 +17105,7 @@ components:
       type: string
       format: uri-reference
       readOnly: true
-      description: "Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs/tools/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer."
+      description: "Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs/understand/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer."
     PaginationMeta:
       type: object
       additionalProperties: false

@@ -152,6 +152,6 @@ npm run regenerate
 - [Admin Dashboard](../tools/admin-dashboard.md) — the mechanism behind the panels
 - [Realtime](../tools/realtime.md) — the SSE client and its reconnection behaviour
 - [Observability](../tools/observability.md) — what is measured, and by whom
-- [Observability endpoints](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/observability.md) — the backend's page for the reads
+- [Observability endpoints](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/observability.md) — the backend's page for the reads
 - [AsyncAPI Workflow](../api/asyncapi-workflow.md) — where the event types come from
 - [Sitemap & Access Control](../theory/sitemap.md) — the `admin` gate on these screens

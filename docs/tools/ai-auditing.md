@@ -16,7 +16,7 @@ names mean, the tripwire) live in
 
 ## The one rule
 
-Owned by the backend: [The one rule](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-one-rule).
+Owned by the backend: [The one rule](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#the-one-rule).
 
 ## The prompts
 
@@ -71,31 +71,31 @@ This page is per-repo in the same way. It names this repo's own tools and its ow
 
 ### Naming the scope
 
-Owned by the backend: [Naming the scope](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#naming-the-scope).
+Owned by the backend: [Naming the scope](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#naming-the-scope).
 
 ### The tripwire
 
-Owned by the backend: [The tripwire](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-tripwire).
+Owned by the backend: [The tripwire](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#the-tripwire).
 
 ### The reports are disposable
 
-Owned by the backend: [The reports are disposable](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-reports-are-disposable).
+Owned by the backend: [The reports are disposable](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#the-reports-are-disposable).
 
 This repo's delta: the report folder is `reports/audit-<run>/`, not `tmp/reports`. `design-manual` is the exception and keeps one fixed folder, `reports/audit/design-manual/`.
 
 ## The two-pass method
 
-Owned by the backend: [The two-pass method](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-two-pass-method).
+Owned by the backend: [The two-pass method](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#the-two-pass-method).
 
 ## How to run one
 
-Owned by the backend: [How to run one](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#how-to-run-one).
+Owned by the backend: [How to run one](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#how-to-run-one).
 
 This repo's delta: `design-manual` needs a model that can read images; the screenshots go only into the reviewing session's own context, and nothing is uploaded to an image service. The mutation report that `test-honesty` reads is `reports/mutation/mutation.json`.
 
 ## `test-honesty`: a test is innocent once it has failed
 
-Owned by the backend: [test-honesty: a test is innocent once it has failed](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#test-honesty-a-test-is-innocent-once-it-has-failed).
+Owned by the backend: [test-honesty: a test is innocent once it has failed](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#test-honesty-a-test-is-innocent-once-it-has-failed).
 
 This repo's delta:
 
@@ -218,7 +218,7 @@ apart — not on a schedule.
 
 ## Footnote: the tools we evaluated, and why none were adopted
 
-Owned by the backend: [Footnote: the tools we evaluated, and why none were adopted](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#footnote-the-tools-we-evaluated-and-why-none-were-adopted).
+Owned by the backend: [Footnote: the tools we evaluated, and why none were adopted](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#footnote-the-tools-we-evaluated-and-why-none-were-adopted).
 
 ## Related
 

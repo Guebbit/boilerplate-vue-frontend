@@ -205,7 +205,7 @@ Family: [business logic, money and payments][business-logic].
   both belong at the TLS-terminating proxy in front of it, exactly as on the backend.
 - **Anti-automation beyond the honeypot** ([automation and abuse][automation]) — the contact form's honeypot is the only
   human-detection this app ships. No CAPTCHA, no proof-of-work, deliberately — see the backend's
-  `boilerplate-node-backend/docs/theory/defences/automation-and-abuse.md`, which says why the
+  `boilerplate-node-backend/docs/understand/defences/automation-and-abuse.md`, which says why the
   vendor is a deployment's decision.
 
 ### Found by this walk, not yet answered
@@ -242,13 +242,13 @@ named in a row above that moves or is renamed should update that row in the same
 supply-chain table has the shortest shelf life here too — it records what `npm audit --omit=dev`
 said on the day it was walked, not a durable fact.
 
-[index]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/defences/index.md
-[client-side]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/defences/client-side.md
-[authentication]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/defences/authentication.md
-[business-logic]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/defences/business-logic.md
-[crypto]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/defences/crypto-and-secrets.md
-[disclosure]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/defences/disclosure.md
-[infrastructure]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/defences/infrastructure.md
-[supply-chain]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/defences/supply-chain.md
-[api-surface]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/defences/api-surface.md
-[automation]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/defences/automation-and-abuse.md
+[index]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/index.md
+[client-side]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/client-side.md
+[authentication]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/authentication.md
+[business-logic]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/business-logic.md
+[crypto]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/crypto-and-secrets.md
+[disclosure]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/disclosure.md
+[infrastructure]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/infrastructure.md
+[supply-chain]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/supply-chain.md
+[api-surface]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/api-surface.md
+[automation]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/automation-and-abuse.md

@@ -270,7 +270,7 @@ flowchart LR
 
 ## Documentation rule of thumb
 
-The house style is the backend's: [documentation style](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/documentation-style.md).
+The house style is the backend's: [documentation style](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/documentation-style.md).
 
 ## External references
 

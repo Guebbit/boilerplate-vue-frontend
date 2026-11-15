@@ -69,7 +69,7 @@ module's page says which rows it owns.
 
 The live stream is described in [Realtime](../tools/realtime.md) and the observability contract
 (`asyncapi.yaml`); the reads behind the Admin Dashboard are in
-[the backend's observability page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/observability.md).
+[the backend's observability page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/observability.md).
 
 ## Related pages
 

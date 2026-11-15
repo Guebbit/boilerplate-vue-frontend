@@ -11,10 +11,10 @@ prices, totals, eligibility and permissions are decided server-side, and a clien
 re-implements them has two implementations of one rule.
 
 ::: tip This page mirrors the backend's
-`boilerplate-node-backend/docs/theory/strategic-ddd.md` states the same four ideas for
+`boilerplate-node-backend/docs/understand/strategic-ddd.md` states the same four ideas for
 the API. Read them together — the interesting parts are where the two **disagree**, and each of
 those disagreements is a fact about where the domain actually lives. The client-capability half of
-§4 below is `boilerplate-node-backend/docs/theory/tactical-ddd.md` §2.
+§4 below is `boilerplate-node-backend/docs/understand/tactical-ddd.md` §2.
 :::
 
 ---
@@ -136,7 +136,7 @@ The same split is drawn as a map in [Modules](../modules/index.md#the-whole-map)
 The rule of thumb that follows: **a `generic` module's `domain/` is a smell, not a ban.** Expect it
 to be small (`locales` and `webhooks` each keep one file); a large one says the label is wrong. The
 reasoning is the backend's:
-[Strategic DDD](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/strategic-ddd.md).
+[Strategic DDD](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/strategic-ddd.md).
 
 There is no `subdomain` field on the manifest, and no spec holding it. Nothing would read it at runtime, and the one check it enables — refusing `domain/` inside a `generic` module — would be a test acting on a label nothing else consults. The table above is guidance for a reader deciding where a rule goes; no test proves it, the same as `core`.
 

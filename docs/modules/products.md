@@ -81,7 +81,7 @@ flowchart TD
 
 Both write the same `filters.sort` (the API's CSV, so it lives in the URL) through
 `useServerSort`, and both re-search from page 1: the server sorts the whole catalogue, never the
-page the browser holds. See [`sorting`](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/sorting.md)
+page the browser holds. See [`sorting`](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/sorting.md)
 in the backend for the grammar and the per-resource whitelist.
 
 `products/create` is declared before `products/:id` in `routes.ts`. vue-router ranks a static

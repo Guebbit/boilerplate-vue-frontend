@@ -6,7 +6,7 @@
  * opens two minutes before the session would end, so a person who is reading, not acting, is asked
  * rather than dropped (WCAG 2.2.1 Timing Adjustable). "Stay signed in" is a touch; ignoring it
  * ends the session here a moment before the server would. The server enforces the limit either
- * way — this is the courtesy. See boilerplate-node-backend/docs/theory/sessions.md#the-staff-idle-timeout.
+ * way — this is the courtesy. See boilerplate-node-backend/docs/understand/sessions.md#the-staff-idle-timeout.
  */
 import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, onMounted, onUnmounted, ref } from 'vue';

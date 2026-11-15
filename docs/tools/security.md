@@ -38,7 +38,7 @@ The rest of this page describes the `jwt` flow in detail; `cookie` mode drops th
 
 ## Auth token model in `jwt` mode (what the FE sees)
 
-The backend uses a **split-token model** (its [sessions theory](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/sessions.md) owns it). What
+The backend uses a **split-token model** (its [sessions theory](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/sessions.md) owns it). What
 the FE sees: a short-lived access token in the login response body, sent on every protected call as
 `Authorization: Bearer <token>`; and a refresh token in an `HttpOnly` cookie the browser sends
 automatically on `POST /account/refresh`, which the FE never reads. That keeps the refresh token out

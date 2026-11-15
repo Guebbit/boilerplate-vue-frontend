@@ -124,7 +124,7 @@ persists the visitor's choice, and `http/interceptors.ts`'s `onRequest` forwards
 
 The API versions the records its contract marks `x-versioned`, with an `ETag` on the read and an
 optional `If-Match` on the write; a stale one is a `412`. The rules are
-the backend's ([Write Methods](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/write-methods.md#conditional-writes-etag-and-if-match));
+the backend's ([Write Methods](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/write-methods.md#conditional-writes-etag-and-if-match));
 this repo's part is that no edit form has to remember any of it.
 
 ```mermaid

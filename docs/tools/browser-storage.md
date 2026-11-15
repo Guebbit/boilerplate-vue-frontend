@@ -41,7 +41,7 @@ The inventory is data, not prose:
 - This app's own cookies and storage keys: `shared/rules/browser-storage.yaml`
   (the privacy page's table is built from it).
 - The backend's cookies: `contracts/cookies.yaml`, copied from the backend, which documents them in the generated
-  "Cookies the backend sets" table of its [data protection page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/data-protection.md#cookies-the-backend-sets).
+  "Cookies the backend sets" table of its [data protection page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/data-protection.md#cookies-the-backend-sets).
 
 ## Rules that follow from the list
 

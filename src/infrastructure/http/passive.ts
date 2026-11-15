@@ -6,7 +6,7 @@
  * makes on its own (a token refresh, an abilities re-read, the notifications sync) must carry the
  * header, or an unattended staff tab would never idle out.
  *
- * See: boilerplate-node-backend/docs/theory/sessions.md
+ * See: boilerplate-node-backend/docs/understand/sessions.md
  */
 import type { AxiosRequestConfig } from 'axios';
 

@@ -3,7 +3,7 @@
  * Type-guard based readers for the `errors` list an RFC 9457 problem document carries. They narrow
  * to a plain object first and check the key, so nothing here trusts a declared type past the wire.
  *
- * A success has nothing to unwrap: its body is the payload itself (see boilerplate-node-backend/docs/api/responses.md).
+ * A success has nothing to unwrap: its body is the payload itself (see boilerplate-node-backend/docs/reference/responses.md).
  *
  * Here rather than in a store because the problem shape is a property of the transport: every
  * refusal arrives in it, and none of it is the session's business.
