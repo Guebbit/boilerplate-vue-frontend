@@ -67,6 +67,31 @@ export default defineConfig(({ mode }) => ({
                             .replaceAll('"', '&quot;')
                 )
         },
+        /**
+         * Answers `GET <base>config.js` with an empty script while the dev server runs.
+         *
+         * `index.html` loads that file on every page, but only the production image writes it
+         * (docker/docker-entrypoint.d/40-generate-runtime-config.sh), so `vite dev` would 404 on
+         * each load. `apply: 'serve'` keeps it out of builds: nothing ships, and the entrypoint
+         * stays the only writer of a real `config.js`.
+         * https://vite.dev/guide/api-plugin#configureserver
+         */
+        {
+            name: 'dev-empty-runtime-config',
+            apply: 'serve',
+            configureServer: (server) => {
+                const configPath = `${server.config.base}config.js`;
+                server.middlewares.use((request, response, next) => {
+                    // Query string stripped: a cache-buster must still match.
+                    if (request.method !== 'GET' || request.url?.split('?', 1)[0] !== configPath) {
+                        next();
+                        return;
+                    }
+                    response.setHeader('Content-Type', 'application/javascript');
+                    response.end('');
+                });
+            }
+        },
         vue({
             template: {
                 compilerOptions: {
