@@ -35,7 +35,7 @@ export const syntheticProblem = (
  * The response body, with a `application/problem+json` one read into an object whatever form axios
  * handed it over in.
  *
- * `responseType: 'text'` (the orders CSV export) and `'blob'` (a file download) skip axios's JSON
+ * `responseType: 'blob'` (a file download, the orders CSV export included) and `'text'` skip axios's JSON
  * parse, so their refusal arrives as a string or a Blob and its `errors` would go unread. The media
  * type is the signal: the API sends a refusal as `application/problem+json` and a file as anything
  * else, so a file's bytes are never parsed.

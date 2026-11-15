@@ -140,7 +140,7 @@ test can do, because a spec that does not exist runs no assertions and reports n
 Module coupling is **not** in this list, deliberately. Which module may import which is a generated
 ESLint rule — `dependsOn` in each `module.yaml`, read by `eslint.config.ts` — enforced structurally at the import on every
 `npm run lint`, rather than reconciled against a manifest field on a separate run. A rule that
-reads the real imports cannot disagree with them. See
+reads the real imports cannot disagree with them. The same rule lets a spec reach a listed sibling's `tests/**` (the doubles its siblings seed with). See
 [Strategic DDD](../theory/strategic-ddd.md) §2 and §4.
 
 | Spec                            | Refuses                                                                                                                       |

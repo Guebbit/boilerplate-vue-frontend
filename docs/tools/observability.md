@@ -9,7 +9,7 @@ The FE observability layer covers two complementary concerns, both wired into a 
 
 Both are no-ops when their env vars are absent, so local dev works without the stack running. You verify the data in **Grafana** (`http://localhost:3001`, default `admin/admin`) and the **Umami dashboard** (`http://localhost:3080`).
 
-> The browser **only ever talks to Alloy** on `:12347` (never directly to the OTel collector `:4318`, Loki, or Prometheus). Alloy fans the signals out to Loki/Tempo/Prometheus.
+> The browser **only ever talks to Alloy** on `:12347` (never directly to the OTel collector `:4318`, Loki, or Prometheus). Alloy sends logs to Loki and traces to `otel-collector:4317`, never to Prometheus.
 
 ## Architecture
 

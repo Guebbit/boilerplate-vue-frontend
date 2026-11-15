@@ -21,13 +21,14 @@ const addRichProduct = (page: Page, context: PrepareContext): Promise<void> =>
         .then(() => page.click('[data-test=add-to-cart]'))
         // The add is a store write, and a request for a signed-in shopper: wait until the network
         // is quiet. A signed-in page polls (notifications, stock) and may never be quiet, so five
-        // seconds without silence counts as settled; any other failure is real.
+        // seconds without silence counts as settled. Only this wait may time out: a missing
+        // add-to-cart button above must fail, not measure an empty cart.
         // https://pptr.dev/api/puppeteer.page.waitfornetworkidle
-        .then(() => page.waitForNetworkIdle({ idleTime: 500, timeout: 5000 }))
-        .catch((error: unknown) => {
-            if (!(error instanceof TimeoutError)) throw error;
-        })
-        .then(() => undefined);
+        .then(() =>
+            page.waitForNetworkIdle({ idleTime: 500, timeout: 5000 }).catch((error: unknown) => {
+                if (!(error instanceof TimeoutError)) throw error;
+            })
+        );
 
 /** The cases this module contributes. */
 export const lighthouseCases: readonly LighthouseCase[] = [
