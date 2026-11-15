@@ -25,7 +25,7 @@ flowchart TB
     Task --> Guard{"shot size == viewport?"}
     Guard -- no --> FailWindow["FAIL — the window is smaller\nthan the viewport (or DPR 2)"]
     Guard -- yes --> D{"baseline exists?"}
-    D -- no --> Create["write it · PASS\n(review it in the PR diff)"]
+    D -- no --> FailNew["FAIL — no baseline\nwrites &lt;name&gt;.new.png, nothing in __snapshots__"]
     D -- yes --> Size{"same dimensions?"}
     Size -- no --> FailSize["FAIL — a size change\nIS a layout change"]
     Size -- yes --> Match["pixelmatch → differing pixel count"]
@@ -38,8 +38,8 @@ flowchart TB
     classDef bad fill:#fee2e2,stroke:#dc2626,color:#111827;
     classDef dec fill:#fef9c3,stroke:#ca8a04,color:#111827;
     class Visit,Ready,Freeze,Shot,Task,Match proc;
-    class Create,Pass good;
-    class Fail,FailSize,FailWindow bad;
+    class Pass good;
+    class Fail,FailSize,FailWindow,FailNew bad;
     class D,Size,Budget,Guard dec;
 ```
 

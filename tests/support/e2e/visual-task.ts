@@ -67,16 +67,17 @@ export interface CompareResult {
 /**
  * Compare one screenshot against its baseline.
  *
- * Four outcomes, and the first is the one worth understanding:
+ * Five outcomes, in the order the code checks them:
  *
- *   1. **No baseline yet** → FAIL, and write nothing to `__snapshots__`. A comparison that
- *      records its own baseline passes vacuously on every CI run (the file is discarded). Only
- *      update mode writes a baseline, in the pinned image. The shot goes to
- *      `<diffDirectory>/<name>.new.png` so a reviewer finds it in the CI artefact.
- *   0. **Not the viewport's size** → fail, before anything else (the browser window clipped it).
- *   2. **Different dimensions** → fail immediately. Comparing images of different sizes pixel by
+ *   1. **Not the viewport's size** → fail, before anything else, update mode included (the
+ *      browser window clipped it, or the display is double density).
+ *   2. **Update mode** → write the baseline in the pinned image and pass.
+ *   3. **No baseline yet** → FAIL, and write nothing to `__snapshots__`. A comparison that
+ *      records its own baseline passes vacuously on every CI run (the file is discarded). The
+ *      shot goes to `<diffDirectory>/<name>.new.png` so a reviewer finds it in the CI artefact.
+ *   4. **Different dimensions** → fail immediately. Comparing images of different sizes pixel by
  *      pixel is meaningless, and a size change is itself a layout regression.
- *   3. **Same size** → compare, and fail when more than `MAX_DIFFERING_RATIO` differs.
+ *   5. **Same size** → compare, and fail when more than `MAX_DIFFERING_RATIO` differs.
  */
 export const compareSnapshot = (options: CompareOptions): CompareResult => {
     const { name, actualPath, specRelative, expected, diffDirectory, update } = options;

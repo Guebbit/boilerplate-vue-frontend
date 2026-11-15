@@ -408,9 +408,10 @@ jobs:
                   REPOSITORY: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
                   TOKEN: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
               run: |
-                  # `HEAD` is the remote's default branch; an unreachable repo leaves the output
-                  # empty, and the checkout step then reports it with the usual SPEC_SIBLING advice.
+                  # `HEAD` is the remote's default branch. An unreachable repo leaves the sha
+                  # empty, which would silently unpin every slice, so it fails here instead.
                   sha=$(git ls-remote "https://x-access-token:${TOKEN}@github.com/${REPOSITORY}.git" HEAD | cut -f1 || true)
+                  test -n "$sha" || { echo "::error::could not resolve sibling HEAD"; exit 1; }
                   echo "sha=${sha}" >> "$GITHUB_OUTPUT"
 
     test-e2e:

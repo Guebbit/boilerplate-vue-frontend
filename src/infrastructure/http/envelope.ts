@@ -34,8 +34,8 @@ export const isObjectRecord = (value: unknown): value is Record<string, unknown>
 
 /**
  * A body as an object: a string is parsed as JSON first. A request made with
- * `responseType: 'text'` (the orders CSV export) hands even its error envelope over as a string,
- * and a step-up challenge on it would otherwise go unread.
+ * `responseType: 'text'` hands even its error envelope over as a string, and a step-up
+ * challenge on it would otherwise go unread.
  *
  * @param value - The raw body, still unknown at this boundary.
  * @returns The parsed body for a JSON string, `undefined` for any other string, else `value` as is.
