@@ -41,7 +41,7 @@ export const POLL_INTERVAL_MS = 1000;
  * Log in to Umami's own API.
  *
  * The credentials are the compose stack's seeded admin, which exists precisely so the stack comes
- * up ready to query with no manual step — see `umami-init` in the backend's `docker-compose.yml`.
+ * up ready to query with no manual step — see `umami-init` in the backend's development compose file.
  *
  * @returns The connection later reads are made through.
  */

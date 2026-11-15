@@ -198,7 +198,7 @@ cd boilerplate-node-backend
 export NODE_ENV=development            # the seeder's public demo passwords, and the webhook sink, need it
 export NODE_PSEUDONYM_KEY=any-throwaway-value
 export NODE_RABBITMQ_HOST=127.0.0.1    # `host` sets the database and Redis, not the broker
-export NODE_RABBITMQ_URL=amqp://guest:guest@127.0.0.1:5672   # the backend's .env may carry `amqp://rabbitmq:5672`, which shadows HOST/PORT: no broker, no webhook sends, no error
+export NODE_RABBITMQ_URL=amqp://guest:guest@127.0.0.1:5672   # the backend's .env may carry `amqp://queue:5672`, which shadows HOST/PORT: no broker, no webhook sends, no error
 export NODE_FRONTEND_URL=http://localhost:8085
 export NODE_WEBHOOK_DEMO_SINK_URL=https://127.0.0.1:3070   # the TLS door; the literal IP: the SSRF guard's DNS lookup skips /etc/hosts
 export NODE_PAYMENT_WEBHOOK_SECRET=any-throwaway-secret   # a spec signs a payment-provider delivery with it: export the same value as E2E_PAYMENT_WEBHOOK_SECRET in the frontend shell
@@ -252,7 +252,7 @@ The backend ships `NODE_RATE_LIMIT_MAX=100` per minute per IP — sized for a pe
 
 The recipe raises exactly the volume buckets: the global one (`100000` — `1000` a minute still gave 429s on login), the credential pair (per account named, per address calling), signup and password reset. They are separate buckets, so raising only the first just moves which of them the suite trips over. Only FAILED credential attempts spend the credential budgets, which is why a suite that signs in correctly on every spec still gets through. Payments, invoicing and returns stay at their defaults. Do not raise any of these in a deployed environment — the small credential budget is what makes password guessing expensive, and the buckets are deliberately decoupled so that widening one never widens the other (see `boilerplate-node-backend/src/infrastructure/http/middlewares/rate-limit.ts`).
 
-The variables go in front of `compose:restart` when the backend runs in its container — they are declared in `docker-compose.yml` precisely so a run can raise them from the shell.
+The variables go in front of `compose:restart` when the backend runs in its container — they are declared in the backend's development compose file precisely so a run can raise them from the shell.
 
 The counters reset on every reseed only when they live in Redis (`NODE_RATE_LIMIT_REDIS_URL`, step 2). Without it they sit in the backend process's memory, no reseed reaches them, and the payment budget (5 card confirms per account per hour, `payments` keeps its default) answers **429** to the sixth journey that pays by card as the seeded customer, so `CU20`, `CU25` and `N1` fail on a missing `payment-status`. CI sets the URL job-wide.
 
