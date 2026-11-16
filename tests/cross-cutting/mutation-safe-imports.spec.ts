@@ -10,12 +10,12 @@
  * than by `import`, so neither is excluded:
  *
  *   import(`@/locales/${locale}.json`)   ->  import(``)        Vite cannot resolve it
- *   import.meta.glob('/src/locales/*')   ->  import.meta.glob('')   Rollup cannot parse it
+ *   import.meta.glob('/src/locales/*')   ->  import.meta.glob('')   the bundler cannot parse it
  *
  * Vite must be able to read an import specifier statically, and Stryker's whole job is to make
  * literals non-static. The failure is not one surviving mutant: the instrumented build fails to
  * transform, so `npm run test:mutation` dies in the DRY RUN — before a single mutant is tested —
- * with `ERR_LOAD_URL` or `RollupError: Expected ',', got '<eof>'` naming a file that plainly exists.
+ * with `ERR_LOAD_URL` or a parse error such as `Expected ',', got '<eof>'` naming a file that plainly exists.
  * That message points at the sandbox rather than at the line, so the failure is easy to misread
  * as a broken mutation setup and leave alone — which is what makes a cheap static check worth
  * more here than a careful reading of the error.

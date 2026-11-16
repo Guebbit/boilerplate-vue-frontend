@@ -145,11 +145,27 @@ export default defineConfig(({ mode }) => ({
         // so production never ships a source map to the browser — only an error tracker fed the
         // file directly (or a developer with the build artifact) can symbolicate a stack trace.
         sourcemap: 'hidden',
-        rollupOptions: {
+        // The toolkit gets its own chunk: it changes on its own release cadence, not the app's, so
+        // an app deploy leaves it cached. `codeSplitting` groups match on the module path.
+        // https://vite.dev/guide/migration#build-options
+        // https://rolldown.rs/in-depth/manual-code-splitting
+        rolldownOptions: {
+            // A component imported only through a barrel (`@/modules/products` re-exports
+            // ProductCard) is dropped with its stylesheet unless it is used, as Rollup did. Rolldown
+            // otherwise keeps a bare `import "./ProductCard.js"` in the importing chunk, which
+            // pulls that chunk and its CSS into every first paint.
+            // https://rolldown.rs/reference/InputOptions.treeshake#modulesideeffects
+            treeshake: {
+                moduleSideEffects: [{ test: /\.vue$/, sideEffects: false }]
+            },
             output: {
-                manualChunks(id) {
-                    if (id.includes('/node_modules/@guebbit/vue-toolkit/'))
-                        return 'guebbit-vue-toolkit';
+                codeSplitting: {
+                    groups: [
+                        {
+                            name: 'guebbit-vue-toolkit',
+                            test: /[\\/]node_modules[\\/]@guebbit[\\/]vue-toolkit[\\/]/
+                        }
+                    ]
                 }
             }
         }

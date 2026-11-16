@@ -86,7 +86,7 @@ this diagram exists to prevent.
 
 ### Vite
 
-**What it is.** Vite is a next-generation build tool that provides an extremely fast dev server (using native ES modules) and a production bundler (Rollup under the hood).
+**What it is.** Vite is a next-generation build tool that provides an extremely fast dev server (using native ES modules) and a production bundler (Rolldown under the hood).
 
 **Problem it solves.** Traditional bundlers like webpack process the entire module graph on startup — slow for large projects. Vite serves source files directly in dev and only bundles for production, keeping the feedback loop fast.
 

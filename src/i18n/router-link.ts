@@ -10,7 +10,7 @@ import type { RouteLocationRaw } from 'vue-router';
 
 /*
  * Imported from its own path rather than re-exported by `index.ts`: a barrel re-export would make
- * the two files depend on each other, and Rollup then cannot put them in one chunk — it warns
+ * the two files depend on each other, and the bundler then cannot put them in one chunk — it warns
  * about exactly that and the execution order it cannot guarantee.
  */
 
