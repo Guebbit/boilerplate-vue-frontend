@@ -300,7 +300,7 @@ export interface DemoOutboxEmail {
 // `cy.exec` defaults to `failOnNonZeroExit: true`, so a failed seed already fails the test —
 // no extra assertion on the exit code is needed.
 const resetLiveDatabase = (command: string) =>
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Cypress 15.21 deprecates `cy.exec` for `cy.task`; moving the live reset into a task is its own change
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Cypress 15.21 deprecates `cy.exec` for `cy.task`; follow-up: replace with a cy.task when moving to Cypress 16 (cy.exec is removed there)
     cy.exec(command, {
         timeout: LIVE_RESET_TIMEOUT_MS
     });

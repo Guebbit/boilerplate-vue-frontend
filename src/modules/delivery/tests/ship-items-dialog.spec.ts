@@ -15,7 +15,6 @@ import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import { aFulfillmentOrder, aShipment } from '../../../../tests/support/unit/fixtures.ts';
-import type { FulfillmentOrder } from '@types';
 
 wireModulesIntoCore();
 
@@ -29,13 +28,12 @@ const SHIPPABLE = aFulfillmentOrder({
 /**
  * Mounts the dialog closed, then opens it through `v-model` — the transition the form re-seeds on.
  *
- * @param fulfillmentOrder - The group being shipped from.
  * @returns The wrapper and the spied `ship`.
  */
-const openDialog = (fulfillmentOrder: FulfillmentOrder) => {
+const openDialog = () => {
     const ship = vi.spyOn(useDeliveryStore(), 'ship').mockResolvedValue(aShipment());
     const wrapper = mount(ShipItemsDialog, {
-        props: { modelValue: false, fulfillmentOrder },
+        props: { modelValue: false, fulfillmentOrder: SHIPPABLE },
         global: {
             plugins: [vuetify, i18n],
             stubs: { VDialog: { template: '<div><slot /></div>' } }
@@ -51,7 +49,7 @@ beforeEach(() => {
 
 describe('the quantities', () => {
     it('start at everything remaining, labelled with the product title', () =>
-        openDialog(SHIPPABLE).then(({ wrapper }) => {
+        openDialog().then(({ wrapper }) => {
             const field = wrapper.get('[data-test=ship-quantity-p1] input');
             expect((field.element as HTMLInputElement).value).toBe('2');
             expect(wrapper.get('[data-test=ship-quantity-p1]').text()).toContain(
@@ -60,7 +58,7 @@ describe('the quantities', () => {
         }));
 
     it('ship what is typed, as explicit lines', () =>
-        openDialog(SHIPPABLE).then(({ wrapper, ship }) =>
+        openDialog().then(({ wrapper, ship }) =>
             wrapper
                 .get('[data-test=ship-quantity-p1] input')
                 .setValue('1')
@@ -76,7 +74,7 @@ describe('the quantities', () => {
         ));
 
     it('refuse more than remains, with a message, and block the submit', () =>
-        openDialog(SHIPPABLE).then(({ wrapper }) =>
+        openDialog().then(({ wrapper }) =>
             wrapper
                 .get('[data-test=ship-quantity-p1] input')
                 .setValue('5')
@@ -91,7 +89,7 @@ describe('the quantities', () => {
 
 describe('the tracking code', () => {
     it('is optional on an untracked method, and sent trimmed when given', () =>
-        openDialog(SHIPPABLE).then(({ wrapper, ship }) => {
+        openDialog().then(({ wrapper, ship }) => {
             expect(wrapper.get('[data-test=ship-submit]').attributes('disabled')).toBeUndefined();
             return wrapper
                 .get('[data-test=ship-tracking-code] input')
@@ -106,7 +104,7 @@ describe('the tracking code', () => {
         }));
 
     it('never blocks the submit, even on a tracked method: the code may come later', () =>
-        openDialog(SHIPPABLE).then(({ wrapper }) => {
+        openDialog().then(({ wrapper }) => {
             expect(wrapper.get('[data-test=ship-submit]').attributes('disabled')).toBeUndefined();
             expect(wrapper.text()).toContain('Express is tracked: add the code now');
         }));
@@ -114,7 +112,7 @@ describe('the tracking code', () => {
 
 describe('a refusal', () => {
     it('stays in the dialog, which stays open', () =>
-        openDialog(SHIPPABLE).then(({ wrapper, ship }) => {
+        openDialog().then(({ wrapper, ship }) => {
             ship.mockRejectedValue(new Error('DELIVERY_LINES_INVALID'));
             return wrapper
                 .get('form')

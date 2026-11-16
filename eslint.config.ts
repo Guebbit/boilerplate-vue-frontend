@@ -393,9 +393,17 @@ const unicornTuningRules = {
     'unicorn/no-nested-ternary': 'off',
     'unicorn/prefer-top-level-await': 'off',
 
-    // `unicorn/recommended` rules turned off, the same set the backend turns off (its
-    // `eslint.config.ts` explains each group): rules that contradict a house rule, a deliberate
-    // pattern here, or an opinion with hundreds of hits and no bug behind it.
+    // `unicorn/recommended` rules turned off, with the reason for each group. A rule not listed
+    // here either passes as it is or was fixed where it fired.
+    //   Contradicts a house rule: prefer-await (CLAUDE.md prefers `.then` chains for one or two
+    //     awaits), single-line-block-comment-style (docblocks are the house comment shape),
+    //     prefer-then-catch (`.then(ok, fail)` and `.then(ok).catch(fail)` differ: a rewrite).
+    //   Deliberate here: prefer-https (tests use `http://` on purpose), no-error-property-assignment
+    //     (tests build error stubs by setting `name`), no-exports-in-scripts (`scripts/` files
+    //     export for their own unit tests), prefer-string-repeat (reads worse on `'    '`),
+    //     prefer-combined-guards (loses the one-line-per-reason early exits).
+    //   Opinion, no bug behind it, each a judgement call at hundreds of sites: every rule below
+    //     that is not named above.
     'unicorn/prefer-await': 'off',
     'unicorn/single-line-block-comment-style': 'off',
     'unicorn/prefer-then-catch': 'off',
@@ -439,37 +447,16 @@ const unicornTuningRules = {
     'unicorn/prefer-iterator-helpers': 'off',
     'unicorn/prefer-set-methods': 'off',
 
-    // Arrived with unicorn 77-80, off as in the backend (its `eslint.config.ts` says why).
+    // Arrived with unicorn 77-80. Every one with no hit in this repo is ON; the rest are off, one
+    // reason each (hit counts from the run that set this list).
+    // 7,960 hits: it would strip the leading asterisk from every docblock line, the house shape.
     'unicorn/no-asterisk-prefix-in-documentation-comments': 'off',
-    'unicorn/no-conflicting-constraints': 'off',
-    'unicorn/no-incomplete-accessor-override': 'off',
-    'unicorn/no-ineffective-csp-directives': 'off',
-    'unicorn/no-invalid-boolean-attribute-value': 'off',
-    'unicorn/no-invalid-dom-token': 'off',
-    'unicorn/no-invalid-integrity': 'off',
-    'unicorn/no-invalid-intl-options': 'off',
-    'unicorn/no-invalid-property-descriptor': 'off',
-    'unicorn/no-invalid-response-options': 'off',
-    'unicorn/no-invalid-style-set-property': 'off',
-    'unicorn/no-invalid-temporal-arithmetic': 'off',
-    'unicorn/no-invalid-url-protocol-comparison': 'off',
-    'unicorn/no-leading-empty-lines': 'off',
-    'unicorn/no-prevent-default-in-passive-listener': 'off',
-    'unicorn/no-unnecessary-parameters': 'off',
-    'unicorn/no-unsafe-json-serialization': 'off',
-    'unicorn/no-url-in-search-params': 'off',
-    'unicorn/prefer-escaped-irregular-whitespace': 'off',
-    'unicorn/prefer-literal-ascii': 'off',
-    'unicorn/prefer-options-parameter': 'off',
-    'unicorn/prefer-promise-static-methods': 'off',
-    'unicorn/prefer-regexp-exec': 'off',
-    'unicorn/prefer-short-escape-sequences': 'off',
-    'unicorn/require-spread-parentheses': 'off',
-    'unicorn/require-text-decoder-streaming': 'off',
-    // 80 reports the `flatMap((x) => cond ? [v] : [])` filter-and-map idiom: one pass, and the types narrow.
+    // 22 hits: the `flatMap((x) => cond ? [v] : [])` filter-and-map idiom: one pass, and the types narrow.
     'unicorn/no-unnecessary-array-flat-map': 'off',
-    // 80 reports `param ?? fallback` as a default parameter; a default fires on `undefined` only, so the rewrite is not null-safe.
+    // 12 hits: `param ?? fallback` is not a default parameter; a default fires on `undefined` only, so the rewrite is not null-safe.
     'unicorn/prefer-default-parameters': 'off',
+    // 21 hits: positional arguments that mirror a library's own signature.
+    'unicorn/prefer-options-parameter': 'off',
 
     // Off here only (the backend has no hits):
     //   no-optional-chaining-on-undeclared-variable — flags `process.env.X?.trim()` and

@@ -49,14 +49,13 @@ let scope: EffectScope | undefined;
 let visibility: 'visible' | 'hidden';
 
 /**
- * Signs a person in the way the session does: `isAuth` needs a token and a viewer.
+ * Signs viewer `u1` in the way the session does: `isAuth` needs a token and a viewer.
  *
- * @param id - The viewer's id
  * @returns A promise settling once the store's watchers have run
  */
-const signedIn = (id: string) => {
+const signedIn = () => {
     useSessionStore().accessToken = 'test-token';
-    return signInAs(id);
+    return signInAs('u1');
 };
 
 /**
@@ -117,7 +116,7 @@ describe('the knob: no polling unless it asks for it', () => {
         ['fractional', '1.5']
     ])('sets no timer and no listener when it is %s', async (_name, value) => {
         if (value !== undefined) vi.stubEnv(KNOB, value);
-        await signedIn('u1');
+        await signedIn();
         const addListener = vi.spyOn(document, 'addEventListener');
 
         openPage();
@@ -130,7 +129,7 @@ describe('the knob: no polling unless it asks for it', () => {
 
     it('polls every N seconds when it is a positive whole number', async () => {
         vi.stubEnv(KNOB, '10');
-        await signedIn('u1');
+        await signedIn();
         openPage();
 
         await passSeconds(9);
@@ -144,7 +143,7 @@ describe('the knob: no polling unless it asks for it', () => {
     it("takes a container's runtime value over the build's", async () => {
         vi.stubEnv(KNOB, '10');
         vi.stubGlobal('__APP_CONFIG', { CART_STOCK_POLL_SECONDS: '2' });
-        await signedIn('u1');
+        await signedIn();
         openPage();
 
         await passSeconds(2);
@@ -154,7 +153,7 @@ describe('the knob: no polling unless it asks for it', () => {
 
     it('does not read the cart at the moment the page opens: the page has just done it', async () => {
         vi.stubEnv(KNOB, '10');
-        await signedIn('u1');
+        await signedIn();
 
         openPage();
         await nextTick();
@@ -164,7 +163,7 @@ describe('the knob: no polling unless it asks for it', () => {
 
     it('puts what the server answers in the store, so a line turning short shows up', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         const store = openPage();
         vi.mocked(getCart).mockResolvedValue(aCart([['p1', 2]], null, ['p1']));
 
@@ -187,7 +186,7 @@ describe('only for a signed-in person', () => {
 
     it('stops for good on logout, and does not come back with the next sign-in', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         openPage();
         await passSeconds(5);
         expect(getCart).toHaveBeenCalledTimes(1);
@@ -197,14 +196,14 @@ describe('only for a signed-in person', () => {
         expect(getCart).toHaveBeenCalledTimes(1);
         expect(vi.getTimerCount()).toBe(0);
 
-        await signedIn('u1');
+        await signedIn();
         await passSeconds(60);
         expect(getCart).toHaveBeenCalledTimes(1);
     });
 
     it('stops when another account takes the tab over', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         openPage();
 
         await signInAs('u2');
@@ -216,7 +215,7 @@ describe('only for a signed-in person', () => {
 
     it('stops when the page goes away', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         openPage();
 
         scope?.stop();
@@ -228,7 +227,7 @@ describe('only for a signed-in person', () => {
 
     it('stops listening for the tab hiding when the page goes away', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         const removeListener = vi.spyOn(document, 'removeEventListener');
         openPage();
 
@@ -241,7 +240,7 @@ describe('only for a signed-in person', () => {
 describe('a hidden tab', () => {
     it('pauses while hidden', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         openPage();
         await passSeconds(5);
         expect(getCart).toHaveBeenCalledTimes(1);
@@ -255,7 +254,7 @@ describe('a hidden tab', () => {
 
     it('re-reads once as soon as it is visible again, then resumes the interval', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         openPage();
         await setVisibility('hidden');
         await passSeconds(60);
@@ -271,7 +270,7 @@ describe('a hidden tab', () => {
 
     it('does not poll at all for a page that opens in a hidden tab, until it shows', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         visibility = 'hidden';
         openPage();
 
@@ -285,7 +284,7 @@ describe('a hidden tab', () => {
 
     it('re-reads on becoming visible only when it was hidden, not on a repeated event', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         openPage();
 
         await setVisibility('visible');
@@ -299,7 +298,7 @@ describe('a hidden tab', () => {
 describe('next to the shopper’s own writes', () => {
     it('skips a tick while a write is in flight, and polls at the next one after it answered', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         const store = openPage();
         const write = await issue(store, ACTIONS.update);
 
@@ -314,7 +313,7 @@ describe('next to the shopper’s own writes', () => {
 
     it('keeps the write’s answer when an older poll answers after it', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         const store = openPage();
         const pollAnswer = gate<Answer<typeof getCart>>();
         vi.mocked(getCart).mockReturnValueOnce(pollAnswer.promise);
@@ -332,7 +331,7 @@ describe('next to the shopper’s own writes', () => {
 
     it('does not pile a second read on a slow one', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         openPage();
         vi.mocked(getCart).mockReturnValue(new Promise(() => undefined) as never);
 
@@ -343,7 +342,7 @@ describe('next to the shopper’s own writes', () => {
 
     it('survives a failed read and tries again at the next tick', async () => {
         vi.stubEnv(KNOB, '5');
-        await signedIn('u1');
+        await signedIn();
         const store = openPage();
         vi.mocked(getCart).mockRejectedValueOnce(new Error('Network Error'));
 

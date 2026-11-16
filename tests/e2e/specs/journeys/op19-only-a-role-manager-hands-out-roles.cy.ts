@@ -84,14 +84,13 @@ const roleRefusedByHand = (userId: string, role: string, as: E2ERole): void => {
  *
  * @param userId - whose role
  * @param role - the role asked for
- * @param as - the seeded account making the request
  */
-const noRoleOffered = (userId: string, role: string, as: E2ERole): void => {
+const noRoleOffered = (userId: string, role: string): void => {
     cy.visit(`/en/users/${userId}`);
     cy.get('[data-test=user-manage-access]').click();
     cy.get('[data-test=user-access-role]').should('have.class', 'v-input--disabled');
     cy.get('[data-test=user-access-cancel]').click();
-    roleRefusedByHand(userId, role, as);
+    roleRefusedByHand(userId, role, 'moderator');
 };
 
 /**
@@ -120,8 +119,8 @@ describe('OP19 · Nobody hands out more than they hold', () => {
         cy.accountInRole('unverified').then(({ id: targetId }) => {
             cy.step('the moderator holds no role management: nothing to pick, every role refused');
             cy.loginAs('moderator');
-            noRoleOffered(targetId, 'admin', 'moderator');
-            noRoleOffered(targetId, 'moderator', 'moderator');
+            noRoleOffered(targetId, 'admin');
+            noRoleOffered(targetId, 'moderator');
 
             cy.step('support is refused the same, the account staying a customer');
             cy.switchUser('support');

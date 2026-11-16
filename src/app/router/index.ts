@@ -153,7 +153,7 @@ const router = createRouter({
      * @param savedPosition - Where the visitor was, on a history navigation; `null` otherwise.
      * @returns The scroll target, or `false` to leave the viewport alone.
      */
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- vue-router 5.4 deprecates `scrollBehavior` for the experimental ScrollRestoration; moving to it is its own change
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- vue-router 5.4 deprecates `scrollBehavior` for the experimental ScrollRestoration; follow-up: move to vue-router's ScrollRestoration API
     scrollBehavior: (to, from, savedPosition) => {
         const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
         if (savedPosition) return { ...savedPosition, behavior };

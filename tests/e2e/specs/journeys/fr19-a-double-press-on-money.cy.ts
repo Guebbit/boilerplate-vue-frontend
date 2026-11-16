@@ -30,12 +30,11 @@ interface OrderState {
 /**
  * The order as the API serves it to one persona.
  *
- * @param role - who asks
  * @param orderId - which order
  * @returns a chain yielding its state
  */
-const orderNow = (role: 'user' | 'warehouse', orderId: string): Cypress.Chainable<OrderState> =>
-    cy.apiAs<OrderState>(role, 'GET', `/orders/${orderId}`).then((order) => {
+const orderNow = (orderId: string): Cypress.Chainable<OrderState> =>
+    cy.apiAs<OrderState>('user', 'GET', `/orders/${orderId}`).then((order) => {
         if (!order) throw new Error(`orderNow: no order ${orderId}`);
         return order;
     });
@@ -102,7 +101,7 @@ describe('FR19 · A double press on money', () => {
 
             cy.step('the order is canceled once, with no error on the page');
             eventually(
-                () => orderNow('user', orderId),
+                () => orderNow(orderId),
                 (order) => order.status === 'canceled'
             );
             cy.get('[data-test=order-cancel-error]').should('not.exist');
@@ -124,7 +123,7 @@ describe('FR19 · A double press on money', () => {
 
             cy.step('the order is canceled once, with no error on the page');
             eventually(
-                () => orderNow('user', orderId),
+                () => orderNow(orderId),
                 (order) => order.status === 'canceled'
             );
             cy.get('[data-test=withdraw-error]').should('not.exist');

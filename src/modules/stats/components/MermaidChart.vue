@@ -57,6 +57,11 @@ const failed = ref(false);
 let renderCounter = 0;
 
 /**
+ * Random prefix, drawn once per chart, so the ids of two charts on one page never collide.
+ */
+const idPrefix = `stats-chart-${Math.random().toString(36).slice(2, 8)}`;
+
+/**
  * Whether the component is gone, so a late render stops touching the DOM.
  */
 let unmounted = false;
@@ -81,12 +86,15 @@ const render = (): Promise<void> => {
                 suppressErrorRendering: true,
                 theme: theme.current.value.dark ? 'dark' : 'default'
             });
-            return mermaid.render(`stats-chart-${current}`, props.definition);
+            return mermaid.render(`${idPrefix}-${current}`, props.definition);
         })
         .then(({ svg }) => {
             if (unmounted || current !== renderCounter || !host.value) return;
-            const parsed = new DOMParser().parseFromString(svg, 'image/svg+xml');
-            host.value.replaceChildren(parsed.documentElement);
+            // Parsed as HTML, not XML: Mermaid's HTML labels (`<br>`, `<i>`) are not well-formed XML, so
+            // an `image/svg+xml` parse would yield a parse error. Already sanitised by `strict`.
+            const parsed = new DOMParser().parseFromString(svg, 'text/html');
+            const drawing = parsed.body.firstElementChild;
+            if (drawing) host.value.replaceChildren(drawing);
             failed.value = false;
         })
         .catch(() => {

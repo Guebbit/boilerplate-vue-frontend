@@ -17,9 +17,9 @@ import type { StatsPeriodChoice } from '../domain';
 const CURRENT: StatsPeriodChoice = { from: '2026-09-01', to: '2026-09-30', interval: 'day' };
 
 /** Mounts the form with the real i18n and Vuetify. */
-const mountForm = (period: StatsPeriodChoice = CURRENT) =>
+const mountForm = () =>
     mount(StatsPeriodForm, {
-        props: { modelValue: period, limits: { maxRangeDays: 731, maxBuckets: 400 } },
+        props: { modelValue: CURRENT, limits: { maxRangeDays: 731, maxBuckets: 400 } },
         global: { plugins: [vuetify, i18n] }
     });
 

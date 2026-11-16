@@ -165,15 +165,14 @@ const visitRoute = (row: ActionRow): void => {
  * Registers the stub that answers the row's request with its failure.
  *
  * @param row - the row
- * @param alias - the alias to wait on
  */
-const stubFailure = (row: ActionRow, alias: string): void => {
+const stubFailure = (row: ActionRow): void => {
     const response = rejectEnvelope(
         row.status ?? DEFAULT_STATUS,
         row.code ?? DEFAULT_CODE,
         row.message
     );
-    cy.intercept(apiRequest(row.intercept), response).as(alias);
+    cy.intercept(apiRequest(row.intercept), response).as('failure');
 };
 
 /**
@@ -232,7 +231,7 @@ const expectRetryWorks = (row: ActionRow): void => {
 const runActionFailure = (row: ActionRow): void => {
     visitRoute(row);
     row.prepare?.();
-    stubFailure(row, 'failure');
+    stubFailure(row);
     cy.location('href').then((href) =>
         typedValues().then((values) => {
             row.trigger?.();
@@ -250,7 +249,7 @@ const runActionFailure = (row: ActionRow): void => {
  * @param row - the row
  */
 const runReadFailure = (row: ActionRow): void => {
-    stubFailure(row, 'failure');
+    stubFailure(row);
     visitRoute(row);
     row.prepare?.();
     cy.wait('@failure');
@@ -442,7 +441,7 @@ const captureRead = (row: ActionRow, shot: PlannedActionShot): void => {
 const captureFailure = (row: ActionRow, shot: PlannedActionShot): void => {
     visitRoute(row);
     row.prepare?.();
-    stubFailure(row, 'failure');
+    stubFailure(row);
     row.trigger?.();
     cy.wait('@failure');
     cy.get(row.alert ? `[data-test=${row.alert}]` : ANY_ALERT).should('be.visible');

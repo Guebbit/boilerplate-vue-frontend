@@ -50,13 +50,13 @@ const lastRequest = () => {
 };
 
 /**
- * The most recent request with this method and url — the avatar PATCH is followed by refetches.
+ * The most recent `PATCH` to `/account` — the avatar PATCH is followed by refetches.
  */
-const lastRequestTo = (method: string, url: string) => {
+const lastAccountPatch = () => {
     const call = vi
         .mocked(orvalMutator)
-        .mock.calls.findLast(([config]) => config.method === method && config.url === url);
-    if (!call) throw new Error(`no ${method} ${url} request was made`);
+        .mock.calls.findLast(([config]) => config.method === 'PATCH' && config.url === '/account');
+    if (!call) throw new Error(`no PATCH /account request was made`);
     return call;
 };
 
@@ -64,7 +64,7 @@ const lastRequestTo = (method: string, url: string) => {
  * The avatar PATCH's body, asserting it was multipart-encoded.
  */
 const avatarFormData = () => {
-    const { data } = lastRequestTo('PATCH', '/account')[0] as { data: unknown };
+    const { data } = lastAccountPatch()[0] as { data: unknown };
     if (!(data instanceof FormData)) throw new TypeError('last request body was not FormData');
     return data;
 };
@@ -149,7 +149,7 @@ describe('useAccountAuthStore.signup', () => {
         return useAccountAuthStore()
             .setAvatarAfterSignup(IMAGE(), { onUploadProgress })
             .then(() => {
-                expect(lastRequestTo('PATCH', '/account')[1]).toEqual(
+                expect(lastAccountPatch()[1]).toEqual(
                     expect.objectContaining({ onUploadProgress })
                 );
             });

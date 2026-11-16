@@ -39,15 +39,14 @@ beforeEach(() => {
 });
 
 /**
- * Waits until a mocked API function has been called `times` times.
+ * Waits until a mocked API function has been called once.
  *
  * @param api - The mocked function
- * @param times - How many calls to wait for
  * @returns A promise settling once it has
  */
-const calledTimes = (api: unknown, times: number) =>
+const calledOnce = (api: unknown) =>
     vi.waitFor(() => {
-        expect(api).toHaveBeenCalledTimes(times);
+        expect(api).toHaveBeenCalledTimes(1);
     });
 
 describe('the shipping radio when the page opens over a cart the store already holds', () => {
@@ -61,10 +60,10 @@ describe('the shipping radio when the page opens over a cart the store already h
         vi.mocked(getCart).mockReturnValueOnce(opening.promise);
         vi.mocked(setCartShippingMethod).mockReturnValueOnce(pick.promise);
         const page = await mountCartPage(aCart([['p1', 2]]));
-        await calledTimes(getCart, 1);
+        await calledOnce(getCart);
 
         await page.pickShipping('standard', true);
-        await calledTimes(setCartShippingMethod, 1);
+        await calledOnce(setCartShippingMethod);
         opening.resolve(answered(aCart([['p1', 2]], null)));
         await flushPromises();
         pick.resolve(answered(aCart([['p1', 2]], 'standard')));
@@ -82,10 +81,10 @@ describe('the shipping radio when the page opens over a cart the store already h
         vi.mocked(getCart).mockReturnValueOnce(opening.promise);
         vi.mocked(setCartShippingMethod).mockReturnValueOnce(pick.promise);
         const page = await mountCartPage(aCart([['p1', 2]]));
-        await calledTimes(getCart, 1);
+        await calledOnce(getCart);
 
         await page.pickShipping('standard', true);
-        await calledTimes(setCartShippingMethod, 1);
+        await calledOnce(setCartShippingMethod);
         pick.resolve(answered(aCart([['p1', 2]], 'standard')));
         await flushPromises();
         opening.resolve(answered(aCart([['p1', 2]], null)));

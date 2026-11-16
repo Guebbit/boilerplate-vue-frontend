@@ -40,10 +40,9 @@ import { instance } from '@/infrastructure/http/client';
  * preview therefore prefixes the API's own origin, and the expectation is built from the axios
  * instance rather than written out, so a spec cannot pass by agreeing with a stale `.env`.
  *
- * @param path - The path as the API returned it.
  * @returns The absolute URL the preview should show.
  */
-const served = (path: string) => `${String(instance.defaults.baseURL)}${path}`;
+const served = () => `${String(instance.defaults.baseURL)}/images/existing.png`;
 
 /** Object-URL bookkeeping, so a missing revoke is observable. */
 const created: string[] = [];
@@ -67,8 +66,8 @@ beforeEach(() => {
 });
 
 /** Builds a small image `File`. */
-const makeFile = (name = 'photo.png', type = 'image/png') =>
-    new File([new Uint8Array([1, 2, 3])], name, { type });
+const makeFile = (name = 'photo.png') =>
+    new File([new Uint8Array([1, 2, 3])], name, { type: 'image/png' });
 
 /** Mounts the upload field; `props` override the defaults. */
 const mountUpload = (props: Record<string, unknown> = {}) =>
@@ -133,7 +132,7 @@ describe('FormImageUpload — the preview', () => {
     it('shows the existing image while nothing is picked', () => {
         const wrapper = mountUpload({ currentImageUrl: '/images/existing.png' });
 
-        expect(wrapper.find('img').attributes('src')).toBe(served('/images/existing.png'));
+        expect(wrapper.find('img').attributes('src')).toBe(served());
     });
 
     it('prefers the picked file over the existing image', async () => {
@@ -158,7 +157,7 @@ describe('FormImageUpload — the preview', () => {
         await wrapper.setProps({ modelValue: undefined });
         await nextRenderTick(wrapper);
 
-        expect(wrapper.find('img').attributes('src')).toBe(served('/images/existing.png'));
+        expect(wrapper.find('img').attributes('src')).toBe(served());
     });
 });
 

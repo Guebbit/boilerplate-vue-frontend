@@ -36,17 +36,17 @@ import {
 const CHECK_IDS = Object.keys(CHECKS) as CheckId[];
 
 /** A synthetic CSS source for the sample cases. */
-const sample = (css: string, scoped = true): CssSource => ({
+const sample = (css: string): CssSource => ({
     file: 'Sample.vue',
     css,
     firstLine: 1,
-    scoped,
+    scoped: true,
     sfc: true
 });
 
 /** The checks that fire on a CSS sample, allowances applied. */
-const cssChecks = async (css: string, scoped = true): Promise<CheckId[]> =>
-    applyAllowances(await scanCss([sample(css, scoped)])).map((finding) => finding.check);
+const cssChecks = async (css: string): Promise<CheckId[]> =>
+    applyAllowances(await scanCss([sample(css)])).map((finding) => finding.check);
 
 /** The checks that fire on an SFC template sample, allowances applied. */
 const templateChecks = (template: string): CheckId[] =>

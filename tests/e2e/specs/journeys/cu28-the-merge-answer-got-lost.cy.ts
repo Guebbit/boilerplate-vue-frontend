@@ -56,11 +56,10 @@ const loseTheFirstMergeAnswer = (): void => {
 /**
  * As a guest, adds a seeded product from its page to the cart `GUEST_UNITS` times.
  *
- * @param name - a `product.*` guarantee name
  */
-const guestAdds = (name: string): void => {
+const guestAdds = (): void => {
     cy.visit('/en/products');
-    searchAndOpenProduct(name);
+    searchAndOpenProduct('product.inStock');
     for (let unit = 0; unit < GUEST_UNITS; unit += 1) cy.get('[data-test=add-to-cart]').click();
     cy.get('[data-test=nav-badge]').should('contain.text', String(GUEST_UNITS));
 };
@@ -69,14 +68,13 @@ const guestAdds = (name: string): void => {
  * Reads back the account's cart from the server and checks the product's quantity there.
  *
  * @param productId - the product the guest added
- * @param quantity - what the cart must hold of it
  */
-const accountHolds = (productId: string, quantity: number): void => {
+const accountHolds = (productId: string): void => {
     cy.apiAs<{ items: { productId: string; quantity: number }[] }>('user', 'GET', '/cart').then(
         (cart) => {
             const lines = (cart?.items ?? []).filter((line) => line.productId === productId);
             expect(lines, 'one line for the product').to.have.length(1);
-            expect(lines[0]?.quantity, 'the guest quantity, added once').to.equal(quantity);
+            expect(lines[0]?.quantity, 'the guest quantity, added once').to.equal(GUEST_UNITS);
         }
     );
 };
@@ -91,7 +89,7 @@ describe('CU28 · The answer to my cart merge got lost', () => {
     it('keeps the guest cart, and the retry after a reload adds it once', () => {
         cy.subjectId('product.inStock').then((productId) => {
             cy.step('a guest fills a cart, and the merge answer will be lost on the way back');
-            guestAdds('product.inStock');
+            guestAdds();
             loseTheFirstMergeAnswer();
 
             cy.step(
@@ -110,14 +108,14 @@ describe('CU28 · The answer to my cart merge got lost', () => {
                     'the pending merge'
                 ).not.to.equal(null);
             });
-            accountHolds(productId, GUEST_UNITS);
+            accountHolds(productId);
 
             cy.step('the page is reloaded: the session returns and the same merge is sent again');
             cy.reload();
             cy.wait('@merge');
 
             cy.step('nothing was added twice, and the browser copy is gone at last');
-            accountHolds(productId, GUEST_UNITS);
+            accountHolds(productId);
             cy.window().should((win) => {
                 expect(win.localStorage.getItem(GUEST_CART_KEY), 'the guest copy').to.equal(null);
                 expect(
@@ -134,7 +132,7 @@ describe('CU28 · The answer to my cart merge got lost', () => {
     it('ends the lost merge with the session: the next sign-in sends nothing and adds nothing', () => {
         cy.subjectId('product.inStock').then((productId) => {
             cy.step('a guest fills a cart, the merge answer is lost, the shopper signs out again');
-            guestAdds('product.inStock');
+            guestAdds();
             loseTheFirstMergeAnswer();
             cy.get('[data-test=nav-login-link]').click();
             signInThroughTheForm();
@@ -157,7 +155,7 @@ describe('CU28 · The answer to my cart merge got lost', () => {
             cy.goToCart();
             cy.get('[data-test=cart-item]').should('have.length', 1);
             cy.get('@merge.all').should('have.length', 1);
-            accountHolds(productId, GUEST_UNITS);
+            accountHolds(productId);
         });
     });
 });

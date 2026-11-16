@@ -160,8 +160,8 @@ const reportFile = path.join(REPO_ROOT, MUTATION_REPORT_PATH);
 const pageFile = path.join(path.dirname(reportFile), 'index.html');
 
 /** Reads a Stryker JSON report. */
-const readStrykerReport = (file: string): StrykerReport =>
-    JSON.parse(readFileSync(file, 'utf8')) as StrykerReport;
+const readStrykerReport = (): StrykerReport =>
+    JSON.parse(readFileSync(reportFile, 'utf8')) as StrykerReport;
 
 /** Whether this run mutates only some files — Stryker's `--mutate`, long or short. */
 const partial = passthrough.some(
@@ -171,7 +171,7 @@ const partial = passthrough.some(
 /** The report on disk before a partial run, and when it was written; a full run replaces it. */
 const previous =
     partial && existsSync(reportFile)
-        ? { report: readStrykerReport(reportFile), writtenAt: statSync(reportFile).mtimeMs }
+        ? { report: readStrykerReport(), writtenAt: statSync(reportFile).mtimeMs }
         : undefined;
 
 /**
@@ -181,7 +181,7 @@ const previous =
 const keepReportWhole = (): void => {
     if (!previous || statSync(reportFile).mtimeMs === previous.writtenAt) return;
 
-    const merged = overlayReport(previous.report, readStrykerReport(reportFile));
+    const merged = overlayReport(previous.report, readStrykerReport());
     writeFileSync(reportFile, JSON.stringify(merged));
     writeFileSync(pageFile, renderHtml(readFileSync(pageFile, 'utf8'), merged));
     console.log(

@@ -25,8 +25,8 @@ afterEach(() => {
 });
 
 /** Writes a flat PNG to the scratch root and returns its path. */
-const writePng = (name: string, width: number, height: number): string => {
-    const png = new PNG({ width, height });
+const writePng = (name: string): string => {
+    const png = new PNG({ width: 390, height: 844 });
     png.data.fill(255);
     const file = path.join(root, name);
     writeFileSync(file, PNG.sync.write(png));
@@ -66,7 +66,7 @@ describe('stitchDesignCapture', () => {
         const one = stitchDesignCapture(
             {
                 shotId: 'a--phone--light',
-                segments: [{ path: writePng('s0.png', 390, 844), scrollY: 0 }],
+                segments: [{ path: writePng('s0.png'), scrollY: 0 }],
                 bandTop: 0,
                 bandBottom: 0,
                 pageHeight: 844
@@ -82,9 +82,9 @@ describe('stitchDesignCapture', () => {
             {
                 shotId: 'b--phone--light',
                 segments: [
-                    { path: writePng('t0.png', 390, 844), scrollY: 0 },
-                    { path: writePng('t1.png', 390, 844), scrollY: 844 },
-                    { path: writePng('t2.png', 390, 844), scrollY: 1688 }
+                    { path: writePng('t0.png'), scrollY: 0 },
+                    { path: writePng('t1.png'), scrollY: 844 },
+                    { path: writePng('t2.png'), scrollY: 1688 }
                 ],
                 bandTop: 0,
                 bandBottom: 0,

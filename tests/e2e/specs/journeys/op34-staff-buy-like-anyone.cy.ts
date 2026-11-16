@@ -16,11 +16,10 @@ interface AuditRowLike {
 /**
  * From a basket holding one product, ships to a freshly added address and pays by card.
  *
- * @param product - the `product.*` guarantee name to buy
  * @returns a chain yielding the new order's id
  */
-const buyByCard = (product: string): Cypress.Chainable<string> => {
-    addToCartFromStorefront(product);
+const buyByCard = (): Cypress.Chainable<string> => {
+    addToCartFromStorefront('product.rich');
     cy.goToCart();
     cy.get('[data-test=cart-item]').should('have.length', 1);
     cy.get('[data-test=shipping-method-standard]').click();
@@ -51,7 +50,7 @@ describe('OP34 · Staff buy like anyone', () => {
     it('a warehouse worker buys by card and reads their own order', () => {
         cy.step('the worker shops from the storefront and pays');
         cy.loginAs('warehouse');
-        buyByCard('product.rich').then((orderId) => {
+        buyByCard().then((orderId) => {
             cy.step('their own order is in their order list and opens');
             cy.visit('/en/orders');
             cy.get(`[data-test=row-view][href$="/orders/${orderId}"]`).should('exist');
@@ -63,7 +62,7 @@ describe('OP34 · Staff buy like anyone', () => {
     it('a moderator refunds their own order, and the audit row says it was their own', () => {
         cy.step('the moderator buys and pays');
         cy.loginAs('moderator');
-        buyByCard('product.rich').then((orderId) => {
+        buyByCard().then((orderId) => {
             cy.step('on the edit page the refund is theirs to press (the session is fresh)');
             cy.visit(`/en/orders/${orderId}/edit`);
             cy.get('[data-test=button-refund-only]').should('not.be.disabled').click();

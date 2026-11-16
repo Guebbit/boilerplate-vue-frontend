@@ -239,7 +239,7 @@ describe('UserEdit', () => {
             .then(() => {
                 // A role-only save has no profile change: no PATCH at all, just the door.
                 expect(lastPatchBody()).toBeUndefined();
-                const doors = callsTo('POST', '/users/u1/assign-role');
+                const doors = postsTo('/users/u1/assign-role');
                 expect(doors).toHaveLength(1);
                 expect(contractRequest(schemas.AssignUserRoleBody, doors[0]?.[0].data)).toEqual({
                     role: 'manager'
@@ -470,11 +470,11 @@ describe('UserEdit — what each row allows', () => {
     });
 });
 
-/** The requests of one method and url, in call order. */
-const callsTo = (method: string, url: string) =>
+/** The `POST` requests to one url, in call order. */
+const postsTo = (url: string) =>
     vi
         .mocked(orvalMutator)
-        .mock.calls.filter(([config]) => config.method === method && config.url === url);
+        .mock.calls.filter(([config]) => config.method === 'POST' && config.url === url);
 
 /**
  * Status is an action, not a field of the `PATCH`: Deactivate asks the access dialog first (it
@@ -493,12 +493,12 @@ describe('UserEdit — activating and deactivating', () => {
                     skipPicker: true,
                     chosenActive: false
                 });
-                expect(callsTo('POST', '/users/u1/deactivate')).toHaveLength(0);
+                expect(postsTo('/users/u1/deactivate')).toHaveLength(0);
                 emitOn(dialog, 'confirm', { active: false });
             })
             .then(flushPromises)
             .then(() => {
-                expect(callsTo('POST', '/users/u1/deactivate')).toHaveLength(1);
+                expect(postsTo('/users/u1/deactivate')).toHaveLength(1);
                 expect(lastPatchBody()).toBeUndefined();
             });
     });
@@ -512,7 +512,7 @@ describe('UserEdit — activating and deactivating', () => {
             .then(() => emitOn(wrapper.findComponent(UserAccessDialog), 'cancel'))
             .then(flushPromises)
             .then(() => {
-                expect(callsTo('POST', '/users/u1/deactivate')).toHaveLength(0);
+                expect(postsTo('/users/u1/deactivate')).toHaveLength(0);
             });
     });
 
@@ -523,7 +523,7 @@ describe('UserEdit — activating and deactivating', () => {
             .then(() => wrapper.get('[data-test=user-edit-activate]').trigger('click'))
             .then(flushPromises)
             .then(() => {
-                expect(callsTo('POST', '/users/u1/activate')).toHaveLength(1);
+                expect(postsTo('/users/u1/activate')).toHaveLength(1);
                 expect(wrapper.findComponent(UserAccessDialog).props('target')).toBeUndefined();
             });
     });

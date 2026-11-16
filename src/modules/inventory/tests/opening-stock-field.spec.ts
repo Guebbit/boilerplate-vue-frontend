@@ -47,15 +47,14 @@ const mountFieldAs = (abilities: [string, string][]) => {
 };
 
 /**
- * Types a count into the field.
+ * Types the count 5 into the field.
  *
  * @param wrapper - The mounted field.
- * @param quantity - What to type.
  */
-const typeCount = (wrapper: ReturnType<typeof mountFieldAs>['wrapper'], quantity: number) =>
+const typeCount = (wrapper: ReturnType<typeof mountFieldAs>['wrapper']) =>
     wrapper
         .get('[data-test=product-on-hand-field] input')
-        .setValue(String(quantity))
+        .setValue('5')
         .then(() => flushPromises());
 
 describe('OpeningStockField', () => {
@@ -75,7 +74,7 @@ describe('OpeningStockField', () => {
     it('receives the typed count against the new product, as an opening delivery', () => {
         const { wrapper, steps, receive } = mountFieldAs([['create', 'StockMovement']]);
 
-        return typeCount(wrapper, 5)
+        return typeCount(wrapper)
             .then(() => steps[0]('p2'))
             .then(() => {
                 expect(steps).toHaveLength(1);
@@ -97,6 +96,6 @@ describe('OpeningStockField', () => {
         const { wrapper, steps, receive } = mountFieldAs([['create', 'StockMovement']]);
         receive.mockRejectedValueOnce(new Error('Network Error'));
 
-        return typeCount(wrapper, 5).then(() => expect(steps[0]('p2')).resolves.toBeUndefined());
+        return typeCount(wrapper).then(() => expect(steps[0]('p2')).resolves.toBeUndefined());
     });
 });

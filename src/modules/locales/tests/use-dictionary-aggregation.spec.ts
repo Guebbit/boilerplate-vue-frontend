@@ -42,10 +42,10 @@ const apps = ref([
 /**
  * Builds one stored entry row for the fixtures below.
  */
-const entry = (key: string, value: string, app = OWN_APP): LocaleEntry => ({
-    id: `entry-${key}-${app}`,
+const entry = (key: string, value: string): LocaleEntry => ({
+    id: `entry-${key}-${OWN_APP}`,
     locale: 'en',
-    app,
+    app: OWN_APP,
     key,
     value
 });

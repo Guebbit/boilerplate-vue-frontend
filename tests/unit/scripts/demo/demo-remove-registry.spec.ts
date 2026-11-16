@@ -23,8 +23,8 @@ const write = (relative: string, content: string): void => {
     writeFileSync(full, content);
 };
 
-/** Read a scratch file back. */
-const read = (relative: string): string => readFileSync(path.join(root, relative), 'utf8');
+/** Read the scratch module registry back. */
+const read = (): string => readFileSync(path.join(root, 'src/modules.ts'), 'utf8');
 
 beforeEach(() => {
     root = mkdtempSync(path.join(os.tmpdir(), 'demo-remove-registry-'));
@@ -66,7 +66,7 @@ describe('stripModuleRegistry', () => {
 
         stripModuleRegistry(root, ['stock-alerts']);
 
-        expect(read('src/modules.ts')).toBe(
+        expect(read()).toBe(
             [
                 "import cart from '@/modules/cart/module';",
                 'export const enabledModules = [',
@@ -91,7 +91,7 @@ describe('stripModuleRegistry', () => {
 
         stripModuleRegistry(root, ['cart']);
 
-        expect(read('src/modules.ts')).toBe(
+        expect(read()).toBe(
             [
                 "import account from '@/modules/account/module';",
                 'export const enabledModules = [',

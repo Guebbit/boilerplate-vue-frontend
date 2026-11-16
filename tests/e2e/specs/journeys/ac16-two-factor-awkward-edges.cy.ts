@@ -68,12 +68,11 @@ const watchGuesses = (): void => {
 /**
  * Types one guess into the login challenge, submits it, and expects the API's answer.
  *
- * @param code - what to type
  * @param expectedStatus - the HTTP status the API should answer with
  */
-const guess = (code: string, expectedStatus: number): void => {
+const guess = (expectedStatus: number): void => {
     cy.get('[data-test=two-factor-challenge-code] input').clear();
-    cy.get('[data-test=two-factor-challenge-code] input').type(code);
+    cy.get('[data-test=two-factor-challenge-code] input').type('000000');
     cy.get('[data-test=two-factor-challenge-submit]').click();
     cy.wait('@guess').its('response.statusCode').should('equal', expectedStatus);
 };
@@ -157,8 +156,8 @@ describe('AC16 · Two-factor, the awkward edges', () => {
 
         cy.step('five wrong guesses are answered as wrong, the sixth is refused outright');
         watchGuesses();
-        for (let attempt = 1; attempt <= GUESSES_ALLOWED; attempt += 1) guess('000000', 422);
-        guess('000000', 429);
+        for (let attempt = 1; attempt <= GUESSES_ALLOWED; attempt += 1) guess(422);
+        guess(429);
 
         cy.step('that is terminal: the page says why, and the only way on is a fresh login');
         cy.get('[data-test=two-factor-challenge-locked-out]').should('not.be.empty');
