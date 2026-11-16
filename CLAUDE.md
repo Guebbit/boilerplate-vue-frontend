@@ -124,7 +124,7 @@ can offer a sibling. See `docs/theory/strategic-ddd.md` §5.
     with a redirect for one release.
 - MUST NOT keep compatibility code past that one release: no permanent field aliases, no
   `@deprecated` tags left "for later".
-- **Pre-release opt-out:** when the backend's `HANDOFF.md` (plans for both repos live there) or the
+- **Pre-release opt-out:** when the backend's `.work/HANDOFF.md` (plans for both repos live there) or the
   user's prompt says "pre-release: no backward compatibility", replace instead. No shims, no
   bridges, no deprecation period.
 - MUST NOT build guardrails for staff against their own choices: no extra confirmations, no
@@ -307,43 +307,68 @@ raises a design choice the rules above don't settle, run this procedure. Don't a
    - writes one **card** (format below).
 2. **A skeptic agent per card** tries to break it: wrong facts, a better option, a clash with
    another decision. The card is corrected, never just defended.
-3. **Decide or ask, by confidence after the skeptic:**
+3. **File it by confidence after the skeptic.** FE-only cards sit 10 points lower: the FE is
+   allowed to be more creative than the BE.
 
-   | Layer | Decided alone | Otherwise |
-   | --- | --- | --- |
-   | BE (or BE + FE) | ≥ 90 % | the card goes to the user |
-   | FE only | ≥ 70 % | the card goes to the user |
+   | Outcome | BE (or BE + FE) | FE only | File | Built? |
+   | --- | --- | --- | --- | --- |
+   | decided | ≥ 90 % | ≥ 80 % | `DECIDED.md` | yes |
+   | decided with doubts | 80–90 % | 70–80 % | `DECIDED_WITH_DOUBTS.md`, alternatives kept | yes; the user may overturn it |
+   | asked | < 80 % | < 70 % | `QUESTIONS.md` | no, waits for the user |
 
-4. **Where cards live:** the backend's root (gitignored), beside its `HANDOFF.md`. One home for
-   both repos:
-   - open cards in QUESTIONS_<MMDD>.md, with a quick table on top (id, what, suggestion, %, lane);
-   - decided and answered cards in DECIDED_<MMDD>.md: each card is its lane's build spec, so it
-     is moved there, never deleted;
-   - an answered card leaves QUESTIONS, and its lane row in the root HANDOFF file says so.
+   - Whatever the %, a card on money, auth, deletion, a new dependency or a contract is asked
+     (§ Asking vs. deciding).
+   - An answered card moves to `DECIDED.md` in its final wording, with `Decided by: user, <date>`.
+     A pipeline decision carries `Decided by: <role>, <N %>`.
+
+4. **Where cards live:** the backend's `.work/` (gitignored), one home for both repos, one folder per feature:
+   `.work/features/<feature>/` holds `QUESTIONS.md`, `DECIDED.md`, `DECIDED_WITH_DOUBTS.md`.
+   - Each file has one writer: the role that decided, or the vicemanager.
+   - `QUESTIONS.md` opens with a quick table (id, what, suggestion, %, lane).
+   - A decided card is its lane's build spec; its lane row in `.work/HANDOFF.md` says so.
+   - When the feature is merged: fold the why and the rejected alternatives into the owning
+     `docs/` page, then delete the feature's folder.
 5. **"Prune" or "refute"**: one refuter agent per decided card. A refuted card goes back to
    QUESTIONS; a surviving one is permanent and gets its amendments appended to its card.
 
-**The card**, in this order. Short lines, plain words, no paragraphs:
+**The card** follows the MADR 4 template (https://adr.github.io/madr/), plus our extras (marked ⁺).
+One card per `###` heading. Short lines, plain words:
 
 ```md
 ### <ID> · <the question, in plain words>
 
-**Summary:** 3-5 lines a non-specialist can answer from: what is being decided, what changes
-for whom, and what the suggestion is.
+**Status:** proposed | accepted | rejected | superseded by <ID> · <date> · decision-makers: <user | role>
+**Plain version⁺:** 3-5 lines of plain prose a non-specialist can answer from: what is being
+decided, what changes for whom, and what the suggestion is.
 
-**Background (from scratch):** the terms, one bullet each.
-**Today (main <sha>):** at most ~8 bullets: what the code does, with file:line.
-**Why it matters:** who is hurt, and how.
-**What others do:** | Who | What they do | Source (verified / from memory) |
-**Options:** | Option | What changes | For | Against | Cost (S/M/L · BE/FE · contract yes/no) |
-**Suggestion:** <letter>, <N> %. The one reason. What would lower it.
-**Answer with:** "<ID> <letter>" (or the alternatives).
+#### Context and Problem Statement
+- Background (from scratch): the terms, one bullet each.
+- Today (main <sha>): at most ~8 bullets, with file:line.
+- Why it matters: who is hurt, and how.
+
+#### Decision Drivers
+The standards and house rules that settle it.
+
+#### Considered Options
+| Option | What changes | Good | Bad | Cost (S/M/L · BE/FE · contract yes/no) |
+
+#### Decision Outcome
+Chosen option: <letter>, because <the one reason>.
+- **Confidence⁺:** <N> % · raises: <…> · lowers: <…>
+- **Skeptic⁺:** held / corrected: <what it changed>
+- **Consequences:** Good, because <…> · Bad, because <…>
+- **Confirmation:** the build list (files, contract, tests, docs), so a lane can build it without coming back.
+
+#### What others do⁺
+| Who | What they do | Source (verified / from memory) |
+
+**Answer with⁺:** "<ID> <letter>" (QUESTIONS only).
 ```
 
-- The suggested option carries a build list (files, contract, tests, docs), so a lane can build
-  it without coming back.
-- When the user answers "dumb it down", add a **Plain version** block under the Summary. Don't
-  rewrite the card.
+- Status by file: `QUESTIONS.md` = proposed · `DECIDED.md` and `DECIDED_WITH_DOUBTS.md` = accepted ·
+  overturned = superseded by the new card · an option dropped on purpose = rejected.
+- MADR keeps one record per file; ours keep several per file, so the status is a line, not a
+  front-matter block.
 
 ## Commits
 
@@ -352,7 +377,13 @@ Conventional Commits, enforced by commitlint on the `commit-msg` hook.
 - `type(scope): subject`. Lowercase, imperative, no trailing full stop.
 - Types: `feat` `fix` `refactor` `perf` `test` `docs` `style` `build` `ci` `chore` `revert`.
 - Scope is the module or area. The subject says what the change does for the user or system.
-- One commit per work item, with its code, tests and docs. Split only unrelated pieces.
+- One commit per lane by default: code, tests, docs and the BE half together. Every commit pays the
+  hook's light gate.
+  - Check slices cheaply (eslint, prettier, tests by file); do not commit them.
+  - A second commit only to keep a behaviour change apart from a mechanical pass. Follow-ups and
+    review fixes are amended in.
+  - Small unrelated items may share one commit: the header takes the type of the largest, the body
+    lists each as `- type(scope): subject`.
 - Breaking change: `!` after the scope plus a `BREAKING CHANGE:` footer.
 - MUST stage explicit pathspecs, never `git add -A` or `git add .`. Commit with
   `git commit -m "…" -- <paths>`. After a failed hook, run `git status` before retrying.
