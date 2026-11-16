@@ -320,7 +320,7 @@ any other Cypress run using those ports.
 From a worktree the backend sits at no fixed relative path, so `BACKEND_PATH` names the committed backend checkout explicitly. The engine is rootless podman (`podman` for `docker`), and `rm -f` can take over a minute to tear down: prove the ports are free before the next run.
 
 ```bash
-IMAGE=cypress/included:15.18.1@sha256:d133bd7549adb28f82ea4a8c90e8cb73fc28657b8eb32656c771b1d0c5afe047   # the digest pinned in visual.yml
+IMAGE=cypress/included:15.21.1@sha256:8d874a8e5457459c7b8f185f797e46c299f7d0584c9fbda0b0ca23b3e85be749   # the digest pinned in visual.yml
 docker run -d --name visual \
   -v "$PWD:/src/frontend:ro" -v "$BACKEND_PATH:/src/backend:ro" \
   --entrypoint sleep "$IMAGE" infinity

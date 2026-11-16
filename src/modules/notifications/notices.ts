@@ -132,11 +132,13 @@ export const foundationNotices: Record<string, AppNotice> = {
         })
     },
     'notifications.staff.outbox-dead': {
+        /** The line: the event name and a shortened reference to the dead row's aggregate. */
         describe: (notice: Of<'notifications.staff.outbox-dead'>, { translate }) =>
             translate(notice.code, {
                 event: notice.params.eventName,
                 ref: shortRef(notice.params.aggregateId)
             }),
+        /** Where the notice leads: the event's own page, when it has one. */
         target: (notice: Of<'notifications.staff.outbox-dead'>) =>
             outboxDeadTarget(notice.params.eventName, notice.params.aggregateId)
     }

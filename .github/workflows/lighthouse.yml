@@ -41,7 +41,7 @@ jobs:
         container:
             # Pinned by tag AND digest, the same as visual.yml: one Chrome build for every nightly
             # that measures a browser. Bump both workflows together (the unit suite refuses a split).
-            image: cypress/included:15.18.1@sha256:d133bd7549adb28f82ea4a8c90e8cb73fc28657b8eb32656c771b1d0c5afe047
+            image: cypress/included:15.21.1@sha256:8d874a8e5457459c7b8f185f797e46c299f7d0584c9fbda0b0ca23b3e85be749
         env:
             CYPRESS_CACHE_FOLDER: /root/.cache/Cypress
             BACKEND_PATH: ${{ github.workspace }}/.backend

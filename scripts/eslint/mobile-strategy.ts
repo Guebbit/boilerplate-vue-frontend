@@ -73,9 +73,9 @@ export const mobileStrategy = ESLintUtils.RuleCreator(
                 'Render a data table through `{{ owner }}`: it owns `mobile-breakpoint`, so rows stack on a phone the same way everywhere.',
             scrollWithoutName:
                 'A `<v-table>` scrolls sideways, so it needs `v-focusable-scroll="name"` (a named region) to be reachable by keyboard.'
-        }
+        },
+        defaultOptions: []
     },
-    defaultOptions: [],
     create: (context) => {
         const policy = DESIGN_POLICY.mobileStrategy;
         const isOwner = context.filename.replaceAll('\\', '/').endsWith(policy.tableOwner);

@@ -57,9 +57,9 @@ export const templateDirectiveDescription = ESLintUtils.RuleCreator(
         messages: {
             missingDescription:
                 'This template eslint-disable has no reason. Add " -- <why>" after the rule name.'
-        }
+        },
+        defaultOptions: []
     },
-    defaultOptions: [],
     create: (context) => {
         /** Reports each reason-less disable once the whole file, template included, is parsed. */
         const checkTemplateComments = (program: object): void => {

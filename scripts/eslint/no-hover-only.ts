@@ -109,9 +109,9 @@ export const noHoverOnly = ESLintUtils.RuleCreator((name) => `docs/tools/design-
                 '`{{ what }}` is a gesture with no visible control. Give the same action a button.',
             hoverTitle:
                 'A native `title` on truncated text never shows on touch, so the clipped text is lost. Show the full text.'
-        }
+        },
+        defaultOptions: []
     },
-    defaultOptions: [],
     create: (context) => {
         /** One element's checks, in the order the messages list them. */
         const checkElement = (element: TemplateElement): void => {

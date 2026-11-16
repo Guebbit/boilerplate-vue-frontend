@@ -18,6 +18,7 @@ const WRAPPER_SELECTOR = '.v-table__wrapper';
  * Without a name the region is still focusable, but is not announced as a landmark.
  */
 export const vFocusableScroll: Directive<HTMLElement, string | undefined> = {
+    /** Makes the table's scroll wrapper reachable by keyboard, and names it when a name is given. */
     mounted: (element, { value }) => {
         const wrapper = element.querySelector<HTMLElement>(WRAPPER_SELECTOR);
         if (!wrapper) return;
@@ -26,6 +27,7 @@ export const vFocusableScroll: Directive<HTMLElement, string | undefined> = {
         wrapper.setAttribute('role', 'region');
         wrapper.setAttribute('aria-label', value);
     },
+    /** Keeps the region's accessible name in step with the directive's value. */
     updated: (element, { value }) => {
         const wrapper = element.querySelector<HTMLElement>(WRAPPER_SELECTOR);
         if (!wrapper || !value) return;

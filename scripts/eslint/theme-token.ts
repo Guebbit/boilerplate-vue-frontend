@@ -87,9 +87,9 @@ export const themeToken = ESLintUtils.RuleCreator((name) => `docs/tools/design-l
                 '"--v-theme-{{name}}" is not a colour the theme defines. See src/ui/vuetify/theme.ts.',
             unknownThemeColor:
                 '"{{name}}" is not a theme colour. Use a name from src/ui/vuetify/theme.ts, or a generated variant such as primary-darken-1.'
-        }
+        },
+        defaultOptions: []
     },
-    defaultOptions: [],
     create: (context) => {
         const colors = themeColorNames();
 
