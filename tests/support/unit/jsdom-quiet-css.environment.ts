@@ -11,10 +11,8 @@
  * Go back to `environment: 'jsdom'` in vitest.config.ts once the parser handles nested
  * at-rules inside `@layer`.
  */
-import { builtinEnvironments } from 'vitest/runtime';
+import { builtinEnvironments, type Environment } from 'vitest/runtime';
 import { VirtualConsole } from 'jsdom';
-// Type-only, so it is erased before it can hit the deprecated runtime export.
-import type { Environment } from 'vitest/environments';
 
 /** The `type` jsdom stamps on a CSS parse failure. */
 const CSS_PARSING_ERROR = 'css-parsing';

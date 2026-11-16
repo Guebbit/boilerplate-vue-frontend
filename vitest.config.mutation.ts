@@ -58,14 +58,22 @@ const mutationConfig = mergeConfig(
                 '**/.stryker-tmp/**',
                 'reports/**',
                 'tests/cross-cutting/mutation-safe-imports.spec.ts',
-                // Reads `docs/theory/sitemap.md`, which the sandbox does not copy (`docs/**` is in
-                // `ignorePatterns`), so it fails the dry run on a missing file. It guards a page,
-                // not the source, and kills no mutants.
-                'tests/cross-cutting/sitemap-document.spec.ts',
                 // Reads every module's `routes.ts` as text, and inside the sandbox those are
                 // Stryker's instrumented output: `path: '...'` no longer matches, so it finds no
                 // routes and fails the dry run. It guards the a11y sweeps, and kills no mutants.
-                'tests/cross-cutting/a11y-coverage.spec.ts'
+                'tests/cross-cutting/a11y-coverage.spec.ts',
+                // Builds the app and weighs the entry chunk; the sandbox's sources carry Stryker's
+                // mutation switches, so the bundle busts the byte budget. Guards the build, kills no mutants.
+                'tests/cross-cutting/entry-chunk-budget.spec.ts',
+                // Resolves a `See scripts/eslint/...` path against the repo, which the sandbox is
+                // not (no .git, ignored paths not copied). Guards a lint rule, kills no mutants.
+                'tests/unit/scripts/eslint/comment-links.spec.ts',
+                // It also executes routes.ts and static-pages.ts, so this run loses it as a killer of
+                // route-name mutants; excluded because its text scan cannot pass on instrumented sources.
+                'tests/cross-cutting/route-name-coupling.spec.ts',
+                // Reads form schemas as text; the sandbox's are instrumented output, so its
+                // numeric-bound scan sees the mutation switches. Guards a style rule, kills no mutants.
+                'tests/cross-cutting/module-file-shapes.spec.ts'
             ]
         }
     })

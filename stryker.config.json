@@ -28,7 +28,7 @@
         "reports/**",
         "dist/**",
         "dist-e2e/**",
-        "docs/**",
+        "docs/.vitepress/**",
         ".stryker-tmp*/**",
         ".claude/**"
     ],
