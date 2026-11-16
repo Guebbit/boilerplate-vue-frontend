@@ -54,6 +54,14 @@ export default mergeConfig(
             // See the file itself for why, and for how to go back to 'jsdom'.
             environment: './tests/support/unit/jsdom-quiet-css.environment.ts',
             setupFiles: ['tests/support/unit/setup.ts'],
+            /**
+             * The page's own origin is the API's (`http://api.test`, the host every wire spec
+             * mocks). jsdom's XMLHttpRequest enforces CORS, and since MSW 3 a mocked answer no
+             * longer gets the CORS headers added for it, so a cross-origin call would fail with
+             * a network error before any handler's response is read.
+             * https://vitest.dev/config/environmentoptions
+             */
+            environmentOptions: { jsdom: { url: 'http://api.test/' } },
             // Pins the API base URL so logged URLs and relative MSW handlers read the same on every
             // machine; a local .env would otherwise point it at a dev backend.
             // Vitest sizes its pool from the CPU count (~15 forks on a 16-CPU box), each one a full

@@ -411,15 +411,22 @@ describe('orvalMutator contract validation', () => {
                 { collectModuleResponseSchemas },
                 { enabledModules }
             ]) => {
-                // Deliberately NOT awaited — the request below fires into the same race window
-                // `main.ts` leaves after mount, before this resolves.
-                const loading = loadResponseSchemas(collectModuleResponseSchemas(enabledModules));
+                /**
+                 * The request goes out before the schema table is installed, and finishes before
+                 * it is: `isResponseSchemaTableLoading()` is "not ready yet", which is exactly the
+                 * window `main.ts` leaves after mount. Starting the load first and racing it
+                 * would depend on how fast the mocked answer arrives.
+                 */
                 return orvalMutator({ url: '/locales', method: 'GET' })
                     .then((response) => {
                         expect(response).toMatchObject({ languages: ['en'] });
                         expect(warnSpy).not.toHaveBeenCalled();
                     })
-                    .finally(() => loading.then(() => warnSpy.mockRestore()));
+                    .finally(() =>
+                        loadResponseSchemas(collectModuleResponseSchemas(enabledModules)).then(() =>
+                            warnSpy.mockRestore()
+                        )
+                    );
             }
         );
     });

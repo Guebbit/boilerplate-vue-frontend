@@ -5,7 +5,7 @@
  * is never asked; a route change inside the minute reuses the answer and a staff notice forces a
  * new one; sign-out empties the counts.
  */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
@@ -112,8 +112,8 @@ describe('the shop work feed', () => {
             id: 'staff-2',
             email: 's2@example.com'
         });
-        await flushPromises();
-        expect(reads).toHaveLength(2);
+        // The handler runs a tick after the request leaves, so wait for the read rather than for the microtask queue.
+        await vi.waitFor(() => expect(reads).toHaveLength(2));
 
         useSessionStore().accessToken = undefined;
         await flushPromises();

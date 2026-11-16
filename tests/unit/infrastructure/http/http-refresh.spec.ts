@@ -109,6 +109,21 @@ const defaultScenario = (): Scenario => ({
 /** Requests seen by the server, in arrival order. Cleared before every case. */
 let requestLog: LoggedRequest[] = [];
 
+/**
+ * What a response needs for jsdom's XMLHttpRequest to hand it over when the call goes to another
+ * origin than the page's (`ABSOLUTE_EXCLUDED_URL` is a deliberate one): MSW 3 does not add them,
+ * and a call that sends cookies refuses a wildcard, so the caller's origin and headers are echoed.
+ *
+ * @param request - the request being answered
+ * @returns the CORS response headers for it
+ */
+const crossOriginHeaders = (request: Request) => ({
+    'Access-Control-Allow-Origin': request.headers.get('Origin') ?? '',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Methods': request.headers.get('Access-Control-Request-Method') ?? '*',
+    'Access-Control-Allow-Headers': request.headers.get('Access-Control-Request-Headers') ?? ''
+});
+
 /** What the handlers answer with for the case currently running. */
 let scenario: Scenario = defaultScenario();
 
@@ -116,10 +131,11 @@ let scenario: Scenario = defaultScenario();
  * Builds the envelope the API rejects with, so the handlers and the app agree on one error shape.
  *
  * @param message - Human-readable reason, echoed into `errors[0].message` as the API does.
+ * @param headers - extra response headers, for a call that crosses origins.
  * @returns A 401 response carrying the standard reject envelope.
  */
-const unauthorized = (message: string) =>
-    HttpResponse.json(aProblem(401, [{ code: 'UNAUTHORIZED', message }]), { status: 401 });
+const unauthorized = (message: string, headers?: Record<string, string>) =>
+    HttpResponse.json(aProblem(401, [{ code: 'UNAUTHORIZED', message }]), { status: 401, headers });
 
 /** This file's stub endpoints, registered on the shared MSW server before each test. */
 const handlers = [
@@ -199,11 +215,18 @@ const handlers = [
               });
     }),
 
+    /** The preflight the browser layer sends before the cross-origin call to the absolute URL. */
+    http.options(
+        ABSOLUTE_EXCLUDED_URL,
+        ({ request }) =>
+            new HttpResponse(null, { status: 204, headers: crossOriginHeaders(request) })
+    ),
+
     /** Every excluded path, each answering 401 as the ordinary outcome the exclusion exists for. */
     ...[...EXCLUDED_PATHS, ABSOLUTE_EXCLUDED_URL].map((path) =>
         http.post(path.startsWith('http') ? path : `${API}${path}`, ({ request }) => {
             requestLog.push({ route: `POST ${new URL(request.url).pathname}` });
-            return unauthorized('Bad credentials');
+            return unauthorized('Bad credentials', crossOriginHeaders(request));
         })
     ),
 

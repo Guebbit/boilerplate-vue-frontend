@@ -83,13 +83,13 @@ afterEach(() => {
 });
 
 /**
- * Starts the shared MSW server. `onUnhandledRequest: 'error'` prints the method and URL of any
+ * Starts the shared MSW server. `onUnhandledFrame: 'error'` prints the method and URL of any
  * call no handler answers and refuses it, so no unit spec ever opens a real socket. Whatever
  * happens to listen on localhost:3000 (often the paired backend) can no longer change a result.
  * https://mswjs.io/docs/api/setup-server/listen
  */
 beforeAll(() => {
-    server.listen({ onUnhandledRequest: 'error' });
+    server.listen({ onUnhandledFrame: 'error' });
 });
 
 /**
