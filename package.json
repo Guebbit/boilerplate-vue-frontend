@@ -84,7 +84,7 @@
         "driver.js": "1.10.1",
         "lodash-es": "^4.18.1",
         "lucide-vue-next": "^1.0.0",
-        "mermaid": "^11.17.0",
+        "mermaid": "^12.3.0",
         "pinia": "^3.0.4",
         "qrcode": "1.5.4",
         "tailwindcss": "^4.3.3",
@@ -164,9 +164,6 @@
         "vue-eslint-parser": "10.4.1",
         "vue-tsc": "^3.2.5",
         "yaml": "^2.8.1"
-    },
-    "overrides": {
-        "katex": "^0.18.2"
     },
     "engines": {
         "node": "^24",

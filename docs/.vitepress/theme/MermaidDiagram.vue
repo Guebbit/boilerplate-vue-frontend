@@ -55,6 +55,11 @@ const render = (): Promise<void> => {
                 ...mermaidOptions,
                 startOnLoad: false,
                 securityLevel: 'strict',
+                // Mermaid 12 defaults to the ELK layout and the `neo` look; these two keep the
+                // diagrams as they were drawn on 11.
+                // https://mermaid.js.org/config/layouts.html
+                layout: 'dagre',
+                look: 'classic',
                 theme: isDark.value ? 'dark' : 'neutral'
             });
             // render(id, source): returns the SVG as a string.

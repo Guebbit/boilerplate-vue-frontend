@@ -57,12 +57,12 @@ Groups are organised by concern, with same-namespace tools together where that h
   maintained, and the only npm package `HumanCheck.vue` depends on: its `turnstile` branch loads
   Cloudflare's vendor script directly rather than adding a wrapper for one `render()` call.
 
-## Overrides
+## Browser floor
 
-`katex` is forced to `^0.18.2` (GHSA-238p-pmpm-9mq7). `mermaid` 11 pins a vulnerable katex and
-only loads it for `$$` maths, which no chart uses; no mermaid 11 release will carry the fix, and
-mermaid 12 drops it. Dependabot ignores mermaid majors. Drop the override
-and the ignore together at mermaid 12.
+`mermaid` 12 raises the floor to Safari 17.4+ for the staff stats charts and for the docs site: the
+docs diagrams load the same `mermaid` in the reader's browser. A browser below it, or a chunk that
+fails to load, shows the stats chart's failed state (the table view still holds the numbers); a docs
+diagram stays undrawn and the cause is logged to the console.
 
 ## Install scripts
 
