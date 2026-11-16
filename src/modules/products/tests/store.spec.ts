@@ -65,7 +65,7 @@ const lastRequest = () => {
  */
 const lastFormData = () => {
     const { data } = lastRequest();
-    if (!(data instanceof FormData)) throw new Error('last request body was not FormData');
+    if (!(data instanceof FormData)) throw new TypeError('last request body was not FormData');
     return data;
 };
 

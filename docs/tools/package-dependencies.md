@@ -89,6 +89,27 @@ diagram stays undrawn and the cause is logged to the console.
 
 The paired backend's dependency-vetting page holds the longer argument.
 
+## Held versions
+
+Measured 2026-11-16. Everything else is on its latest release; what is not is here, with the run
+that says why. The paired backend's pending-major-upgrades page holds its own list.
+
+| Package           | Now     | Latest | Why it waits                                                                                                                                                                                                    |
+| ----------------- | ------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vuetify`         | ~4.1.5  | 4.3.2  | 4.3 fails 22 unit tests in 11 files (sortable header classes, the merge-report live region, inline alerts, stale-record dialogs); 4.1.5 passes them. Needs a look at the changed DOM, and the visual baselines. |
+| `@vue/test-utils` | ~2.4.11 | 2.5.1  | 2.5's types make `findComponent(<SFC>)` an error type, so typed lint fails in three specs.                                                                                                                      |
+| `vite`            | 7.3     | 8.3    | Rolldown replaces Rollup: `manualChunks` moves, CJS default imports change. Its own change.                                                                                                                     |
+| `vitest`          | 4.1     | 5.1    | `clearMocks` defaults on and `test.each` titles change. Its own change.                                                                                                                                         |
+| `cypress`         | 15.21   | 16.2   | `cypress-axe` peers 15; `cy.exec` is removed; every visual baseline moves.                                                                                                                                      |
+| `pixelmatch`      | 7.2     | 8.0    | Changes every diff count, which is a visual-gate decision for a person.                                                                                                                                         |
+| `typescript`      | 6.0.3   | 7.0.2  | `typescript-eslint`, `ts-jest` and `vue-tsc` do not accept 7 yet.                                                                                                                                               |
+| `@types/node`     | 24      | 26     | Moves with the Node runtime.                                                                                                                                                                                    |
+
+`eslint-plugin-unicorn` 80 and `jsdom` 31 were released less than seven days before they were taken
+(the owner's explicit exception, once). Until 2026-11-22 a plain `npm install <pkg>` fails with
+`ETARGET` on `eslint-plugin-unicorn@^80`, because `min-release-age` cannot resolve it; `npm ci`
+reads the lockfile and is unaffected, and `--min-release-age=0` on that one command works.
+
 ## Related pages
 
 - [Package Scripts](./package-scripts.md)

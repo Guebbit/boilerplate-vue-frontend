@@ -168,10 +168,10 @@ describe('routeSchemas table', () => {
 
     it('names a real request-body schema for every operation that declares a JSON body', () => {
         const missing = GENERATED_ROUTES.flatMap((route) =>
-            route.bodySchemaName !== undefined &&
-            !(schemas as Record<string, unknown>)[route.bodySchemaName]
-                ? [`${route.method} ${route.pattern.source} -> ${route.bodySchemaName}`]
-                : []
+            route.bodySchemaName === undefined ||
+            (schemas as Record<string, unknown>)[route.bodySchemaName]
+                ? []
+                : [`${route.method} ${route.pattern.source} -> ${route.bodySchemaName}`]
         );
 
         expect(missing).toEqual([]);

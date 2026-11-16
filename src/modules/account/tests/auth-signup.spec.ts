@@ -65,7 +65,7 @@ const lastRequestTo = (method: string, url: string) => {
  */
 const avatarFormData = () => {
     const { data } = lastRequestTo('PATCH', '/account')[0] as { data: unknown };
-    if (!(data instanceof FormData)) throw new Error('last request body was not FormData');
+    if (!(data instanceof FormData)) throw new TypeError('last request body was not FormData');
     return data;
 };
 
