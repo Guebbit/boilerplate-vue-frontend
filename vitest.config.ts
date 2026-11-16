@@ -68,6 +68,13 @@ export default mergeConfig(
             // jsdom + Vuetify. Two is plenty for the pre-commit path; `VITEST_MAX_WORKERS` overrides.
             // https://vitest.dev/config/maxworkers
             maxWorkers: 2,
+            /**
+             * Node 25+ ships its own `localStorage` global, which is `undefined` without a
+             * `--localstorage-file` and, being there, keeps jsdom's from being installed. Off,
+             * jsdom's `localStorage`/`sessionStorage` are the only ones, as on Node 24.
+             * https://nodejs.org/api/cli.html#--no-experimental-webstorage
+             */
+            execArgv: ['--no-experimental-webstorage'],
             env: { VITE_API_URL: '', ...depthKnobs },
             // Each of these runs BEFORE every test, so a spy or stub made at module scope or in
             // `beforeAll` is undone before the first test: create them in `beforeEach`.
