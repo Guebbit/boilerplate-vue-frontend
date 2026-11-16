@@ -1211,12 +1211,12 @@ export default defineConfigWithVueTs(
     },
 
     /**
-     * The linter's own config and the VitePress config: TypeScript, but outside the project
+     * The linter's own config and the VitePress config and theme: TypeScript, but outside the project
      * the type-aware program resolves against, so that program is switched off for them —
      * everything syntax-level still applies.
      */
     {
-        files: ['eslint.config.ts', 'docs/.vitepress/**/*.{ts,mts}'],
+        files: ['eslint.config.ts', 'docs/.vitepress/**/*.{ts,mts,vue}'],
         extends: [tseslint.configs.disableTypeChecked],
         languageOptions: {
             globals: {

@@ -23,7 +23,7 @@ observability stack here — the whole thing runs locally under Docker/Podman.
 ```mermaid
 flowchart LR
     Boot[App bootstrap] --> Gate{Visitor consented?}
-    Gate -->|yes| Store[useObservabilityStore\nsetUmamiConsent(true)]
+    Gate -->|yes| Store["useObservabilityStore\nsetUmamiConsent(true)"]
     Gate -->|no| Off[umami.disabled set\nno tag injected]
     Store -.injects the tag.-> Umami[Umami tracker\noptional]
     Nav[Route change] -.automatic pageview.-> Umami

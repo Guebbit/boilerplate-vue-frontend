@@ -38,10 +38,10 @@ flowchart TD
     D -.->|"transport failed"| J["generic checkout error,<br/>same Idempotency-Key on retry"]
 
     classDef ui fill:#dbeafe,stroke:#2563eb,color:#111827;
-    classDef call fill:#ede9fe,stroke:#7c3aed,color:#111827;
+    classDef api fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef bad fill:#fee2e2,stroke:#b91c1c,color:#111827;
     class A,B,C,S,E,F ui;
-    class D call;
+    class D api;
     class G,H,I,J,K,L bad;
 ```
 

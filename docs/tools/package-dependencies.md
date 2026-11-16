@@ -38,7 +38,7 @@ Groups are organised by concern, with same-namespace tools together where that h
 | Import graph                   | `dependency-cruiser`                                                                                                                                                               | the one graph rule, `no-circular` over the runtime graph (`.dependency-cruiser.cjs`), run by `npm run check`; the tier walls stay in ESLint                                                                                                                                      |
 | Formatting                     | `prettier`                                                                                                                                                                         | consistent code formatting                                                                                                                                                                                                                                                       | [Testing](./testing-and-docs.md)                 |
 | Git hooks                      | `husky`, `lint-staged`                                                                                                                                                             | the pre-commit hook; `lint-staged` scopes lint + format to staged files only, so an unrelated dirty file in the checkout cannot fail or rewrite someone else's commit                                                                                                            | [Testing](./testing-and-docs.md)                 |
-| Docs                           | `vitepress`, `vitepress-plugin-mermaid`                                                                                                                                            | docs site, diagrams, offline search                                                                                                                                                                                                                                              | [Testing](./testing-and-docs.md)                 |
+| Docs                           | `vitepress`                                                                                                                                                                        | docs site, diagrams, offline search                                                                                                                                                                                                                                              | [Testing](./testing-and-docs.md)                 |
 
 ## Quick take
 
@@ -61,8 +61,8 @@ Groups are organised by concern, with same-namespace tools together where that h
 
 `katex` is forced to `^0.18.2` (GHSA-238p-pmpm-9mq7). `mermaid` 11 pins a vulnerable katex and
 only loads it for `$$` maths, which no chart uses; no mermaid 11 release will carry the fix, and
-mermaid 12 breaks `vitepress-plugin-mermaid`. Dependabot ignores mermaid majors. Drop the override
-and the ignore together when the plugin is replaced and mermaid 12 lands.
+mermaid 12 drops it. Dependabot ignores mermaid majors. Drop the override
+and the ignore together at mermaid 12.
 
 ## Install scripts
 

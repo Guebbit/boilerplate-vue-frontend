@@ -35,16 +35,12 @@ flowchart LR
     HTTP -->|HTTP/JSON| Backend
     Backend --> HTTP
 
-    alt 2xx
-        HTTP -->|typed data| Store
-        Store --> Resp
-    else 401
-        HTTP -->|refresh, replay once| Backend
-        HTTP -->|REAUTH_REQUIRED| Step["Step-up prompt\n(ReauthDialog)"]
-    else any other failure
-        HTTP -->|normalised problem| Store
-        Store -->|rejects to| Caller["Call site\ntoast or in-place alert,\nreported to Faro"]
-    end
+    HTTP -->|"2xx: typed data"| Store
+    Store --> Resp
+    HTTP -->|"401: refresh, replay once"| Backend
+    HTTP -->|"401: REAUTH_REQUIRED"| Step["Step-up prompt\n(ReauthDialog)"]
+    HTTP -->|"any other failure: normalised problem"| Store
+    Store -->|rejects to| Caller["Call site\ntoast or in-place alert,\nreported to Faro"]
 
     classDef user fill:#f0fdf4,stroke:#16a34a,color:#111827;
     classDef view fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -170,7 +166,7 @@ sequenceDiagram
     participant D as download.ts (interceptor)
     participant A as API
     V->>A: GET /orders/1/invoice
-    A-->>D: 200 blob + Content-Disposition: inline; filename="invoice-2026-0042.pdf"
+    A-->>D: 200 blob + Content-Disposition: inline#59; filename="invoice-2026-0042.pdf"
     Note over D: parses the header (content-disposition package),<br/>wraps the blob in a File of that name
     D-->>V: File
     Note over V: saveDownload(file) saves file.name
@@ -198,7 +194,7 @@ flowchart TB
     Catch --> Q
     Q -->|yes| Blocking
     Q -->|no — a list's own\nsearch/refresh, a\nbackground poll,\na badge or count fetch| Ambient
-    Blocking -->|report\(\), a real failure| Faro
+    Blocking -->|"report(), a real failure"| Faro
     Ambient --> Faro
 
     classDef q fill:#fef3c7,stroke:#d97706,color:#111827;

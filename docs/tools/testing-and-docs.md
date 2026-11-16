@@ -225,19 +225,21 @@ Two further limits:
 
 ## Quality tools
 
-| Tool                                                                                                                        | Why it is here                                                               |
-| --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| [Vitest](https://vitest.dev/)                                                                                               | Unit test runner built on Vite — same config, fast                           |
-| [@vue/test-utils](https://test-utils.vuejs.org/)                                                                            | Vue-specific component mounting and assertion helpers                        |
-| [jsdom](https://github.com/jsdom/jsdom)                                                                                     | DOM environment for unit tests                                               |
-| [Cypress](https://www.cypress.io/)                                                                                          | Browser-based end-to-end tests, both profiles plus the visual suite          |
-| [start-server-and-test](https://github.com/bahmutov/start-server-and-test)                                                  | Boots Vite + waits before running Cypress                                    |
-| [MSW](https://mswjs.io/)                                                                                                    | Node adapter standing in for a server in the transport-layer unit specs only |
-| [Stryker](https://stryker-mutator.io/)                                                                                      | Mutation testing — see [Mutation Testing](./mutation-testing.md)             |
-| [ESLint](https://eslint.org/) + plugins                                                                                     | Code consistency and correctness checks                                      |
-| [Prettier](https://prettier.io/)                                                                                            | Predictable formatting                                                       |
-| [VitePress](https://vitepress.dev/)                                                                                         | Documentation site + offline local search                                    |
-| [Mermaid](https://mermaid.js.org/) + [vitepress-plugin-mermaid](https://emersonbottero.github.io/vitepress-plugin-mermaid/) | ADHD-friendly visual diagrams                                                |
+| Tool                                                                                            | Why it is here                                                               |
+| ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [Vitest](https://vitest.dev/)                                                                   | Unit test runner built on Vite — same config, fast                           |
+| [@vue/test-utils](https://test-utils.vuejs.org/)                                                | Vue-specific component mounting and assertion helpers                        |
+| [jsdom](https://github.com/jsdom/jsdom)                                                         | DOM environment for unit tests                                               |
+| [Cypress](https://www.cypress.io/)                                                              | Browser-based end-to-end tests, both profiles plus the visual suite          |
+| [start-server-and-test](https://github.com/bahmutov/start-server-and-test)                      | Boots Vite + waits before running Cypress                                    |
+| [MSW](https://mswjs.io/)                                                                        | Node adapter standing in for a server in the transport-layer unit specs only |
+| [Stryker](https://stryker-mutator.io/)                                                          | Mutation testing — see [Mutation Testing](./mutation-testing.md)             |
+| [ESLint](https://eslint.org/) + plugins                                                         | Code consistency and correctness checks                                      |
+| [Prettier](https://prettier.io/)                                                                | Predictable formatting                                                       |
+| [VitePress](https://vitepress.dev/)                                                             | Documentation site + offline local search                                    |
+| [Mermaid](https://mermaid.js.org/), drawn by our own `docs/.vitepress/theme/MermaidDiagram.vue` | ADHD-friendly visual diagrams                                                |
+
+Why our own component: `vitepress-plugin-mermaid` has been unmaintained since 2024-09 and patches VitePress internals; the one maintained alternative has a single maintainer, licence churn and a second zoom toolbar.
 
 ## Maintenance flow
 
