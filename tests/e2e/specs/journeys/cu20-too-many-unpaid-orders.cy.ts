@@ -42,16 +42,14 @@ const putInCart = (): void => {
 };
 
 /**
- * Puts the ordinary product in the cart and presses checkout with the given payment method.
+ * Puts the ordinary product in the cart and presses checkout paying by bank transfer.
  * `pickup` needs no address, so choosing it alone enables the button.
- *
- * @param method - the payment method's radio id: `card` or `bank_transfer`
  */
-const checkoutWith = (method: 'card' | 'bank_transfer'): void => {
+const checkoutByBankTransfer = (): void => {
     putInCart();
     cy.goToCart();
     cy.get('[data-test=shipping-method-pickup]').click();
-    cy.get(`[data-test=payment-method-${method}] label`).click();
+    cy.get('[data-test=payment-method-bank_transfer] label').click();
     cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
 };
 
@@ -66,7 +64,7 @@ describe('CU20 · Too many unpaid orders', () => {
         cy.step('the customer starts with one open order, and opens a second, by transfer');
         cy.loginAs('user');
         openOrders().should('equal', 1);
-        checkoutWith('bank_transfer');
+        checkoutByBankTransfer();
         cy.get('#order-target').should('exist');
         cy.get('[data-test=transfer-instructions-panel]').should('exist');
         idFromLocation().then((secondTransfer) => {
@@ -114,7 +112,7 @@ describe('CU20 · Too many unpaid orders', () => {
             openOrders().should('equal', 1);
 
             cy.step('and a new transfer is taken again');
-            checkoutWith('bank_transfer');
+            checkoutByBankTransfer();
             cy.get('#order-target').should('exist');
             cy.get('[data-test=transfer-instructions-panel]').should('exist');
             openOrders().should('equal', 2);

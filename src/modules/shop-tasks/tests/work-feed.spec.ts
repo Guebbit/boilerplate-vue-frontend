@@ -47,11 +47,10 @@ beforeEach(() => {
  * Signs a stub staff member in with the given tenant rules.
  *
  * @param can - the rules they hold
- * @param id - their account id
  */
-const signIn = (can: [string, string][], id = 'staff-1') => {
+const signIn = (can: [string, string][]) => {
     const session = useSessionStore();
-    session.viewer = asStub<SessionViewer>({ id, email: `${id}@example.com` });
+    session.viewer = asStub<SessionViewer>({ id: 'staff-1', email: 'staff-1@example.com' });
     session.accessToken = 'tok';
     session.setAbilities({ tenant: can, platform: [] });
 };
@@ -104,7 +103,7 @@ describe('the shop work feed', () => {
     });
 
     it('reads again for another person, and empties every count on sign-out', async () => {
-        signIn([['display', 'Order']], 'staff-1');
+        signIn([['display', 'Order']]);
         await mountBadge(useShopWorkFeed);
         await flushPromises();
 

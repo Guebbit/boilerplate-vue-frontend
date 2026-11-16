@@ -86,6 +86,10 @@ beforeEach(() => {
 
 `tests/unit/infrastructure/http/http-validate-responses.spec.ts` unit-tests the load-bearing piece behind both e2e profiles: `orvalMutator`'s contract check, which parses every response through its OpenAPI-derived Zod schema and rejects a 2xx that violates it.
 
+### Same-origin by default
+
+Every unit spec runs with the page at the API's own origin (`http://api.test/`, set in `vitest.config.ts`), because jsdom's `XMLHttpRequest` enforces CORS and a mocked MSW answer carries no CORS headers. A spec therefore cannot exercise a cross-origin call; only `http-refresh.spec.ts` does, by echoing the CORS headers itself.
+
 ## What the harness enforces for every spec
 
 `tests/support/unit/setup.ts` and `vitest.config.ts` carry the rules no spec varies.

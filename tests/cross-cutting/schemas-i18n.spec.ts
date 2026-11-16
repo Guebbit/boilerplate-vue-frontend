@@ -51,20 +51,18 @@ const setLocale = (locale: string) => loadLocale(locale).then(() => nextTick());
 /**
  * Every issue message a schema produces for a value, in the currently active locale.
  */
-const messagesOf = (
-    schema: { safeParse: (value: unknown) => { error?: { issues: { message: string }[] } } },
-    value: unknown
-) => schema.safeParse(value).error?.issues.map(({ message }) => message) ?? [];
+const messagesOf = (value: unknown) =>
+    madeUpSchema.safeParse(value).error?.issues.map(({ message }) => message) ?? [];
 
 describe('a thunked schema follows the active locale', () => {
     beforeAll(() => setLocale('en'));
     afterEach(() => setLocale('en'));
 
     it('resolves in English, then in Italian, from the same schema object', () => {
-        expect(messagesOf(madeUpSchema, { email: 'nope' })).toEqual([EN]);
+        expect(messagesOf({ email: 'nope' })).toEqual([EN]);
 
         return setLocale('it').then(() => {
-            expect(messagesOf(madeUpSchema, { email: 'nope' })).toEqual([IT]);
+            expect(messagesOf({ email: 'nope' })).toEqual([IT]);
         });
     });
 });

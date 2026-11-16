@@ -15,11 +15,11 @@ import { contractResponse } from '../../../../tests/support/unit/orval-fixture-s
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 /** A page's worth of meta, as `PaginationMeta` declares it. */
-const meta = (totalItems: number, totalPages = 1, page = 1, pageSize = 50) => ({
-    page,
-    pageSize,
-    totalItems,
-    totalPages
+const meta = () => ({
+    page: 1,
+    pageSize: 50,
+    totalItems: 1,
+    totalPages: 1
 });
 
 /** One platform-trail row; the platform trail answers the same `AuditEntryItem` as the shop one. */
@@ -51,7 +51,7 @@ vi.mock('@api', () => ({
         Promise.resolve(
             contractResponse(schemas.ListObservabilityAuditEntriesResponse, {
                 items: [EVENT_ITEM],
-                meta: meta(1)
+                meta: meta()
             })
         )
     ),
@@ -59,7 +59,7 @@ vi.mock('@api', () => ({
         Promise.resolve(
             contractResponse(schemas.ListAuditEntriesResponse, {
                 items: [ENTRY_ITEM],
-                meta: meta(1)
+                meta: meta()
             })
         )
     )

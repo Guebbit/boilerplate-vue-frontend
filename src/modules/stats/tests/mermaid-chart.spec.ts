@@ -107,4 +107,30 @@ describe('MermaidChart', () => {
             expect(wrapper.find('[data-test=stats-chart-failed]').exists()).toBe(true);
         });
     });
+
+    it('gives two charts on one page different element ids', () => {
+        mermaidMock.render.mockResolvedValue(svgOf('a'));
+        mountChart('one');
+        return flushPromises()
+            .then(() => {
+                mountChart('two');
+                return flushPromises();
+            })
+            .then(() => {
+                const ids = mermaidMock.render.mock.calls.map((call) => call[0] as string);
+                expect(ids).toHaveLength(2);
+                expect(new Set(ids).size).toBe(2);
+            });
+    });
+
+    it('draws an SVG whose HTML labels are not well-formed XML', () => {
+        mermaidMock.render.mockResolvedValue({
+            svg: '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject><div>a<br>b</div></foreignObject></svg>'
+        });
+        const wrapper = mountChart('labels');
+        return flushPromises().then(() => {
+            expect(wrapper.find('svg foreignObject').exists()).toBe(true);
+            expect(wrapper.find('parsererror').exists()).toBe(false);
+        });
+    });
 });

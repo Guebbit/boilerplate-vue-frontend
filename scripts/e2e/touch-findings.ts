@@ -121,7 +121,7 @@ const addHit = (
     { kind, detail }: { kind: TouchFinding['kind']; detail: string },
     selector: string
 ): void => {
-    const key = `${kind}\u0000${detail}`;
+    const key = `${kind}\0${detail}`;
     const known = grouped.get(key);
     if (!known) {
         grouped.set(key, { kind, detail, count: 1, selectors: [selector] });

@@ -56,11 +56,11 @@ const makeRoot = (files: Record<string, string>): string => {
  * at different paths, so contents keyed by path would differ between the repos and every pair
  * would read as forked. What must match is the content, not the filename.
  */
-const sharedFiles = (role: RepoRole, suffix = ''): Record<string, string> =>
+const sharedFiles = (role: RepoRole): Record<string, string> =>
     Object.fromEntries(
         SHARED_FILES.map((shared, index) => [
             role === 'backend' ? shared.backend : shared.frontend,
-            `shared-${index} contents${suffix}`
+            `shared-${index} contents`
         ])
     );
 
@@ -69,7 +69,7 @@ const sharedFiles = (role: RepoRole, suffix = ''): Record<string, string> =>
  *
  * Declared rather than written inline because a filename is not an identifier: `'openapi.yaml'` as
  * a literal object key trips the naming-convention lint rule in every fixture, while a computed
- * key built from a variable does not. `sharedFilesWith` and `withoutFile` exist for the same
+ * key built from a variable does not. `forkedOpenApi` and `withoutFile` exist for the same
  * reason — they are the only two shapes a fixture needs.
  */
 const OPENAPI = 'openapi.yaml';
@@ -77,12 +77,11 @@ const OPENAPI = 'openapi.yaml';
 /** The async contract's file name on the frontend side. */
 const ASYNCAPI = 'asyncapi.yaml';
 
-/** `sharedFiles(role)` with one entry replaced. */
-const sharedFilesWith = (
-    role: RepoRole,
-    file: string,
-    contents: string
-): Record<string, string> => ({ ...sharedFiles(role), [file]: contents });
+/** The OTHER side's shared files with the OpenAPI contract's contents forked. */
+const forkedOpenApi = (): Record<string, string> => ({
+    ...sharedFiles(THERE),
+    [OPENAPI]: 'forked'
+});
 
 /** `sharedFiles(role)` with one entry removed. */
 const withoutFile = (role: RepoRole, file: string): Record<string, string> => {
@@ -307,7 +306,7 @@ describe('formatSharedFileProblems', () => {
         // A same-path pair, so one constant names the file in both roots. The cross-path case has
         // its own test below.
         const here = root(sharedFiles(HERE));
-        const there = root(sharedFilesWith(THERE, OPENAPI, 'forked'));
+        const there = root(forkedOpenApi());
 
         const message = formatSharedFileProblems(compareSharedFiles(there, here, HERE), there);
 
@@ -330,7 +329,7 @@ describe('formatSharedFileProblems', () => {
 
     it('tells the reader what to do about it', () => {
         const here = root(sharedFiles(HERE));
-        const there = root(sharedFilesWith(THERE, OPENAPI, 'forked'));
+        const there = root(forkedOpenApi());
         const message = formatSharedFileProblems(compareSharedFiles(there, here, HERE), there);
 
         expect(message).toContain('npm run gen:api');

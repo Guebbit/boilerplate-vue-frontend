@@ -83,8 +83,8 @@ const loadHttp = () => {
 /** The routes requested so far, in order. */
 const routes = () => requestLog.map(({ route }) => route);
 
-/** How many times one route was requested. */
-const timesRequested = (route: string) => requestLog.filter((r) => r.route === route).length;
+/** How many times the checkout route was requested. */
+const timesRequested = () => requestLog.filter((r) => r.route === 'POST /checkout').length;
 
 /**
  * Waits until the step-up prompt is open — the interceptor's `requestStepUp()` runs after at
@@ -183,7 +183,7 @@ describe('the REAUTH_REQUIRED step-up flow', () => {
                 })
                 .then(() => {
                     // Two calls in, one prompt, both replayed: four requests total, never a fifth.
-                    expect(timesRequested('POST /checkout')).toBe(4);
+                    expect(timesRequested()).toBe(4);
                 });
         }));
 
@@ -200,7 +200,7 @@ describe('the REAUTH_REQUIRED step-up flow', () => {
                 })
                 .then(() => {
                     // Never replayed: the visitor walked away instead of proving their password.
-                    expect(timesRequested('POST /checkout')).toBe(1);
+                    expect(timesRequested()).toBe(1);
                 });
         }));
 
@@ -218,7 +218,7 @@ describe('the REAUTH_REQUIRED step-up flow', () => {
                 })
                 .then(() => {
                     // `_steppedUp` on the replay stops a second prompt from opening.
-                    expect(timesRequested('POST /checkout')).toBe(2);
+                    expect(timesRequested()).toBe(2);
                 });
         }));
 });

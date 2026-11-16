@@ -75,14 +75,20 @@ const PROBED_SELECTOR = `${CONTROL_SELECTOR}, [title], [aria-describedby^="v-too
 let emulating = false;
 
 /**
- * Sends one Chrome DevTools Protocol command through Cypress' own channel.
+ * Sends the Chrome DevTools Protocol touch-emulation command through Cypress' own channel.
  * https://docs.cypress.io/api/cypress-api/automation
  * Protocol reference: https://chromedevtools.github.io/devtools-protocol/tot/Emulation/
  */
-const sendCdp = (command: string, parameters?: Record<string, unknown>) =>
-    cy.wrap(Cypress.automation('remote:debugger:protocol', { command, params: parameters }), {
-        log: false
-    });
+const sendTouchEmulation = (parameters: Record<string, unknown>) =>
+    cy.wrap(
+        Cypress.automation('remote:debugger:protocol', {
+            command: 'Emulation.setTouchEmulationEnabled',
+            params: parameters
+        }),
+        {
+            log: false
+        }
+    );
 
 /** The page's own answer to "is the primary pointer coarse?", read from the top window. */
 const pointerIsCoarse = (): boolean => window.top?.matchMedia('(pointer: coarse)').matches ?? false;
@@ -166,7 +172,7 @@ Cypress.Commands.add(
         Cypress.log({ name: 'enableTouch', displayName: 'TOUCH', message: 'on' });
         // `enabled`: switch on. `maxTouchPoints`: how many fingers the page believes the screen
         // takes (5, a typical phone).
-        return sendCdp('Emulation.setTouchEmulationEnabled', {
+        return sendTouchEmulation({
             enabled: true,
             maxTouchPoints: 5
         }).then(() => {
@@ -185,7 +191,7 @@ Cypress.Commands.add(
         if (!emulating) return cy.wrap(undefined, { log: false });
         Cypress.log({ name: 'resetTouch', displayName: 'TOUCH', message: 'off' });
         // `enabled: false` alone: adding `maxTouchPoints: 0` throws "Touch points must be between 1 and 16".
-        return sendCdp('Emulation.setTouchEmulationEnabled', { enabled: false }).then(() => {
+        return sendTouchEmulation({ enabled: false }).then(() => {
             emulating = false;
             expect(pointerIsCoarse(), `touch emulation ended (${browserLabel()})`).to.equal(false);
         });

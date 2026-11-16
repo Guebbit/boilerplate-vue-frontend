@@ -389,7 +389,7 @@ describe('orvalMutator contract validation', () => {
      * chunk resolves reads as "unmapped" too, for a route that DOES have a row —
      * the table is just still empty. Unlike a genuinely unmapped route, that must stay quiet.
      */
-    it('stays quiet for a mapped route while the lazy schema chunk is still loading', () => {
+    it('stays quiet for a mapped route before the schema table is ready', () => {
         server.use(http.get(`${API}/locales`, () => HttpResponse.json({ languages: ['en'] })));
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {

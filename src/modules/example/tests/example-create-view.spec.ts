@@ -64,21 +64,16 @@ const mountPage = () => {
 };
 
 /**
- * Types a title and a body and submits.
+ * Types a title and the body `A body` and submits.
  *
  * @param wrapper - The mounted page.
  * @param title - What goes in the title field.
- * @param body - What goes in the body field.
  */
-const fillAndSubmit = (
-    wrapper: ReturnType<typeof mountPage>['wrapper'],
-    title: string,
-    body: string
-) =>
+const fillAndSubmit = (wrapper: ReturnType<typeof mountPage>['wrapper'], title: string) =>
     wrapper
         .get('[data-test=example-title] input')
         .setValue(title)
-        .then(() => wrapper.get('[data-test=example-body] textarea').setValue(body))
+        .then(() => wrapper.get('[data-test=example-body] textarea').setValue('A body'))
         .then(() => wrapper.get('form').trigger('submit'))
         .then(flushPromises);
 
@@ -94,7 +89,7 @@ describe('ExampleCreate', () => {
     it('refuses an empty title, and sends nothing', () => {
         const { wrapper, create } = mountPage();
 
-        return fillAndSubmit(wrapper, '', 'A body').then(() => {
+        return fillAndSubmit(wrapper, '').then(() => {
             expect(create).not.toHaveBeenCalled();
             expect(wrapper.find('[data-test=example-title] .v-messages').text()).not.toBe('');
         });
@@ -104,7 +99,7 @@ describe('ExampleCreate', () => {
         const { wrapper, create } = mountPage();
         create.mockResolvedValue(CREATED);
 
-        return fillAndSubmit(wrapper, 'A title', 'A body')
+        return fillAndSubmit(wrapper, 'A title')
             .then(() => {
                 expect(create).toHaveBeenCalledWith({ title: 'A title', body: 'A body' });
                 return vi.waitFor(() => {
@@ -126,7 +121,7 @@ describe('ExampleCreate', () => {
             ])
         );
 
-        return fillAndSubmit(wrapper, 'A title', 'A body').then(() => {
+        return fillAndSubmit(wrapper, 'A title').then(() => {
             expect(wrapper.find('[data-test=example-body] .v-messages').text()).toContain(
                 'Too long for this deployment'
             );
@@ -138,7 +133,7 @@ describe('ExampleCreate', () => {
         const { wrapper, create } = mountPage();
         create.mockRejectedValue(aProblem(500, [{ code: 'INTERNAL', message: 'Server error' }]));
 
-        return fillAndSubmit(wrapper, 'A title', 'A body').then(() => {
+        return fillAndSubmit(wrapper, 'A title').then(() => {
             expect(wrapper.find('[data-test=example-create-error]').exists()).toBe(true);
             expect(router.currentRoute.value.fullPath).toBe('/en/examples/create');
         });

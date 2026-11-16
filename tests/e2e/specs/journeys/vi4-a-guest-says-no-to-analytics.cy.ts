@@ -68,13 +68,12 @@ const browse = (phase: Phase, product: string, seen: Seen[]): void => {
 };
 
 /**
- * How many searches of this half's own text the page made.
+ * How many searches of the accepted half's own text the page made.
  *
  * @param seen - every catalogue request so far
- * @param phase - which half
  */
-const searchesOf = (seen: Seen[], phase: Phase): number =>
-    seen.filter((request) => request.phase === phase && request.kind === 'search').length;
+const searchesOf = (seen: Seen[]): number =>
+    seen.filter((request) => request.phase === 'accepted' && request.kind === 'search').length;
 
 describe('VI4 · A guest says no to analytics', () => {
     beforeEach(function () {
@@ -170,13 +169,13 @@ describe('VI4 · A guest says no to analytics', () => {
                 session,
                 since,
                 'products_searched',
-                (before.products_searched ?? 0) + searchesOf(seen, 'accepted')
+                (before.products_searched ?? 0) + searchesOf(seen)
             ).then(() => {
                 eventCounts(session, since).then((after) => {
                     expect(
                         (after.products_searched ?? 0) - (before.products_searched ?? 0),
                         'searches recorded: the accepted ones only'
-                    ).to.equal(searchesOf(seen, 'accepted'));
+                    ).to.equal(searchesOf(seen));
                 });
             });
         });

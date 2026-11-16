@@ -44,15 +44,14 @@ beforeEach(() => {
 });
 
 /**
- * Waits until a mocked API function has been called `times` times.
+ * Waits until a mocked API function has been called once.
  *
  * @param api - The mocked function
- * @param times - How many calls to wait for
  * @returns A promise settling once it has
  */
-const calledTimes = (api: unknown, times: number) =>
+const calledOnce = (api: unknown) =>
     vi.waitFor(() => {
-        expect(api).toHaveBeenCalledTimes(times);
+        expect(api).toHaveBeenCalledTimes(1);
     });
 
 /**
@@ -74,7 +73,7 @@ describe('while an order is being placed', () => {
         const { page } = await placingAnOrder();
 
         await page.wrapper.get('[data-test=cart-checkout]').trigger('click');
-        await calledTimes(apiCheckout, 1);
+        await calledOnce(apiCheckout);
         await flushPromises();
 
         expect(page.wrapper.get('[data-test=cart-increase]').attributes('disabled')).toBeDefined();
@@ -84,7 +83,7 @@ describe('while an order is being placed', () => {
     it('sends nothing that changes the cart once the order exists, even for a step taken a moment before it', async () => {
         const { page, order } = await placingAnOrder();
         await page.wrapper.get('[data-test=cart-checkout]').trigger('click');
-        await calledTimes(apiCheckout, 1);
+        await calledOnce(apiCheckout);
 
         // A step inside its debounce window while the request is out.
         await page.wrapper.get('[data-test=cart-increase]').trigger('click');

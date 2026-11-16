@@ -60,15 +60,14 @@ afterEach(() => {
 });
 
 /**
- * Waits until a mocked API function has been called `times` times.
+ * Waits until a mocked API function has been called once.
  *
  * @param api - The mocked function
- * @param times - How many calls to wait for
  * @returns A promise settling once it has
  */
-const calledTimes = (api: unknown, times: number) =>
+const calledOnce = (api: unknown) =>
     vi.waitFor(() => {
-        expect(api).toHaveBeenCalledTimes(times);
+        expect(api).toHaveBeenCalledTimes(1);
     });
 
 /**
@@ -129,13 +128,13 @@ describe('a quantity step and the order that follows it', () => {
 
         await page.wrapper.get('[data-test=cart-increase]').trigger('click');
         await page.wrapper.get('[data-test=cart-checkout]').trigger('click');
-        await calledTimes(updateCartItemByProductId, 1);
+        await calledOnce(updateCartItemByProductId);
         // The order waits for the step's answer: nothing has been placed while it is out.
         await flushPromises();
         expect(apiCheckout).not.toHaveBeenCalled();
 
         step.resolve(answered(aCart([['p1', 3]])));
-        await calledTimes(apiCheckout, 1);
+        await calledOnce(apiCheckout);
 
         expect(vi.mocked(updateCartItemByProductId).mock.calls[0]).toEqual(['p1', { quantity: 3 }]);
     });

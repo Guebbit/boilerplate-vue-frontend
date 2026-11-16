@@ -77,11 +77,11 @@ vi.mock('@/infrastructure/utils/use-blocking-error.ts', () => ({
 }));
 
 /** One stored entry, as the board's lookup returns it. */
-const entry = (key: string, value: string): LocaleEntry => ({
-    id: `entry-${key}`,
+const greetingEntry = (value = 'Hello'): LocaleEntry => ({
+    id: 'entry-greeting',
     locale: 'en',
     app: OWN_APP,
-    key,
+    key: 'greeting',
     value
 });
 
@@ -116,7 +116,7 @@ beforeEach(() => {
 
 describe('handleCellBlur', () => {
     it('does nothing when the cell was never typed into', () => {
-        const { editor, afterWrite } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor, afterWrite } = editorWith({ greeting: greetingEntry() });
 
         expect(editor.handleCellBlur(ENGLISH, 'greeting')).toBeUndefined();
         expect(addEntry).not.toHaveBeenCalled();
@@ -129,7 +129,7 @@ describe('handleCellBlur', () => {
      * cell already holds on every pass of the keyboard.
      */
     it('does nothing when the draft matches the stored value', () => {
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
         editor.handleCellInput(ENGLISH, 'greeting', 'Hello');
 
         expect(editor.handleCellBlur(ENGLISH, 'greeting')).toBeUndefined();
@@ -145,7 +145,7 @@ describe('handleCellBlur', () => {
     });
 
     it('treats a cleared field (null) as an empty draft: blur writes and removes nothing', () => {
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
         editor.handleCellInput(ENGLISH, 'greeting', null);
 
         expect(editor.handleCellBlur(ENGLISH, 'greeting')).toBeUndefined();
@@ -168,7 +168,7 @@ describe('handleCellBlur', () => {
     });
 
     it('edits the stored entry by its own id when the cell held one', () => {
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
         editor.handleCellInput(ENGLISH, 'greeting', 'Ciao');
 
         return editor.handleCellBlur(ENGLISH, 'greeting')!.then(() => {
@@ -183,7 +183,7 @@ describe('handleCellBlur', () => {
      * again.
      */
     it('never removes an entry — an emptied cell only forgets its draft', () => {
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
         editor.handleCellInput(ENGLISH, 'greeting', '');
 
         expect(editor.handleCellBlur(ENGLISH, 'greeting')).toBeUndefined();
@@ -209,7 +209,7 @@ describe('handleCellBlur', () => {
 
     it('leaves the error on the cell, not a toast, when the write fails', () => {
         editEntry.mockRejectedValueOnce(new Error('nope'));
-        const { editor, afterWrite } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor, afterWrite } = editorWith({ greeting: greetingEntry() });
         const id = editor.cellId('en', 'greeting');
         editor.handleCellInput(ENGLISH, 'greeting', 'Ciao');
 
@@ -224,7 +224,7 @@ describe('handleCellBlur', () => {
     it('still reports the failure to Faro, just not as a toast', () => {
         const error = new Error('nope');
         editEntry.mockRejectedValueOnce(error);
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
         editor.handleCellInput(ENGLISH, 'greeting', 'Ciao');
 
         return editor.handleCellBlur(ENGLISH, 'greeting')!.then(() => {
@@ -243,7 +243,7 @@ describe('handleCellInput', () => {
 
     it('clears a previous error, so a fresh attempt starts clean', () => {
         editEntry.mockRejectedValueOnce(new Error('nope'));
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
         const id = editor.cellId('en', 'greeting');
         editor.handleCellInput(ENGLISH, 'greeting', 'Ciao');
 
@@ -258,7 +258,7 @@ describe('handleCellInput', () => {
 
 describe('handleCellClear', () => {
     it('removes the entry once confirmed and names the cell in the toast', () => {
-        const { editor, afterWrite } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor, afterWrite } = editorWith({ greeting: greetingEntry() });
 
         return editor.handleCellClear(ENGLISH, 'greeting', new Event('click'))!.then(() => {
             expect(removeEntry).toHaveBeenCalledWith('en', 'demo-fe', 'entry-greeting');
@@ -273,7 +273,7 @@ describe('handleCellClear', () => {
      */
     it('removes nothing and restores the draft when the confirmation is declined', () => {
         confirmAnswer = false;
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
         const id = editor.cellId('en', 'greeting');
         editor.handleCellInput(ENGLISH, 'greeting', '');
 
@@ -284,7 +284,7 @@ describe('handleCellClear', () => {
     });
 
     it('ignores a second clear on the same cell while the first is still pending', () => {
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
 
         const first = editor.handleCellClear(ENGLISH, 'greeting', new Event('keydown'));
         const second = editor.handleCellClear(ENGLISH, 'greeting', new Event('click'));
@@ -309,7 +309,7 @@ describe('handleCellClear', () => {
             '<div data-test="dictionary-cell"><input id="cell" /><button id="clear"></button></div>';
         const input = document.querySelector<HTMLInputElement>('#cell')!;
         const button = document.querySelector<HTMLButtonElement>('#clear')!;
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
 
         const event = new Event('click');
         Object.defineProperty(event, 'target', { value: button });
@@ -323,7 +323,7 @@ describe('handleCellClear', () => {
 
 describe('handleCellEnter', () => {
     it('removes when the cell was emptied', () => {
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
         editor.handleCellInput(ENGLISH, 'greeting', '');
 
         return editor.handleCellEnter(ENGLISH, 'greeting', new Event('keydown'))!.then(() => {
@@ -333,7 +333,7 @@ describe('handleCellEnter', () => {
     });
 
     it('saves when the cell holds a value — the same save a blur would do', () => {
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
         editor.handleCellInput(ENGLISH, 'greeting', 'Ciao');
 
         return editor.handleCellEnter(ENGLISH, 'greeting', new Event('keydown'))!.then(() => {
@@ -343,7 +343,7 @@ describe('handleCellEnter', () => {
     });
 
     it('saves rather than removes when the cell was never typed into', () => {
-        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        const { editor } = editorWith({ greeting: greetingEntry() });
 
         // An undefined draft is not an emptied cell: Enter on an untouched cell must not confirm
         // a removal.
@@ -362,10 +362,7 @@ describe('cellLabel', () => {
     });
 
     it('omits the baseline when the cell already holds an entry', () => {
-        const { editor } = editorWith(
-            { greeting: entry('greeting', 'Ciao') },
-            { greeting: 'Hello' }
-        );
+        const { editor } = editorWith({ greeting: greetingEntry('Ciao') }, { greeting: 'Hello' });
 
         expect(editor.cellLabel(ENGLISH, 'greeting')).toBe('locales-dictionary-page.cell-label');
     });

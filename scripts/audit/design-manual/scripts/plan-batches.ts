@@ -76,7 +76,7 @@ const groupByCase = (shots: DesignShot[]): CaseGroup[] => {
     const groups = new Map<string, CaseGroup>();
 
     for (const shot of shots) {
-        const key = `${shot.module}\u0000${shot.spec}\u0000${shot.caseName}`;
+        const key = `${shot.module}\0${shot.spec}\0${shot.caseName}`;
         const group = groups.get(key) ?? {
             module: shot.module,
             shots: [],

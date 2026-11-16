@@ -26,9 +26,10 @@ const renderNothing = () => null;
 /**
  * Mounts a host component around the composable and hands back what the host would read.
  *
- * @param fallback - the fallback language, which a spec sets later to mimic `GET /locales` landing
  */
-const mountForm = (fallback = ref<string | undefined>()) => {
+const mountForm = () => {
+    // The fallback language, which a spec sets later to mimic `GET /locales` landing.
+    const fallback = ref<string | undefined>();
     let form!: ReturnType<typeof useTranslatedEntityForm<PriceForm>>;
     mount(
         defineComponent({
