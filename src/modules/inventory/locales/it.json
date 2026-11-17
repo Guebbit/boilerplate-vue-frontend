@@ -94,7 +94,7 @@
         "button-show-orders": "Gruppi di spedizione",
         "button-show-orders-named": "Gruppi di spedizione di {name}",
         "button-move-date": "Sposta la data di uscita",
-        "button-move-date-named": "Sposta la data di uscita di {name}"
+        "button-move-date-named": "Sposta la data di uscita: {name}"
     },
     "inventory-tour": {
         "forms-title": "Registra la giacenza",

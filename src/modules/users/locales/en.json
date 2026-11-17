@@ -32,7 +32,7 @@
         "button-view-named": "View {name}",
         "button-edit-named": "Edit {name}",
         "button-delete-named": "Delete {name}",
-        "button-hard-delete-named": "Permanently delete {name}",
+        "button-hard-delete-named": "Hard delete {name}",
         "column-image": "Picture",
         "image-alt": "Profile picture of {name}",
         "button-restore": "Restore",

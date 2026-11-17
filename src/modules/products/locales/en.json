@@ -61,7 +61,7 @@
         "button-view-named": "View {name}",
         "button-edit-named": "Edit {name}",
         "button-delete-named": "Delete {name}",
-        "button-hard-delete-named": "Permanently delete {name}",
+        "button-hard-delete-named": "Hard delete {name}",
         "column-image": "Image",
         "image-alt": "Photo of {name}",
         "button-restore": "Restore",

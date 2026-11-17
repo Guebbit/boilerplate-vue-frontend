@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 
+import { parse } from 'content-disposition';
 import { cents } from '../../../scripts/e2e/cents';
 import { mailAbout } from '../../../scripts/e2e/mail-filters';
 import type { MailedEmail } from '../../../scripts/e2e/mail-message';
@@ -483,6 +484,15 @@ export const refusedWith = (
  */
 export const downloadedText = (fileName: string): Cypress.Chainable<string> =>
     cy.readFile<string>(`${Cypress.config('downloadsFolder')}/${fileName}`);
+
+/**
+ * The file name a download response gives itself, quoted or not (Express sends it unquoted when it
+ * is a plain token). https://github.com/jshttp/content-disposition
+ *
+ * @param header - the response's `content-disposition` header
+ */
+export const servedFileName = (header: unknown): string | undefined =>
+    typeof header === 'string' ? parse(header).parameters.filename : undefined;
 
 /**
  * A product on preorder with room in its allowance: the editor creates it through the API with a

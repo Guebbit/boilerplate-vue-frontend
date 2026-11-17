@@ -94,7 +94,7 @@
         "button-show-orders": "Fulfillment orders",
         "button-show-orders-named": "Fulfillment orders of {name}",
         "button-move-date": "Move release date",
-        "button-move-date-named": "Move the release date of {name}"
+        "button-move-date-named": "Move release date: {name}"
     },
     "inventory-tour": {
         "forms-title": "Record stock",

@@ -14,6 +14,7 @@
  * link answers that the export is gone, and asking again mails a new one.
  */
 import { expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
+import { servedFileName } from '../../../support/e2e/steps';
 import type { MailedEmail } from '../../../../scripts/e2e/mail-message';
 
 /** One hour, in milliseconds. */
@@ -99,9 +100,7 @@ describe('AC6 · Give me my data', () => {
                 cy.step(
                     'a file lands on disk, under the name the server gave it, with what it sent'
                 );
-                const name = /filename="([^"]+)"/.exec(
-                    String(answer?.headers['content-disposition'])
-                )?.[1];
+                const name = servedFileName(answer?.headers['content-disposition']);
                 expect(name, 'the server names the file').to.match(
                     /^account-export-\d{4}-\d{2}-\d{2}\.json$/
                 );

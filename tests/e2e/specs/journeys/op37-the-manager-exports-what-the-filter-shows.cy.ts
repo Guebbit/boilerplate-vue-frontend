@@ -6,7 +6,12 @@
  * gave, it holds one line per listed order plus the header, and every order number on the screen
  * is in it. Nothing parses the CSV: equality and substring checks need no parser.
  */
-import { downloadedText, listedIds, submitSearch } from '../../../support/e2e/steps';
+import {
+    downloadedText,
+    listedIds,
+    servedFileName,
+    submitSearch
+} from '../../../support/e2e/steps';
 
 describe('OP37 · The manager exports what the filter shows', () => {
     beforeEach(() => {
@@ -30,9 +35,7 @@ describe('OP37 · The manager exports what the filter shows', () => {
                 // The server leads with a byte-order mark so a spreadsheet reads UTF-8; readFile drops it.
                 const served = String(response?.body).replace(/^\uFEFF/, '');
                 // The server names the file (`orders-<shop date>.csv`); the page saves it as served.
-                const name = /filename="([^"]+)"/.exec(
-                    String(response?.headers['content-disposition'])
-                )?.[1];
+                const name = servedFileName(response?.headers['content-disposition']);
                 expect(name, 'the server names the file').to.match(
                     /^orders-\d{4}-\d{2}-\d{2}\.csv$/
                 );

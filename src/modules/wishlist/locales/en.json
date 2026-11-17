@@ -11,7 +11,7 @@
         "button-remove": "Remove",
         "success-moved": "Product moved to cart.",
         "success-removed": "Product removed from wishlist.",
-        "button-move-to-cart-named": "Move product {id} to cart",
+        "button-move-to-cart-named": "Move to cart: {id}",
         "button-remove-named": "Remove product {id}"
     },
     "navigation": {

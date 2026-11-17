@@ -31,7 +31,7 @@
         "button-view-named": "View order {id}",
         "button-edit-named": "Edit order {id}",
         "button-delete-named": "Delete order {id}",
-        "button-hard-delete-named": "Permanently delete order {id}",
+        "button-hard-delete-named": "Hard delete order {id}",
         "button-restore": "Restore",
         "button-restore-named": "Restore {id}",
         "success-restore": "Order restored",

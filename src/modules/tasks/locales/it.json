@@ -66,7 +66,7 @@
         "button-resolve": "Risolvi",
         "button-resolve-named": "Risolvi \"{subject}\"",
         "button-spam": "Segna come spam",
-        "button-spam-named": "Segna \"{subject}\" come spam",
+        "button-spam-named": "Segna come spam: {subject}",
         "button-reopen": "Riapri",
         "button-reopen-named": "Riapri \"{subject}\"",
         "button-open": "Apri",
