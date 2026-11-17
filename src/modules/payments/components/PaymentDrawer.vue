@@ -34,9 +34,10 @@ import { useDialogStore } from '@/ui/dialog.ts';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import type { Payment } from '@types';
+import type { Payment, Refund } from '@types';
 import { usePaymentsStore } from '../store.ts';
 import { refundNotice } from '../refund-notice.ts';
+import { disputeHintFor } from '../dispute-hint.ts';
 import PaymentStatusChip from './PaymentStatusChip.vue';
 import RefundCancelForm from './RefundCancelForm.vue';
 import DisputeBanner from './DisputeBanner.vue';
@@ -131,6 +132,20 @@ const canSettle = (refundId: string) =>
  * @returns `true` when `actions.cancelRefund` names it.
  */
 const canCancel = (refundId: string) => props.payment?.actions.cancelRefund.includes(refundId);
+
+/**
+ * Which of the two allowed buttons a refund refused as disputed should use, by how the dispute
+ * ended. Each hint shows only while the server offers the button it points to: a refund the bank
+ * sent back after it settled is never offered Cancel refund, so it never gets the `won` hint.
+ *
+ * @param refund - A record of the shown payment.
+ * @returns `lost`, `won`, or `undefined` when there is nothing to suggest.
+ */
+const hintOf = (refund: Refund) => {
+    const hint = props.payment && disputeHintFor(props.payment, refund);
+    if (hint === 'lost') return canSettle(refund.id) ? hint : undefined;
+    return hint === 'won' && canCancel(refund.id) ? hint : undefined;
+};
 
 /**
  * The refund whose cancel form is open, if any. One at a time: opening another closes the first.
@@ -368,6 +383,13 @@ const handleCancelRefund = singleFlight((refund: Payment['refunds'][number], not
                     <p v-if="refund.failureReason" class="mt-1" data-test="drawer-failure-reason">
                         {{ t(`payments-list-page.failure-reason-${refund.failureReason}`) }}
                     </p>
+                    <p
+                        v-if="hintOf(refund)"
+                        class="mt-1 text-sm"
+                        :data-test="`drawer-dispute-hint-${hintOf(refund)}`"
+                    >
+                        {{ t(`payments-list-page.dispute-hint-${hintOf(refund)}`) }}
+                    </p>
                     <p v-if="refund.reversedAt" class="mt-1" data-test="drawer-reversed-on">
                         {{
                             t('payments-list-page.refund-reversed-on', {
@@ -386,7 +408,7 @@ const handleCancelRefund = singleFlight((refund: Payment['refunds'][number], not
                         class="mt-2"
                         size="small"
                         color="success"
-                        variant="tonal"
+                        :variant="hintOf(refund) === 'lost' ? 'flat' : 'tonal'"
                         :disabled="refunding"
                         :data-test="`drawer-mark-returned-${refund.id}`"
                         @click="handleMarkReturned(refund)"
@@ -397,7 +419,7 @@ const handleCancelRefund = singleFlight((refund: Payment['refunds'][number], not
                         v-if="canCancel(refund.id) && cancelling !== refund.id"
                         class="mt-2"
                         size="small"
-                        variant="tonal"
+                        :variant="hintOf(refund) === 'won' ? 'flat' : 'tonal'"
                         :disabled="refunding"
                         :data-test="`drawer-cancel-refund-${refund.id}`"
                         @click="cancelling = refund.id"

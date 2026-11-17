@@ -81,6 +81,27 @@ beforeEach(() => {
     return router.push('/en/sales/payments').then(() => loadLocale('en'));
 });
 
+/** A chargeback that ended in `status`. */
+const ended = (status: 'lost' | 'won') => ({
+    disputeRef: 'dp_1',
+    kind: 'chargeback' as const,
+    status,
+    reason: 'fraudulent' as const,
+    amount: '50.00',
+    currency: 'EUR',
+    fundsWithdrawn: status === 'lost',
+    openedAt: '2026-03-05T10:00:00Z',
+    observedAt: '2026-03-05T10:00:00Z'
+});
+
+/** The payment once the server offers both buttons on the refused refund. */
+const refused = (status: 'lost' | 'won'): Payment => ({
+    ...FULL,
+    actions: { ...FULL.actions, settleRefundByHand: ['r1'], cancelRefund: ['r1'] },
+    disputes: [ended(status)],
+    refunds: [{ ...FULL.refunds[0], failureReason: 'disputed' }]
+});
+
 describe('PaymentDrawer', () => {
     it('shows the provider reference, the card, and each refund with why it failed', () => {
         const wrapper = mountDrawer(FULL);
@@ -133,6 +154,56 @@ describe('PaymentDrawer', () => {
 
         expect(wrapper.get('[data-test="dispute-banner"]').text()).toContain('Chargeback');
         expect(wrapper.find('[data-test="drawer-refund"]').exists()).toBe(false);
+    });
+
+    describe('a refund refused as disputed', () => {
+        it('suggests Mark returned, with the small-rest hint, after a lost chargeback', () => {
+            const wrapper = mountDrawer(refused('lost'));
+
+            expect(wrapper.get('[data-test="drawer-dispute-hint-lost"]').text()).toContain(
+                'pay the small rest outside the app'
+            );
+            expect(wrapper.find('[data-test="drawer-dispute-hint-won"]').exists()).toBe(false);
+            expect(wrapper.get('[data-test="drawer-mark-returned-r1"]').classes()).toContain(
+                'v-btn--variant-flat'
+            );
+            expect(wrapper.get('[data-test="drawer-cancel-refund-r1"]').classes()).toContain(
+                'v-btn--variant-tonal'
+            );
+        });
+
+        it('suggests Cancel refund, then a card refund, after a won chargeback', () => {
+            const wrapper = mountDrawer(refused('won'));
+
+            expect(wrapper.get('[data-test="drawer-dispute-hint-won"]').text()).toContain(
+                'refund the buyer by card'
+            );
+            expect(wrapper.get('[data-test="drawer-cancel-refund-r1"]').classes()).toContain(
+                'v-btn--variant-flat'
+            );
+            expect(wrapper.get('[data-test="drawer-mark-returned-r1"]').classes()).toContain(
+                'v-btn--variant-tonal'
+            );
+        });
+
+        it('gives no won hint when only Mark returned is offered (a refund that settled first)', () => {
+            const wrapper = mountDrawer({
+                ...refused('won'),
+                actions: { ...FULL.actions, settleRefundByHand: ['r1'], cancelRefund: [] }
+            });
+
+            expect(wrapper.find('[data-test="drawer-dispute-hint-won"]').exists()).toBe(false);
+            expect(wrapper.find('[data-test="drawer-mark-returned-r1"]').exists()).toBe(true);
+        });
+
+        it('suggests nothing while the server offers neither button', () => {
+            const wrapper = mountDrawer({
+                ...refused('lost'),
+                actions: { ...FULL.actions, settleRefundByHand: [], cancelRefund: [] }
+            });
+
+            expect(wrapper.find('[data-test="drawer-dispute-hint-lost"]').exists()).toBe(false);
+        });
     });
 
     it('shows no dispute banner for a payment without one', () => {
