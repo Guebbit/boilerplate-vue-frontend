@@ -13389,6 +13389,61 @@ paths:
         "403":
           - FORBIDDEN
           - SECOND_FACTOR_ENROLLMENT_REQUIRED
+  /payments/{id}/refunds/sync:
+    post:
+      tags:
+        - Payments
+      summary: Re-read the provider's refunds and record the ones the app missed
+      description: "Staff running again the import of refunds made in the provider's own dashboard. The provider's refund event does the same walk by itself; this is the instrument for the refund it gave up on (the import lost its race on the running total on every attempt, and staff were told by a `refund_unrecorded` to-do). Every refund the provider lists for the payment is looked at: one of ours is carried onto its record, an outside one that succeeded and is not yet recorded is imported as a settled `external` refund, with its credit note and the buyer's mail, exactly as the webhook would. Idempotent: a refund already recorded is never imported twice, so a second call imports nothing twice. A refund it cannot record (another currency than the payment: never converted) is announced again on each run, with the same to-do, because the books still lack it. A payment that has not succeeded, or has no provider to ask, answers itself unchanged. The payment's `actions.syncRefunds` says whether the control is offered. Needs `create:Refund`, with the same fresh-session requirement as creating one: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`."
+      operationId: syncRefunds
+      x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
+      security:
+        - bearerAuth:
+            - create:Refund
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+          description: The payment whose refunds are re-read
+      responses:
+        "200":
+          description: The payment as it now stands, with its refunds and actions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            Content-Language:
+              $ref: "#/components/headers/ContentLanguage"
+            Vary:
+              $ref: "#/components/headers/Vary"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
+            RateLimit:
+              $ref: "#/components/headers/RateLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /payments/{id}/refunds/{refundId}/settle:
     post:
       tags:
@@ -19651,6 +19706,7 @@ components:
         - refund_reversed
         - paid_without_hold
         - consent_due
+        - refund_unrecorded
     TaskLinkType:
       type: string
       enum:
@@ -24311,6 +24367,7 @@ components:
         - refund
         - settleRefundByHand
         - cancelRefund
+        - syncRefunds
       description: What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself. Every response that carries a payment carries these, including the answer to each write, so a client never has to re-read to learn the next step.
       properties:
         pay:
@@ -24332,6 +24389,9 @@ components:
           items:
             $ref: "#/components/schemas/Id"
           description: "The ids of the refunds this caller may void with `POST /payments/{id}/refunds/{refundId}/cancel`: the same set as `settleRefundByHand` (money that provably did not move), so a hand-paid `pending` refund or a card refund refused for a clear reason. The server decides. Empty when there is none."
+        syncRefunds:
+          type: boolean
+          description: "Whether `POST /payments/{id}/refunds/sync` would do something: the caller holds `create:Refund`, the payment is `succeeded` and went through a provider that can be asked. It re-reads the provider's refunds, which is how a refund made in the provider's dashboard that the app missed gets recorded."
     Payment:
       type: object
       additionalProperties: false

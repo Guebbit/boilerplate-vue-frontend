@@ -114,6 +114,12 @@ shows a "Cancel refund" button per id; it opens a note field (required, the audi
 deliberate step. Nothing is sent to the provider and nobody is mailed. Like the hand settle, a lost
 race re-reads the payment before the error shows.
 
+**A dashboard refund the shop missed is re-read, not guessed.** `actions.syncRefunds` is true for a
+holder of `create:Refund` on a card payment that succeeded. The drawer then shows "Re-sync refunds",
+which sends `POST /payments/{id}/refunds/sync` with no question (it is idempotent and sends nothing to the provider)
+and stays open on the payment as the server answers it, so the recorded refund is right there. The
+to-do that points here is a `refund_unrecorded` task from `shop-tasks`.
+
 **The legal clock is visible.** A refused refund that pays a withdrawal or a return carries
 `refundDueBy` (creation plus 14 days, Consumer Rights Directive Art. 13); the needs-attention list
 turns it into the days left, or how late the refund is. Any other refund shows its age only.

@@ -19,7 +19,9 @@ export default {
  * a hand-paid refund waiting for the operator gets a "Mark returned" button, offered for the ids
  * `actions.settleRefundByHand` names. Beside it, "Cancel refund" voids a refund that must never be paid:
  * it opens a note field (the audit needs the why) and is offered for the ids `actions.cancelRefund`
- * names. The server decides what is offered; this renders it.
+ * names. "Re-sync refunds" re-reads the provider's refunds for one the shop missed (a dashboard
+ * refund its import gave up on), offered when `actions.syncRefunds` says so. The server decides what
+ * is offered; this renders it.
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -114,6 +116,11 @@ const refunding = ref(false);
  * Whether the server would take a refund of this payment from this caller.
  */
 const canRefund = computed(() => props.payment?.actions.refund === true);
+
+/**
+ * Whether the server would take a re-read of this payment's refunds from this caller.
+ */
+const canSyncRefunds = computed(() => props.payment?.actions.syncRefunds === true);
 
 /**
  * Whether the server would take this refund as "returned by hand" from this caller.
@@ -264,6 +271,30 @@ const handleCancelRefund = singleFlight((refund: Payment['refunds'][number], not
             cancelling.value = undefined;
             emit('changed', refreshed);
             open.value = false;
+        })
+        .catch((error: unknown) => reportRefundError(error))
+        .finally(() => {
+            refunding.value = false;
+        });
+});
+
+/**
+ * Re-reads the provider's refunds and records the missing ones. Safe to repeat and sends nothing to
+ * the provider, so there is no confirm dialog. The drawer stays open on the payment as it was re-read, so the
+ * recorded refund is right there. A second press while the call is open does nothing.
+ *
+ * @returns A promise settling once the call finished; a failure is shown in the drawer.
+ */
+const handleSyncRefunds = singleFlight(() => {
+    const current = props.payment;
+    if (!current) return Promise.resolve();
+    clearRefundError();
+    refunding.value = true;
+    return store
+        .syncRefunds(current)
+        .then((refreshed) => {
+            addMessage(t('payments-list-page.sync-refunds-done'));
+            emit('changed', refreshed);
         })
         .catch((error: unknown) => reportRefundError(error))
         .finally(() => {
@@ -425,6 +456,15 @@ const handleCancelRefund = singleFlight((refund: Payment['refunds'][number], not
                     @click="handleRefund"
                 >
                     {{ t('payments-list-page.button-refund') }}
+                </v-btn>
+                <v-btn
+                    v-if="canSyncRefunds"
+                    variant="tonal"
+                    :disabled="refunding"
+                    data-test="drawer-sync-refunds"
+                    @click="handleSyncRefunds"
+                >
+                    {{ t('payments-list-page.button-sync-refunds') }}
                 </v-btn>
                 <v-btn
                     v-if="orderEditLink"

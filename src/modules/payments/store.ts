@@ -18,6 +18,7 @@ import {
     createRefund,
     settleRefundByHand as settleRefundByHandRequest,
     cancelRefund as cancelRefundRequest,
+    syncRefunds as syncRefundsRequest,
     recordOrderPayment,
     listPaymentMethods,
     searchPayments,
@@ -360,6 +361,24 @@ export const usePaymentsStore = defineStore('payments', () => {
         );
 
     /**
+     * Asks the server to re-read the provider's refunds and record the ones it missed
+     * (`POST /payments/{id}/refunds/sync`): a refund made in the provider's dashboard that the
+     * import gave up on. Idempotent, so a second press records nothing twice. Needs `create:Refund`
+     * and a fresh session. The answer is the payment itself, with the refunds it now holds.
+     *
+     * @param target - The payment to re-read.
+     * @param target.id - The payment.
+     * @returns A promise resolving with the payment as it now stands.
+     */
+    const syncRefunds = (target: { id: string }) =>
+        fetchAny(() =>
+            syncRefundsRequest(target.id).then((response) => {
+                if (payment.value?.id === response.id) payment.value = response;
+                return response;
+            })
+        );
+
+    /**
      * Records money that arrived outside the provider — cash, a transfer, by hand. Admin-only at
      * the API; a caller without the role gets the 403 this rethrows.
      *
@@ -536,6 +555,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         refundPayment,
         settleRefundByHand,
         cancelRefund,
+        syncRefunds,
         recordOfflinePayment,
         findOrderIdByReference
     };
