@@ -45,7 +45,14 @@ const FULL: Payment = aPayment({
     cardLast4: '4242',
     amountRefunded: '10.00',
     displayStatus: 'refund_pending',
-    actions: { pay: false, sync: false, refund: true, settleRefundByHand: [], cancelRefund: [] },
+    actions: {
+        pay: false,
+        sync: false,
+        refund: true,
+        settleRefundByHand: [],
+        cancelRefund: [],
+        syncRefunds: false
+    },
     refunds: [
         {
             id: 'r1',
@@ -236,7 +243,8 @@ describe('PaymentDrawer', () => {
                     sync: false,
                     refund: false,
                     settleRefundByHand: [],
-                    cancelRefund: []
+                    cancelRefund: [],
+                    syncRefunds: false
                 }
             })
                 .find('[data-test="drawer-refund"]')
@@ -347,7 +355,8 @@ describe('PaymentDrawer', () => {
                 sync: false,
                 refund: false,
                 settleRefundByHand: ['r-owed'],
-                cancelRefund: []
+                cancelRefund: [],
+                syncRefunds: false
             },
             refunds: [
                 {
@@ -421,6 +430,56 @@ describe('PaymentDrawer', () => {
         });
     });
 
+    describe("re-syncing a payment's refunds", () => {
+        const SYNCABLE: Payment = aPayment({
+            actions: {
+                pay: false,
+                sync: false,
+                refund: true,
+                settleRefundByHand: [],
+                cancelRefund: [],
+                syncRefunds: true
+            }
+        });
+
+        it('offers "Re-sync refunds" only when actions.syncRefunds says so', () => {
+            expect(mountDrawer(SYNCABLE).find('[data-test="drawer-sync-refunds"]').exists()).toBe(
+                true
+            );
+            expect(mountDrawer(aPayment()).find('[data-test="drawer-sync-refunds"]').exists()).toBe(
+                false
+            );
+        });
+
+        it('syncs without a question, tells the list and stays open on the re-read payment', async () => {
+            const sync = vi.spyOn(usePaymentsStore(), 'syncRefunds').mockResolvedValue(SYNCABLE);
+            const confirm = vi.spyOn(useDialogStore(), 'confirm');
+            const wrapper = mountDrawer(SYNCABLE);
+
+            await wrapper.get('[data-test="drawer-sync-refunds"]').trigger('click');
+            await flushPromises();
+
+            expect(confirm).not.toHaveBeenCalled();
+            expect(sync).toHaveBeenCalledWith(SYNCABLE);
+            expect(wrapper.emitted('changed')).toEqual([[SYNCABLE]]);
+            expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+        });
+
+        it('shows a refusal in the drawer', async () => {
+            vi.spyOn(usePaymentsStore(), 'syncRefunds').mockRejectedValue(
+                aProblem(401, [{ code: 'REAUTH_REQUIRED', message: 'Sign in again.' }])
+            );
+            const wrapper = mountDrawer(SYNCABLE);
+
+            await wrapper.get('[data-test="drawer-sync-refunds"]').trigger('click');
+            await flushPromises();
+
+            expect(wrapper.get('[data-test="drawer-refund-error"]').text()).toContain(
+                'Sign in again.'
+            );
+        });
+    });
+
     describe('a refund the server lets staff cancel', () => {
         const VOIDABLE: Payment = aPayment({
             provider: 'manual',
@@ -432,7 +491,8 @@ describe('PaymentDrawer', () => {
                 sync: false,
                 refund: false,
                 settleRefundByHand: ['r-owed'],
-                cancelRefund: ['r-owed']
+                cancelRefund: ['r-owed'],
+                syncRefunds: false
             },
             refunds: [
                 {

@@ -35,7 +35,14 @@ const PAYMENT = {
     method: 'card',
     amountRefunded: '0.00',
     refunds: [],
-    actions: { pay: false, sync: false, refund: false, settleRefundByHand: [], cancelRefund: [] }
+    actions: {
+        pay: false,
+        sync: false,
+        refund: false,
+        settleRefundByHand: [],
+        cancelRefund: [],
+        syncRefunds: false
+    }
 };
 
 /** Canned response per `METHOD /url` key; an `Error` or `Declined` entry makes the call reject. */
@@ -439,7 +446,8 @@ describe('refundPayment', () => {
                 sync: false,
                 refund: true,
                 settleRefundByHand: ['refund-1'],
-                cancelRefund: []
+                cancelRefund: [],
+                syncRefunds: false
             }
         };
         const store = usePaymentsStore();
@@ -462,7 +470,8 @@ describe('refundPayment', () => {
                 sync: false,
                 refund: true,
                 settleRefundByHand: [],
-                cancelRefund: []
+                cancelRefund: [],
+                syncRefunds: false
             }
         };
         const store = usePaymentsStore();
@@ -506,7 +515,8 @@ describe('settleRefundByHand', () => {
             sync: false,
             refund: false,
             settleRefundByHand: [],
-            cancelRefund: []
+            cancelRefund: [],
+            syncRefunds: false
         }
     };
 
@@ -521,7 +531,8 @@ describe('settleRefundByHand', () => {
                 sync: false,
                 refund: false,
                 settleRefundByHand: ['refund-1'],
-                cancelRefund: []
+                cancelRefund: [],
+                syncRefunds: false
             }
         });
 
@@ -572,11 +583,47 @@ describe('settleRefundByHand', () => {
     });
 });
 
+describe('syncRefunds', () => {
+    it('posts the sync, then mirrors the payment it answers with', () => {
+        const synced = aPayment({
+            id: 'payment-1',
+            amountRefunded: '5.00',
+            refunds: [{ ...REFUND, amount: '5.00', reason: 'external', status: 'succeeded' }]
+        });
+        responses['POST /payments/payment-1/refunds/sync'] = synced;
+        const store = usePaymentsStore();
+        store.payment = aPayment({ id: 'payment-1' });
+
+        return store.syncRefunds({ id: 'payment-1' }).then(() => {
+            expect(requestedUrls()).toEqual(['/payments/payment-1/refunds/sync']);
+            expect(store.payment?.refunds).toHaveLength(1);
+            expect(store.payment?.amountRefunded).toBe('5.00');
+        });
+    });
+
+    it('leaves a different cached payment alone: syncing from a list must not swap an order page', () => {
+        responses['POST /payments/payment-9/refunds/sync'] = aPayment({ id: 'payment-9' });
+        const store = usePaymentsStore();
+        store.payment = aPayment({ id: 'payment-1' });
+
+        return store.syncRefunds({ id: 'payment-9' }).then(() => {
+            expect(store.payment?.id).toBe('payment-1');
+        });
+    });
+});
+
 describe('cancelRefund', () => {
     const VOIDED = {
         ...PAYMENT,
         refunds: [{ ...REFUND, status: 'failed', failureReason: 'canceled' }],
-        actions: { pay: false, sync: false, refund: true, settleRefundByHand: [], cancelRefund: [] }
+        actions: {
+            pay: false,
+            sync: false,
+            refund: true,
+            settleRefundByHand: [],
+            cancelRefund: [],
+            syncRefunds: false
+        }
     };
 
     it('posts the note, then reads the payment again and mirrors it', () => {
@@ -590,7 +637,8 @@ describe('cancelRefund', () => {
                 sync: false,
                 refund: false,
                 settleRefundByHand: ['refund-1'],
-                cancelRefund: ['refund-1']
+                cancelRefund: ['refund-1'],
+                syncRefunds: false
             }
         });
 

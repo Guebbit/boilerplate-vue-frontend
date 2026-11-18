@@ -167,6 +167,8 @@
         "confirm-mark-returned-card": "Confermi di aver restituito {amount} al cliente in un altro modo? Fallo solo dopo che il denaro è uscito: l'app smette di ritentare questo rimborso e avvisa il cliente che è stato restituito.",
         "mark-returned-done": "Segnato come restituito",
         "button-cancel-refund": "Annulla rimborso",
+        "button-sync-refunds": "Risincronizza rimborsi",
+        "sync-refunds-done": "Rimborsi riletti dal provider. Quelli mancanti ora sono registrati.",
         "cancel-refund-done": "Rimborso annullato. Non è stato inviato nulla e nessuno è stato avvisato.",
         "button-open-payment": "Apri pagamento",
         "button-open-order": "Apri l'ordine",

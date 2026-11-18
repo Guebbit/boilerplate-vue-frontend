@@ -167,6 +167,8 @@
         "confirm-mark-returned-card": "Confirm you returned {amount} to the customer another way? Do this only after the money has left: the app stops retrying this refund and tells the customer it is back.",
         "mark-returned-done": "Marked as returned",
         "button-cancel-refund": "Cancel refund",
+        "button-sync-refunds": "Re-sync refunds",
+        "sync-refunds-done": "Refunds re-read from the provider. Any that were missing are now recorded.",
         "cancel-refund-done": "Refund canceled. Nothing was sent and nobody was notified.",
         "button-open-payment": "Open payment",
         "button-open-order": "Open the order",

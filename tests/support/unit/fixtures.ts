@@ -146,7 +146,8 @@ export const aPayment = (overrides: Partial<Payment> = {}): Payment =>
             sync: false,
             refund: false,
             settleRefundByHand: [],
-            cancelRefund: []
+            cancelRefund: [],
+            syncRefunds: false
         },
         ...overrides
     });
