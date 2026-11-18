@@ -134,6 +134,8 @@
         "failure-reason-unknown": "The provider gave no usable reason",
         "failure-reason-canceled": "Canceled by staff: nothing was sent",
         "failure-reason-disputed": "The buyer's bank took the money back in a dispute",
+        "dispute-hint-lost": "The bank paid the buyer. Mark returned once the buyer has it all; if the bank took less than this refund, pay the small rest outside the app first.",
+        "dispute-hint-won": "The shop won the dispute, so no money left. Cancel this refund, then refund the buyer by card.",
         "refund-reversed-on": "Reversed by the provider on {date}",
         "attention-kind-stale_refund": "Waiting for the provider's answer",
         "attention-kind-refused_refund": "Refused: return the money another way",

@@ -134,6 +134,8 @@
         "failure-reason-unknown": "Il provider non ha indicato un motivo utilizzabile",
         "failure-reason-canceled": "Annullato dallo staff: non è stato inviato nulla",
         "failure-reason-disputed": "La banca dell'acquirente ha ripreso il denaro con una contestazione",
+        "dispute-hint-lost": "La banca ha pagato l'acquirente. Segna come restituito quando l'acquirente ha ricevuto tutto; se la banca ha ripreso meno di questo rimborso, paga prima fuori dall'app il piccolo resto.",
+        "dispute-hint-won": "Il negozio ha vinto la contestazione, quindi nessun denaro è uscito. Annulla questo rimborso, poi rimborsa l'acquirente con la carta.",
         "refund-reversed-on": "Annullato dal gestore il {date}",
         "attention-kind-stale_refund": "In attesa della risposta del gestore",
         "attention-kind-refused_refund": "Rifiutato: restituisci il denaro in un altro modo",
