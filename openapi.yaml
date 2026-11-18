@@ -19707,6 +19707,7 @@ components:
         - paid_without_hold
         - consent_due
         - refund_unrecorded
+        - return_refund_short
     TaskLinkType:
       type: string
       enum:
@@ -19716,6 +19717,7 @@ components:
         - payment
         - refund
         - fulfillment_order
+        - return
     TaskLink:
       type: object
       additionalProperties: false

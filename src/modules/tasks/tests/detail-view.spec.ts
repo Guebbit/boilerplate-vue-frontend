@@ -81,6 +81,20 @@ describe('TaskDetail reference', () => {
         }));
 });
 
+describe('TaskDetail record link', () => {
+    it('opens the return page for a to-do linked to a return, worded with its own label', () =>
+        openDetail(aTask({ kind: 'return_refund_short', link: { type: 'return', id: 'r9' } })).then(
+            (wrapper) => {
+                const link = wrapper.get('[data-test=task-link] a');
+                expect(link.text()).toBe('Return r9');
+                expect(link.attributes('href')).toBe('/en/returns/r9');
+                expect(wrapper.get('[data-test=task-detail]').text()).toContain(
+                    'Return refund smaller than owed'
+                );
+            }
+        ));
+});
+
 describe('TaskDetail unknown kind', () => {
     // Production validation is report-only: a response passes through as it arrived
     // (`isReportOnly` in `src/infrastructure/http/validate.ts`).

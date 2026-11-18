@@ -89,6 +89,7 @@ const recordLink = computed(() => {
     const link = task.value?.link;
     if (link?.type === 'order') return linkIfRouted(router, 'OrderTarget', { id: link.id });
     if (link?.type === 'user') return linkIfRouted(router, 'UserTarget', { id: link.id });
+    if (link?.type === 'return') return linkIfRouted(router, 'ReturnTarget', { id: link.id });
     return undefined;
 });
 
