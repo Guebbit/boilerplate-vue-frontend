@@ -1,5 +1,8 @@
 {
-    "*.{ts,mts,tsx,vue,cjs}": "eslint --max-warnings 0 --no-warn-ignored",
+    "*.{ts,mts,tsx,vue,cjs}": [
+        "eslint --fix --max-warnings 0 --no-warn-ignored",
+        "prettier --write --ignore-unknown"
+    ],
     "{src/styles/**/*.css,scripts/design-policy.ts,scripts/eslint/**/*.ts,src/ui/vuetify/theme.ts}": "node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js --max-warnings 0 --no-warn-ignored src",
-    "*": "prettier --check --ignore-unknown"
+    "!(*.{ts,mts,tsx,vue,cjs})": "prettier --write --ignore-unknown"
 }

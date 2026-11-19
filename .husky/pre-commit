@@ -1,8 +1,9 @@
-# The LIGHT gate, `complete:light`. It keeps every static check (lint, format,
+# The LIGHT gate: lint-staged FIXES eslint and prettier on the staged files and stages the fixes into
+# this same commit, then `complete:light:gates`. It keeps every static check (lint, format,
 # generated-types freshness, spec identity, docs references, `vue-tsc`) plus the unit suite.
 # The backend lints the contract; the frontend only verifies its copy is identical.
 #
-# Left out (CI on push runs all of it). A lane merges on `complete:light` plus every Cypress spec it
+# Left out (CI on push runs all of it). A lane merges on `complete:light:fix` plus every Cypress spec it
 # adds or changes, run by file; the full `npm run complete` runs on main at the checkpoints:
 #
 # - the Vite build and Cypress e2e against the demo dataset — most of the full gate's minutes;
@@ -20,19 +21,18 @@
 # `test:e2e:live` (needs the paired backend up). Pixel diffs answer to the machine that took them,
 # so they run only in the pinned image of `visual.yml`.
 #
-# Lint and format check the STAGED SNAPSHOT, not the working tree. `lint-staged`
-# (`.lintstagedrc.json`) runs `eslint` and `prettier --check` on staged files only. Over the whole
-# tree, a peer's unrelated dirty file — or a scratch note sitting in the same checkout — could fail
-# a commit that never touched it, and a `prettier --write` would rewrite every unformatted file in
-# the tree, not only the ones being committed. `type-check-only` and `test:unit` below stay
-# whole-project on purpose:
-# `vue-tsc` needs the whole project graph regardless of what changed, and neither one can be tricked
-# into failing by an unrelated dirty file the way a tree-wide format check can.
-npx lint-staged
+# Lint and format FIX the STAGED files only, and lint-staged stages the fixes (`.lintstagedrc.json`:
+# `eslint --fix`, then `prettier --write`). Over the whole tree, a peer's unrelated dirty file would
+# be rewritten and committed by a tree-wide `--write`. The design-policy lint globs all of `src`, so
+# it stays check-only (no `--fix`), and `--concurrent false` runs the globs one after another so no
+# two tasks touch the same file at once. `type-check-only` and `test:unit` below stay
+# whole-project on purpose: `vue-tsc` needs the whole project graph regardless of what changed, and
+# neither one can be tricked into failing by an unrelated dirty file.
+npx lint-staged --concurrent false
 
 # The generated contract code is gitignored and rebuilt from `openapi.yaml` / `asyncapi.yaml`, so
 # regenerating it is only needed when one of those two is staged: the checks below read the result.
-# Nothing here stages anything.
+# `regenerate` never stages: only the fixes lint-staged made to staged files are staged.
 if git diff --cached --name-only --diff-filter=ACMR | grep -qE '^(openapi|asyncapi)\.yaml$'; then
     npm run regenerate
 fi

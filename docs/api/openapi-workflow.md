@@ -60,7 +60,8 @@ is `npm run regenerate`; the container images run it once after `COPY . .`
 - **After a pull that changed `openapi.yaml`, `asyncapi.yaml` or `shared/rules/`:** run `npm install`
   (or `npm run regenerate`). A stale `contracts/rest/` makes `vue-tsc` fail, not the app misbehave.
 - **The pre-commit hook** regenerates when `openapi.yaml` or `asyncapi.yaml` is staged, so the
-  type-check and unit run on the new contract. It stages nothing.
+  type-check and unit run on the new contract. The regenerate step stages nothing; lint-staged stages its
+  own lint and formatting fixes to the files you staged.
 - **What `npm run check` still guards:** `openapi.yaml` and `asyncapi.yaml` are the backend's bytes
   (`spec-identity`), and the committed shared-rules JSON Schemas are what the generator writes.
 
