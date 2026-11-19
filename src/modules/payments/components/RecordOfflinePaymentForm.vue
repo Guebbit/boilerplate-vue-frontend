@@ -21,7 +21,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { RecordOfflinePaymentRequestMethod } from '@/types/enums.ts';
+import { OutsideMoneyMethod } from '@/types/enums.ts';
 import { usePaymentsStore } from '../store.ts';
 import { offlineReferenceMax } from '../schemas.ts';
 import { useRecordOfflinePayment } from '../composables/use-record-offline-payment.ts';
@@ -72,7 +72,7 @@ const { recordOfflinePayment } = useRecordOfflinePayment(computed(() => props.or
  * The three offline methods the admin may pick — `card` is not one of them, that path is the
  * customer's own checkout.
  */
-const methods = Object.values(RecordOfflinePaymentRequestMethod);
+const methods = Object.values(OutsideMoneyMethod);
 
 /**
  * The `<form>` element, handed to `useStructureFormValidation` for its native-validity wiring.
@@ -85,7 +85,7 @@ const formElement = ref<HTMLFormElement>();
  * submit time since the contract wants an ISO date-TIME.
  */
 const schema = z.object({
-    method: z.enum(RecordOfflinePaymentRequestMethod, {
+    method: z.enum(OutsideMoneyMethod, {
         error: () => t('record-offline-payment-form.error-method-required')
     }),
     reference: z.string().max(offlineReferenceMax).optional(),

@@ -141,6 +141,7 @@
         "attention-kind-refused_refund": "Refused: return the money another way",
         "attention-kind-reversed_refund": "Sent back by the bank: return the money another way",
         "attention-kind-refund_exceeds_remaining": "A refund made elsewhere left no room: cancel it or mark it returned",
+        "attention-kind-over_refunded": "Refunded more than was paid: check the books",
         "attention-exceeds-by": "Over by {amount}",
         "attention-kind-manual_refund_owed": "Money to hand back outside the system",
         "attention-deadline-left": "Last day to pay this back | {count} day left to pay this back | {count} days left to pay this back",

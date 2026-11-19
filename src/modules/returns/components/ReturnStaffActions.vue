@@ -34,6 +34,7 @@ import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import PaidOutsideFields from '@/ui/molecules/PaidOutsideFields.vue';
 import { useReturnsStore } from '../store.ts';
 import {
     cancelNoteMax,
@@ -46,7 +47,7 @@ import {
     declineReasonSchema
 } from '../schemas.ts';
 import { hasRemedyChoice, REMEDIES } from '../domain/remedy.ts';
-import type { Return } from '@types';
+import type { PaidOutside, Return } from '@types';
 
 /**
  * The return being worked on, with the caller's `actions`.
@@ -262,6 +263,23 @@ const setRestock = (productId: string, value: string) => {
 };
 
 /**
+ * Staff's statement that the buyer was already paid back outside the app, or `undefined`. It rides
+ * beside the receive form's fields, not in its schema: the contract's own shape is sent as it is.
+ */
+const paidOutside = ref<PaidOutside>();
+
+/**
+ * Whether the statement is offered: the caller may refund (`create:Refund`, which the server
+ * demands for it on top of `receive:Return`), and the remedy is a refund — a replacement or a
+ * repair moves no money.
+ */
+const canPayOutside = computed(
+    () =>
+        session.can('create', 'Refund') &&
+        (!underGuarantee.value || receiveForm.value.remedy === 'refund')
+);
+
+/**
  * The proof-of-sending form's element.
  */
 const proofElement = ref<HTMLFormElement>();
@@ -453,7 +471,8 @@ const submitReceive = () =>
                       )
                   }),
             ...(underGuarantee.value && chosen ? { remedy: chosen } : {}),
-            ...(lowered.length > 0 ? { lines: lowered } : {})
+            ...(lowered.length > 0 ? { lines: lowered } : {}),
+            ...(canPayOutside.value && paidOutside.value ? { paidOutside: paidOutside.value } : {})
         };
         // A repair or a replacement moves no money, so there is no refund to wait for.
         const moneyStays = body.remedy === 'repair' || body.remedy === 'replace';
@@ -696,6 +715,8 @@ const submitCancel = () =>
                 hide-details="auto"
                 data-test="return-receive-deduction"
             />
+            <!-- The refund is recorded as paid by hand and no card is asked: the buyer was paid already. -->
+            <PaidOutsideFields v-if="canPayOutside" v-model="paidOutside" class="w-full" />
             <v-btn type="submit" color="primary" data-test="return-receive" :disabled="loading">
                 {{ t('return-staff-actions.button-receive') }}
             </v-btn>

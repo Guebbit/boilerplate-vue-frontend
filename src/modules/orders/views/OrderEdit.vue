@@ -33,7 +33,7 @@ import { useOrderHero } from '../composables/use-order-hero.ts';
 import { useOrderRefund, OrderDisputes, RecordOfflinePaymentForm } from '@/modules/payments';
 import ShippingAddressForm from '../components/ShippingAddressForm.vue';
 import { z } from 'zod';
-import type { OrderStatus } from '@types';
+import type { OrderStatus, PaidOutside } from '@types';
 import { isWholeOrder } from '../domain/whole-order.ts';
 import { Calendar, Clock, Package, Pencil, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -52,6 +52,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import PaidOutsideFields from '@/ui/molecules/PaidOutsideFields.vue';
 
 /**
  * Generic utility hooks.
@@ -295,8 +296,15 @@ const refundAmountInvalid = computed(
 );
 
 /**
+ * Staff's statement that the refund was already paid outside the app (cash, a transfer), or
+ * `undefined` for an ordinary refund. Sent with "Refund only" and cleared once it landed.
+ */
+const paidOutside = ref<PaidOutside>();
+
+/**
  * Returns the money without touching the order's status — all of it, or the typed part. On a
- * hand-paid payment this only opens the refund; {@link runSettle} confirms it.
+ * hand-paid payment this only opens the refund and {@link runSettle} confirms it, unless
+ * {@link paidOutside} says the money is already back.
  *
  * @returns A promise resolving once the payment is re-read, which is what greys the control out.
  */
@@ -334,9 +342,10 @@ const runSettle = (refundId: string, amount: string) =>
  */
 const refundOnce = () => {
     clearActionsError();
-    return refund(refundAmount.value)
+    return refund(refundAmount.value, paidOutside.value)
         .then((notice) => {
             refundAmountText.value = '';
+            paidOutside.value = undefined;
             if (notice) addMessage(notice.text, notice.type);
         })
         .catch((error: unknown) => reportActionsError(error));
@@ -587,6 +596,9 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         class="mb-3 max-w-72"
                         data-test="refund-amount"
                     />
+
+                    <!-- Only "Refund only" reads it: "Cancel and refund" still goes to the card. -->
+                    <PaidOutsideFields v-model="paidOutside" class="mb-3" />
 
                     <div class="flex flex-wrap gap-2">
                         <v-btn

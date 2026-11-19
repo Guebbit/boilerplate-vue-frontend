@@ -79,6 +79,14 @@ beforeEach(() => {
     };
 });
 
+/** The request bodies sent to the refund door so far, oldest first. */
+const sentBodies = () =>
+    vi
+        .mocked(orvalMutator)
+        .mock.calls.filter(([config]) => config.url === '/payments/p1/refunds')
+        // `data` is orval's request body, which the mutator's config type leaves open.
+        .map(([config]) => (config as { data: unknown }).data);
+
 /**
  * Lets the immediate watcher's fetch settle before the assertion reads its result.
  */
@@ -118,6 +126,32 @@ describe('useOrderRefund', () => {
             })
             .then(() => {
                 expect(canRefund.value).toBe(false);
+            });
+    });
+
+    it('sends the paid-outside statement with the amount, and with no amount for what is left', () => {
+        const { refund } = useOrderRefund(ref('o1'));
+        return settled()
+            .then(() => refund('12.5', { method: 'cash', reference: 'receipt 17' }))
+            .then(() => refund(undefined, { method: 'bank_transfer' }))
+            .then(() => {
+                expect(sentBodies()).toEqual([
+                    { amount: '12.50', paidOutside: { method: 'cash', reference: 'receipt 17' } },
+                    { paidOutside: { method: 'bank_transfer' } }
+                ]);
+            });
+    });
+
+    it('sends no paidOutside key for an ordinary refund', () => {
+        const { refund } = useOrderRefund(ref('o1'));
+
+        return settled()
+            .then(() => refund('10.00'))
+            .then(() => {
+                const call = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.findLast(([config]) => config.url === '/payments/p1/refunds');
+                expect((call?.[0] as { data: object }).data).not.toHaveProperty('paidOutside');
             });
     });
 

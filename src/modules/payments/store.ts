@@ -28,6 +28,7 @@ import {
 import type {
     ListRefundsParams,
     Payment,
+    PaidOutside,
     PaymentAttentionItem,
     PaymentMethodOption,
     RecordOfflinePaymentRequest,
@@ -261,12 +262,26 @@ export const usePaymentsStore = defineStore('payments', () => {
      * @param target.orderId - Its order, for the re-read after a fault.
      * @param amount - A partial refund, a decimal string in the payment's own currency. Absent returns
      *  everything still refundable.
+     * @param paidOutside - Staff's statement that the money already went back outside the app: the
+     *  record is then born settled and the provider is never asked.
      * @returns A promise resolving with the refreshed payment and the record this request wrote.
      */
-    const refundPayment = (target: { id: string; orderId: string }, amount?: string) => {
+    const refundPayment = (
+        target: { id: string; orderId: string },
+        amount?: string,
+        paidOutside?: PaidOutside
+    ) => {
         const keeper = refundIdempotencyKeys.forSubject(target.id);
+        const body = {
+            ...(amount === undefined ? {} : { amount }),
+            ...(paidOutside ? { paidOutside } : {})
+        };
         return fetchAny(() =>
-            createRefund(target.id, amount === undefined ? undefined : { amount }, keeper.withKey())
+            createRefund(
+                target.id,
+                Object.keys(body).length > 0 ? body : undefined,
+                keeper.withKey()
+            )
                 .then((created) => {
                     keeper.settle();
                     return readPaymentWithRefund(target.id, created);

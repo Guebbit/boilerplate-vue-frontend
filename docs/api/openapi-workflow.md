@@ -104,12 +104,12 @@ Never import from the file path directly (`../../contracts/rest/index.ts`) — a
 Orval generates enums as `as const` objects (not TypeScript `enum` declarations). Use them with `z.nativeEnum()` or for runtime checks:
 
 ```ts
-import { RecordOfflinePaymentRequestMethod } from '@api';
+import { ReauthPasswordRequestMethod } from '@api';
 
-const schema = z.nativeEnum(RecordOfflinePaymentRequestMethod);
+const schema = z.nativeEnum(ReauthPasswordRequestMethod);
 ```
 
-Naming convention: schema name + property name, PascalCase. Example: `RecordOfflinePaymentRequest.method` → `RecordOfflinePaymentRequestMethod`.
+Naming convention: schema name + property name, PascalCase. Example: `ReauthPasswordRequest.method` → `ReauthPasswordRequestMethod`. An enum named in the contract (`OutsideMoneyMethod`) keeps its own name wherever it is used.
 
 ## Orval configuration
 
