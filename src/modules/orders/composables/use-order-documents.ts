@@ -24,7 +24,8 @@ export const useOrderDocuments = (
     /**
      * Store requests rendering the PDFs and listing the notes.
      */
-    const { fetchInvoice, fetchCreditNotes, fetchCreditNote } = useOrdersStore();
+    const ordersStore = useOrdersStore();
+    const { fetchInvoice, fetchCreditNotes, fetchCreditNote } = ordersStore;
 
     /**
      * Whether the server has actually issued this order's invoice — read from the server rather
@@ -144,7 +145,9 @@ export const useOrderDocuments = (
             targetId(),
             invoiceAvailable.value,
             currentOrder.value?.status,
-            currentOrder.value?.paymentStatus
+            currentOrder.value?.paymentStatus,
+            // A correction reissues the invoice after its answer: the list is read again then.
+            ordersStore.documentsRevision
         ],
         loadCreditNotes,
         { immediate: true }

@@ -23,6 +23,7 @@ import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useI18n } from 'vue-i18n';
+import type { CreditNoteSummary } from '@types';
 import { storeToRefs } from 'pinia';
 import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '../store.ts';
@@ -106,7 +107,7 @@ const session = useSessionStore();
 /**
  * The order being displayed, and whether it is in flight.
  */
-const { currentOrder, loading } = storeToRefs(useOrdersStore());
+const { currentOrder, loading, documentsRevision } = storeToRefs(useOrdersStore());
 
 /**
  * The order once the whole record is in. A list-seeded row is an `OrderListItem`, a preview with no
@@ -173,7 +174,9 @@ const timelineRefreshKey = computed(() =>
         currentOrder.value?.fulfillmentStatus,
         currentOrder.value?.returnStatus,
         detail.value?.updatedAt,
-        reportCount.value
+        reportCount.value,
+        // A billing correction reissues the invoice after its answer: the history is read again then.
+        documentsRevision.value
     ].join('|')
 );
 
@@ -291,6 +294,18 @@ const shippingAddressText = computed(() => formatAddressLine(detail.value?.shipp
  * checkout placed carries one, whether or not anything ships.
  */
 const billingAddressText = computed(() => formatAddressLine(detail.value?.billingAddress));
+
+/**
+ * The label of one credit-note row: a correction of the buyer's details says so, since it reverses
+ * no refund.
+ *
+ * @param note - The credit note listed.
+ * @returns The locale key of its row label.
+ */
+const creditNoteLabelKey = (note: CreditNoteSummary) =>
+    note.reason === 'correction'
+        ? 'order-target-page.label-credit-note-correction'
+        : 'order-target-page.label-credit-note';
 
 /**
  * The invoice and its credit notes: whether they exist, the download/view actions, and each
@@ -502,6 +517,13 @@ watchOrder(() => id, { onError: onMissingRecord });
                         :icon="ReceiptText"
                         full-width
                         data-test="order-billing-address"
+                    />
+                    <ItemDetailField
+                        v-if="detail?.billingAddress?.vatNumber"
+                        :label="t('order-target-page.label-billing-vat-number')"
+                        :value="detail.billingAddress.vatNumber"
+                        :icon="ReceiptText"
+                        data-test="order-billing-vat-number"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-updated-at')"
@@ -773,7 +795,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                     >
                         <span class="text-sm">
                             {{
-                                t('order-target-page.label-credit-note', {
+                                t(creditNoteLabelKey(note), {
                                     number: note.number,
                                     date: formatDate(note.issuedAt),
                                     amount: formatCurrency(note.grandTotal, note.currency)

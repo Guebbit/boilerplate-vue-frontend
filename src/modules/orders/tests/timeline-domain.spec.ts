@@ -224,6 +224,24 @@ describe('describeTimelineEntry', () => {
             ).detail
         ).toBe('order-timeline.detail-number(INV-1)');
     });
+
+    it('prints the new invoice and the credit note that cancelled the old one on a correction', () => {
+        expect(
+            describeTimelineEntry(
+                {
+                    ...row,
+                    type: 'invoice_corrected',
+                    data: {
+                        invoiceId: 'i2',
+                        number: 'INV-2',
+                        creditNoteId: 'c1',
+                        creditNoteNumber: 'CN-1'
+                    }
+                },
+                tools
+            ).detail
+        ).toBe('order-timeline.detail-number(INV-2) · order-timeline.detail-cancelled-by(CN-1)');
+    });
 });
 
 describe('the preorder rows', () => {

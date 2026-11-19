@@ -206,6 +206,7 @@ const deleteFlags = (remove: boolean, permanent: boolean, restorable = false) =>
     process: false,
     overrideStatus: [],
     correctAddress: false,
+    correctBilling: false,
     invoice: false,
     withdraw: false,
     delete: remove,

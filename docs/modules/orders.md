@@ -96,6 +96,18 @@ sends `PUT /orders/{id}/shipping-address` with the whole address, so a held `inc
 group has a way out. A refusal that slipped through (it shipped meanwhile) blocks the form in place
 with the server's `ORDER_ADDRESS_LOCKED` message; the form decides nothing about when it may run.
 
+## Correcting the billing address
+
+`OrderEdit` shows `BillingAddressForm` while the order's own `actions.correctBilling` is true: staff
+hold `update:Order` and retention has not erased the order's data. The form carries the address
+and an optional buyer VAT number (typed in any case, sent upper-cased; the contract's pattern is the
+rule) and sends `PUT /orders/{id}/billing-address` with the whole of it. The server cancels an
+invoice already issued with a credit note and issues a new one, a moment after it answers, so the page
+re-reads the order. The order's detail page reads its history and its documents again, now and
+once more two seconds later (`documentsRevision` in the store), since the reissue runs off an event. A credit note issued for such a
+correction is listed as "invoice corrected": it names no refund. A refusal that slipped through
+(`ORDER_BILLING_LOCKED`) blocks the form in place; the form decides nothing about when it may run.
+
 ## The timeline
 
 `src/modules/orders/components/OrderTimeline.vue` sits under the order's details and lists what happened to it, newest first, a

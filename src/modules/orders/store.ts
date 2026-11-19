@@ -5,7 +5,7 @@
  * `fetchCreditNote`, `fetchTimeline`, `addNote`, `deleteNote`, `exportOrdersCsv`, `createOrder`)
  * for endpoints that don't fit the toolkit's record-shaped primitives.
  */
-import { toValue } from 'vue';
+import { ref, toValue } from 'vue';
 import { defineStore } from 'pinia';
 import { sendKeyed, useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
@@ -33,6 +33,7 @@ import {
     exportOrders,
     overrideOrderStatus,
     correctOrderShippingAddress,
+    correctOrderBillingAddress,
     OrderSortItem
 } from '@api';
 import type {
@@ -42,6 +43,7 @@ import type {
     UpdateOrderByIdRequest,
     SearchOrdersRequest,
     OrderAddress,
+    OrderBillingAddress,
     OrderStatus,
     CreditNoteSummary,
     OrderTimelineEntry,
@@ -199,6 +201,12 @@ const listCreditNotes = (orderId: string): Promise<CreditNoteSummary[]> =>
     listOrderCreditNotes(orderId).then((response) => response.items);
 
 /**
+ * How long after a billing correction the documents are read once more: the reissue runs off an
+ * outbox event, which the relay delivers within moments of the answer.
+ */
+const REISSUE_SETTLE_MS = 2000;
+
+/**
  * Orders CRUD, paginated search and invoices.
  *
  * The CRUD half is declared; the invoice download is written against the toolkit primitives below,
@@ -209,6 +217,13 @@ const listCreditNotes = (orderId: string): Promise<CreditNoteSummary[]> =>
  * learns about any other: by fetching.
  */
 export const useOrdersStore = defineStore('orders', () => {
+    /**
+     * Bumped whenever the server may have just issued documents for an order, so a page showing the
+     * documents or the history reads them again. Only a billing correction does it today: the
+     * invoice is cancelled and reissued off an event, after the answer.
+     */
+    const documentsRevision = ref(0);
+
     /**
      * Which cached orders a list row has disagreed with since their last detail read.
      */
@@ -414,6 +429,32 @@ export const useOrdersStore = defineStore('orders', () => {
         updateTarget(() => correctOrderShippingAddress(orderId, address), {}, orderId);
 
     /**
+     * Replaces who an order is invoiced to — `PUT /orders/{id}/billing-address` (`update:Order`;
+     * `Order.actions.correctBilling` says whether it would be accepted). An invoice already issued
+     * is cancelled and reissued by the server a moment later, so the page re-reads the order's
+     * timeline and documents after this. The cached record is replaced, same as
+     * {@link correctShippingAddress}.
+     *
+     * @param orderId - Which order.
+     * @param address - The corrected address and VAT number; the whole of it replaces the old one.
+     * @returns A promise resolving with the order, its new billing address in place.
+     */
+    const correctBillingAddress = (orderId: string, address: OrderBillingAddress) =>
+        updateTarget(() => correctOrderBillingAddress(orderId, address), {}, orderId).then(
+            (order) => {
+                /**
+                 * Documents are read once now and once more when the reissue has had time to land:
+                 * it runs off an outbox event, a moment after this answer.
+                 */
+                documentsRevision.value += 1;
+                setTimeout(() => {
+                    documentsRevision.value += 1;
+                }, REISSUE_SETTLE_MS);
+                return order;
+            }
+        );
+
+    /**
      * Raises an order for a buyer, or for nobody — `POST /orders` (`create:Order`). Without a
      * `userId` it is a walk-in order: no account, the receipt goes to `email`. Outside `fetchAny`
      * like the other writes the page runs itself; the new order is cached so its page opens at once.
@@ -467,6 +508,7 @@ export const useOrdersStore = defineStore('orders', () => {
         addOrder,
         selectedOrderId,
         currentOrder,
+        documentsRevision,
 
         filters,
         loading,
@@ -485,6 +527,7 @@ export const useOrdersStore = defineStore('orders', () => {
         cancelOrder,
         overrideStatus,
         correctShippingAddress,
+        correctBillingAddress,
         hardDeleteOrder,
         restoreOrder,
         fetchInvoice,
