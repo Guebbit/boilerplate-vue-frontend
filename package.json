@@ -61,7 +61,7 @@
         "complete": "npm run lint && npm run prettier:check && npm run complete:gates",
         "complete:fix": "npm run lint:fix && npm run lint && npm run prettier:fix && npm run complete:gates",
         "complete:manual": "npm run test:e2e:live",
-        "complete:light": "npm run lint && npm run prettier:check && npm run complete:light:gates",
+        "complete:light:fix": "npm run lint:fix && npm run prettier:fix && npm run lint && npm run prettier:check && npm run complete:light:gates",
         "complete:light:gates": "npm run check && npm run type-check-only && npm run test:unit",
         "postinstall": "npm run regenerate",
         "prepare": "husky",

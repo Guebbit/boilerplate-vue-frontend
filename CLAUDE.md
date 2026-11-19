@@ -352,10 +352,11 @@ Conventional Commits, enforced by commitlint on the `commit-msg` hook.
     plain `git commit`.
 - The container engine is **podman** (rootless). `docker` here is the podman shim.
 - MUST NOT run subagents that implement concurrently in the same working tree.
-- The pre-commit hook runs `lint-staged` (eslint + prettier on staged files), runs
+- The pre-commit hook runs `lint-staged`, which fixes eslint and prettier on the staged files and puts
+  the fixes in the same commit (the design-policy lint over `src` stays check-only), runs
   `npm run regenerate` when `openapi.yaml`/`asyncapi.yaml` is staged, then
   `complete:light:gates` (`check`, `vue-tsc`, unit).
-- A lane merges on `complete:light`, plus every Cypress spec it adds or changes, run by file.
+- A lane merges on `npm run complete:light:fix`, plus every Cypress spec it adds or changes, run by file.
   CI on push is authoritative.
 - Before the commit, run every test the hook does not run that the change touches: a new Cypress
   journey or live e2e, AND every existing one whose screen, flow or response shape the change

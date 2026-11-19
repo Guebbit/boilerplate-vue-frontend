@@ -99,8 +99,8 @@ The tiers and the folder map live in [`docs/theory/layers.md`](docs/theory/layer
 npm run complete    # lint + spec lint + contract identity + format + build + unit + e2e
 ```
 
-The full gate. The pre-commit hook runs a faster subset, `npm run complete:light` (no
-build or Cypress), so run this yourself before merging a lane and once on main after; CI is authoritative. It takes **around ten minutes**,
+The full gate. The pre-commit hook fixes lint and formatting on the staged files, then runs a faster subset,
+`npm run complete:light:gates` (no build or Cypress). A lane merges on `npm run complete:light:fix`; run this one on main at the checkpoints; CI is authoritative. It takes **around ten minutes**,
 mostly Cypress — start it and go do something else. `npm run complete:fix` is the same gate with lint and formatting fixed
 rather than reported.
 
