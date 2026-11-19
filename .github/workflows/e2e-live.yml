@@ -473,11 +473,15 @@ jobs:
                   # It listens on its own port (NODE_WORKER_PORT, default 3010), never the backend's :3000.
                   npm run host -- e2e:worker > "$GITHUB_WORKSPACE/worker.log" 2>&1 &
                   echo $! > "$GITHUB_WORKSPACE/worker.pid"
+                  # The heavy-role worker (image digest, data export): the standard one takes none of
+                  # those queues, so without it an export mail never goes out. Own port, 3011.
+                  npm run host -- e2e:worker:heavy > "$GITHUB_WORKSPACE/worker-heavy.log" 2>&1 &
+                  echo $! > "$GITHUB_WORKSPACE/worker-heavy.pid"
 
             # Nothing downstream retries a connection, so without this the first spec would race
             # the server's startup and fail on a network error rather than on an assertion.
             - name: Wait for the backend
-              run: npx wait-on http://localhost:3000 tcp:127.0.0.1:3010 tcp:127.0.0.1:3070 --timeout 120000
+              run: npx wait-on http://localhost:3000 tcp:127.0.0.1:3010 tcp:127.0.0.1:3011 tcp:127.0.0.1:3070 --timeout 120000
 
             # Before spending minutes on Cypress: are the two checkouts still the same pair? A
             # forked `openapi.yaml` makes the run fail on shapes rather than on behaviour, which
@@ -528,7 +532,7 @@ jobs:
             # the runner does next.
             - name: Stop the backend
               if: always()
-              run: kill "$(cat "$GITHUB_WORKSPACE/backend.pid")" "$(cat "$GITHUB_WORKSPACE/worker.pid")" || true
+              run: kill "$(cat "$GITHUB_WORKSPACE/backend.pid")" "$(cat "$GITHUB_WORKSPACE/worker.pid")" "$(cat "$GITHUB_WORKSPACE/worker-heavy.pid")" || true
 
             - name: Upload backend log
               # Uploaded even on success: a green run whose log is full of 500s is worth seeing.
@@ -539,6 +543,7 @@ jobs:
                   path: |
                       backend.log
                       worker.log
+                      worker-heavy.log
                   retention-days: 14
                   if-no-files-found: warn
 
