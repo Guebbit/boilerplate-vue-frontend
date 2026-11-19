@@ -17,3 +17,4 @@ export * from './composables/use-order-hero';
 export * from './domain';
 export { default as OrderTimeline } from './components/OrderTimeline.vue';
 export { default as ShippingAddressForm } from './components/ShippingAddressForm.vue';
+export { default as BillingAddressForm } from './components/BillingAddressForm.vue';

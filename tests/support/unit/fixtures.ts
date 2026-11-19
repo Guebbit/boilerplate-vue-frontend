@@ -62,6 +62,7 @@ export const NO_ORDER_ACTIONS: OrderActions = {
     process: false,
     overrideStatus: [],
     correctAddress: false,
+    correctBilling: false,
     withdraw: false,
     delete: false,
     hardDelete: false,

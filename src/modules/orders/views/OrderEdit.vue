@@ -32,6 +32,7 @@ import { ordersSchema } from '../schemas.ts';
 import { useOrderHero } from '../composables/use-order-hero.ts';
 import { useOrderRefund, OrderDisputes, RecordOfflinePaymentForm } from '@/modules/payments';
 import ShippingAddressForm from '../components/ShippingAddressForm.vue';
+import BillingAddressForm from '../components/BillingAddressForm.vue';
 import { z } from 'zod';
 import type { OrderStatus, PaidOutside } from '@types';
 import { isWholeOrder } from '../domain/whole-order.ts';
@@ -170,6 +171,13 @@ const canCancel = computed(() => currentOrder.value?.actions.cancel === true);
 const canCorrectAddress = computed(() => currentOrder.value?.actions.correctAddress === true);
 
 /**
+ * The order's own `actions.correctBilling`: staff may still change who it is invoiced to (any
+ * status, until retention erased the order's data), so the form is never offered for a call the
+ * API would refuse.
+ */
+const canCorrectBilling = computed(() => currentOrder.value?.actions.correctBilling === true);
+
+/**
  * Whether both halves of "cancel and refund" are available, which is what the combined
  * button needs.
  */
@@ -219,6 +227,13 @@ const onOfflinePaymentRecorded = () => {
  * the new record, and the cached copy still holds the old address.
  */
 const onAddressCorrected = onOfflinePaymentRecorded;
+
+/**
+ * Reloads the order once its billing address was replaced. The invoice is cancelled and reissued by
+ * the server off an event, a moment after the answer, so the history and the documents are read
+ * again with the order.
+ */
+const onBillingCorrected = onOfflinePaymentRecorded;
 
 /**
  * The three money-action buttons' own blocked state — cancel-only and cancel-and-refund are the
@@ -679,6 +694,26 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         :order-id="id"
                         :address="detail?.shippingAddress"
                         @corrected="onAddressCorrected"
+                    />
+                </div>
+
+                <!--
+                    Staff correcting who the order is invoiced to: an invoice already issued is
+                    cancelled and reissued by the server. Offered only on the server's own
+                    `actions.correctBilling`.
+                -->
+                <div v-if="canCorrectBilling && id" class="mt-6 border-t pt-5">
+                    <h3 class="text-lg font-semibold">
+                        {{ t('order-edit-page.billing-address-title') }}
+                    </h3>
+                    <p class="mt-1 mb-3 opacity-75">
+                        {{ t('order-edit-page.billing-address-hint') }}
+                    </p>
+                    <BillingAddressForm
+                        :key="JSON.stringify(detail?.billingAddress)"
+                        :order-id="id"
+                        :address="detail?.billingAddress"
+                        @corrected="onBillingCorrected"
                     />
                 </div>
 

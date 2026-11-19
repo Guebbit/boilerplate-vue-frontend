@@ -263,6 +263,10 @@ const DETAILS: { readonly [T in OrderTimelineType]?: DetailBuilder<DataOf<T>> } 
     return_approved: returnReason,
     invoice_issued: documentNumber,
     credit_note_issued: documentNumber,
+    invoice_corrected: (tools, { number, creditNoteNumber }) => [
+        plain(tools, number, 'order-timeline.detail-number'),
+        plain(tools, creditNoteNumber, 'order-timeline.detail-cancelled-by')
+    ],
     release_date_moved: dateMove,
     delay_notice_sent: delayNotice
 };

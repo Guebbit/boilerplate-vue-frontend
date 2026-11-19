@@ -28,6 +28,7 @@ import {
     addOrderNote,
     deleteOrderNote,
     createOrder,
+    correctOrderBillingAddress,
     exportOrders
 } from '@api';
 import * as schemas from '@api/schemas';
@@ -76,6 +77,7 @@ const CREDIT_NOTES = [
         issuedAt: '2026-09-30T10:00:00.000Z',
         currency: 'EUR',
         grandTotal: '9.99',
+        reason: 'refund',
         refundId: 'r1'
     }
 ];
@@ -96,7 +98,8 @@ const RESPONSES = {
     updated: contractResponse(schemas.UpdateOrderByIdResponse, ORDER),
     deleted: contractResponse(schemas.DeleteOrderByIdResponse),
     hardDeleted: contractResponse(schemas.HardDeleteOrderByIdResponse),
-    restored: contractResponse(schemas.RestoreOrderByIdResponse, ORDER)
+    restored: contractResponse(schemas.RestoreOrderByIdResponse, ORDER),
+    billingCorrected: contractResponse(schemas.CorrectOrderBillingAddressResponse, ORDER)
 };
 
 vi.mock('@api', () => ({
@@ -114,6 +117,7 @@ vi.mock('@api', () => ({
     addOrderNote: vi.fn(() => Promise.resolve(TIMELINE[0])),
     deleteOrderNote: vi.fn(() => Promise.resolve()),
     createOrder: vi.fn(() => Promise.resolve(ORDER)),
+    correctOrderBillingAddress: vi.fn(() => Promise.resolve(RESPONSES.billingCorrected)),
     exportOrders: vi.fn(() =>
         Promise.resolve(
             new File(['createdAt,orderNumber\n'], 'orders-2026-10-27.csv', { type: 'text/csv' })
@@ -255,6 +259,48 @@ describe('useOrdersStore', () => {
                     });
                     contractRequest(schemas.UpdateOrderByIdBody, { email: 'new@example.com' });
                 }));
+    });
+
+    describe('correctBillingAddress', () => {
+        it('sends the whole address, VAT number included, and caches the order it answers', () => {
+            const address = {
+                fullName: 'Rossi Srl',
+                street: 'Via Roma 1',
+                city: 'Milano',
+                zip: '20100',
+                country: 'IT',
+                vatNumber: 'IT01234567890'
+            };
+
+            return useOrdersStore()
+                .correctBillingAddress('o1', address)
+                .then((corrected) => {
+                    expect(correctOrderBillingAddress).toHaveBeenCalledWith('o1', address);
+                    contractRequest(schemas.CorrectOrderBillingAddressBody, address);
+                    expect(corrected).toMatchObject({ id: 'o1' });
+                    expect(useOrdersStore().orders.o1).toMatchObject({ id: 'o1' });
+                });
+        });
+
+        it('asks for the documents to be read again now and once more when the reissue has landed', async () => {
+            vi.useFakeTimers();
+            const store = useOrdersStore();
+            const address = {
+                fullName: 'Rossi Srl',
+                street: 'Via Roma 1',
+                city: 'Milano',
+                zip: '20100',
+                country: 'IT'
+            };
+
+            await store.correctBillingAddress('o1', address);
+            expect(store.documentsRevision).toBe(1);
+
+            // The server reissues off an outbox event, a moment after its answer.
+            await vi.advanceTimersByTimeAsync(2000);
+            expect(store.documentsRevision).toBe(2);
+            vi.useRealTimers();
+        });
     });
 
     describe('deleteOrder', () => {

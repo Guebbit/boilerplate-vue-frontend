@@ -130,6 +130,7 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
         process: false,
         overrideStatus: [],
         correctAddress: false,
+        correctBilling: false,
         invoice: false,
         withdraw: false,
         delete: false,
@@ -172,6 +173,7 @@ describe('the invoice buttons', () => {
                 process: false,
                 overrideStatus: [],
                 correctAddress: false,
+                correctBilling: false,
                 invoice: true,
                 withdraw: false,
                 delete: false,
@@ -208,6 +210,7 @@ describe('the credit notes', () => {
         issuedAt: '2026-09-30T10:00:00.000Z',
         currency: 'EUR',
         grandTotal: '9.99',
+        reason: 'refund' as const,
         refundId: 'r1'
     };
 
@@ -254,6 +257,47 @@ describe('the credit notes', () => {
         expect(downloadBlob).toHaveBeenCalledExactlyOnceWith(
             expect.any(File),
             'credit-note-CN-2026-0002.pdf'
+        );
+
+        wrapper.unmount();
+    });
+
+    it('reads the list again when a billing correction asks for the documents, since the reissue lands after the answer', async () => {
+        const wrapper = mountOrder(invoicedOrder());
+        await flushPromises();
+        expect(listOrderCreditNotes).toHaveBeenCalledTimes(1);
+
+        const correction = {
+            ...NOTE,
+            id: 'cn9',
+            number: 'CN-2026-0009',
+            reason: 'correction' as const
+        };
+        vi.mocked(listOrderCreditNotes).mockResolvedValueOnce({ items: [correction] });
+        useOrdersStore().documentsRevision += 1;
+        await flushPromises();
+
+        expect(listOrderCreditNotes).toHaveBeenCalledTimes(2);
+        expect(wrapper.get('[data-test=order-credit-note-row]').text()).toContain('CN-2026-0009');
+
+        wrapper.unmount();
+    });
+
+    it('says a credit note issued for a correction is one, since it reverses no refund', async () => {
+        const correction = {
+            id: 'cn3',
+            number: 'CN-2026-0003',
+            issuedAt: NOTE.issuedAt,
+            currency: 'EUR',
+            grandTotal: '9.99',
+            reason: 'correction' as const
+        };
+        vi.mocked(listOrderCreditNotes).mockResolvedValueOnce({ items: [correction] });
+        const wrapper = mountOrder(invoicedOrder());
+        await flushPromises();
+
+        expect(wrapper.get('[data-test=order-credit-note-row]').text()).toContain(
+            'invoice corrected'
         );
 
         wrapper.unmount();
