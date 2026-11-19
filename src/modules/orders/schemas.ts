@@ -10,7 +10,9 @@ import {
     correctOrderShippingAddressBodyOneStreetMax,
     correctOrderShippingAddressBodyOneCityMax,
     correctOrderShippingAddressBodyOneZipMax,
-    correctOrderShippingAddressBodyOnePhoneMax
+    correctOrderShippingAddressBodyOnePhoneMax,
+    correctOrderBillingAddressBodyOneVatNumberMax,
+    correctOrderBillingAddressBodyOneVatNumberRegExp
 } from '@api/schemas';
 
 /**
@@ -68,6 +70,20 @@ export const shippingAddressCorrectionSchema = z.object({
         .trim()
         .min(1, { error: () => translate('shipping-address-form.error-required') }),
     phone: addressText(correctOrderShippingAddressBodyOnePhoneMax)
+});
+
+/**
+ * Staff's corrected billing address (`correctOrderBillingAddress`): the shipping form's fields plus
+ * the buyer's VAT number, optional and cleared by leaving it empty. Typed in any case: the form
+ * sends it upper-cased, the way the contract's pattern wants it.
+ */
+export const billingAddressCorrectionSchema = shippingAddressCorrectionSchema.extend({
+    vatNumber: addressText(correctOrderBillingAddressBodyOneVatNumberMax).refine(
+        (value) =>
+            value === '' ||
+            correctOrderBillingAddressBodyOneVatNumberRegExp.test(value.toUpperCase()),
+        { error: () => translate('billing-address-form.error-vat-number') }
+    )
 });
 
 /**

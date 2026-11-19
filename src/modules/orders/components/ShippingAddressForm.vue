@@ -11,22 +11,18 @@ export default {
 <script setup lang="ts">
 /**
  * @module
+ * @module
  * Staff correcting where an unshipped order ships: the form a held `incorrect_address` group needs,
  * since nothing else changes an address after checkout. The owning page renders it only while the
  * order's own `actions.correctAddress` says the door is open, so this decides nothing about when;
  * a refusal that slipped through (the order shipped meanwhile) blocks the form in place.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
-import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { ISO_COUNTRY_CODES } from '@/infrastructure/utils/country-codes.ts';
-import { countryLabel } from '@/i18n/country-label.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useOrdersStore } from '../store.ts';
 import { shippingAddressCorrectionSchema } from '../schemas.ts';
+import { useAddressCorrectionForm } from '../composables/use-address-correction-form.ts';
 import type { OrderAddress } from '@types';
 
 /**
@@ -48,88 +44,45 @@ const emit = defineEmits<
 >();
 
 /**
- * Translation function and the reactive locale, which re-validates a form's messages.
+ * Translation function for the labels.
  */
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
 /**
- * Toast dispatcher, used to report the outcome.
- */
-const { addMessage } = useNotificationsStore();
-
-/**
- * The store's write and its in-flight flag.
+ * The store's write.
  */
 const ordersStore = useOrdersStore();
 
 /**
- * True while an orders call is in flight; disables the submit so a double click cannot send two.
- */
-const { loading } = storeToRefs(ordersStore);
-
-/**
- * The `<form>` element, handed to the validation for its native-validity wiring.
- */
-const formElement = ref<HTMLFormElement>();
-
-/**
- * Field state, errors and submit gating; starts from the address the order has now.
- */
-const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors } =
-    useStructureFormValidation(
-        {
-            fullName: props.address?.fullName ?? '',
-            street: props.address?.street ?? '',
-            city: props.address?.city ?? '',
-            zip: props.address?.zip ?? '',
-            country: props.address?.country ?? '',
-            phone: props.address?.phone ?? ''
-        },
-        shippingAddressCorrectionSchema,
-        {
-            formElement,
-            revalidateOn: locale,
-            onInvalid: () => addMessage(t('generic.fix-errors'))
-        }
-    );
-
-/**
- * Every ISO country, localized and sorted for the select.
- */
-const countryOptions = computed(() =>
-    ISO_COUNTRY_CODES.map((code) => ({
-        value: code,
-        title: countryLabel(code, locale.value)
-    })).toSorted((a, b) => a.title.localeCompare(b.title, locale.value))
-);
-
-/**
- * This form's own blocked state: the order shipped meanwhile, or has no address to redirect.
+ * Field state, errors, country options and the submit, starting from the address the order has now.
  */
 const {
-    message: addressError,
-    report: reportAddressError,
-    clear: clearAddressError
-} = useBlockingError();
-
-/**
- * Validates, then replaces the address.
- *
- * @returns A promise settling once the call finished; a refusal blocks the form in place.
- */
-const submit = () =>
-    handleSubmit(({ phone, ...rest }) => {
-        clearAddressError();
-        return ordersStore
-            .correctShippingAddress(props.orderId, { ...rest, ...(phone ? { phone } : {}) })
-            .then(() => {
-                addMessage(t('shipping-address-form.success'));
-                emit('corrected');
-            })
-            .catch((error: unknown) => {
-                applyServerErrors(error, { onUnmapped: () => reportAddressError(error) });
-            });
-    });
+    formElement,
+    form,
+    formErrors,
+    showFormErrors,
+    countryOptions,
+    loading,
+    addressError,
+    submit
+} = useAddressCorrectionForm({
+    initial: {
+        fullName: props.address?.fullName ?? '',
+        street: props.address?.street ?? '',
+        city: props.address?.city ?? '',
+        zip: props.address?.zip ?? '',
+        country: props.address?.country ?? '',
+        phone: props.address?.phone ?? ''
+    },
+    schema: shippingAddressCorrectionSchema,
+    save: ({ phone, ...rest }) =>
+        ordersStore.correctShippingAddress(props.orderId, {
+            ...rest,
+            ...(phone ? { phone } : {})
+        }),
+    successKey: 'shipping-address-form.success',
+    onCorrected: () => emit('corrected')
+});
 </script>
 
 <template>

@@ -104,6 +104,7 @@ const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
     process: false,
     overrideStatus: [],
     correctAddress: false,
+    correctBilling: false,
     invoice: false,
     withdraw: false,
     delete: false,
@@ -529,6 +530,39 @@ describe('the edit form', () => {
             .then(() => nextTick())
             .then(() => {
                 expect(updateOrder).toHaveBeenCalledWith('o1', { email: 'billing@example.com' });
+            });
+    });
+});
+
+describe('correcting the billing address', () => {
+    it('offers the form on the server’s own actions.correctBilling, and hides it otherwise', () => {
+        signInAsAdmin();
+        const offered = mountFromListCache(
+            anOrder({ actions: anAction({ correctBilling: true }) })
+        ).wrapper;
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => {
+                expect(offered.find('[data-test=billing-address-form]').exists()).toBe(true);
+                const hidden = mountFromListCache(anOrder({ actions: anAction() })).wrapper;
+                return nextTick().then(() => {
+                    expect(hidden.find('[data-test=billing-address-form]').exists()).toBe(false);
+                });
+            });
+    });
+
+    it('re-reads the order once the billing address was corrected, since the invoice is reissued', () => {
+        signInAsAdmin();
+        const detail = anOrder({ actions: anAction({ correctBilling: true }) });
+        const { wrapper, fetchOrder } = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => emitOn(wrapper.findComponent({ name: 'BillingAddressForm' }), 'corrected'))
+            .then(() => nextTick())
+            .then(() => {
+                expect(fetchOrder).toHaveBeenLastCalledWith(detail.id, { forced: true });
             });
     });
 });

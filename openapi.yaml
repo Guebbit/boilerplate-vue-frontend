@@ -8553,7 +8553,7 @@ paths:
       tags:
         - Invoicing
       summary: Download the order's invoice (PDF)
-      description: "The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The server names the file: `Content-Disposition` carries `invoice-<invoice number>.pdf`, so a client saves it under that name rather than inventing one."
+      description: "The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. After staff correct the buyer's details (`PUT /orders/{id}/billing-address`) this is the LIVE invoice: the one issued in place of the one a credit note cancelled. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The server names the file: `Content-Disposition` carries `invoice-<invoice number>.pdf`, so a client saves it under that name rather than inventing one."
       operationId: getOrderInvoice
       x-error-codes:
         "404":
@@ -8609,7 +8609,7 @@ paths:
         - Invoicing
       summary: List the order's credit notes
       description: |-
-        One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note. Empty for an order never refunded, with no invoice to reverse, or whose money the caller may not read: the buyer sees their own, and staff need the payments staff read (`display:Payment`), so the warehouse that packs the order sees none. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads.
+        One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note — plus one per correction of the buyer's details (`reason: correction`, no refund). Empty for an order never refunded, with no invoice to reverse, or whose money the caller may not read: the buyer sees their own, and staff need the payments staff read (`display:Payment`), so the warehouse that packs the order sees none. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads.
         Unpaged: one per settled refund of this order.
       operationId: listOrderCreditNotes
       security:
@@ -12947,6 +12947,74 @@ paths:
       responses:
         "200":
           description: The order, with its new address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            Content-Language:
+              $ref: "#/components/headers/ContentLanguage"
+            Vary:
+              $ref: "#/components/headers/Vary"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
+            RateLimit:
+              $ref: "#/components/headers/RateLimit"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
+  /orders/{id}/billing-address:
+    put:
+      tags:
+        - Orders
+      summary: Correct who the order is invoiced to (staff)
+      description: "Replaces the order's billing address, with an optional buyer VAT number, as staff do once the buyer wrote in that the name, address or VAT number on the invoice is wrong and the accountant agreed. Needs `update:Order`. The order already invoiced is not edited: an invoice is a frozen legal record, so `invoicing` cancels it with a credit note for what is still invoiced (`reason: correction`, no refund behind it) and issues a new invoice to the corrected buyer, both in one step and with no money moving (EU VAT Directive Art. 219). That happens a moment after this answers, off an outbox event; an order not invoiced yet has nothing to reissue, and its future invoice freezes the corrected address. An admin-created order that had no billing address gets one. The answer is `409 ORDER_BILLING_LOCKED` once retention has erased the order's personal data. Leaves a staff-only timeline row, `billing_corrected`, and an audit row naming who changed it, never what it says; the reissue leaves `invoice_corrected`. `OrderActions.correctBilling` says whether this would be accepted."
+      operationId: correctOrderBillingAddress
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
+        "409":
+          - ORDER_BILLING_LOCKED
+      security:
+        - bearerAuth:
+            - update:Order
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceBillingAddressRequest"
+      responses:
+        "200":
+          description: The order, with its new billing address
           content:
             application/json:
               schema:
@@ -19972,6 +20040,34 @@ components:
           $ref: "#/components/schemas/CountryCode"
         phone:
           $ref: "#/components/schemas/AddressPhone"
+    OrderBillingAddress:
+      type: object
+      additionalProperties: false
+      required:
+        - fullName
+        - street
+        - city
+        - zip
+        - country
+      properties:
+        fullName:
+          $ref: "#/components/schemas/AddressFullName"
+        street:
+          $ref: "#/components/schemas/AddressStreet"
+        city:
+          $ref: "#/components/schemas/AddressCity"
+        zip:
+          $ref: "#/components/schemas/AddressZip"
+        country:
+          $ref: "#/components/schemas/CountryCode"
+        phone:
+          $ref: "#/components/schemas/AddressPhone"
+        vatNumber:
+          type: string
+          minLength: 4
+          maxLength: 20
+          pattern: ^[A-Z]{2}[A-Za-z0-9]{2,18}$
+          description: The buyer's VAT identification number, country prefix first (`IT01234567890`), printed on the invoice as the buyer's (Art. 226(4)). Not checked against VIES. Absent for a private buyer.
     PaymentMethodId:
       type: string
       enum:
@@ -20104,7 +20200,7 @@ components:
         shippingAddress:
           $ref: "#/components/schemas/OrderAddress"
         billingAddress:
-          $ref: "#/components/schemas/OrderAddress"
+          $ref: "#/components/schemas/OrderBillingAddress"
         paymentMethod:
           $ref: "#/components/schemas/PaymentMethodId"
         payBy:
@@ -20185,6 +20281,7 @@ components:
                 - processing
                 - shipped
                 - address_corrected
+                - billing_corrected
             data:
               $ref: "#/components/schemas/OrderTimelineDataNone"
     OrderTimelineDataStatusOverridden:
@@ -20837,6 +20934,41 @@ components:
                 - credit_note_issued
             data:
               $ref: "#/components/schemas/OrderTimelineDataCreditNoteIssued"
+    OrderTimelineDataInvoiceCorrected:
+      type: object
+      additionalProperties: false
+      required:
+        - invoiceId
+        - number
+        - creditNoteId
+        - creditNoteNumber
+      description: The invoice was cancelled by a credit note and reissued to a corrected buyer.
+      properties:
+        invoiceId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: string
+          description: The new invoice's number.
+        creditNoteId:
+          $ref: "#/components/schemas/Id"
+        creditNoteNumber:
+          type: string
+          description: The credit note that cancelled the old invoice.
+    OrderTimelineExportEntryInvoiceCorrected:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - invoice_corrected
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataInvoiceCorrected"
     OrderTimelineDataReleaseDateMoved:
       type: object
       additionalProperties: false
@@ -20925,6 +21057,7 @@ components:
         - $ref: "#/components/schemas/OrderTimelineExportEntryReturnClosed"
         - $ref: "#/components/schemas/OrderTimelineExportEntryInvoiceIssued"
         - $ref: "#/components/schemas/OrderTimelineExportEntryCreditNoteIssued"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryInvoiceCorrected"
         - $ref: "#/components/schemas/OrderTimelineExportEntryReleaseDateMoved"
         - $ref: "#/components/schemas/OrderTimelineExportEntryDelayNoticeSent"
       discriminator:
@@ -20934,6 +21067,7 @@ components:
           processing: "#/components/schemas/OrderTimelineExportEntryPlain"
           shipped: "#/components/schemas/OrderTimelineExportEntryPlain"
           address_corrected: "#/components/schemas/OrderTimelineExportEntryPlain"
+          billing_corrected: "#/components/schemas/OrderTimelineExportEntryPlain"
           status_overridden: "#/components/schemas/OrderTimelineExportEntryStatusOverridden"
           note_added: "#/components/schemas/OrderTimelineExportEntryNoteAdded"
           paid: "#/components/schemas/OrderTimelineExportEntryPaid"
@@ -20962,6 +21096,7 @@ components:
           return_closed: "#/components/schemas/OrderTimelineExportEntryReturnClosed"
           invoice_issued: "#/components/schemas/OrderTimelineExportEntryInvoiceIssued"
           credit_note_issued: "#/components/schemas/OrderTimelineExportEntryCreditNoteIssued"
+          invoice_corrected: "#/components/schemas/OrderTimelineExportEntryInvoiceCorrected"
           release_date_moved: "#/components/schemas/OrderTimelineExportEntryReleaseDateMoved"
           delay_notice_sent: "#/components/schemas/OrderTimelineExportEntryDelayNoticeSent"
     RefundStatus:
@@ -23747,6 +23882,7 @@ components:
         - process
         - overrideStatus
         - correctAddress
+        - correctBilling
         - invoice
         - withdraw
         - delete
@@ -23778,6 +23914,9 @@ components:
         correctAddress:
           type: boolean
           description: "Whether `PUT /orders/{id}/shipping-address` would be accepted for this caller: they hold `update:Order`, the order has a shipping address, and units remain to send."
+        correctBilling:
+          type: boolean
+          description: "Whether `PUT /orders/{id}/billing-address` would be accepted for this caller: they hold `update:Order` and retention has not erased the order's personal data. Offered at any status: an unpaid order has no invoice yet, a paid one gets it cancelled and reissued."
         withdraw:
           type: boolean
           description: "Whether the \"withdraw from contract here\" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. A mixed order is not a reason to hide it: before dispatch the withdrawal takes the eligible goods (the whole order while it is unpaid or paid, the eligible shipment groups once it is `processing`); only an order made wholly of excluded goods is blocked."
@@ -23886,7 +24025,7 @@ components:
         shippingAddress:
           $ref: "#/components/schemas/OrderAddress"
         billingAddress:
-          $ref: "#/components/schemas/OrderAddress"
+          $ref: "#/components/schemas/OrderBillingAddress"
         paymentMethod:
           $ref: "#/components/schemas/PaymentMethodId"
         payBy:
@@ -24227,7 +24366,7 @@ components:
         - issuedAt
         - currency
         - grandTotal
-        - refundId
+        - reason
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -24244,8 +24383,15 @@ components:
         grandTotal:
           $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: The gross amount this credit note reverses.
+        reason:
+          type: string
+          enum:
+            - refund
+            - correction
+          description: "Why it was issued. `refund`: it reverses a refund that settled. `correction`: staff corrected the buyer's details on the order, so the old invoice was cancelled and reissued; no money moved."
         refundId:
           $ref: "#/components/schemas/Id"
+          description: The refund it reverses. Absent on a `correction`.
     CreditNotesResponse:
       type: object
       additionalProperties: false
@@ -26454,6 +26600,7 @@ components:
                 - processing
                 - shipped
                 - address_corrected
+                - billing_corrected
             data:
               $ref: "#/components/schemas/OrderTimelineDataNone"
     OrderTimelineEntryStatusOverridden:
@@ -26784,6 +26931,21 @@ components:
                 - credit_note_issued
             data:
               $ref: "#/components/schemas/OrderTimelineDataCreditNoteIssued"
+    OrderTimelineEntryInvoiceCorrected:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - invoice_corrected
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataInvoiceCorrected"
     OrderTimelineEntryReleaseDateMoved:
       unevaluatedProperties: false
       allOf:
@@ -26838,6 +27000,7 @@ components:
         - $ref: "#/components/schemas/OrderTimelineEntryReturnClosed"
         - $ref: "#/components/schemas/OrderTimelineEntryInvoiceIssued"
         - $ref: "#/components/schemas/OrderTimelineEntryCreditNoteIssued"
+        - $ref: "#/components/schemas/OrderTimelineEntryInvoiceCorrected"
         - $ref: "#/components/schemas/OrderTimelineEntryReleaseDateMoved"
         - $ref: "#/components/schemas/OrderTimelineEntryDelayNoticeSent"
       discriminator:
@@ -26847,6 +27010,7 @@ components:
           processing: "#/components/schemas/OrderTimelineEntryPlain"
           shipped: "#/components/schemas/OrderTimelineEntryPlain"
           address_corrected: "#/components/schemas/OrderTimelineEntryPlain"
+          billing_corrected: "#/components/schemas/OrderTimelineEntryPlain"
           status_overridden: "#/components/schemas/OrderTimelineEntryStatusOverridden"
           note_added: "#/components/schemas/OrderTimelineEntryNoteAdded"
           paid: "#/components/schemas/OrderTimelineEntryPaid"
@@ -26875,6 +27039,7 @@ components:
           return_closed: "#/components/schemas/OrderTimelineEntryReturnClosed"
           invoice_issued: "#/components/schemas/OrderTimelineEntryInvoiceIssued"
           credit_note_issued: "#/components/schemas/OrderTimelineEntryCreditNoteIssued"
+          invoice_corrected: "#/components/schemas/OrderTimelineEntryInvoiceCorrected"
           release_date_moved: "#/components/schemas/OrderTimelineEntryReleaseDateMoved"
           delay_notice_sent: "#/components/schemas/OrderTimelineEntryDelayNoticeSent"
     OrderTimelineResponse:
@@ -26905,6 +27070,10 @@ components:
       allOf:
         - $ref: "#/components/schemas/OrderAddress"
       description: The corrected shipping address; the whole of it replaces the old one.
+    ReplaceBillingAddressRequest:
+      allOf:
+        - $ref: "#/components/schemas/OrderBillingAddress"
+      description: The corrected billing address; the whole of it replaces the old one, the VAT number included.
     PaymentSort:
       description: "`payBy` sorts on the bank-transfer deadline in `nextAction.payBy`. A payment with none (any other method) counts as the earliest: first ascending, last descending."
       type: array
@@ -29004,6 +29173,9 @@ x-error-codes:
   ORDER_ADDRESS_LOCKED:
     status: 409
     description: "The order cannot be redirected: nothing is left to send (every unit has shipped or been canceled), it is over, or it has no shipping address (a pickup, a digital order)."
+  ORDER_BILLING_LOCKED:
+    status: 409
+    description: "The order's billing address cannot be corrected: retention already erased the order's personal data (`reap:orders`), and the route would write it back."
   ORDER_CREDIT_NOTE_NOT_ISSUED:
     status: 404
     description: The order exists but has no such credit note.
