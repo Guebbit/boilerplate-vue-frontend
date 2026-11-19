@@ -20,8 +20,8 @@ export { OrderFulfillmentFilter } from '@api';
 // Inventory movement reasons: a movement ledger's filter select.
 export { StockMovementReason } from '@api';
 
-// Offline payment methods: a payment method picker's options.
-export { RecordOfflinePaymentRequestMethod } from '@api';
+// How money moved outside the app: the offline-payment form's methods, and a refund paid outside.
+export { OutsideMoneyMethod } from '@api';
 
 // Translation provenance: stamped onto a save, not read from one.
 export { TranslationOrigin } from '@api';

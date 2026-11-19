@@ -141,6 +141,7 @@
         "attention-kind-refused_refund": "Rifiutato: restituisci il denaro in un altro modo",
         "attention-kind-reversed_refund": "Respinto dalla banca: restituisci il denaro in un altro modo",
         "attention-kind-refund_exceeds_remaining": "Un rimborso fatto altrove non ha lasciato spazio: annullalo o segnalalo come restituito",
+        "attention-kind-over_refunded": "Rimborsato più di quanto pagato: controlla i conti",
         "attention-exceeds-by": "Eccedenza di {amount}",
         "attention-kind-manual_refund_owed": "Denaro da restituire fuori dal sistema",
         "attention-deadline-left": "Ultimo giorno per restituire il denaro | Resta {count} giorno per restituire il denaro | Restano {count} giorni per restituire il denaro",

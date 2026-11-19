@@ -20,7 +20,7 @@ wireModulesIntoCore();
  * Stands in for Vuetify's `v-select`, same reasoning as `stock-movement-form.spec.ts`'s stub: a
  * real teleported overlay is unrelated to what this suite proves. `bank_transfer` is the second
  * option so a change event actually moves the model off its default (`bank_transfer` is first in
- * the generated enum — see `RecordOfflinePaymentRequestMethod` — so this stub lists it second to
+ * the generated enum — see `OutsideMoneyMethod` — so this stub lists it second to
  * keep the "picks something other than the default" case meaningful).
  */
 const V_SELECT_STUB = {

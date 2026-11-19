@@ -7,6 +7,7 @@ import { computed, watch, type Ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { translate as t } from '@/i18n';
 import type { EToastType } from '@guebbit/vue-toolkit';
+import type { PaidOutside } from '@types';
 import { usePaymentsStore } from '../store';
 import { refundNotice } from '../refund-notice.ts';
 import { decimalScale, padDecimal } from '@/infrastructure/utils/money.ts';
@@ -82,18 +83,24 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
          *
          * @param amount - A partial refund as typed; absent returns everything still refundable.
          *  Sent at the payment's own places (`"12.5"` becomes `"12.50"`).
+         * @param paidOutside - Staff's statement that the money already went back outside the app:
+         *  the refund is then recorded as done and the provider is never asked.
          * @returns A promise resolving once the refreshed payment has replaced the cached one,
          *  which is what withdraws `canRefund`, with what the operator should be told: the money
          *  is back, on file, or the provider refused it (and what to do then).
          */
-        refund: (amount?: string): Promise<{ text: string; type: EToastType } | undefined> =>
+        refund: (
+            amount?: string,
+            paidOutside?: PaidOutside
+        ): Promise<{ text: string; type: EToastType } | undefined> =>
             payment.value
                 ? paymentsStore
                       .refundPayment(
                           payment.value,
                           amount === undefined
                               ? undefined
-                              : padDecimal(amount, decimalScale(payment.value.amount))
+                              : padDecimal(amount, decimalScale(payment.value.amount)),
+                          paidOutside
                       )
                       .then((done) =>
                           done

@@ -29,7 +29,7 @@ import { anOrderListItem } from '../../../../tests/support/unit/fixtures.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import { OrderStatus } from '@api';
-import type { Order, OrderActions, Refund } from '@types';
+import type { Order, OrderActions, PaidOutside, Refund } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
 
 wireModulesIntoCore();
@@ -38,7 +38,7 @@ wireModulesIntoCore();
 const refreshPayment = vi.fn(() => Promise.resolve());
 
 /** Stub for the payments module's `refund`; takes an optional partial amount. */
-const refund = vi.fn((_amount?: number) => Promise.resolve());
+const refund = vi.fn((_amount?: number, _paidOutside?: PaidOutside) => Promise.resolve());
 
 /** Whether the mocked refund action is currently allowed. */
 const mockCanRefund = ref(false);
@@ -278,7 +278,7 @@ describe('a partial refund', () => {
             .then((wrapper) => wrapper.get('[data-test=button-refund-only]').trigger('click'))
             .then(() => nextTick())
             .then(() => {
-                expect(refund).toHaveBeenCalledWith(undefined);
+                expect(refund).toHaveBeenCalledWith(undefined, undefined);
             }));
 
     it('refunds the typed amount', () =>
@@ -289,9 +289,34 @@ describe('a partial refund', () => {
                 .then(() => wrapper.get('[data-test=button-refund-only]').trigger('click'))
                 .then(() => nextTick())
                 .then(() => {
-                    expect(refund).toHaveBeenCalledWith('12.5');
+                    expect(refund).toHaveBeenCalledWith('12.5', undefined);
                 })
         ));
+
+    it('says the money already went back outside the app when the switch is on', () =>
+        mountRefundable().then((wrapper) =>
+            wrapper
+                .get('[data-test=refund-amount] input')
+                .setValue('12.5')
+                .then(() => wrapper.get('[data-test=paid-outside-switch] input').setValue(true))
+                .then(() =>
+                    wrapper.get('[data-test=paid-outside-reference] input').setValue('R-17')
+                )
+                .then(() => wrapper.get('[data-test=button-refund-only]').trigger('click'))
+                .then(() => nextTick())
+                .then(() => {
+                    expect(refund).toHaveBeenCalledWith('12.5', {
+                        method: 'cash',
+                        reference: 'R-17'
+                    });
+                })
+        ));
+
+    it('does not say it with the switch off, and no method select is shown', () =>
+        mountRefundable().then((wrapper) => {
+            expect(wrapper.find('[data-test=paid-outside-method]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=paid-outside-switch]').exists()).toBe(true);
+        }));
 
     it('refuses an amount that is not a positive number', () =>
         mountRefundable().then((wrapper) =>

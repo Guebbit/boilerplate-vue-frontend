@@ -452,6 +452,26 @@ describe('AttentionList', () => {
         expect(row.get('[data-test="attention-exceeds-by"]').text()).toBe('Over by €30.00');
     });
 
+    it('says a payment was refunded past what was paid, naming the payment and the excess', async () => {
+        answerAttentionWith([
+            {
+                kind: 'over_refunded',
+                orderId: 'o7',
+                paymentId: 'pay-7',
+                amount: '130.00',
+                currency: 'EUR',
+                exceedsBy: '30.00',
+                since: '2026-03-09T10:00:00Z'
+            }
+        ]);
+        const wrapper = mount(AttentionList, { global: GLOBAL });
+        await flushPromises();
+
+        const row = wrapper.get('[data-test="attention-row"]');
+        expect(row.get('[data-test="attention-kind"]').text()).toContain('more than was paid');
+        expect(row.get('[data-test="attention-exceeds-by"]').text()).toBe('Over by €30.00');
+    });
+
     it('shows a dispute to answer with its evidence deadline and what was already refunded', async () => {
         const inFiveDays = new Date(Date.now() + 5 * 86_400_000 - 3_600_000).toISOString();
         answerAttentionWith([

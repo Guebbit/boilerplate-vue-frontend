@@ -46,6 +46,21 @@ beforeEach(() => {
     return loadLocale('en');
 });
 
+/**
+ * Signs in a staff member who may receive returns and, if `canRefund`, refund.
+ *
+ * @param canRefund - whether the caller also holds `create:Refund`
+ */
+const signInAs = (canRefund: boolean) => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'u2', email: 'staff@example.com', role: 'owner' };
+    session.setAbilities({
+        tenant: [['receive', 'Return'], ...(canRefund ? [['create', 'Refund']] : [])],
+        platform: []
+    });
+};
+
 describe('ReturnStaffActions', () => {
     it('renders nothing for a caller with no move open', () => {
         const { wrapper } = mountActions(aReturn());
@@ -234,6 +249,58 @@ describe('ReturnStaffActions', () => {
             await flushPromises();
 
             expect(store.receive).toHaveBeenCalledWith('r1', { remedy: 'refund' });
+        });
+    });
+
+    describe('a refund already paid outside the app', () => {
+        const receivable = {
+            approve: false,
+            decline: false,
+            receive: true,
+            recordProof: false,
+            close: false,
+            cancel: false
+        };
+
+        it('is hidden from a caller who may receive but not refund', () => {
+            signInAs(false);
+            const { wrapper } = mountActions(aReturn({ actions: receivable }));
+
+            expect(wrapper.find('[data-test=paid-outside-switch]').exists()).toBe(false);
+        });
+
+        it('is sent as the contract names it once the switch is on', async () => {
+            signInAs(true);
+            const { wrapper, store } = mountActions(aReturn({ actions: receivable }));
+
+            await wrapper.get('[data-test=paid-outside-switch] input').setValue(true);
+            await wrapper.get('[data-test=paid-outside-reference] input').setValue('CRO 1');
+            await wrapper.get('[data-test=return-receive-form]').trigger('submit');
+            await flushPromises();
+
+            expect(store.receive).toHaveBeenCalledWith('r1', {
+                paidOutside: { method: 'cash', reference: 'CRO 1' }
+            });
+        });
+
+        it('is not sent with the switch off', async () => {
+            signInAs(true);
+            const { wrapper, store } = mountActions(aReturn({ actions: receivable }));
+
+            await wrapper.get('[data-test=return-receive-form]').trigger('submit');
+            await flushPromises();
+
+            expect(store.receive).toHaveBeenCalledWith('r1', undefined);
+        });
+
+        it('is withdrawn when staff pick a replacement, which moves no money', async () => {
+            signInAs(true);
+            const { wrapper } = mountActions(aReturn({ reason: 'defective', actions: receivable }));
+            expect(wrapper.find('[data-test=paid-outside-switch]').exists()).toBe(true);
+
+            await wrapper.get('[data-test=return-receive-remedy-replace] input').setValue(true);
+
+            expect(wrapper.find('[data-test=paid-outside-switch]').exists()).toBe(false);
         });
     });
 

@@ -116,7 +116,7 @@ const openPayment = (paymentId: string) =>
 const rows = computed(() =>
     attention.value.map((item, index) => ({
         ...item,
-        rowKey: `${item.kind}-${item.orderId}-${item.refundId ?? item.disputeId}-${index}`
+        rowKey: `${item.kind}-${item.orderId}-${item.refundId ?? item.disputeId ?? item.paymentId}-${index}`
     }))
 );
 
