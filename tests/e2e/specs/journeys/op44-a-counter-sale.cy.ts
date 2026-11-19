@@ -63,7 +63,7 @@ describe('OP44 · A counter sale', () => {
         cy.get<string>('@orderId').then((orderId) => {
             cy.visit(`/en/orders/${orderId}/edit`);
             cy.get('[data-test=record-offline-method]').click();
-            cy.get('[role=listbox] [role=option]').contains('Paid in cash').click();
+            cy.get('[role=listbox] [role=option]').contains('Cash').click();
             cy.get('[data-test=record-offline-submit]').click();
             cy.get('[data-test=record-offline-payment-error]').should('not.exist');
             cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`)
