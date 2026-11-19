@@ -136,6 +136,28 @@ flowchart LR
     dom --> line[title + detail]
 ```
 
+## A new order for a walk-in {#new-order}
+
+The staff list (`/sales/orders`) has a **New order** button for whoever holds `create:Order`; it opens
+`OrderCreate` (`sales/orders/new`). The buyer is **No account (walk-in)** unless the viewer also holds
+`read:User` and picks an account, searched as they type (`use-account-picker.ts`). Lines come from
+`inventory`'s product picker, one product and quantity at a time, so a manager can ring up a counter
+sale without being shown the customer list. The call carries an `Idempotency-Key` (`createOrder` in
+`store.ts`), and success opens the order page.
+
+The form takes no payment. The order opens waiting for payment and holds its stock for about 15
+minutes, so staff record the cash on it at once (the cash form is on `OrderEdit`), then ship and deliver
+it from the order page. The backend side, and what happens to a walk-in buyer's email, are in
+[Creating an order](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/orders-creation-and-exports.md#creating-an-order).
+
+```mermaid
+flowchart LR
+    L["Staff list<br/>New order"] --> F["OrderCreate<br/>walk-in or account, email, lines"]
+    F -->|"POST /orders<br/>Idempotency-Key"| O["Order page<br/>waiting for payment"]
+    O --> P["OrderEdit<br/>record the cash"]
+    P --> S["Order page<br/>ship, deliver"]
+```
+
 ## The CSV export
 
 The staff list (`/sales/orders`) offers **Export CSV** to whoever holds `export:Order`

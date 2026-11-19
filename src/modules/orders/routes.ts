@@ -31,6 +31,13 @@ export default [
         props: { scope: 'all' }
     },
     {
+        path: 'sales/orders/new',
+        name: 'OrderCreate',
+        // `create`, not `display`: raising an order is its own action, held apart from reading them.
+        meta: { access: 'auth', can: ['create', 'Order'], title: 'order-create-page.page-title' },
+        component: () => import('./views/OrderCreate.vue')
+    },
+    {
         path: 'orders/:id',
         name: 'OrderTarget',
         meta: { access: 'auth', title: 'order-target-page.page-title' },

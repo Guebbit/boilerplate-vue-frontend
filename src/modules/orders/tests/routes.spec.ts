@@ -28,6 +28,7 @@ describe('orders route access', () => {
     it.each([
         ['OrdersList', 'auth', undefined, undefined],
         ['SalesOrders', 'auth', 'display', 'Order'],
+        ['OrderCreate', 'auth', 'create', 'Order'],
         ['OrderTarget', 'auth', undefined, undefined],
         ['OrderEdit', 'auth', 'update', 'Order']
     ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
@@ -53,7 +54,7 @@ describe('orders route access', () => {
     it('declares no route this file does not know about', () => {
         // Catches a new route added without an access decision being made for it.
         expect(routes.map(({ name }) => name).toSorted()).toEqual(
-            ['OrdersList', 'SalesOrders', 'OrderTarget', 'OrderEdit'].toSorted()
+            ['OrdersList', 'SalesOrders', 'OrderCreate', 'OrderTarget', 'OrderEdit'].toSorted()
         );
     });
 });

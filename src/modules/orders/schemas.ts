@@ -69,3 +69,30 @@ export const shippingAddressCorrectionSchema = z.object({
         .min(1, { error: () => translate('shipping-address-form.error-required') }),
     phone: addressText(correctOrderShippingAddressBodyOnePhoneMax)
 });
+
+/**
+ * Staff's new order (`createOrder`): the buyer's email, at least one line, and the account when
+ * the buyer has one. A walk-in order has no account, so `userId` stays optional.
+ */
+export const orderCreateSchema = z.object({
+    userId: z.string().optional(),
+    email: z.email({ error: () => translate('orders-form.email-invalid') }),
+    items: z
+        .array(
+            z.object({
+                productId: z.string(),
+                quantity: z.number().int().min(1)
+            })
+        )
+        .min(1, { error: () => translate('order-create-page.error-no-lines') })
+});
+
+/**
+ * {@link orderCreateSchema} for a buyer who has an account: the account must be picked, because an
+ * absent `userId` would quietly make a walk-in order of it.
+ */
+export const orderCreateForAccountSchema = orderCreateSchema.extend({
+    userId: z
+        .string({ error: () => translate('order-create-page.error-account-required') })
+        .min(1, { error: () => translate('order-create-page.error-account-required') })
+});

@@ -2,7 +2,7 @@
  * @module
  * Pinia store built on `useStructureCrudApi` for orders CRUD and paginated
  * search, plus hand-written actions (`cancelOrder`, `fetchInvoice`, `fetchCreditNotes`,
- * `fetchCreditNote`, `fetchTimeline`, `addNote`, `deleteNote`, `exportOrdersCsv`)
+ * `fetchCreditNote`, `fetchTimeline`, `addNote`, `deleteNote`, `exportOrdersCsv`, `createOrder`)
  * for endpoints that don't fit the toolkit's record-shaped primitives.
  */
 import { toValue } from 'vue';
@@ -29,6 +29,7 @@ import {
     getOrderTimeline,
     addOrderNote,
     deleteOrderNote,
+    createOrder as apiCreateOrder,
     exportOrders,
     overrideOrderStatus,
     correctOrderShippingAddress,
@@ -177,6 +178,13 @@ const addNote = (orderId: string, text: string): Promise<OrderTimelineEntry> =>
  */
 const deleteNote = (orderId: string, eventId: string): Promise<void> =>
     deleteOrderNote(orderId, eventId);
+
+/**
+ * `Idempotency-Key`s for `createOrder`, one per body: a lost response resends the SAME key, so a
+ * retry never books the order twice; any answer mints a fresh one, so a second order with the same
+ * lines is a new order.
+ */
+const createOrderIdempotencyKeys = useIdempotencyKeys();
 
 /**
  * Lists the credit notes of an order, oldest first — one per settled refund, `[]` for an order
@@ -406,6 +414,22 @@ export const useOrdersStore = defineStore('orders', () => {
         updateTarget(() => correctOrderShippingAddress(orderId, address), {}, orderId);
 
     /**
+     * Raises an order for a buyer, or for nobody — `POST /orders` (`create:Order`). Without a
+     * `userId` it is a walk-in order: no account, the receipt goes to `email`. Outside `fetchAny`
+     * like the other writes the page runs itself; the new order is cached so its page opens at once.
+     *
+     * @param body - The buyer's email, the lines, and the account when there is one.
+     * @returns A promise resolving with the created order.
+     */
+    const createOrder = (body: CreateOrderRequest): Promise<Order> =>
+        sendKeyed(createOrderIdempotencyKeys.forSubject(JSON.stringify(body)), (options) =>
+            apiCreateOrder(body, options)
+        ).then((created) => {
+            addOrder(created);
+            return created;
+        });
+
+    /**
      * Downloads every order the filters match as one CSV file — `GET /orders/export`
      * (`export:Order`, step-up). Held outside `fetchAny`: a file is not a record, and the
      * page keeps its own `exporting` flag so the table stays usable meanwhile. The step-up
@@ -468,6 +492,7 @@ export const useOrdersStore = defineStore('orders', () => {
         fetchTimeline,
         addNote,
         deleteNote,
+        createOrder,
         exportOrdersCsv,
         fetchCreditNote
     };

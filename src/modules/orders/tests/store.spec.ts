@@ -27,6 +27,7 @@ import {
     getOrderTimeline,
     addOrderNote,
     deleteOrderNote,
+    createOrder,
     exportOrders
 } from '@api';
 import * as schemas from '@api/schemas';
@@ -112,6 +113,7 @@ vi.mock('@api', () => ({
     getOrderTimeline: vi.fn(() => Promise.resolve(TIMELINE_PAGE)),
     addOrderNote: vi.fn(() => Promise.resolve(TIMELINE[0])),
     deleteOrderNote: vi.fn(() => Promise.resolve()),
+    createOrder: vi.fn(() => Promise.resolve(ORDER)),
     exportOrders: vi.fn(() =>
         Promise.resolve(
             new File(['createdAt,orderNumber\n'], 'orders-2026-10-27.csv', { type: 'text/csv' })
@@ -358,6 +360,40 @@ describe('useOrdersStore', () => {
                     expect(options?.headers).toHaveProperty('Idempotency-Key');
                     expect(entry).toEqual(TIMELINE[0]);
                 }));
+    });
+
+    describe('createOrder', () => {
+        const BODY = { email: 'counter@example.com', items: [{ productId: 'p1', quantity: 2 }] };
+
+        it('posts the body as it is, with an Idempotency-Key, and caches the new order', () => {
+            const store = useOrdersStore();
+
+            return store.createOrder(BODY).then((created) => {
+                const [body, options] = vi.mocked(createOrder).mock.calls[0];
+                expect(body).toEqual(BODY);
+                expect(options?.headers).toHaveProperty('Idempotency-Key');
+                expect(created).toEqual(ORDER);
+                expect(store.orders[ORDER.id]).toEqual(ORDER);
+            });
+        });
+
+        it('resends the same key for a lost answer, and a fresh one after any answer', () => {
+            const store = useOrdersStore();
+            vi.mocked(createOrder).mockRejectedValueOnce(new Error('network down'));
+            const keyOf = (call: number) =>
+                (vi.mocked(createOrder).mock.calls[call][1]?.headers as Record<string, string>)[
+                    'Idempotency-Key'
+                ];
+
+            return store
+                .createOrder(BODY)
+                .catch(() => store.createOrder(BODY))
+                .then(() => store.createOrder(BODY))
+                .then(() => {
+                    expect(keyOf(1)).toBe(keyOf(0));
+                    expect(keyOf(2)).not.toBe(keyOf(1));
+                });
+        });
     });
 
     describe('deleteNote', () => {
