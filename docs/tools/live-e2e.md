@@ -129,7 +129,7 @@ What carries the weight for the infrastructure the demo profile lacks:
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart TB
-    Boot["Mongo replica set, Redis, RabbitMQ,\nMailpit, webhook-tester + TLS proxy\nnpm run host -- db:bootstrap\nnpm run host -- e2e:serve\n(backend repo)"] --> Vite["vite build --outDir dist-e2e\nVITE_VALIDATE_RESPONSES=true\nvite preview :8085"]
+    Boot["Mongo replica set, Redis, RabbitMQ,\nMailpit, webhook-tester + TLS proxy\nnpm run host -- db:bootstrap\nnpm run host -- e2e:serve\nnpm run host -- e2e:worker\n(backend repo)"] --> Vite["vite build --outDir dist-e2e\nVITE_VALIDATE_RESPONSES=true\nvite preview :8085"]
     Vite --> Cypress["cypress run --e2e\nCYPRESS_liveProfile=true"]
     Cypress --> Real["real HTTP\n:8085 → :3000"]
     Real --> Backend[("live backend\nreal seeded MongoDB")]
@@ -226,7 +226,10 @@ export NODE_RATE_LIMIT_REDIS_URL=redis://127.0.0.1:6379
 
 npm run host -- db:bootstrap    # migrate + seed
 npm run host -- e2e:serve       # the backend, marked as an e2e run
+npm run host -- e2e:worker      # in a second terminal: takes the jobs the backend publishes to RabbitMQ (own port 3010)
 ```
+
+The backend only PUBLISHES jobs. With RabbitMQ configured (it is, here) nothing sends a mail, digests an image or delivers a webhook until `e2e:worker` runs, so a spec that reads Mailpit would wait for ever. Without a broker the backend does that work inline and needs no worker.
 
 `host` is a PREFIX runner: it points the database and Redis at 127.0.0.1 and runs whatever `npm run` script follows the `--`. Nothing waits for the backend: with none listening on `VITE_API_URL` (default `http://localhost:3000`), every spec fails on a network error rather than on anything it was written to check.
 
