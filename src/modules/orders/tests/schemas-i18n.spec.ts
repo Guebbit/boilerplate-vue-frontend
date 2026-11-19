@@ -18,7 +18,7 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { loadLocale } from '@/i18n';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { ordersSchema, shippingAddressCorrectionSchema } from '../schemas';
+import { orderCreateSchema, ordersSchema, shippingAddressCorrectionSchema } from '../schemas';
 import itMessages from '../locales/it.json';
 
 /**
@@ -48,6 +48,16 @@ describe('orders schema messages', () => {
         setLocale('it').then(() => {
             expect(messagesOf(ordersSchema, { email: 'nope' })).toEqual(
                 expect.arrayContaining([itMessages['orders-form']['email-invalid']])
+            );
+        }));
+
+    it('resolves the new-order messages in Italian: no lines, and a bad email', () =>
+        setLocale('it').then(() => {
+            expect(messagesOf(orderCreateSchema, { email: 'nope', items: [] })).toEqual(
+                expect.arrayContaining([
+                    itMessages['orders-form']['email-invalid'],
+                    itMessages['order-create-page']['error-no-lines']
+                ])
             );
         }));
 

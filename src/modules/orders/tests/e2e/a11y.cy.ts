@@ -32,6 +32,7 @@ sweepA11y(
     'orders — admin',
     [
         ['sales orders', '/en/sales/orders'],
+        ['new order', '/en/sales/orders/new'],
         ['order detail', orderDetail],
         ['order edit', orderEdit]
     ],

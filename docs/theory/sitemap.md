@@ -47,6 +47,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`observability`](../modules/observability.md)         | `playground/realtime`                  | `RealtimePlayground`      | `auth`   | `read ObservabilitySnapshot` | `views/RealtimePlayground.vue`      |
 | [`orders`](../modules/orders.md)                       | `orders`                               | `OrdersList`              | `auth`   | —                            | `views/OrdersList.vue`              |
 | [`orders`](../modules/orders.md)                       | `sales/orders`                         | `SalesOrders`             | `auth`   | `display Order`              | `views/OrdersList.vue`              |
+| [`orders`](../modules/orders.md)                       | `sales/orders/new`                     | `OrderCreate`             | `auth`   | `create Order`               | `views/OrderCreate.vue`             |
 | [`orders`](../modules/orders.md)                       | `orders/:id`                           | `OrderTarget`             | `auth`   | —                            | `views/OrderTarget.vue`             |
 | [`orders`](../modules/orders.md)                       | `orders/:id/edit`                      | `OrderEdit`               | `auth`   | `update Order`               | `views/OrderEdit.vue`               |
 | [`payments`](../modules/payments.md)                   | `sales/payments`                       | `PaymentsList`            | `auth`   | `display Payment`            | `views/PaymentsList.vue`            |
@@ -74,7 +75,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`webhooks`](../modules/webhooks.md)                   | `webhooks/deliveries`                  | `WebhookDeliveries`       | `auth`   | `read WebhookSubscription`   | `views/WebhookDeliveries.vue`       |
 | [`wishlist`](../modules/wishlist.md)                   | `wishlist`                             | `Wishlist`                | `auth`   | —                            | `views/Wishlist.vue`                |
 
-60 screens across 17 modules.
+61 screens across 17 modules.
 
 <!-- sitemap:end -->
 

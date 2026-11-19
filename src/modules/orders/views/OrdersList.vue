@@ -510,6 +510,16 @@ const handleExport = () => {
             @found="handleReferenceFound"
         />
 
+        <div v-if="isStaff && session.can('create', 'Order')" class="mb-4 flex justify-end">
+            <v-btn
+                color="primary"
+                :to="routerLinkI18n({ name: 'OrderCreate' })"
+                data-test="orders-new"
+            >
+                {{ t('orders-list-page.button-new-order') }}
+            </v-btn>
+        </div>
+
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">

@@ -3,6 +3,8 @@ dependsOn:
     - cart
     - delivery
     - payments
+    - inventory
     - invoicing
     - returns
     - shop
+    - users

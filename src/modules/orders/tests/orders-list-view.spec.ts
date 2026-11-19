@@ -98,6 +98,37 @@ beforeEach(() => {
     return loadLocale('en').then(() => router.push('/en/orders').then(() => router.isReady()));
 });
 
+/**
+ * Signs in with the one ability the New order button is gated on.
+ */
+const signInAsOrderCreator = () => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'u1', email: 'manager@example.com', role: 'manager' };
+    session.setAbilities({ tenant: [['create', 'Order']], platform: [] });
+};
+
+describe('OrdersList — the New order button', () => {
+    it('is offered on the staff page to a viewer who may create orders, and leads to the form', () => {
+        signInAsOrderCreator();
+        const wrapper = mountList('all');
+
+        const button = wrapper.get('[data-test=orders-new]');
+
+        expect(button.attributes('href')).toBe('/en/sales/orders/new');
+    });
+
+    it('is hidden from a viewer who may not create orders', () => {
+        expect(mountList('all').find('[data-test=orders-new]').exists()).toBe(false);
+    });
+
+    it('is not on the account page, even for a viewer who may create orders', () => {
+        signInAsOrderCreator();
+
+        expect(mountList().find('[data-test=orders-new]').exists()).toBe(false);
+    });
+});
+
 describe('OrdersList — the RF-reference lookup it mounts', () => {
     it('hides the lookup from a visitor who cannot record a payment', () => {
         const wrapper = mountList('all');
