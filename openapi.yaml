@@ -15728,7 +15728,7 @@ paths:
       tags:
         - Notifications
       summary: Live notifications stream
-      description: "Server-Sent Events: a notification written, deleted or marked read for the caller reaches an open tab as it happens. The channels and their payloads are in `asyncapi.yaml` (`notifications.created`, `notifications.deleted`, `notifications.read`). Per process, like the observability stream: a message written by another worker process arrives at the next `GET /notifications` instead."
+      description: "Server-Sent Events: a notification written, deleted or marked read for the caller reaches an open tab as it happens. The channels and their payloads are in `asyncapi.yaml` (`notifications.created`, `notifications.deleted`, `notifications.read`). Fanned out across app copies over Redis pub/sub: a message written on another copy reaches the tab too, once the tab's own copy has subscribed."
       operationId: getNotificationsStream
       security:
         - cookieAuth: []
