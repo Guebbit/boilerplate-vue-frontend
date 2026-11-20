@@ -842,7 +842,13 @@ export default defineConfigWithVueTs(
          * `npm run lint` fails on a copy of code that is already linted where it lives.
          * `.prettierignore` carries the matching list.
          */
-        '.claude/**'
+        '.claude/**',
+        /*
+         * Local tooling output that is gitignored and not this codebase: `.2brain/` holds the
+         * generated repo map (`.mjs` files outside the `tsconfig` project). Same failure and
+         * same fix as `.claude/**` above.
+         */
+        '.2brain/**'
     ]),
 
     /**
