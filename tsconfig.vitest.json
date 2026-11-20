@@ -1,9 +1,9 @@
 {
     "extends": "./tsconfig.app.json",
     "include": [
-        "contracts/rest",
+        "contracts/rest.generated/**/*",
         "contracts/asyncapi.generated.ts",
-        "contracts/permission-vocabulary.ts",
+        "contracts/permission-vocabulary.generated.ts",
         "src/**/*",
         "src/**/*.vue",
         "tests/unit/**/*.ts",

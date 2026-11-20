@@ -4,7 +4,7 @@
  * message answered with a server fault keeps it listed and shows the alert, and a retry works.
  */
 import { actionTable } from '../../../../../tests/support/e2e/action-table';
-import { SearchTasksResponse } from '../../../../../contracts/rest/schemas.zod';
+import { SearchTasksResponse } from '../../../../../contracts/rest.generated/schemas.zod';
 
 actionTable('tasks', [
     {

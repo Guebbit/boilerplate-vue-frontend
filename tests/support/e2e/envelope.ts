@@ -23,5 +23,5 @@ export const expectDeclaredStatus = (
             return cy.wrap(declared, { log: false });
         });
 
-export { ERROR_CODES, type ErrorCode } from '../../../contracts/rest/error-codes';
+export { ERROR_CODES, type ErrorCode } from '../../../contracts/rest.generated/error-codes';
 export { PROBLEM_MEDIA_TYPE, rejectEnvelope, type RejectResponse } from '../problem-stub';

@@ -33,7 +33,7 @@ Every one of those four reads the registry and never names an entry, so none of 
 either checklist. **`src/modules.ts` is the whole runtime registry on this side** — unlike the
 backend, which also owns the contract fragments and their section lists. Here the contract is
 _consumed_:
-`openapi.yaml` arrives from the paired backend, and `contracts/rest/schemas.zod.ts` and `api/` are
+`openapi.yaml` arrives from the paired backend, and `contracts/rest.generated/schemas.zod.ts` and `api/` are
 generated from it.
 
 That asymmetry is the single most important thing to know before deleting anything — see

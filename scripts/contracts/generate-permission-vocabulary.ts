@@ -1,13 +1,13 @@
 #!/usr/bin/env tsx
 /*
- * Generates the permission vocabulary from `authorization-keys.yaml`: actions, subjects, rule ids,
+ * Generates the permission vocabulary from `authorization-keys.generated.yaml`: actions, subjects, rule ids,
  * set names, scopes, step-up tiers and the subject-to-actions pair map, each a runtime array plus
  * its union type.
  *
  * The render module beside it is the same text in both repos (kept by hand, not synced); both write a
  * `permission-vocabulary` module beside their other generated contract types. The input is the SAME
  * document in both: the backend reads its `shared/authorization-keys.generated.yaml`, the frontend the copy
- * `sync:frontend` hands it (`contracts/authorization-keys.yaml`).
+ * `sync:frontend` hands it (`contracts/authorization-keys.generated.yaml`).
  *
  * Usage: tsx scripts/contracts/generate-permission-vocabulary.ts --in <yaml> --out <path>
  */

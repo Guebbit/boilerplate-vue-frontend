@@ -1,4 +1,4 @@
-import type { ErrorCode } from '../../contracts/rest/error-codes';
+import type { ErrorCode } from '../../contracts/rest.generated/error-codes';
 
 /**
  * Stubbed failure answers shaped like the real thing.
@@ -30,7 +30,7 @@ export const PROBLEM_MEDIA_TYPE = 'application/problem+json';
 
 /**
  * The contract's `Problem`, written out: importing the generated type would drag the whole app
- * through `contracts/rest/index.ts` into the Cypress project. `envelope.spec.ts` assigns a
+ * through `contracts/rest.generated/index.ts` into the Cypress project. `envelope.spec.ts` assigns a
  * stub's body to the generated `Problem`, so a member the contract adds fails there.
  */
 export interface ProblemBody {

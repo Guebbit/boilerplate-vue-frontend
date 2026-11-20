@@ -5,7 +5,7 @@
  * where it was, shows the alert, and a retry works; an empty list shows its copy.
  */
 import { actionTable } from '../../../../../tests/support/e2e/action-table';
-import { ListStockAlertsResponse } from '../../../../../contracts/rest/schemas.zod';
+import { ListStockAlertsResponse } from '../../../../../contracts/rest.generated/schemas.zod';
 
 /**
  * A product nobody has in stock, made by the editor, so asking to be told is allowed.

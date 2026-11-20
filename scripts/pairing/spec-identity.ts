@@ -84,13 +84,13 @@ export const SHARED_FILES: readonly SharedFile[] = [
      */
     { backend: 'asyncapi.public.yaml', frontend: 'asyncapi.yaml' },
     /*
-     * The authorization keys, read here only for `actions:` — `gen:api` turns that list into
-     * `<frontend>/contracts/permission-vocabulary.ts`, so the frontend's `PermissionAction` cannot drift from the
+     * The authorization keys, read here only for `actions:` — `gen:permission-vocabulary` turns that list into
+     * `<frontend>/contracts/permission-vocabulary.generated.ts`, so the frontend's `PermissionAction` cannot drift from the
      * vocabulary the backend enforces.
      */
     {
         backend: 'shared/authorization-keys.generated.yaml',
-        frontend: 'contracts/authorization-keys.yaml'
+        frontend: 'contracts/authorization-keys.generated.yaml'
     },
     /*
      * The frontend paths the backend links to in mail and sitemaps. The frontend's tests walk its

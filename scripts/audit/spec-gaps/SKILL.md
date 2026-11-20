@@ -56,7 +56,7 @@ From the contract and the docs, NOT from the implementation:
     - the root `openapi.yaml` and `asyncapi.yaml`: citable here, since they are tracked copies (a fix
       to one is a backend fix, so say so in the row);
     - `src/modules/<module>/module.yaml` and any other YAML in `src/modules/<module>/`;
-    - `contracts/{cookies,frontend-links,authorization-keys}.yaml`.
+    - `contracts/{cookies,frontend-links,authorization-keys.generated}.yaml`.
 - Docs: `docs/modules/<module>*.md`, `docs/theory/*.md`, `docs/api/*.md`, `docs/tools/*.md`.
 - Shared: `shared/rules/*.yaml`. Layout: `docs/tools/shared-rules.md`.
 

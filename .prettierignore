@@ -7,8 +7,8 @@ docs/.vitepress/cache
 
 # The shared authorization document `generate-permission-vocabulary.ts` reads — copied verbatim from
 # the backend and hash-compared by the spec-identity check, so a formatter must not touch it. The
-# generated code (`contracts/rest/`, `*.generated.ts`) is gitignored, which Prettier skips on its own.
-contracts/authorization-keys.yaml
+# generated code (`contracts/rest.generated/`, `*.generated.ts`) is gitignored, which Prettier skips on its own.
+contracts/authorization-keys.generated.yaml
 
 # nginx configuration — prettier has no parser for it and errors out rather than skipping
 docker/*.conf

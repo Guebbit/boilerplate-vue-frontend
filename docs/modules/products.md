@@ -174,7 +174,7 @@ on the server as a forbidden one.
 
 #### Endpoints called
 
-Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "products"`). Auth is in the backend contract.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest.generated/routes.ts` (rows with `module: "products"`). Auth is in the backend contract.
 
 #### Navigation entries
 

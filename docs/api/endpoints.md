@@ -63,7 +63,7 @@ flowchart LR
 ## Where each endpoint is listed
 
 The method, path pattern, response schema and owning module of every operation is one row of the
-generated route table `contracts/rest/routes.ts`. Auth is not in it: that is in the backend's own
+generated route table `contracts/rest.generated/routes.ts`. Auth is not in it: that is in the backend's own
 contract, the root `openapi.yaml` and its per-module fragments. This page does not copy either. A
 module's page says which rows it owns.
 

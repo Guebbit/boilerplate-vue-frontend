@@ -5,8 +5,8 @@ The backend owns the contract. This repo never edits it.
 - NEVER hand-edit `openapi.yaml`, `asyncapi.yaml` or `contracts/{authorization-keys,cookies,frontend-links}.yaml`.
   They arrive by the backend's `npm run sync:frontend`, and `npm run check` refuses a copy that
   differs from the backend's.
-- NEVER hand-edit what is generated from them (`contracts/rest/*`, `contracts/asyncapi.generated.ts`,
-  `contracts/permission-vocabulary.ts`): `npm run regenerate` rebuilds them.
+- NEVER hand-edit what is generated from them (`contracts/rest.generated/*`, `contracts/asyncapi.generated.ts`,
+  `contracts/permission-vocabulary.generated.ts`): `npm run regenerate` rebuilds them.
 - A contract change starts in the backend: edit its fragment, `npm run regenerate` there, then
   `sync:frontend`, which also runs this repo's `regenerate`.
 - From a lane worktree, sync into the paired frontend worktree, never into this repo's main.
@@ -33,7 +33,7 @@ Every rule in this section is machine-checked: `strictTypeChecked` plus the proj
 - MUST NOT use `any`. Use `unknown` plus type narrowing.
 - MUST NOT use `as unknown as X`, nor `as any as X`, tests included. A double cast launders `any`.
   - Fix the type at its source: a typed factory, a type guard, or a parse through the generated
-    Zod schemas in `contracts/rest/`.
+    Zod schemas in `contracts/rest.generated/`.
   - One exception, for hand-built test stubs only: `asStub<T>()` from `tests/support/stub.ts`.
 - `as X` only **narrows**: it names which type a value already can be, proven by a check the
   compiler cannot follow (`unknown` after a Zod parse, a union after a discriminant, an `Element`

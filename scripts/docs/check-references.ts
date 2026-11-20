@@ -293,8 +293,14 @@ const readPackage = (): {
  */
 const factFindings = (pages: DocumentPage[]): FactFinding[] => {
     const own = readPackage();
-    const contractIndex = readFileSync(path.join(ROOT, 'contracts/rest/index.ts'), 'utf8');
-    const contractSchemas = readFileSync(path.join(ROOT, 'contracts/rest/schemas.zod.ts'), 'utf8');
+    const contractIndex = readFileSync(
+        path.join(ROOT, 'contracts/rest.generated/index.ts'),
+        'utf8'
+    );
+    const contractSchemas = readFileSync(
+        path.join(ROOT, 'contracts/rest.generated/schemas.zod.ts'),
+        'utf8'
+    );
     const byPath = new Map(pages.map((page) => [page.path, page]));
     const dependenciesPage = byPath.get(DEPENDENCIES_PAGE);
 

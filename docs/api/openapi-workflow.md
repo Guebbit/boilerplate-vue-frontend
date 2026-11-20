@@ -52,13 +52,13 @@ drift from the spec: every install rebuilds it.
 
 ## The generated code is not committed
 
-`contracts/rest/` and the other generated files are gitignored, so there is no freshness check to
+`contracts/rest.generated/` and the other generated files are gitignored, so there is no freshness check to
 run and nothing to commit after a spec change. `npm install` and `npm ci` run `postinstall`, which
 is `npm run regenerate`; the container images run it once after `COPY . .`
 (`npm ci --ignore-scripts` skips `postinstall`).
 
 - **After a pull that changed `openapi.yaml`, `asyncapi.yaml` or `shared/rules/`:** run `npm install`
-  (or `npm run regenerate`). A stale `contracts/rest/` makes `vue-tsc` fail, not the app misbehave.
+  (or `npm run regenerate`). A stale `contracts/rest.generated/` makes `vue-tsc` fail, not the app misbehave.
 - **The pre-commit hook** regenerates when `openapi.yaml` or `asyncapi.yaml` is staged, so the
   type-check and unit run on the new contract. The regenerate step stages nothing; lint-staged stages its
   own lint and formatting fixes to the files you staged.
@@ -72,17 +72,17 @@ is `npm run regenerate`; the container images run it once after `COPY . .`
 
 ## Tools around the contract
 
-| Tool                                                        | Job                                                    |
-| ----------------------------------------------------------- | ------------------------------------------------------ |
-| [`openapi.yaml`](https://spec.openapis.org/oas/latest.html) | single contract file (OpenAPI 3.x)                     |
-| [orval](https://orval.dev)                                  | generate `contracts/rest/` — axios client, Zod schemas |
+| Tool                                                        | Job                                                              |
+| ----------------------------------------------------------- | ---------------------------------------------------------------- |
+| [`openapi.yaml`](https://spec.openapis.org/oas/latest.html) | single contract file (OpenAPI 3.x)                               |
+| [orval](https://orval.dev)                                  | generate `contracts/rest.generated/` — axios client, Zod schemas |
 
-## Generated output (`contracts/rest/`)
+## Generated output (`contracts/rest.generated/`)
 
-Running `npm run gen:api` regenerates the entire `contracts/rest/` directory. It is gitignored and rebuilt on `npm install`. **Never edit files inside `contracts/rest/` manually** — they are overwritten.
+Running `npm run gen:api` regenerates the entire `contracts/rest.generated/` directory. It is gitignored and rebuilt on `npm install`. **Never edit files inside `contracts/rest.generated/` manually** — they are overwritten.
 
 ```
-contracts/rest/
+contracts/rest.generated/
 ├── index.ts          ← typed axios functions (one per operation)
 └── schemas.zod.ts    ← Zod schemas for every request/response shape
 ```
@@ -98,7 +98,7 @@ import type { Product, CreateProductRequest } from '@api';
 import { CreateProductBody, ListProductsResponse } from '@api/schemas';
 ```
 
-Never import from the file path directly (`../../contracts/rest/index.ts`) — always use the alias.
+Never import from the file path directly (`../../contracts/rest.generated/index.ts`) — always use the alias.
 
 ## Enum const objects
 
@@ -116,10 +116,10 @@ Naming convention: schema name + property name, PascalCase. Example: `ReauthPass
 
 `orval.config.ts` at the project root controls code generation. It defines **three independent output blocks**, each reading the same spec:
 
-| Block        | Target                            | Effect                                               |
-| ------------ | --------------------------------- | ---------------------------------------------------- |
-| `api`        | `./contracts/rest/index.ts`       | typed axios functions, routed through `orvalMutator` |
-| `zodSchemas` | `./contracts/rest/schemas.zod.ts` | Zod schema per request/response shape                |
+| Block        | Target                                      | Effect                                               |
+| ------------ | ------------------------------------------- | ---------------------------------------------------- |
+| `api`        | `./contracts/rest.generated/index.ts`       | typed axios functions, routed through `orvalMutator` |
+| `zodSchemas` | `./contracts/rest.generated/schemas.zod.ts` | Zod schema per request/response shape                |
 
 ### Multipart operations generate two functions
 
@@ -165,7 +165,7 @@ that call inconsistent with the other two dozen.
 ## Commands
 
 ```bash
-npm run gen:api         # regenerate contracts/rest/ from openapi.yaml
+npm run gen:api         # regenerate contracts/rest.generated/ from openapi.yaml
 ```
 
 ## Mocks

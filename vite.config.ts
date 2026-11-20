@@ -126,18 +126,22 @@ export default defineConfig(({ mode }) => ({
             // '@api/schemas', '@api/error-codes', '@api/routes', '@api/upload-types' and '@api/permission-vocabulary' must all be declared before
             // '@api': Vite matches a string alias against both the exact key and `key + '/'` as a
             // prefix, in declaration order, so the shorter '@api' would otherwise shadow any of them.
-            '@api/schemas': fileURLToPath(new URL('contracts/rest/schemas.zod', import.meta.url)),
-            '@api/error-codes': fileURLToPath(
-                new URL('contracts/rest/error-codes', import.meta.url)
+            '@api/schemas': fileURLToPath(
+                new URL('contracts/rest.generated/schemas.zod', import.meta.url)
             ),
-            '@api/routes': fileURLToPath(new URL('contracts/rest/routes', import.meta.url)),
+            '@api/error-codes': fileURLToPath(
+                new URL('contracts/rest.generated/error-codes', import.meta.url)
+            ),
+            '@api/routes': fileURLToPath(
+                new URL('contracts/rest.generated/routes', import.meta.url)
+            ),
             '@api/upload-types': fileURLToPath(
-                new URL('contracts/rest/upload-types', import.meta.url)
+                new URL('contracts/rest.generated/upload-types', import.meta.url)
             ),
             '@api/permission-vocabulary': fileURLToPath(
-                new URL('contracts/permission-vocabulary', import.meta.url)
+                new URL('contracts/permission-vocabulary.generated', import.meta.url)
             ),
-            '@api': fileURLToPath(new URL('contracts/rest/index', import.meta.url))
+            '@api': fileURLToPath(new URL('contracts/rest.generated/index', import.meta.url))
         }
     },
     build: {
