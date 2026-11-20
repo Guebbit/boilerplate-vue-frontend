@@ -7,6 +7,7 @@
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { ref } from 'vue';
+import { VAutocomplete } from 'vuetify/components';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
@@ -42,8 +43,11 @@ vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@api')>()),
     searchUsers: vi.fn(() =>
         Promise.resolve({
-            items: [aUser({ id: 'u7', username: 'ada', email: 'ada@example.com' })],
-            meta: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 }
+            items: [
+                aUser({ id: 'u7', username: 'ada', email: 'ada@example.com' }),
+                aUser({ id: 'u8', username: 'bob', email: 'bob@example.com' })
+            ],
+            meta: { page: 1, pageSize: 20, totalItems: 2, totalPages: 1 }
         })
     )
 }));
@@ -127,6 +131,29 @@ const fillEmailAndSubmit = (wrapper: ReturnType<typeof mountPage>['wrapper'], em
         .setValue(email)
         .then(() => wrapper.get('form').trigger('submit'))
         .then(flushPromises);
+
+/** Switches to an account buyer and waits for the picker's options. */
+const openAccountPicker = (wrapper: ReturnType<typeof mountPage>['wrapper']) =>
+    wrapper
+        .findComponent('[data-test=order-buyer]')
+        .setValue(true)
+        .then(() => {
+            wrapper
+                .findComponent<typeof VAutocomplete>('[data-test=order-account]')
+                .vm.$emit('update:search', 'a');
+            // The picker debounces its search; wait for the options to arrive.
+            return vi.waitFor(() =>
+                expect(
+                    wrapper
+                        .findComponent<typeof VAutocomplete>('[data-test=order-account]')
+                        .props('items')
+                ).toHaveLength(2)
+            );
+        });
+
+/** The email field's current text. */
+const emailOf = (wrapper: ReturnType<typeof mountPage>['wrapper']) =>
+    wrapper.get<HTMLInputElement>('[data-test=order-email] input').element.value;
 
 beforeEach(() => {
     setActivePinia(createPinia());
@@ -238,6 +265,55 @@ describe('OrderCreate', () => {
                 expect(create).toHaveBeenLastCalledWith(
                     expect.not.objectContaining({ userId: expect.anything() as unknown })
                 );
+            });
+    });
+
+    it('prefills the email from the picked account and follows a change of account', () => {
+        signInAsStaff(true);
+        const { wrapper } = mountPage();
+
+        return openAccountPicker(wrapper)
+            .then(() => wrapper.findComponent('[data-test=order-account]').setValue('u7'))
+            .then(() => {
+                expect(emailOf(wrapper)).toBe('ada@example.com');
+                return wrapper.findComponent('[data-test=order-account]').setValue('u8');
+            })
+            .then(() => {
+                expect(emailOf(wrapper)).toBe('bob@example.com');
+            });
+    });
+
+    it('never overwrites a typed email, even when the account changes', () => {
+        signInAsStaff(true);
+        const { wrapper } = mountPage();
+
+        return openAccountPicker(wrapper)
+            .then(() => wrapper.get('[data-test=order-email] input').setValue('typed@example.com'))
+            .then(() => wrapper.findComponent('[data-test=order-account]').setValue('u7'))
+            .then(() => {
+                expect(emailOf(wrapper)).toBe('typed@example.com');
+                return wrapper.findComponent('[data-test=order-account]').setValue(null);
+            })
+            .then(() => {
+                expect(emailOf(wrapper)).toBe('typed@example.com');
+            });
+    });
+
+    it('blanks a prefilled email when the account goes away, on walk-in or on clear', () => {
+        signInAsStaff(true);
+        const { wrapper } = mountPage();
+
+        return openAccountPicker(wrapper)
+            .then(() => wrapper.findComponent('[data-test=order-account]').setValue('u7'))
+            .then(() => wrapper.findComponent('[data-test=order-buyer]').setValue(false))
+            .then(() => {
+                expect(emailOf(wrapper)).toBe('');
+                return wrapper.findComponent('[data-test=order-buyer]').setValue(true);
+            })
+            .then(() => wrapper.findComponent('[data-test=order-account]').setValue('u7'))
+            .then(() => wrapper.findComponent('[data-test=order-account]').setValue(null))
+            .then(() => {
+                expect(emailOf(wrapper)).toBe('');
             });
     });
 
