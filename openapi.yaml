@@ -19917,6 +19917,7 @@ components:
         - order
         - payment
         - refund
+        - dispute
         - fulfillment_order
         - return
     TaskLink:

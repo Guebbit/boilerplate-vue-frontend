@@ -61,6 +61,7 @@
         "order": "Order",
         "payment": "Payment",
         "refund": "Refund",
+        "dispute": "Dispute",
         "fulfillment_order": "Fulfillment order",
         "return": "Return"
     }

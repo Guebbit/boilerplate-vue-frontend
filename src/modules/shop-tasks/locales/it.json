@@ -61,6 +61,7 @@
         "order": "Ordine",
         "payment": "Pagamento",
         "refund": "Rimborso",
+        "dispute": "Contestazione",
         "fulfillment_order": "Ordine di evasione",
         "return": "Reso"
     }
