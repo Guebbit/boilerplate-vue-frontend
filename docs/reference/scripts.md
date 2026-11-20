@@ -168,8 +168,9 @@ The design system's ESLint rules and the policy they read. How they fit together
 
 ## Git hooks
 
-| File                | What it is                                                           | Read next                                      |
-| ------------------- | -------------------------------------------------------------------- | ---------------------------------------------- |
-| `.husky/pre-commit` | Runs the local gate before a commit is written.                      | [Package Scripts](../tools/package-scripts.md) |
-| `.husky/commit-msg` | Runs commitlint, so every message is a conventional commit.          | [Repository Root](./root.md)                   |
-| `.husky/.gitignore` | Husky's own — keeps the wrappers it generates out of the repository. | —                                              |
+| File                      | What it is                                                                                                                                                                                                                                                                           | Read next                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| `.husky/pre-commit`       | Runs the local gate before a commit is written.                                                                                                                                                                                                                                      | [Package Scripts](../tools/package-scripts.md) |
+| `.husky/pre-merge-commit` | Runs the same gate on a conflict-free merge, which git does not send through `pre-commit`. When the gate stages fixes it refuses, because they would miss the merge commit: `git commit --no-edit` concludes the merge with them, and a merge that needed fixes pays the gate twice. | [Package Scripts](../tools/package-scripts.md) |
+| `.husky/commit-msg`       | Runs commitlint, so every message is a conventional commit.                                                                                                                                                                                                                          | [Repository Root](./root.md)                   |
+| `.husky/.gitignore`       | Husky's own — keeps the wrappers it generates out of the repository.                                                                                                                                                                                                                 | —                                              |

@@ -107,7 +107,7 @@ port pointing at nothing.
 npm run complete    # lint + spec lint + contract identity + format check + build + unit + e2e
 ```
 
-The pre-commit hook fixes lint and formatting on the staged files and commits the fixes, then runs a faster subset,
+The pre-commit hook (also run on a conflict-free merge, by `pre-merge-commit`, which refuses when the gate staged fixes: `git commit --no-edit` concludes that merge with them) fixes lint and formatting on the staged files and commits the fixes, then runs a faster subset,
 `npm run complete:light:gates`: every static check, `vue-tsc` and the unit suite, but no build or Cypress.
 A lane merges on `npm run complete:light:fix`; the full `complete` runs on main at the checkpoints; CI on push is authoritative. Its mutating twin, `npm run complete:fix`, fixes lint and formatting instead of
 reporting them.
