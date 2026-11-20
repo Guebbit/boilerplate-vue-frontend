@@ -106,10 +106,15 @@ export const useListUrlState = <TFilters extends object>(
     options: ListUrlStateOptions<TFilters>
 ): ListUrlState => {
     const route = useRoute();
+
     const router = useRouter();
+
     const names = Object.keys(options.params);
+
     const keyOf = (name: string) => (options.prefix ? `${options.prefix}-${name}` : name);
+
     const ownKeys = [...names, 'page', 'pageSize'].map((name) => keyOf(name));
+
     const defaultPageSize = options.pageSize?.value;
 
     /**

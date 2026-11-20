@@ -14,6 +14,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 
 /** The runner's calls, and what it claims to have seen. */
 const startTour = vi.fn(() => Promise.resolve(true));
+
 const seen = new Set<string>();
 
 vi.mock('@/app/tours/use-tour.ts', () => ({

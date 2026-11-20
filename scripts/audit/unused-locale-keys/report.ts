@@ -6,5 +6,6 @@
 import { scanLocaleKeys } from './scan';
 
 const { unused, files } = scanLocaleKeys();
+
 for (const line of unused) console.info(line);
 console.info(`\n${String(unused.length)} unused key(s) across ${String(files)} file(s).`);

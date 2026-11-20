@@ -17,6 +17,7 @@ const nginxConfig = readFileSync(path.resolve(__dirname, '../../../docker/nginx.
 
 /** The throwaway web root and nginx include folder each case writes into. */
 let root = '';
+
 let configDirectory = '';
 
 /**

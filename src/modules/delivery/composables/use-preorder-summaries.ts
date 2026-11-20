@@ -15,7 +15,9 @@ import { useDeliveryStore } from '../store.ts';
  */
 export const usePreorderSummaries = () => {
     const store = useDeliveryStore();
+
     const { preorderSummaries, loading } = storeToRefs(store);
+
     return {
         summaries: computed(() => preorderSummaries.value),
         loading,

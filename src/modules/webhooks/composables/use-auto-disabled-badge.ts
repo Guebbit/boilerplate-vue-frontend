@@ -18,7 +18,9 @@ import { useWebhooksBadgeStore } from '../badge-store';
  */
 export const useAutoDisabledBadge = (): Ref<number | undefined> => {
     const store = useWebhooksBadgeStore();
+
     const session = useSessionStore();
+
     const { autoDisabledTotal } = storeToRefs(store);
 
     useBadgeRefresh({

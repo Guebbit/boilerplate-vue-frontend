@@ -27,6 +27,7 @@ wireModulesIntoCore();
  * What the endpoint answers next, and how it was asked.
  */
 let answer: ReturnType<typeof aSummary>;
+
 let reads: { passive: boolean }[];
 
 beforeEach(() => {

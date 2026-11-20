@@ -5,7 +5,9 @@ import { describe, expect, it } from 'vitest';
 import { scopeToSpecs } from '../../../../scripts/audit/design-manual/scripts/capture-scope';
 
 const modules = ['cart', 'orders'];
+
 const none = (): boolean => false;
+
 const onlyCartActions = (file: string): boolean =>
     file === 'src/modules/cart/tests/e2e/actions.cy.ts';
 

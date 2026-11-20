@@ -25,8 +25,11 @@ import { useExampleStore, type ExampleEvent } from '../store';
  */
 export const useExampleTransition = (id: () => string | undefined) => {
     const { t } = useI18n();
+
     const { addMessage } = useNotificationsStore();
+
     const store = useExampleStore();
+
     const { message: error, report, clear: clearError } = useBlockingError();
 
     /**

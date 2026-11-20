@@ -20,9 +20,12 @@ import { asStub } from '../stub.ts';
 // ResizeObserver — used by v-app-bar, v-number-input & friends
 class ResizeObserverStub {
     observe() {}
+
     unobserve() {}
+
     disconnect() {}
 }
+
 globalThis.ResizeObserver ??= ResizeObserverStub;
 
 // matchMedia — used by the "system" default theme

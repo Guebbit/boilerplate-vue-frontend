@@ -105,6 +105,7 @@ const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 
 /** The stripped file's text. */
 const output = printer.printFile(result.transformed[0] as ts.SourceFile);
+
 result.dispose();
 
 writeFileSync(TARGET, output, 'utf8');

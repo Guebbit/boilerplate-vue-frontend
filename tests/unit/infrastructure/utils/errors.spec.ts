@@ -24,6 +24,7 @@ beforeAll(() => loadLocale('en'));
  * against the real store every assertion about reporting would pass vacuously.
  */
 const captureExceptionMock = vi.fn();
+
 vi.mock('@/infrastructure/observability/store.ts', () => ({
     useObservabilityStore: () => ({ captureException: captureExceptionMock })
 }));

@@ -32,6 +32,7 @@ import {
     type CheckId,
     type CssFinding
 } from '../../scripts/audit/css-invasive/scan';
+
 /** Every check id. */
 const CHECK_IDS = Object.keys(CHECKS) as CheckId[];
 

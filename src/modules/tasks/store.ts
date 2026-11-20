@@ -147,10 +147,15 @@ export const useTasksStore = defineStore('tasks', () => {
      * are offered is the task's own `actions`, never recomputed here.
      */
     const resolve = (id: string) => resolveTask(id).then(keep);
+
     const markSpam = (id: string) => markTaskSpam(id).then(keep);
+
     const reopen = (id: string) => reopenTask(id).then(keep);
+
     const assign = (id: string, userId: string) => assignTask(id, { userId }).then(keep);
+
     const unassign = (id: string) => unassignTask(id).then(keep);
+
     const addNote = (id: string, body: string) =>
         sendKeyed(noteIdempotencyKeys.forSubject(`${id}\n${body}`), (options) =>
             createTaskNote(id, { body }, options)

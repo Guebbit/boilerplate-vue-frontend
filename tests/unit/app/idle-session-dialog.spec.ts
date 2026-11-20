@@ -16,7 +16,9 @@ const idle = ref<{ timeoutMs: number; lastActiveAt: number } | undefined>();
 
 /** Stubs for the store actions the dialog drives. */
 const touchSession = vi.fn();
+
 const signalIdle = vi.fn();
+
 const logout = vi.fn();
 
 vi.mock('@/infrastructure/session.ts', () => ({

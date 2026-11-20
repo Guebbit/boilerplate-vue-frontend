@@ -38,6 +38,7 @@ vi.mock('../store.ts', () => ({
 
 /** The tab bar is not under test: an inert stand-in that takes no props. */
 const renderEmpty = () => h('div');
+
 const TabsStub = defineComponent({ setup: () => renderEmpty });
 
 beforeEach(() => {

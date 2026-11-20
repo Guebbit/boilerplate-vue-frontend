@@ -10,7 +10,9 @@ import { contractResponse } from '../../support/unit/orval-fixture-schema.ts';
 
 // Deliberately untyped: the mocks return case-by-case fixture shapes the generated types refuse.
 const reauthMock = vi.fn();
+
 const getReauthMethodsMock = vi.fn();
+
 const sendReauthCodeMock = vi.fn();
 
 vi.mock('@api', () => ({

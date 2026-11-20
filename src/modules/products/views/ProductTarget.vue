@@ -112,6 +112,7 @@ watchProduct(() => id, { staleTime: 0, onError: onMissingRecord });
  * most product reads from the server, so the page says it; a no-op until the visitor has agreed.
  */
 const { trackBrowsing } = useAnalyticsConsentStore();
+
 watch(
     () => id,
     (productId) => {

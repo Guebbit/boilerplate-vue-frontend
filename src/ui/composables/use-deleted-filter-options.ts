@@ -25,6 +25,7 @@ export interface DeletedFilterOption {
  */
 export const useDeletedFilterOptions = (): ComputedRef<DeletedFilterOption[]> => {
     const { t } = useI18n();
+
     return computed(() => [
         { value: null, label: t('generic.filter-deleted-any') },
         { value: false, label: t('generic.filter-deleted-live') },

@@ -36,6 +36,7 @@ const router = createRouter({
  * The bodies the two writes arrived with.
  */
 let assignBodies: Record<string, unknown>[];
+
 let noteBodies: Record<string, unknown>[];
 
 /**

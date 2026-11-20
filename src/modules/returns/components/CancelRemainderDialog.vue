@@ -90,6 +90,7 @@ const asWithdrawal = ref(false);
  * The day the buyer stated the withdrawal (local, typed) and the channel they used.
  */
 const requestedAt = ref('');
+
 const statedVia = ref('');
 
 /**

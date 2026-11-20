@@ -76,6 +76,7 @@ const document = parse(readFileSync(INPUT, 'utf8')) as OpenApiDocument;
 
 /** One `[generated function name, owning module]` pair per operation that has a module. */
 const entries: [string, string][] = [];
+
 // Walk every operation of every path.
 for (const pathItem of Object.values(document.paths ?? {}))
     for (const method of OPERATION_METHODS) {

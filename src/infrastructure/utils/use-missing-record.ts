@@ -29,6 +29,7 @@ const FORBIDDEN_MESSAGE = 'navigation.error-forbidden';
  */
 export const useMissingRecord = (): ((error: unknown) => void) => {
     const router = useRouter();
+
     const { addMessage } = useNotificationsStore();
 
     return (error) => {

@@ -22,6 +22,7 @@ export const useThemeColorMeta = (): void => {
      * https://vuetifyjs.com/en/features/theme/
      */
     const theme = useTheme();
+
     watch(
         () => theme.global.current.value.colors.surface,
         (surface) => {

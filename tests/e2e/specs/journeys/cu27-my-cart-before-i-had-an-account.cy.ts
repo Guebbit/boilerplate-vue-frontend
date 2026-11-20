@@ -25,6 +25,7 @@ import { GUEST_CART_KEY, searchAndOpenProduct, submitLoginForm } from '../../../
 
 /** The merge alert on the cart page, and the one control that closes it. */
 const MERGE_ALERT = '[data-test=cart-merge-report]';
+
 const MERGE_ALERT_CLOSE = `${MERGE_ALERT} button[aria-label=Dismiss]`;
 
 /**

@@ -27,6 +27,7 @@ export interface RoleOption {
 export const useRoleOptions = () => {
     /** The session, whose `grantableRoles` is what the server last answered. */
     const session = useSessionStore();
+
     /** Translates the one option that is not a role name. */
     const { t } = useI18n();
 

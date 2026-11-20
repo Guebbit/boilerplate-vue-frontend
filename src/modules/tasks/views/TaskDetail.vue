@@ -40,6 +40,7 @@ const { t } = useI18n();
  * The route, for the task id, and the router, for the sibling pages a link may reach.
  */
 const route = useRoute();
+
 const router = useRouter();
 
 /**
@@ -51,6 +52,7 @@ const session = useSessionStore();
  * The store: the current task and the doors.
  */
 const store = useTasksStore();
+
 const { task } = storeToRefs(store);
 
 /**
@@ -78,6 +80,7 @@ watch(
  * The row-write pipeline, failing into the page's blocking alert.
  */
 const { message: actionError, report, clear } = useBlockingError();
+
 const { run } = useRowActions({ report, clear });
 
 /**

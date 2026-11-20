@@ -99,6 +99,7 @@ const emit = defineEmits<{ submit: [] }>();
  * the page that owns the form's state is a level up from the element.
  */
 const formElement = ref<HTMLFormElement>();
+
 defineExpose({ formElement });
 </script>
 

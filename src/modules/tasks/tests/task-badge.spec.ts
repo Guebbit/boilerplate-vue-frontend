@@ -23,6 +23,7 @@ wireModulesIntoCore();
  * What `GET /tasks/summary` answers, and how many times it was asked.
  */
 let counts: { open: number; mine: number; overdue: number; unassigned: number };
+
 let reads: { passive: boolean }[];
 
 /**

@@ -22,6 +22,7 @@ wireModulesIntoCore();
  * The queries the list was asked with, and its answer's total.
  */
 let asked: { query: URLSearchParams; passive: boolean }[];
+
 let total: number;
 
 beforeEach(() => {

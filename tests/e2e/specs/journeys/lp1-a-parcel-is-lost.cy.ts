@@ -13,6 +13,7 @@ interface OrderLike {
 }
 
 const MESSAGE = 'A new one ships on Monday.';
+
 const NOTE = 'carrier claim opened, ref 4471';
 
 describe('LP1 · A parcel is lost', () => {
