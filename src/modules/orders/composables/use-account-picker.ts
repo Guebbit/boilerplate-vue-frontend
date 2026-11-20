@@ -4,7 +4,7 @@
  * `POST /users/search`, debounced like `inventory`'s product picker, and only ever started by a
  * viewer who may read users: it fires nothing until `search` is called.
  */
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { debounce } from 'lodash-es';
 import { searchUsers } from '@api';
 
@@ -12,6 +12,8 @@ import { searchUsers } from '@api';
 export interface AccountOption {
     value: string;
     title: string;
+    /** The account's own address, used to prefill the order's email. */
+    email: string;
 }
 
 /** How many rows one search page returns: a picker, not a user list. */
@@ -23,15 +25,28 @@ const DEBOUNCE_MS = 300;
 /**
  * An account picker's search box and options list.
  *
- * @returns `query` (bind to `v-autocomplete`'s `search`), `options` (bind to `:items`) and `search`
- *  (call with each typed text).
+ * Vuetify writes the picked title into the search text, which re-searches and drops the picked
+ * account from the results; `pick` pins it so the field keeps showing its title.
+ *
+ * @returns `query` (bind to `v-autocomplete`'s `search`), `options` (bind to `:items`), `search`
+ *  (call with each typed text) and `pick` (call with the chosen id).
  */
 export const useAccountPicker = () => {
     /** The text currently typed into the picker. */
     const query = ref('');
 
     /** The accounts the last search found. */
-    const options = ref<AccountOption[]>([]);
+    const found = ref<AccountOption[]>([]);
+
+    /** The picked account, kept while a later search no longer lists it. */
+    const pinned = ref<AccountOption | undefined>();
+
+    /** The found accounts, plus the pinned one when a search dropped it. */
+    const options = computed(() =>
+        pinned.value && found.value.every((option) => option.value !== pinned.value?.value)
+            ? [pinned.value, ...found.value]
+            : found.value
+    );
 
     /**
      * Runs the search, debounced so a fast typist does not fire one request per key. A failed
@@ -42,9 +57,10 @@ export const useAccountPicker = () => {
     const runSearch = debounce((text: string) => {
         searchUsers({ text: text || undefined, pageSize: PAGE_SIZE })
             .then((response) => {
-                options.value = response.items.map((user) => ({
+                found.value = response.items.map((user) => ({
                     value: user.id,
-                    title: `${user.username} (${user.email})`
+                    title: `${user.username} (${user.email})`,
+                    email: user.email
                 }));
             })
             .catch(() => undefined);
@@ -60,5 +76,16 @@ export const useAccountPicker = () => {
         runSearch(text);
     };
 
-    return { query, options, search };
+    /**
+     * Pins the chosen account so it stays listed.
+     *
+     * @param id - The picked account id; falsy clears the pin.
+     * @returns The picked account's email, `undefined` when none.
+     */
+    const pick = (id: string | null | undefined) => {
+        pinned.value = id ? options.value.find((option) => option.value === id) : undefined;
+        return pinned.value?.email;
+    };
+
+    return { query, options, search, pick };
 };

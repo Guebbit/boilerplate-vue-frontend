@@ -132,7 +132,41 @@ const {
 /**
  * The account search box and the options it found, for a viewer who may read users.
  */
-const { query: accountQuery, options: accountOptions, search: searchAccounts } = useAccountPicker();
+const {
+    query: accountQuery,
+    options: accountOptions,
+    search: searchAccounts,
+    pick: pickAccount
+} = useAccountPicker();
+
+/** The email last prefilled from a picked account; a typed address differs from it and stays. */
+let prefilledEmail: string | undefined;
+
+/**
+ * Blanks the email while it still holds the prefill, so a receipt never goes to an account that
+ * was let go. A typed address stays.
+ */
+const clearPrefill = () => {
+    if (prefilledEmail && form.value.email === prefilledEmail) form.value.email = undefined;
+    prefilledEmail = undefined;
+};
+
+/**
+ * Sets the buyer account and prefills the email from it, unless staff typed their own.
+ *
+ * @param id - The picked account id.
+ */
+const setAccount = (id: string | null) => {
+    form.value.userId = id ?? undefined;
+    const email = pickAccount(id);
+    if (!email) {
+        clearPrefill();
+        return;
+    }
+    if (form.value.email && form.value.email !== prefilledEmail) return;
+    form.value.email = email;
+    prefilledEmail = email;
+};
 
 /**
  * Picks the buyer's kind. Back to a walk-in drops the account, so the order is sent without one.
@@ -141,7 +175,10 @@ const { query: accountQuery, options: accountOptions, search: searchAccounts } =
  */
 const setForAccount = (value: boolean | null) => {
     forAccount.value = value === true;
-    if (!forAccount.value) form.value.userId = undefined;
+    if (forAccount.value) return;
+    form.value.userId = undefined;
+    pickAccount(undefined);
+    clearPrefill();
 };
 
 /**
@@ -265,7 +302,7 @@ const submitForm = () => {
             -->
             <v-autocomplete
                 v-if="canPickAccount && forAccount"
-                v-model="form.userId"
+                :model-value="form.userId"
                 :search="accountQuery"
                 :items="accountOptions"
                 item-title="title"
@@ -275,6 +312,7 @@ const submitForm = () => {
                 data-test="order-account"
                 v-bind="fieldErrorProps(showErrors ? formErrors.userId : [])"
                 class="mb-2"
+                @update:model-value="setAccount"
                 @update:search="searchAccounts"
             />
 

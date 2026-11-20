@@ -659,8 +659,10 @@ export const counterSale = (sale: {
         cy.get('[data-test=order-account] input').type(sale.accountEmail);
         cy.get('[role=listbox] [role=option]').contains(sale.accountEmail).click();
     }
-    // The email is required for either buyer: a walk-in's receipt address, or the account's own.
-    cy.get('[data-test=order-email] input').type(sale.accountEmail ?? 'counter-sale@example.com');
+    // An account buyer's email is prefilled from the account; only a walk-in's is typed.
+    if (!sale.accountEmail) {
+        cy.get('[data-test=order-email] input').type('counter-sale@example.com');
+    }
     cy.get('[data-test=order-product] input').type(sale.title);
     cy.get('[role=listbox] [role=option]').contains(sale.title).click();
     cy.get('[data-test=order-quantity] input').clear();

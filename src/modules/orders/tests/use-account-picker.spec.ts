@@ -49,7 +49,9 @@ describe('useAccountPicker', () => {
 
         expect(searchUsers).toHaveBeenCalledExactlyOnceWith({ text: 'ada', pageSize: 20 });
         expect(query.value).toBe('ada');
-        expect(options.value).toEqual([{ value: 'u7', title: 'ada (ada@example.com)' }]);
+        expect(options.value).toEqual([
+            { value: 'u7', title: 'ada (ada@example.com)', email: 'ada@example.com' }
+        ]);
     });
 
     it('sends an emptied box as no text at all, and one request for a burst of keys', async () => {
@@ -75,6 +77,21 @@ describe('useAccountPicker', () => {
         search('bo');
         await vi.runAllTimersAsync();
 
-        expect(options.value).toEqual([{ value: 'u1', title: 'bo (b@e.com)' }]);
+        expect(options.value).toEqual([{ value: 'u1', title: 'bo (b@e.com)', email: 'b@e.com' }]);
+    });
+
+    it('keeps the picked account listed after a search that no longer finds it', async () => {
+        vi.mocked(searchUsers)
+            .mockReturnValueOnce(pageOf([aUser({ id: 'u7', username: 'ada', email: 'a@e.com' })]))
+            .mockReturnValueOnce(pageOf([]));
+        const { search, options, pick } = useAccountPicker();
+
+        search('ada');
+        await vi.runAllTimersAsync();
+        expect(pick('u7')).toBe('a@e.com');
+        search('ada (a@e.com)');
+        await vi.runAllTimersAsync();
+
+        expect(options.value.map((option) => option.value)).toEqual(['u7']);
     });
 });
