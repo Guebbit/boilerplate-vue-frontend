@@ -9,6 +9,7 @@
  * Always exits 0 on a completed scan: the gate is `tests/cross-cutting/css-invasiveness.spec.ts`.
  */
 import { CHECKS, scanApp, type CheckId, type CssFinding } from './scan';
+
 /** The command-line flags. */
 const flags = new Set(process.argv.slice(2));
 

@@ -18,7 +18,9 @@ import { useUsersBadgeStore } from '../badge-store';
  */
 export const useReviewBadge = (): Ref<number | undefined> => {
     const store = useUsersBadgeStore();
+
     const session = useSessionStore();
+
     const { reviewTotal } = storeToRefs(store);
 
     useBadgeRefresh({

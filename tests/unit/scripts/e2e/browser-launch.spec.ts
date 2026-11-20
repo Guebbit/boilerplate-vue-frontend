@@ -10,6 +10,7 @@ import {
 import { VIEWPORTS } from '../../../../scripts/e2e/viewports';
 
 const SIZE = { width: 1280, height: 844 };
+
 const EMPTY = { args: ['--existing'], preferences: { keep: true } };
 
 describe('windowFor', () => {

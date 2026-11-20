@@ -19,6 +19,7 @@ vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }));
 
 /** The day the product holds, and a different one typed into the input. */
 const HELD = '2027-03-15';
+
 const EARLIER = '2027-03-01';
 
 beforeEach(() => {

@@ -13,6 +13,7 @@ import { CAPTURE_DIR, type DesignCaptureManifest, REPORT_DIR } from './manifest'
 
 /** The scope the skill passed; the report files are named after it. */
 const scope = process.argv[2];
+
 if (!scope) {
     process.stderr.write(
         'audit:design:check: pass the scope, e.g. `npm run audit:design:check -- orders`\n'
@@ -21,9 +22,11 @@ if (!scope) {
 }
 
 const verified = path.join(REPORT_DIR, `${scope}.verified.md`);
+
 const reportFile = existsSync(verified) ? verified : path.join(REPORT_DIR, `${scope}.findings.md`);
 
 const manifestFile = path.join(CAPTURE_DIR, 'manifest.json');
+
 if (!existsSync(reportFile) || !existsSync(manifestFile)) {
     process.stderr.write(
         `audit:design:check: ${existsSync(reportFile) ? manifestFile : reportFile} does not exist\n`

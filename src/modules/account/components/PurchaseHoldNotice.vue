@@ -44,6 +44,7 @@ const router = useRouter();
  * The profile store; its `profile` carries the hold while one is in force.
  */
 const profileStore = useAccountProfileStore();
+
 const { profile } = storeToRefs(profileStore);
 
 /**

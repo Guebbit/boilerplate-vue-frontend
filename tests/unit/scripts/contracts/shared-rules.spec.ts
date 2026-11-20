@@ -44,6 +44,7 @@ const cookie = (name: string) => ({
     kind: 'cookie' as const,
     necessity: 'necessary' as const
 });
+
 /** One frontend row. */
 const stored = (name: string) => ({
     name,
@@ -51,6 +52,7 @@ const stored = (name: string) => ({
     kind: 'localStorage' as const,
     necessity: 'necessary' as const
 });
+
 describe('buildBrowserStorage', () => {
     const synced = { cookies: { session: cookie('__Host-session') } };
     const own = { order: ['session', 'cart'], items: { cart: stored('cart') } };

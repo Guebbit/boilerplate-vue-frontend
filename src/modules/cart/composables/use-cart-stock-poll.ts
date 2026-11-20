@@ -39,9 +39,11 @@ export const useCartStockPoll = (): void => {
     const intervalMs = stockPollIntervalMs(
         runtimeValue('CART_STOCK_POLL_SECONDS') ?? import.meta.env.VITE_CART_STOCK_POLL_SECONDS
     );
+
     if (intervalMs === undefined) return;
 
     const cartStore = useCartStore();
+
     const session = useSessionStore();
 
     /**

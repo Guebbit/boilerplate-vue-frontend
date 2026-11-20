@@ -84,6 +84,7 @@ vi.mock('../store.ts', () => ({
  * plus overrides, merged) is `locale-overrides.spec.ts`'s job to prove.
  */
 const refreshRunningLocaleMock = vi.fn((_locale: string) => Promise.resolve());
+
 vi.mock('@/infrastructure/locale-overrides.ts', () => ({
     refreshRunningLocale: (locale: string) => refreshRunningLocaleMock(locale)
 }));

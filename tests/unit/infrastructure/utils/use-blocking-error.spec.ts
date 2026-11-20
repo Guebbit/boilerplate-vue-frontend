@@ -10,6 +10,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 /** Stub for the observability store's `captureException`. */
 const captureExceptionMock = vi.fn();
+
 vi.mock('@/infrastructure/observability/store.ts', () => ({
     useObservabilityStore: () => ({ captureException: captureExceptionMock })
 }));

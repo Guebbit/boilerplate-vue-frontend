@@ -36,7 +36,9 @@ export const useReleaseDateConfirm = (
     kind: 'release' | 'restock' = 'release'
 ) => {
     const { t } = useI18n();
+
     const session = useSessionStore();
+
     const dialog = useDialogStore();
 
     /**

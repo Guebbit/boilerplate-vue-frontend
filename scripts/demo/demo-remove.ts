@@ -53,6 +53,7 @@ const findResidueTests = (names: readonly string[]): string[] => {
 
 /** The demo modules to delete: the `shop` and `example` groups of the `module.yaml` files. */
 const demoNames = demoModuleNames();
+
 console.info(`[demo-remove] removing ${demoNames.length} demo module(s): ${demoNames.join(', ')}`);
 console.info('\n[demo-remove] module folders:');
 // Delete each demo module's folder.
@@ -74,6 +75,7 @@ console.info('  2. npm run lint              — catches an import eslint-plugin
 
 /** Files that still import a deleted module, found by grep. */
 const residue = findResidueTests(demoNames);
+
 // Name each leftover importer; fixing it is a human's call, not this script's.
 if (residue.length > 0) {
     console.info('\n[demo-remove] still importing a deleted module, from a grep:');

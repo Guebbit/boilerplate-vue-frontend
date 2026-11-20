@@ -342,6 +342,7 @@ const clearBrowserHttpCache = () =>
  * handler.
  */
 let injectedApiUrl: string | undefined;
+
 before(() => {
     cy.env(['apiUrl']).then(({ apiUrl }) => {
         injectedApiUrl = String(apiUrl);

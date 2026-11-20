@@ -25,6 +25,7 @@ export const useOrderDocuments = (
      * Store requests rendering the PDFs and listing the notes.
      */
     const ordersStore = useOrdersStore();
+
     const { fetchInvoice, fetchCreditNotes, fetchCreditNote } = ordersStore;
 
     /**

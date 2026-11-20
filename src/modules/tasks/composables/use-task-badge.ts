@@ -40,9 +40,13 @@ const useTaskNoticeCount = (): Ref<number> => {
  */
 export const useTaskBadge = (): Ref<number | undefined> => {
     const store = useTasksStore();
+
     const session = useSessionStore();
+
     const { summary } = storeToRefs(store);
+
     const noticeCount = useTaskNoticeCount();
+
     // A failed read leaves the badge at its last count; the person is told once.
     const onAmbientError = useAmbientError();
 

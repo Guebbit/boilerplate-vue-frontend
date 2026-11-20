@@ -53,8 +53,11 @@ const STAFF_NOTICE_MARKER = '.staff.';
  */
 export const useBadgeRefresh = ({ readerId, read, clear }: BadgeRefreshOptions): void => {
     const route = useRoute();
+
     const notices = useInboxNotices();
+
     const onAmbientError = useAmbientError();
+
     /** True once the person was told a read failed; reset by the next success. */
     let warned = false;
 
@@ -103,6 +106,7 @@ export const useBadgeRefresh = ({ readerId, read, clear }: BadgeRefreshOptions):
     const onVisibilityChange = () => {
         if (document.visibilityState === 'visible') refresh(false);
     };
+
     // https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event
     document.addEventListener('visibilitychange', onVisibilityChange);
     onScopeDispose(() => {

@@ -24,6 +24,7 @@ import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
  */
 export const useCopyToClipboard = (failureKey: string): ((text: string) => Promise<void>) => {
     const { t } = useI18n();
+
     const { addMessage } = useNotificationsStore();
 
     return (text) =>

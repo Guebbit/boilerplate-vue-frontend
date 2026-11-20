@@ -84,7 +84,9 @@ const LABEL_KEYS: Record<Exclude<LineAvailability, 'in_stock'>, string> = {
  */
 export const useProductLines = (): ProductLines => {
     const { t } = useI18n();
+
     const store = useProductsStore();
+
     const { products, loading } = storeToRefs(store);
 
     const productOf = (productId: string): Product | undefined => products.value[productId];

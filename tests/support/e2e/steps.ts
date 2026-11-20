@@ -199,6 +199,7 @@ export const submitLoginForm = (email: string, password: string): void => {
  * The `localStorage` key the guest cart lives under, and the one its unanswered merge lives under.
  */
 export const GUEST_CART_KEY = 'guest-cart';
+
 export const GUEST_MERGE_ATTEMPT_KEY = 'guest-cart-merge-attempt';
 
 /**

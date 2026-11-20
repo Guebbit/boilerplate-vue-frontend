@@ -14,6 +14,7 @@ import { useShopTasksStore } from '../store';
  */
 export const useShopWorkFeed = (): void => {
     const session = useSessionStore();
+
     const store = useShopTasksStore();
 
     // The same gates as the five screens' routes: holding none of them means no badge to feed.

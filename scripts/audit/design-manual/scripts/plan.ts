@@ -15,6 +15,7 @@ import { planBatches } from './plan-batches';
 const scope = process.argv[2] ?? '';
 
 const manifestFile = path.join(CAPTURE_DIR, 'manifest.json');
+
 if (!existsSync(manifestFile)) {
     process.stderr.write(
         `audit:design:plan: ${manifestFile} does not exist: run the capture first\n`
@@ -28,6 +29,7 @@ const manifest = JSON.parse(readFileSync(manifestFile, 'utf8')) as DesignCapture
 const shots = manifest.shots.filter(
     (shot) => scope === '' || shot.module === scope || shot.spec.includes(scope)
 );
+
 const { batches, problem } = planBatches({ shots });
 
 if (problem !== undefined) {

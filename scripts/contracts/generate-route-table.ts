@@ -154,6 +154,7 @@ const collectRedirectEnums = (operation: OpenApiOperation): void => {
 
 /** One row per operation that has an `operationId`. */
 const rows: Row[] = [];
+
 // Walk every operation of every path.
 for (const [openApiPath, pathItem] of Object.entries(document.paths ?? {}))
     for (const method of OPERATION_METHODS) {

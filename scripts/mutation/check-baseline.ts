@@ -30,6 +30,7 @@ const update = process.argv.includes('--update');
 
 /** This run's per-file scores. */
 let current: Record<string, number>;
+
 // A missing report is a usage error: say how to produce one and exit 2.
 try {
     current = readReport();
@@ -74,6 +75,7 @@ if (!baseline) {
  * `missingFromReport`: recording one would quietly erase every file the run did not measure.
  */
 const missing = missingFromReport(current, baseline);
+
 // Refuse to record a partial run over the baseline.
 if (update && missing.length > 0) {
     console.error(

@@ -23,9 +23,11 @@ export const TOUCH_TARGET_PX = 44;
  */
 export const useIsTouch = (): ComputedRef<boolean> => {
     const { mobile } = useDisplay();
+
     // `(pointer: coarse)`: the primary input is imprecise, a finger rather than a mouse.
     // https://developer.mozilla.org/en-US/docs/Web/CSS/@media/pointer
     const coarse = useMediaQuery('(pointer: coarse)');
+
     return computed(() => mobile.value || coarse.value);
 };
 
@@ -37,6 +39,7 @@ export const useIsTouch = (): ComputedRef<boolean> => {
  */
 export const useTouchFriendlySize = (): ComputedRef<'small' | 'large'> => {
     const isTouch = useIsTouch();
+
     return computed(() => (isTouch.value ? 'large' : 'small'));
 };
 
@@ -48,6 +51,7 @@ export const useTouchFriendlySize = (): ComputedRef<'small' | 'large'> => {
  */
 export const useTouchTarget = (): ComputedRef<number | undefined> => {
     const isTouch = useIsTouch();
+
     return computed(() => (isTouch.value ? TOUCH_TARGET_PX : undefined));
 };
 
@@ -59,5 +63,6 @@ export const useTouchTarget = (): ComputedRef<number | undefined> => {
  */
 export const useTouchChipSize = (): ComputedRef<'small' | 'x-large'> => {
     const isTouch = useIsTouch();
+
     return computed(() => (isTouch.value ? 'x-large' : 'small'));
 };

@@ -689,6 +689,7 @@ export const useSessionStore = defineStore('session', () => {
         // Another tab acted: the server's one idle clock is shared by every tab of this session.
         if (message?.type === 'activity' && typeof message.at === 'number') markActive(message.at);
     };
+
     sessionChannel?.addEventListener('message', onBroadcast);
     // Each `createPinia()` (every test file, every HMR reload) re-runs this setup and would
     // otherwise pile another listener onto the one module-scoped channel.

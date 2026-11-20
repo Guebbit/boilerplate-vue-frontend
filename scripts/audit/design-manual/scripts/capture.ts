@@ -113,6 +113,7 @@ const { specs, widened } = scopeToSpecs({
     exists: existsSync,
     changedFiles: scope === '--diff' ? changedFiles() : []
 });
+
 if (widened) process.stdout.write('audit:design:capture: shared chrome changed, so every screen\n');
 
 // A run replaces the last whole: its manifest describes exactly this run's scope.

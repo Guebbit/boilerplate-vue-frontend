@@ -118,7 +118,9 @@ const mayViewTranslations = computed(
  */
 const { translationLocales: locales, translationFallbackLocale: fallbackLocale } =
     storeToRefs(useProductsStore());
+
 const { fetchTranslationLocales } = useProductsStore();
+
 // eslint-disable-next-line @typescript-eslint/no-floating-promises -- fetchTranslationLocales never rejects (it falls back to the shop languages)
 void fetchTranslationLocales();
 
