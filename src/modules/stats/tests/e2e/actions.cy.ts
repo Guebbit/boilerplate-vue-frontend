@@ -8,7 +8,7 @@ import { actionTable } from '../../../../../tests/support/e2e/action-table';
 import {
     GetProductStatsResponse,
     GetSalesStatsResponse
-} from '../../../../../contracts/rest/schemas.zod';
+} from '../../../../../contracts/rest.generated/schemas.zod';
 
 /** The period an empty answer reports: a day with nothing in it. */
 const EMPTY_PERIOD = { from: '2026-01-01', to: '2026-01-01', interval: 'day', timeZone: 'UTC' };

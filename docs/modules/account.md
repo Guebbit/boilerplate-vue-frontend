@@ -88,7 +88,7 @@ Paths, route names, access and permission per screen: `src/modules/account/route
 
 #### Endpoints called
 
-Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "account"` or `"addresses"`). Auth is in the backend contract.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest.generated/routes.ts` (rows with `module: "account"` or `"addresses"`). Auth is in the backend contract.
 
 #### Navigation entries
 
@@ -175,7 +175,7 @@ Three rules fall out of that shape and are easy to break:
   login form's "remember me" choice, so `beginLoginChallenge` takes it as a second argument and
   `submitLoginCode` applies it. Nothing else remembers it across the two steps.
 - **The credential-taking doors are excluded from refresh-and-retry** — the operations the contract marks
-  `x-no-refresh`, listed as `noRefresh: true` in `contracts/rest/routes.ts` (login and its 2FA steps,
+  `x-no-refresh`, listed as `noRefresh: true` in `contracts/rest.generated/routes.ts` (login and its 2FA steps,
   restore, signup, password reset). A
   wrong or expired code answers 401 like any other business outcome. Without the exclusion, a
   visitor still holding a valid refresh cookie from an earlier session gets a silent

@@ -152,7 +152,7 @@ The rest of the module is components, schemas and a store contributed to the mod
 
 #### Endpoints called
 
-Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "payments"`). Auth is in the backend contract.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest.generated/routes.ts` (rows with `module: "payments"`). Auth is in the backend contract.
 
 #### Navigation entries
 

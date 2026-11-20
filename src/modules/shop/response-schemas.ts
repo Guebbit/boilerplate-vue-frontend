@@ -1,7 +1,7 @@
 /**
  * @module
  * This module's response-schema rows: `GET /shop`, the one operation the generated table
- * (`contracts/rest/routes.ts`, from `openapi.yaml`'s `x-module` stamps) attributes to backend `shop`.
+ * (`contracts/rest.generated/routes.ts`, from `openapi.yaml`'s `x-module` stamps) attributes to backend `shop`.
  */
 import * as schemas from '@api/schemas';
 import { routesForModules } from '@/infrastructure/http/response-schema-map';

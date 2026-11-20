@@ -501,7 +501,7 @@ const CURRENT_TITLES: Record<number, string> = {
  * a catch. One builder for every spec, typed on the generated `Problem`, so a member the contract
  * adds or requires is a compile error here and not a drift nobody sees.
  *
- * `Problem` has no response schema in `contracts/rest/schemas.zod.ts`, so this fixture is typed on the generated
+ * `Problem` has no response schema in `contracts/rest.generated/schemas.zod.ts`, so this fixture is typed on the generated
  * type but not parsed through the contract.
  *
  * @param status - The HTTP status the server answered with.

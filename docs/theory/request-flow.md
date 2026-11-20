@@ -21,7 +21,7 @@ flowchart LR
 
     subgraph Client ["Generated client"]
         direction TB
-        Fn["contracts/rest/index.ts\ntyped axios function"]
+        Fn["contracts/rest.generated/index.ts\ntyped axios function"]
         HTTP["src/infrastructure/http/index.ts\ninterceptors"]
         Fn --> HTTP
     end
@@ -89,14 +89,14 @@ flowchart LR
 
 ## What each layer does
 
-| Layer                                        | Responsibility                                                                                                                                                          |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| View / template                              | Renders data, captures user events, delegates to composables                                                                                                            |
-| Composable                                   | Encapsulates form state, validation, and list logic for one domain                                                                                                      |
-| Pinia store                                  | Orchestrates API calls, holds reactive data, exposes actions                                                                                                            |
-| Generated client (`contracts/rest/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml`                                                                                                    |
-| `src/infrastructure/http/install.ts`         | Registers the request/response interceptors on the single axios instance (`client.ts`); `src/main.ts` calls it at boot; they shape errors into `AxiosResponseErrorData` |
-| Router guards                                | `tryRestoreAuth` then `enforceRouteAccess` (`beforeEach`), `localeChoice` (`beforeResolve`) — run before the view is entered; redirect on failure                       |
+| Layer                                                  | Responsibility                                                                                                                                                          |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| View / template                                        | Renders data, captures user events, delegates to composables                                                                                                            |
+| Composable                                             | Encapsulates form state, validation, and list logic for one domain                                                                                                      |
+| Pinia store                                            | Orchestrates API calls, holds reactive data, exposes actions                                                                                                            |
+| Generated client (`contracts/rest.generated/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml`                                                                                                    |
+| `src/infrastructure/http/install.ts`                   | Registers the request/response interceptors on the single axios instance (`client.ts`); `src/main.ts` calls it at boot; they shape errors into `AxiosResponseErrorData` |
+| Router guards                                          | `tryRestoreAuth` then `enforceRouteAccess` (`beforeEach`), `localeChoice` (`beforeResolve`) — run before the view is entered; redirect on failure                       |
 
 ## Cross-cutting strategies
 

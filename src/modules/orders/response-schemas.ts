@@ -1,7 +1,7 @@
 /**
  * @module
  * This module's response-schema rows — every operation the generated table
- * (`contracts/rest/routes.ts`, from `openapi.yaml`'s `x-module` stamps) attributes to backend
+ * (`contracts/rest.generated/routes.ts`, from `openapi.yaml`'s `x-module` stamps) attributes to backend
  * `orders` or `invoicing`, the latter owning no frontend module of its own (invoice/credit-note
  * downloads live here). {@link ResponseSchemaRoute}'s own docblock states the two rules every row
  * obeys.

@@ -33,10 +33,10 @@ const contentTypeOperationNames = (verb: GeneratorVerbOptions): GeneratorVerbOpt
  *
  * Full output reference: https://orval.dev/docs/reference/configuration/output
  *
- * api:         typed axios functions + TS types → contracts/rest/index.ts
+ * api:         typed axios functions + TS types → contracts/rest.generated/index.ts
  *              mutator delegates HTTP to orvalMutator (auth headers, token refresh)
  *
- * zodSchemas:  Zod schemas matching each OpenAPI model → contracts/rest/schemas.zod.ts
+ * zodSchemas:  Zod schemas matching each OpenAPI model → contracts/rest.generated/schemas.zod.ts
  *              Import from @api/schemas to validate forms or parse API responses.
  *              Always in sync with the spec — never hand-write these.
  *
@@ -58,7 +58,7 @@ export default defineConfig({
             // 'tags'        - one file per OpenAPI tag
             // 'tags-split'  - a folder per tag, each further split into impl/schemas
             mode: 'single',
-            target: './contracts/rest/index.ts',
+            target: './contracts/rest.generated/index.ts',
             // `client` is left at orval's default, 'axios-functions': plain top-level exported
             // functions, no factory. The alternatives ('axios', 'vue-query', 'fetch', and the
             // framework-specific ones) all answer a question this axios + Pinia-store setup does
@@ -85,7 +85,7 @@ export default defineConfig({
         input: './openapi.yaml',
         output: {
             mode: 'single',
-            target: './contracts/rest/schemas.zod.ts',
+            target: './contracts/rest.generated/schemas.zod.ts',
             client: 'zod',
             override: {
                 zod: {

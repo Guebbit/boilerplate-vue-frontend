@@ -4,7 +4,7 @@
  * `dependsOn` already stops a module reaching a sibling's SOURCE (`@/modules/<x>`) —
  * `eslint.config.ts`'s boundary rules. It said nothing about a module calling another module's
  * BACKEND operation directly through `@api`, because nothing in the contract said which backend
- * module an operation belonged to. `contracts/rest/operation-modules.ts` (generated from
+ * module an operation belonged to. `contracts/rest.generated/operation-modules.ts` (generated from
  * `openapi.yaml`'s `x-module` stamps) closes that gap: this sweep reads it, and flags a call to a
  * module the caller neither is nor has declared.
  *
@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { OPERATION_MODULES } from '../../contracts/rest/operation-modules';
+import { OPERATION_MODULES } from '../../contracts/rest.generated/operation-modules';
 import { moduleDependsOn } from '../../scripts/module-manifest';
 
 /** The `src` folder, two levels above this file. */
@@ -77,7 +77,7 @@ describe('a module calls only the backend modules its coupling declares', () => 
 
     it('actually finds cross-module calls to check against dependsOn', () => {
         // A second canary: this test could otherwise pass vacuously forever if the `@api` import
-        // regex, the `contracts/rest/operation-modules` path, or the module-name matching ever
+        // regex, the `contracts/rest.generated/operation-modules` path, or the module-name matching ever
         // broke — no violations found is meaningless unless calls were found at all.
         const totalCalls = moduleNames().reduce(
             (total, moduleName) => total + backendModulesCalledBy(moduleName).size,
