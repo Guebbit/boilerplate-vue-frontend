@@ -626,3 +626,110 @@ export const creditNotesOf = (
         () => cy.apiAs<{ items: unknown[] }>(persona, 'GET', `/orders/${orderId}/credit-notes`),
         (notes) => (notes?.items.length ?? 0) > 0
     );
+
+/** How a counter buyer paid: the label the "record payment" method picker shows. */
+export type CounterPayment = 'Cash' | 'Bank transfer';
+
+/**
+ * A counter sale, start to finish, as the signed-in admin: raises the order in the app ("New
+ * order"), records the money on it, hands the goods over (ship with no tracking code, then
+ * deliver) and checks it ended delivered. Two returns journeys begin from here, so the walk lives
+ * once.
+ *
+ * @param sale - what was sold, to whom and how it was paid
+ * @param sale.title - the title of the product sold (it must exist and have stock)
+ * @param sale.quantity - how many units
+ * @param sale.paidBy - the method recorded on the order
+ * @param sale.accountEmail - the buyer's account email; omitted, the buyer is a walk-in
+ * @returns a chain yielding the delivered order's id
+ */
+export const counterSale = (sale: {
+    title: string;
+    quantity: number;
+    paidBy: CounterPayment;
+    accountEmail?: string;
+}): Cypress.Chainable<string> => {
+    cy.step('staff raise the order: New order, the buyer, one product line');
+    cy.visit('/en/sales/orders');
+    cy.get('[data-test=orders-new]').click();
+    cy.get('#order-create-page').should('exist');
+    if (sale.accountEmail) {
+        cy.get('[data-test=order-buyer-account] input').check();
+        cy.get('[data-test=order-account] input').type(sale.accountEmail);
+        cy.get('[role=listbox] [role=option]').contains(sale.accountEmail).click();
+    }
+    // The email is required for either buyer: a walk-in's receipt address, or the account's own.
+    cy.get('[data-test=order-email] input').type(sale.accountEmail ?? 'counter-sale@example.com');
+    cy.get('[data-test=order-product] input').type(sale.title);
+    cy.get('[role=listbox] [role=option]').contains(sale.title).click();
+    cy.get('[data-test=order-quantity] input').clear();
+    cy.get('[data-test=order-quantity] input').type(String(sale.quantity));
+    cy.get('[data-test=order-add-line]').click();
+    cy.get('[data-test=order-line]').should('have.length', 1).and('contain.text', sale.title);
+    cy.intercept('POST', '**/orders').as('createCounterOrder');
+    cy.get('[data-test=order-create-submit]').click();
+
+    return cy.wait('@createCounterOrder').then(({ response }) => {
+        expect(response?.statusCode).to.equal(201);
+        // `as`: the intercepted body is untyped; a 201 here is the created order.
+        const orderId = (response?.body as { id: string }).id;
+
+        cy.step(
+            `the ${sale.paidBy.toLowerCase()} is recorded on the order, which moves it to paid`
+        );
+        cy.visit(`/en/orders/${orderId}/edit`);
+        cy.get('[data-test=record-offline-method]').click();
+        cy.get('[role=listbox] [role=option]').contains(sale.paidBy).click();
+        cy.get('[data-test=record-offline-submit]').click();
+        cy.get('[data-test=record-offline-payment-error]').should('not.exist');
+        cy.apiAs<{ status: string }>('admin', 'GET', `/orders/${orderId}`)
+            .its('status')
+            .should('equal', 'paid');
+
+        cy.step('the goods are handed over: ship with no tracking code, then deliver');
+        cy.visit(`/en/orders/${orderId}`);
+        cy.get('[data-test=open-ship]').first().click();
+        cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
+        cy.get('[data-test=mark-delivered]').click();
+        cy.get('[data-test=mark-delivered]').should('not.exist');
+        cy.apiAs<{ status: string }>('admin', 'GET', `/orders/${orderId}`)
+            .its('status')
+            .should('equal', 'delivered');
+        return cy.wrap(orderId, { log: false });
+    });
+};
+
+/**
+ * As the signed-in staff member, opens a return on an order the buyer is not present for: the
+ * order page's "open a return" form in staff mode, one line, any reason but a withdrawal. The
+ * request starts approved, since staff are the ones answering it.
+ *
+ * @param request - the return to open
+ * @param request.orderId - the delivered order
+ * @param request.productId - the product coming back
+ * @param request.quantity - how many units of it
+ * @param request.reason - the reason's label in the form
+ * @returns a chain yielding the new return's id
+ */
+export const openStaffReturn = (request: {
+    orderId: string;
+    productId: string;
+    quantity: number;
+    reason: string;
+}): Cypress.Chainable<string> => {
+    cy.visit(`/en/orders/${request.orderId}`);
+    cy.get('[data-test=return-request-open]').click();
+    cy.get(`[data-test=return-line-pick-${request.productId}] input`).check({ force: true });
+    cy.get(`[data-test=return-line-quantity-${request.productId}] input`).clear();
+    cy.get(`[data-test=return-line-quantity-${request.productId}] input`).type(
+        String(request.quantity)
+    );
+    cy.pickOption('[data-test=return-reason]', request.reason);
+    cy.intercept('POST', '**/returns').as('openStaffReturn');
+    cy.get('[data-test=return-request-submit]').click();
+    return cy.wait('@openStaffReturn').then(({ response }) => {
+        expect(response?.statusCode).to.equal(201);
+        // `as`: the intercepted body is untyped; a 201 here is the opened return.
+        return cy.wrap((response?.body as { id: string }).id, { log: false });
+    });
+};
