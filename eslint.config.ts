@@ -11,6 +11,7 @@ import {
 import pluginVue from 'eslint-plugin-vue';
 import pluginVueA11y from 'eslint-plugin-vuejs-accessibility';
 import pluginVitest from '@vitest/eslint-plugin';
+import pluginStylistic from '@stylistic/eslint-plugin';
 import pluginCypress from 'eslint-plugin-cypress';
 import pluginJsdoc from 'eslint-plugin-jsdoc';
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
@@ -26,6 +27,38 @@ import {
 import localRules from './scripts/eslint/index';
 import { DESIGN_POLICY } from './scripts/design-policy';
 import { designLintConfig } from './scripts/eslint/design-config';
+
+/**
+ * The bodies that own most of a file, where "top-level" means their outermost level, not the
+ * file's: a composable (`const useX = () => {…}` or `function useX() {…}`) and a setup-style
+ * store (`defineStore('id', () => {…})`). Their members are the module's declarations in all but
+ * name, and `CLAUDE.md` § Code layout asks the same blank line of them.
+ */
+const OWNING_BODY =
+    'VariableDeclarator[id.name=/^use[A-Z]/] > ArrowFunctionExpression > BlockStatement, FunctionDeclaration[id.name=/^use[A-Z]/] > BlockStatement, CallExpression[callee.name="defineStore"] > ArrowFunctionExpression > BlockStatement';
+
+/** A statement directly in the file or directly in an {@link OWNING_BODY}. */
+const LAYOUT_LEVEL = `:matches(Program, ${OWNING_BODY})`;
+
+/**
+ * What the blank-line rule counts as a declaration at that level: `const`, function, class, type,
+ * interface and enum, exported or not. Imports, bare `export { a }` and `export * from` are not
+ * declarations of ours.
+ *
+ * Scoped by selector, not by statement kind: `padding-line-between-statements` otherwise applies
+ * inside every block, and a function body's own consecutive `const`s are the author's call.
+ */
+const LAYOUT_DECLARATION = `${LAYOUT_LEVEL} > :matches(VariableDeclaration, FunctionDeclaration, ClassDeclaration, TSInterfaceDeclaration, TSTypeAliasDeclaration, TSEnumDeclaration, TSModuleDeclaration, ExportNamedDeclaration[declaration], ExportDefaultDeclaration)`;
+
+/** Any statement at that level: the other side of a {@link LAYOUT_DECLARATION} pair. */
+const LAYOUT_STATEMENT = `${LAYOUT_LEVEL} > *`;
+
+/**
+ * A function overload signature, bare or exported: it and its implementation are one declaration
+ * written in several lines, so no blank line is asked between them.
+ */
+const LAYOUT_OVERLOAD =
+    'Program > :matches(TSDeclareFunction, ExportNamedDeclaration:has(> TSDeclareFunction))';
 
 /**
  * The project-local rules as one plugin object. Flat config refuses two different objects under
@@ -1300,6 +1333,48 @@ export default defineConfigWithVueTs(
     },
 
     /**
+     * One blank line between declarations, and between class members, so the JSDoc above each one
+     * visibly belongs to the thing below it (`CLAUDE.md` § Code layout). The fix puts the blank
+     * line BEFORE the JSDoc. Later entries win, so the overload entries lift the requirement for a
+     * signature and its implementation.
+     *
+     * https://eslint.style/rules/padding-line-between-statements
+     * https://eslint.style/rules/lines-between-class-members
+     */
+    {
+        files: ['**/*.{ts,mts,cts,tsx,vue,js,mjs,cjs}'],
+
+        plugins: { '@stylistic': pluginStylistic },
+
+        rules: {
+            '@stylistic/padding-line-between-statements': [
+                'error',
+                {
+                    blankLine: 'always',
+                    prev: { selector: LAYOUT_DECLARATION },
+                    next: { selector: LAYOUT_STATEMENT }
+                },
+                {
+                    blankLine: 'always',
+                    prev: { selector: LAYOUT_STATEMENT },
+                    next: { selector: LAYOUT_DECLARATION }
+                },
+                {
+                    blankLine: 'any',
+                    prev: { selector: LAYOUT_OVERLOAD },
+                    next: { selector: LAYOUT_STATEMENT }
+                },
+                {
+                    blankLine: 'any',
+                    prev: { selector: LAYOUT_STATEMENT },
+                    next: { selector: LAYOUT_OVERLOAD }
+                }
+            ],
+            '@stylistic/lines-between-class-members': ['error', 'always']
+        }
+    },
+
+    /**
      * Tests specific eslint config
      * - Unit Tests (Vitest)
      *  - E2E Tests (Cypress)
@@ -1307,6 +1382,13 @@ export default defineConfigWithVueTs(
     {
         ...pluginVitest.configs.recommended,
         files: ['src/**/__tests__/*', 'tests/**/*', '**/*.{spec,test}.{ts,tsx}'],
+        rules: {
+            ...pluginVitest.configs.recommended.rules,
+            // A blank line around each `it` / `describe`, so a spec reads as separate cases.
+            // https://github.com/vitest-dev/eslint-plugin-vitest/blob/main/docs/rules/padding-around-test-blocks.md
+            'vitest/padding-around-test-blocks': 'error',
+            'vitest/padding-around-describe-blocks': 'error'
+        },
         // The e2e suites and their support files are Cypress's, not Vitest's, so all three
         // locations leave this block. A module's co-located specs are split the same way:
         // `src/modules/*/tests/` holds both suites, and only the `.spec.ts` half is Vitest's.
