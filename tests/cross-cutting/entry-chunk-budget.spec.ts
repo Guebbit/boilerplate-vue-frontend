@@ -111,7 +111,7 @@ describe('entry chunk budget', () => {
     });
 
     it('does not eagerly load the response-schema contract chunk', () => {
-        // The schema chunk is real (the bundler names it after its source, `contracts/rest/schemas.zod.ts`) — this
+        // The schema chunk is real (the bundler names it after its source, `contracts/rest.generated/schemas.zod.ts`) — this
         // fails closed if the split silently stops happening, not just if it stays but loads early.
         const schemaChunk = readdirSync(path.join(buildOutputDirectory, 'assets')).find((file) =>
             /^schemas\.zod-.*\.js$/.test(file)

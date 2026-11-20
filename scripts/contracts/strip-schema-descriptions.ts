@@ -9,7 +9,7 @@
  * nothing at runtime reads: the schemas are only ever `.safeParse()`d
  * (`infrastructure/http/validate.ts`), never introspected for `.description`.
  *
- * Runs as the last step of `gen:api`, right after orval, so `contracts/rest/schemas.zod.ts`
+ * Runs as the last step of `gen:api`, right after orval, so `contracts/rest.generated/schemas.zod.ts`
  * is always written already stripped.
  *
  * AST-based, via the `typescript` package this repo already depends on — no new dependency for

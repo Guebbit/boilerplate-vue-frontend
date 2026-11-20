@@ -45,7 +45,7 @@ export type RouteAccess = 'guest' | 'auth' | 'open';
  *
  * A pair per declared subject: `['checkout', 'Order']` is a compile error, because no rule carries
  * `checkout` on `Order`. The lists come from `@api/permission-vocabulary`, generated from the
- * `authorization-keys.yaml` that `sync:frontend` hands over.
+ * `authorization-keys.generated.yaml` that `sync:frontend` hands over.
  */
 export type RoutePermission = {
     [TSubject in PermissionSubject]: readonly [action: ActionOn<TSubject>, subject: TSubject];

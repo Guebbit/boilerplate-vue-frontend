@@ -16,7 +16,7 @@ flowchart LR
     end
 
     subgraph API["API & Contract"]
-        Orval[Orval codegen\nopenapi.yaml → contracts/rest/]
+        Orval[Orval codegen\nopenapi.yaml → contracts/rest.generated/]
         Axios[Axios\nHTTP client]
         Zod[Zod\nvalidation]
         Validate[Response validation\nZod, every profile but Vitest]

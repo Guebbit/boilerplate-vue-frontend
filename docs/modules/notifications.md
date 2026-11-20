@@ -95,7 +95,7 @@ notification.
 The backend's table holds the foundation's codes and how they are routed (who is told, whether they
 mail), not a copy here:
 [work notices for staff](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/notifications.md#work-notices-for-staff).
-The `params` of a code are in the contract (`contracts/rest/schemas.zod.ts`).
+The `params` of a code are in the contract (`contracts/rest.generated/schemas.zod.ts`).
 Each module declares the copy and the link of its own codes in `AppModule.notices`.
 
 A task notice reads "{kind}" (a contact message adds its category). Kind and category are closed
@@ -166,7 +166,7 @@ None. The module has no routes.
 
 #### Endpoints called
 
-Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "notifications"`). Auth is in the backend contract.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest.generated/routes.ts` (rows with `module: "notifications"`). Auth is in the backend contract.
 
 #### Stream events
 

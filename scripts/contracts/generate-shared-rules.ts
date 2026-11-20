@@ -3,7 +3,7 @@
  * @module
  * Everything `regenerate` derives from the frontend-owned rules files, in one step:
  *
- * - `shared/rules/schemas/<name>.schema.json`: each file's Zod schema as JSON Schema, so another
+ * - `shared/rules/schemas/<name>.generated.schema.json`: each file's Zod schema as JSON Schema, so another
  *   frontend validates the same YAML without Zod.
  * - `<out>.generated.ts`: the data as a gitignored `as const` file the code imports.
  *
@@ -72,7 +72,13 @@ const formatted = (file: string, content: string): Promise<string> =>
  * @returns once both files are written or checked
  */
 const writeRule = (name: string, rule: SharedRule): Promise<void> => {
-    const schemaFile = path.join(ROOT, 'shared', 'rules', 'schemas', `${name}.schema.json`);
+    const schemaFile = path.join(
+        ROOT,
+        'shared',
+        'rules',
+        'schemas',
+        `${name}.generated.schema.json`
+    );
     // Zod 4's built-in exporter. https://zod.dev/json-schema
     const schemaText = `${JSON.stringify(z.toJSONSchema(rule.schema), undefined, 2)}\n`;
     const out = path.join(ROOT, rule.generate.out);

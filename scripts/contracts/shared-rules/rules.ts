@@ -98,7 +98,7 @@ export type LoadRules = <T extends z.ZodType>(relative: string, schema: T) => z.
 export interface SharedRule {
     /** Repo-relative path of the frontend-owned YAML. */
     source: string;
-    /** Checks that YAML; also exported as `shared/rules/schemas/<name>.schema.json`. */
+    /** Checks that YAML; also exported as `shared/rules/schemas/<name>.generated.schema.json`. */
     schema: z.ZodType;
     /**
      * Cuts the generated constants' document from more than the YAML: it reads the backend files

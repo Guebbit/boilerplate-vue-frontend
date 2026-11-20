@@ -1,3 +1,6 @@
+# The JSON Schemas generated from the shared rules, for the PHP twin to validate with.
+shared/rules/schemas/*.generated.schema.json linguist-generated=true
+
 # 2brain:start — regenerate with: 2brain <repo-path>
 .2brain/** linguist-generated=true
 # 2brain:end

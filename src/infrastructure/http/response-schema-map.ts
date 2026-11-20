@@ -28,7 +28,7 @@ import { ROUTES } from '@api/routes';
  * same, or it measures an app nobody ships.
  *
  * The method+pattern+schema-name triple is generated (`scripts/contracts/generate-route-table.ts`
- * → `contracts/rest/routes.ts` → `npm run gen:api`) straight from `openapi.yaml`: an
+ * → `contracts/rest.generated/routes.ts` → `npm run gen:api`) straight from `openapi.yaml`: an
  * `AxiosRequestConfig` does not carry which operation issued it, so the SCHEMA still has to be
  * resolved here at runtime, but the METHOD, PATTERN and WHICH SCHEMA are never hand-typed,
  * so they cannot drift out of step with the contract.

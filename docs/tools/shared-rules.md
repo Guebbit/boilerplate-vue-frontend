@@ -16,7 +16,7 @@ flowchart LR
   Z["Zod schema +\ngenerate spec\n(shared-rules/rules.ts)"] --> G
   S["contracts/cookies.yaml\n(synced from the backend)"] -.-> G
   G --> T["name.generated.ts\nnext to the code that imports it"]
-  G --> J["shared/rules/schemas/name.schema.json"]
+  G --> J["shared/rules/schemas/name.generated.schema.json"]
   T --> C["application code"]
 ```
 

@@ -114,7 +114,7 @@ flowchart TD
     A["src/app/views/ + src/modules/*/views/\nView layer"] --> B["src/modules/*/composables/\nsrc/infrastructure/\nComposables + infrastructure helpers"]
     A --> C
     B --> C["src/infrastructure/ (session, observability)\nsrc/modules/*/store.ts\nPinia stores"]
-    B -->|"one-shot calls"| D["contracts/rest/index.ts\nGenerated axios client"]
+    B -->|"one-shot calls"| D["contracts/rest.generated/index.ts\nGenerated axios client"]
     C --> D
     D --> E["src/infrastructure/http/index.ts\nAxios + interceptors"]
     E --> F[("Backend\n(demo or full stack)")]
@@ -138,7 +138,7 @@ flowchart TD
 | Infrastructure helpers | `src/infrastructure/utils/`                                                                                                | cross-domain helpers: formatters, errors, uploads, images, logger                                                                                                                                                                                                                                      |
 | i18n runtime           | `src/i18n/`, `src/infrastructure/locale-overrides.ts`                                                                      | the vue-i18n instance and locale loading (`index.ts`), the locale-prefixed router locations (`router-link.ts`) — extractable, no imports into the rest of the app; the language manifest and the API-stored overrides (`locale-overrides.ts`) stay behind, since they call the generated `@api` client |
 | Stores                 | `src/infrastructure/session.ts`, `src/infrastructure/observability/store.ts`, `src/ui/dialog.ts`, `src/modules/*/store.ts` | global reactive state, API orchestration                                                                                                                                                                                                                                                               |
-| Generated client       | `contracts/rest/index.ts`, `contracts/rest/schemas.zod.ts`                                                                 | typed axios functions + Zod schemas (DO NOT edit)                                                                                                                                                                                                                                                      |
+| Generated client       | `contracts/rest.generated/index.ts`, `contracts/rest.generated/schemas.zod.ts`                                             | typed axios functions + Zod schemas (DO NOT edit)                                                                                                                                                                                                                                                      |
 | HTTP layer             | `src/infrastructure/http/`                                                                                                 | axios instance (`client.ts`), interceptors and error shaping (`interceptors.ts`), the 401 replay (`refresh.ts`), contract validation (`validate.ts`), problem-details readers (`envelope.ts`), the orval mutator and the barrel (`index.ts`), response-schema map                                      |
 | Design system          | `src/ui/vuetify/`                                                                                                          | theme tokens, component defaults, lucide icon set                                                                                                                                                                                                                                                      |
 | Shared components      | `src/ui/molecules/`, `src/ui/organisms/`                                                                                   | domain-agnostic components, placed here by consumer count                                                                                                                                                                                                                                              |
@@ -225,7 +225,7 @@ composables ([TanStack Query: does this replace client state](https://tanstack.c
 flowchart LR
     View[Module view] --> Composable[Module composable\nor store]
     Composable --> Store[Pinia store]
-    Store --> Client[Generated API function\ncontracts/rest/index.ts]
+    Store --> Client[Generated API function\ncontracts/rest.generated/index.ts]
     Client --> HTTP[infrastructure/http/index.ts]
 
     classDef view fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -245,17 +245,17 @@ For a product flow you typically move through:
 - `src/modules/products/views/ProductsList.vue`
 - `src/modules/<name>/composables/<useThing>.ts` (optional — products has `use-release-date-confirm.ts`)
 - `src/modules/products/store.ts`
-- `contracts/rest/index.ts` → `listProducts()`
+- `contracts/rest.generated/index.ts` → `listProducts()`
 - `src/infrastructure/http/index.ts`
 
 The same shape repeats for every entity. The entity names are examples.
 
 ## What each layer should not do
 
-- Views should not call `contracts/rest/` directly — go through a store or composable.
+- Views should not call `contracts/rest.generated/` directly — go through a store or composable.
 - Stores should not contain template logic or DOM refs.
 - Composables should not scatter side effects across unrelated stores.
-- `contracts/rest/index.ts` is generated — never edit it by hand.
+- `contracts/rest.generated/index.ts` is generated — never edit it by hand.
 - `src/infrastructure/http/types.ts` should not know about specific business entities.
 
 ## Why this is useful

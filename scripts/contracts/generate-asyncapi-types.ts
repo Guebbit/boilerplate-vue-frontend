@@ -341,7 +341,7 @@ const generator = new TypeScriptGenerator({
  * them. A schema copied in from the REST contract is imported from here rather than declared a
  * second time, so the two cannot drift and the type barrel never exports one name twice.
  */
-const REST_MODELS_MODULE = './rest/index';
+const REST_MODELS_MODULE = './rest.generated/index';
 
 /** The key the bundler stamps on a schema copied in from the REST contract: the schema's name there. */
 const OPENAPI_SCHEMA_MARKER = 'x-openapi-schema';

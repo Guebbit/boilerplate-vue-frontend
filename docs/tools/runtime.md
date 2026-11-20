@@ -22,7 +22,7 @@ flowchart LR
     SFC --> Styles[CSS: Vuetify + Tailwind]
     Components --> Pinia[Pinia stores]
     Pinia --> Axios[Axios\nsrc/infrastructure/http/index.ts]
-    Axios --> API[Generated client\ncontracts/rest/index.ts]
+    Axios --> API[Generated client\ncontracts/rest.generated/index.ts]
 
     classDef build fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef app fill:#ddd6fe,stroke:#7c3aed,color:#111827;
@@ -41,11 +41,11 @@ flowchart LR
 
 ## Path aliases
 
-| Alias          | Resolves to                     |
-| -------------- | ------------------------------- |
-| `@/`           | `src/`                          |
-| `@api`         | `contracts/rest/index.ts`       |
-| `@api/schemas` | `contracts/rest/schemas.zod.ts` |
+| Alias          | Resolves to                               |
+| -------------- | ----------------------------------------- |
+| `@/`           | `src/`                                    |
+| `@api`         | `contracts/rest.generated/index.ts`       |
+| `@api/schemas` | `contracts/rest.generated/schemas.zod.ts` |
 
 ## Related pages
 

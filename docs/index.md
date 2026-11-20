@@ -100,8 +100,8 @@ Start here when you have landed on a filename rather than on a question.
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 70}}}%%
 flowchart LR
-    OpenSpec[openapi.yaml] --> Client[contracts/rest/index.ts\naxios client]
-    OpenSpec --> Schemas[contracts/rest/schemas.zod.ts\nZod schemas]
+    OpenSpec[openapi.yaml] --> Client[contracts/rest.generated/index.ts\naxios client]
+    OpenSpec --> Schemas[contracts/rest.generated/schemas.zod.ts\nZod schemas]
     AsyncSpec[asyncapi.yaml] --> Realtime[contracts/asyncapi.generated.ts]
 
     Client --> Stores[Pinia stores]

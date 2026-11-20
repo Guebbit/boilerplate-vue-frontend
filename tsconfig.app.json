@@ -4,9 +4,9 @@
     // Cypress' ambient types and `support/unit` needs Vitest's, so both belong to their own
     // projects rather than to this one.
     "include": [
-        "contracts/rest",
+        "contracts/rest.generated/**/*",
         "contracts/asyncapi.generated.ts",
-        "contracts/permission-vocabulary.ts",
+        "contracts/permission-vocabulary.generated.ts",
         "src/**/*",
         "src/**/*.vue"
     ],
@@ -27,12 +27,12 @@
             // The generated client and its Zod schemas. Aliased rather than reached by relative
             // path because every module's store imports them from its own folder depth, and one
             // entry here is what makes regenerating them somewhere else a one-line change.
-            "@api": ["./contracts/rest/index"],
-            "@api/schemas": ["./contracts/rest/schemas.zod"],
-            "@api/error-codes": ["./contracts/rest/error-codes"],
-            "@api/routes": ["./contracts/rest/routes"],
-            "@api/upload-types": ["./contracts/rest/upload-types"],
-            "@api/permission-vocabulary": ["./contracts/permission-vocabulary"]
+            "@api": ["./contracts/rest.generated/index"],
+            "@api/schemas": ["./contracts/rest.generated/schemas.zod"],
+            "@api/error-codes": ["./contracts/rest.generated/error-codes"],
+            "@api/routes": ["./contracts/rest.generated/routes"],
+            "@api/upload-types": ["./contracts/rest.generated/upload-types"],
+            "@api/permission-vocabulary": ["./contracts/permission-vocabulary.generated"]
         }
     }
 }

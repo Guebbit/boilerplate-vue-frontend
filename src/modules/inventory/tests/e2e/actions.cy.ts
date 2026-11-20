@@ -9,7 +9,7 @@ import {
     ListPreorderFulfillmentOrdersResponse,
     ListPreorderLevelsResponse,
     ListStockMovementsResponse
-} from '../../../../../contracts/rest/schemas.zod';
+} from '../../../../../contracts/rest.generated/schemas.zod';
 
 /** An empty page, as the paged list reads answer it. */
 const emptyPage = { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } };

@@ -5,7 +5,7 @@
  * what was typed, and work again once the stub is gone.
  */
 import { actionTable } from '../../../../../tests/support/e2e/action-table';
-import { SearchOrdersResponse } from '../../../../../contracts/rest/schemas.zod';
+import { SearchOrdersResponse } from '../../../../../contracts/rest.generated/schemas.zod';
 
 /** A list answer with nothing in it, for the list read the empty rows stub. */
 const emptyPage = { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } };

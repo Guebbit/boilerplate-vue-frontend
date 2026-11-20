@@ -61,7 +61,7 @@ const schemaByName = (name: string) => asStub<Record<string, unknown>>(schemas)[
 const ID = '65dc8a99604c307b702b5ccc';
 
 /**
- * `contracts/rest/index.ts`'s own function name for one response schema's operation
+ * `contracts/rest.generated/index.ts`'s own function name for one response schema's operation
  * — the inverse of `generate-route-table.ts`'s `schemaNameFor`. Not exact for the seven
  * operations orval splits on content type (`generate-operation-modules.ts`'s
  * `contentTypeOperationNames`): {@link isImportedByApp} checks both spellings for those.

@@ -125,7 +125,7 @@ describe('SHARED_FILES', () => {
 
         expect(frontendPaths).toContain(OPENAPI);
         expect(frontendPaths).toContain(ASYNCAPI);
-        expect(frontendPaths).toContain('contracts/authorization-keys.yaml');
+        expect(frontendPaths).toContain('contracts/authorization-keys.generated.yaml');
         expect(frontendPaths).toContain('contracts/frontend-links.yaml');
         expect(frontendPaths).toContain('contracts/cookies.yaml');
         expect(frontendPaths).toContain('scripts/e2e/tls/webhook-sink-ca.pem');

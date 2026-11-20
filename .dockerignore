@@ -13,8 +13,8 @@ node_modules
 # Generated contract code (gitignored). The image rebuilds it with `npm run regenerate`, so a stale
 # copy on the host never rides into the build context.
 contracts/asyncapi.generated.ts
-contracts/permission-vocabulary.ts
-contracts/rest
+contracts/permission-vocabulary.generated.ts
+contracts/rest.generated
 src/app/tours/tours.generated.ts
 src/app/utils/static-pages.generated.ts
 src/infrastructure/browser-storage.generated.ts
