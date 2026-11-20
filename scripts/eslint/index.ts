@@ -6,6 +6,7 @@
  * `tests/unit/scripts/eslint/`. The paired backend keeps the same layout in `scripts/eslint/`.
  */
 import { commentLinks } from './comment-links';
+import { maxDepthThroughClosures } from './max-depth-through-closures';
 import { mobileStrategy } from './mobile-strategy';
 import { noHoverOnly } from './no-hover-only';
 import { templateDirectiveDescription } from './template-directive-description';
@@ -14,6 +15,7 @@ import { themeToken } from './theme-token';
 /** The plugin's rule table: rule name (as used in `eslint.config.ts`) to implementation. */
 export default {
     'comment-links': commentLinks,
+    'max-depth-through-closures': maxDepthThroughClosures,
     'mobile-strategy': mobileStrategy,
     'no-hover-only': noHoverOnly,
     'template-directive-description': templateDirectiveDescription,

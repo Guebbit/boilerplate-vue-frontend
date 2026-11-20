@@ -2,7 +2,7 @@
 
 The backend owns the contract. This repo never edits it.
 
-- NEVER hand-edit `openapi.yaml`, `asyncapi.yaml` or `contracts/{authorization-keys,cookies,frontend-links}.yaml`.
+- NEVER hand-edit `openapi.yaml`, `asyncapi.yaml` or `contracts/{authorization-keys.generated,cookies,frontend-links}.yaml`.
   They arrive by the backend's `npm run sync:frontend`, and `npm run check` refuses a copy that
   differs from the backend's.
 - NEVER hand-edit what is generated from them (`contracts/rest.generated/*`, `contracts/asyncapi.generated.ts`,
@@ -68,9 +68,6 @@ Every rule in this section is machine-checked: `strictTypeChecked` plus the proj
 
 - MUST apply SOLID principles.
 - MUST keep functions focused — one responsibility each.
-- MUST keep nesting ≤ 3 levels; extract a helper for anything deeper. `max-depth` enforces the
-  block half at 3; `max-nested-callbacks` caps callbacks at 4 in production code — chain, or name
-  the step.
 - MUST prefer pure functions and shared abstractions over duplicated inline logic.
 - MUST NOT extract a function, file or wrapper unless it hides real complexity, names a domain
   rule, is a boundary (port, adapter, third-party call), or has ≥ 2 callers today. A three-line

@@ -1012,8 +1012,8 @@ export default defineConfigWithVueTs(
              */
             'no-console': 'error',
             'no-debugger': 'warn',
-            /** CLAUDE.md: nesting; blocks at 3, callbacks at 4 (the later src block); extract a helper for anything deeper. */
-            'max-depth': ['error', 3],
+            /** Nesting: blocks at 3 counted through callbacks, callbacks at 4; specs get 4 below. */
+            'local/max-depth-through-closures': ['error', { max: 3 }],
             'max-nested-callbacks': ['error', 4],
             '@eslint-community/eslint-comments/require-description': 'error',
 
@@ -1027,7 +1027,11 @@ export default defineConfigWithVueTs(
     {
         /** `describe`/`it`/hook nesting is the test runner's shape, not logic nesting. */
         files: [...ALL_SPEC_GLOBS, '**/tests/**'],
-        rules: { 'max-nested-callbacks': 'off' }
+        plugins: { local: localPlugin },
+        rules: {
+            'max-nested-callbacks': 'off',
+            'local/max-depth-through-closures': ['error', { max: 4 }]
+        }
     },
 
     /**
@@ -1176,19 +1180,19 @@ export default defineConfigWithVueTs(
     },
 
     /**
-     * CLAUDE.md's "nesting ≤ 3 levels; extract a helper for anything deeper", as two rules:
-     * `max-depth` counts nested blocks (`if`/`for`/`while`), `max-nested-callbacks` counts
-     * functions passed as arguments — a `.then` chain nested inside a `.then`, or an action inside
-     * `defineStore`'s setup. Specs are exempt: `describe` → `it` → a callback is their shape.
+     * Nesting stays at 3 levels; extract a helper for anything deeper. Two rules:
+     * `local/max-depth-through-closures` counts nested blocks (`if`/`for`/`while`) through
+     * callbacks, `max-nested-callbacks` counts functions passed as
+     * arguments — a `.then` chain nested inside a `.then`, or an action inside `defineStore`'s setup. Specs are exempt: `describe` → `it` → a callback is their shape.
      *
-     * https://eslint.org/docs/latest/rules/max-depth
      * https://eslint.org/docs/latest/rules/max-nested-callbacks
      */
     {
         files: ['src/**/*.{ts,mts,tsx,vue}'],
         ignores: ['src/**/__tests__/**', 'src/modules/*/tests/**'],
+        plugins: { local: localPlugin },
         rules: {
-            'max-depth': ['error', 3],
+            'local/max-depth-through-closures': ['error', { max: 3 }],
             'max-nested-callbacks': ['error', 4]
         }
     },
