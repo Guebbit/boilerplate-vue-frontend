@@ -12214,6 +12214,12 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/ReturnReason"
+        - name: proofOfSending
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: '`true` keeps the returns that carry a proof of sending, `false` those that have none yet. The staff summary rows "proof on file, goods late" and "overdue for their goods" open the list on one each.'
         - name: sort
           in: query
           required: false
@@ -12714,7 +12720,7 @@ paths:
       summary: Record that the returned goods arrived
       description: |-
         The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
-        What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A defect or a wrong item has a ladder of remedies (Directive 2019/771 Art. 13): `remedy` says which one staff give — `refund` (the default, as above), `replace` (the same product is sent again on the SAME order through the ordinary shipping door; the return closes with no money moving) or `repair` (the goods are repaired and posted back by staff; the return closes with no money moving and the guarantee is extended by 12 months, once per order, Directive 2024/1799). Staff may pick a remedy other than the buyer's `preferredRemedy`. A withdrawal and a goodwill return always refund (`RETURN_REMEDY_INVALID` otherwise), and a defect or a wrong item never takes a `handlingDeduction`. A replacement the order cannot send again answers 409 `DELIVERY_NOT_REOPENABLE`. On a withdrawal whose proof of sending was recorded the refund was opened then (`POST /returns/{id}/proof-of-sending`), so receiving the goods opens no second one and a `handlingDeduction` above 0 answers 409 `RETURN_REFUND_OPENED_ON_PROOF` (Art. 13(3): the shop can no longer withhold it); the return closes in this step when that refund already settled, and otherwise when it does. A parcel lost on its way back is received with 0 on every line: this shop's policy is to bear that risk and refund on proof of sending (the EU leaves the final risk to national law), so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed — usually its refund record is already on the payment (follow it there and on `GET /payments/attention`), but when the payment had nothing left to give no record exists and staff are told by a to-do instead, to close the return by hand once they have checked — and `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+        What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A defect or a wrong item has a ladder of remedies (Directive 2019/771 Art. 13): `remedy` says which one staff give — `refund` (the default, as above), `replace` (the same product is sent again on the SAME order through the ordinary shipping door; the return closes with no money moving) or `repair` (the goods are repaired and posted back by staff; the return closes with no money moving and the guarantee is extended by 12 months, once per order, Directive 2024/1799). Staff may pick a remedy other than the buyer's `preferredRemedy`. A withdrawal and a goodwill return always refund (`RETURN_REMEDY_INVALID` otherwise), and a defect or a wrong item never takes a `handlingDeduction`. A replacement the order cannot send again answers 409 `DELIVERY_NOT_REOPENABLE`. On a withdrawal whose proof of sending was recorded the refund was opened then (`POST /returns/{id}/proof-of-sending`), so receiving the goods opens no second one and a `handlingDeduction` above 0 answers 409 `RETURN_REFUND_OPENED_ON_PROOF` (Art. 13(3): the shop can no longer withhold it); the return closes in this step when that refund already settled, and otherwise when it does. The same holds for a defect or a wrong item whose proof staff recorded with `refundOnProof`: a `repair` or `replace` then answers 409 `RETURN_REFUND_OPENED_ON_PROOF` too. A parcel lost on its way back is received with 0 on every line: this shop's policy is to bear that risk and refund on proof of sending (the EU leaves the final risk to national law), so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed — usually its refund record is already on the payment (follow it there and on `GET /payments/attention`), but when the payment had nothing left to give no record exists and staff are told by a to-do instead, to close the return by hand once they have checked — and `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
       operationId: receiveReturn
       x-error-codes:
         "401":
@@ -12797,7 +12803,7 @@ paths:
       summary: Record the buyer's proof of sending
       description: |-
         Staff note the carrier document the buyer showed for the parcel they sent back: the date it was handed over, the carrier and the reference. Requires an `approved` return (409 `RETURN_NOT_RECEIVABLE` otherwise) and is one-time: a second call answers 409 `RETURN_PROOF_ALREADY_RECORDED`. A `sentAt` in the future answers 422 `RETURN_PROOF_DATE_INVALID`.
-        On a `withdrawal` the proof opens the refund then, as receiving the goods would (the shop may wait for the goods or the proof, whichever comes first, Directive 2011/83/EU Art. 13(3)), so the money can go back before the parcel arrives: the amount is quoted now, with no handling deduction. A later `POST /returns/{id}/receive` restocks as usual and opens no second refund. On a `defective` or `wrong_item` return the remedy is only decided at receipt, so the proof is recorded and nothing is refunded; if receipt then refunds, that refund is due the moment the goods or the proof came, whichever is earlier. This shop's policy is to refund on proof of sending, so a parcel lost on its way back is still refunded (the EU leaves the final risk to national law). Needs `receive:Return`, which carries a fresh-session requirement.
+        On a `withdrawal` the proof opens the refund then, as receiving the goods would (the shop may wait for the goods or the proof, whichever comes first, Directive 2011/83/EU Art. 13(3)), so the money can go back before the parcel arrives: the amount is quoted now, with no handling deduction. A later `POST /returns/{id}/receive` restocks as usual and opens no second refund. On a `defective` or `wrong_item` return the remedy is only decided at receipt, so by default the proof is recorded and nothing is refunded; if receipt then refunds, that refund is due the moment the goods or the proof came, whichever is earlier. Staff who accept the buyer's termination of the contract (Directive 2019/771 Art. 13(4), 16) send `refundOnProof: true`: the proof then opens the refund like a withdrawal's, `Return.refundOnProof` says so, and receipt can no longer choose a repair or a replacement (409 `RETURN_REFUND_OPENED_ON_PROOF`). `refundOnProof` on another reason answers 422 `RETURN_REFUND_ON_PROOF_INVALID`. This shop's policy is to refund on proof of sending, so a parcel lost on its way back is still refunded (the EU leaves the final risk to national law). Needs `receive:Return`, which carries a fresh-session requirement.
       operationId: recordProofOfSending
       x-error-codes:
         "401":
@@ -12810,6 +12816,7 @@ paths:
           - RETURN_PROOF_ALREADY_RECORDED
         "422":
           - RETURN_PROOF_DATE_INVALID
+          - RETURN_REFUND_ON_PROOF_INVALID
       security:
         - bearerAuth:
             - receive:Return
@@ -22181,6 +22188,7 @@ components:
         - $ref: "#/components/schemas/NotificationStaffPreordersLate"
         - $ref: "#/components/schemas/NotificationStaffDeliveryHoldsOpen"
         - $ref: "#/components/schemas/NotificationStaffReturnsAwaitingGoods"
+        - $ref: "#/components/schemas/NotificationStaffReturnsProofGoodsLate"
         - $ref: "#/components/schemas/NotificationStaffReturnsUndecided"
         - $ref: "#/components/schemas/NotificationStaffLowStock"
         - $ref: "#/components/schemas/NotificationStaffUnshipped"
@@ -22210,6 +22218,7 @@ components:
           shop-tasks.staff.preorders-late: "#/components/schemas/NotificationStaffPreordersLate"
           shop-tasks.staff.delivery-holds-open: "#/components/schemas/NotificationStaffDeliveryHoldsOpen"
           shop-tasks.staff.returns-awaiting-goods: "#/components/schemas/NotificationStaffReturnsAwaitingGoods"
+          shop-tasks.staff.returns-proof-goods-late: "#/components/schemas/NotificationStaffReturnsProofGoodsLate"
           shop-tasks.staff.returns-undecided: "#/components/schemas/NotificationStaffReturnsUndecided"
           shop-tasks.staff.low-stock: "#/components/schemas/NotificationStaffLowStock"
           shop-tasks.staff.unshipped: "#/components/schemas/NotificationStaffUnshipped"
@@ -26194,6 +26203,8 @@ components:
           - -createdAt
           - status
           - -status
+          - proofOfSendingAt
+          - -proofOfSendingAt
     ReturnKind:
       type: string
       enum:
@@ -26491,6 +26502,9 @@ components:
           type: string
           maxLength: 200
           description: The carrier document's reference (a tracking or receipt number). Present with `proofOfSendingAt`.
+        refundOnProof:
+          type: boolean
+          description: "`true` when staff opened the refund of a `defective` or `wrong_item` return with its proof of sending. Receipt then takes no repair or replacement. Absent otherwise (a withdrawal's proof opens its refund without this flag)."
         closedAt:
           type: string
           format: date-time
@@ -26688,6 +26702,9 @@ components:
           minLength: 1
           maxLength: 200
           description: The document's reference, a tracking or receipt number. Plain text.
+        refundOnProof:
+          type: boolean
+          description: "Staff's choice, for a `defective` or `wrong_item` return only: `true` opens the refund now, as a withdrawal's proof does. Absent or `false` leaves the remedy to receipt. Any other reason with `true` answers 422 `RETURN_REFUND_ON_PROOF_INVALID`."
     StatsInterval:
       type: string
       enum:
@@ -28877,6 +28894,37 @@ components:
         createdAt:
           type: string
           format: date-time
+    NotificationStaffReturnsProofGoodsLate:
+      type: object
+      additionalProperties: false
+      description: Approved returns whose buyer showed a proof of sending, with the goods still not arrived long after the days to send and the carrier's transit ran out. A refund may already have been sent or may be due; the row says only that the goods are late.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.returns-proof-goods-late
+        params:
+          $ref: "#/components/schemas/WorkCountParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
     NotificationStaffReturnsUndecided:
       type: object
       additionalProperties: false
@@ -29440,12 +29488,15 @@ x-error-codes:
   RETURN_PROOF_DATE_INVALID:
     status: 422
     description: The date on the proof of sending is in the future.
+  RETURN_REFUND_ON_PROOF_INVALID:
+    status: 422
+    description: "Refund on proof is chosen for a reason that has no remedy to choose between: only a `defective` or `wrong_item` return takes it (a withdrawal's proof opens the refund already)."
   RETURN_REFUND_OPEN:
     status: 409
     description: "The return cannot be canceled: the proof of sending already opened its refund, which is owed and open, so a canceled return would no longer add up. Receive the goods (with 0 on every line if the parcel was lost) instead."
   RETURN_REFUND_OPENED_ON_PROOF:
     status: 409
-    description: The refund was opened when the proof of sending was recorded, so a handling deduction can no longer come out of it (Directive 2011/83/EU Art. 13(3)); claim it from the buyer separately.
+    description: The refund was opened when the proof of sending was recorded, so a handling deduction can no longer come out of it (Directive 2011/83/EU Art. 13(3)), and a repair or a replacement can no longer be chosen; claim the deduction from the buyer separately.
   RETURN_REMEDY_INVALID:
     status: 422
     description: A remedy other than a refund is named for a reason that has no guarantee behind it (only a `defective` or `wrong_item` return can be repaired or replaced), or a preferred remedy is named for such a reason.

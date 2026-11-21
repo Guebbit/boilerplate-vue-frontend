@@ -153,9 +153,9 @@ describe('productName', () => {
     });
 });
 
-describe('the shop declares exactly its twenty codes', () => {
+describe('the shop declares exactly its twenty-one codes', () => {
     it('lists them', () => {
-        expect(Object.keys(shopNotices)).toHaveLength(20);
+        expect(Object.keys(shopNotices)).toHaveLength(21);
         expect(Object.keys(shopNotices).every((code) => code.startsWith('shop-tasks.'))).toBe(true);
     });
 });
@@ -395,6 +395,7 @@ describe('a digest summary for staff', () => {
         'shop-tasks.staff.preorders-late',
         'shop-tasks.staff.delivery-holds-open',
         'shop-tasks.staff.returns-awaiting-goods',
+        'shop-tasks.staff.returns-proof-goods-late',
         'shop-tasks.staff.returns-undecided',
         'shop-tasks.staff.low-stock',
         'shop-tasks.staff.unshipped',

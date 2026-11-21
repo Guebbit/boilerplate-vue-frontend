@@ -27,6 +27,7 @@ const SUMMARY_CODES = [
     'shop-tasks.staff.preorders-late',
     'shop-tasks.staff.delivery-holds-open',
     'shop-tasks.staff.returns-awaiting-goods',
+    'shop-tasks.staff.returns-proof-goods-late',
     'shop-tasks.staff.returns-undecided',
     'shop-tasks.staff.low-stock',
     'shop-tasks.staff.unshipped',

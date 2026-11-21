@@ -12,7 +12,8 @@ export default {
 /**
  * @module
  * The staff's six moves on a return — approve, decline (with the reason the customer is told),
- * record the carrier's proof of sending (once; on a withdrawal it opens the refund), receive (with a restock count per line, the remedy for a faulty or wrong item and an optional
+ * record the carrier's proof of sending (once; on a withdrawal it opens the refund, and on a faulty
+ * or wrong item staff may choose "refund on proof" to open it too), receive (with a restock count per line, the remedy for a faulty or wrong item and an optional
  * handling deduction), close by hand (with an optional note, when the
  * money will not follow the usual way), cancel (with an optional note, when the goods never came). Which of them is open is the server's
  * `Return.actions`; this component renders that answer and re-implements none of the lifecycle.
@@ -240,8 +241,9 @@ const {
 } = useStructureFormValidation(
     {
         handlingDeduction: '',
-        // The buyer's wish is preselected; staff may give another (Art. 13(3)).
-        remedy: props.item.preferredRemedy ?? 'refund',
+        // The buyer's wish is preselected; staff may give another (Art. 13(3)). A refund that
+        // opened on the proof of sending is the only remedy left.
+        remedy: props.item.refundOnProof ? 'refund' : (props.item.preferredRemedy ?? 'refund'),
         restock: startingRestock()
     },
     receiveSchema,
@@ -285,12 +287,6 @@ const canPayOutside = computed(
 const proofElement = ref<HTMLFormElement>();
 
 /**
- * Whether the proof opens the refund: only a withdrawal's does, so only its button says "refund".
- * A faulty or wrong item records the proof and the remedy is chosen at receipt.
- */
-const proofOpensRefund = computed(() => props.item.reason === 'withdrawal');
-
-/**
  * The proof is the carrier's document: its date (not in the future), the carrier and the
  * reference, each required plain text.
  */
@@ -309,7 +305,8 @@ const proofSchema = z.object({
         .string()
         .trim()
         .min(1, { error: () => t('return-staff-actions.error-proof-text-required') })
-        .max(200)
+        .max(200),
+    refundOnProof: z.boolean()
 });
 
 /**
@@ -321,11 +318,26 @@ const {
     showFormErrors: showProofErrors,
     handleSubmit: handleProofSubmit,
     applyServerErrors: applyProofErrors
-} = useStructureFormValidation({ sentAt: '', carrier: '', reference: '' }, proofSchema, {
-    formElement: proofElement,
-    revalidateOn: locale,
-    onInvalid: () => addMessage(t('generic.fix-errors'))
-});
+} = useStructureFormValidation(
+    { sentAt: '', carrier: '', reference: '', refundOnProof: false },
+    proofSchema,
+    {
+        formElement: proofElement,
+        revalidateOn: locale,
+        onInvalid: () => addMessage(t('generic.fix-errors'))
+    }
+);
+
+/**
+ * Whether the proof opens the refund: a withdrawal's always does; a faulty or wrong item's only
+ * when staff tick "refund on proof" (otherwise the remedy is chosen at receipt). Only its button
+ * says "refund".
+ */
+const proofOpensRefund = computed(
+    () =>
+        props.item.reason === 'withdrawal' ||
+        (underGuarantee.value && proofForm.value.refundOnProof)
+);
 
 /**
  * The close form's element.
@@ -493,13 +505,15 @@ const submitReceive = () =>
  * @returns A promise settling once the move finished.
  */
 const submitProof = () =>
-    handleProofSubmit(({ sentAt, carrier, reference }) =>
+    handleProofSubmit(({ sentAt, carrier, reference, refundOnProof }) =>
         run(
             () =>
                 recordProof(props.item.id, {
                     sentAt: new Date(`${sentAt}T00:00:00`).toISOString(),
                     carrier: carrier.trim(),
-                    reference: reference.trim()
+                    reference: reference.trim(),
+                    // The choice exists for a faulty or wrong item only; the server refuses it elsewhere.
+                    ...(underGuarantee.value && refundOnProof ? { refundOnProof: true } : {})
                 }),
             proofOpensRefund.value
                 ? 'return-staff-actions.success-proof-refund'
@@ -631,6 +645,15 @@ const submitCancel = () =>
                     hide-details="auto"
                     data-test="return-proof-reference"
                 />
+                <!-- Staff accept the buyer ending the contract: the refund opens now, as on a withdrawal. -->
+                <v-checkbox
+                    v-if="underGuarantee"
+                    v-model="proofForm.refundOnProof"
+                    :label="t('return-staff-actions.label-refund-on-proof')"
+                    :hint="t('return-staff-actions.hint-refund-on-proof')"
+                    persistent-hint
+                    data-test="return-proof-refund-on-proof"
+                />
             </fieldset>
             <v-btn type="submit" color="primary" data-test="return-proof" :disabled="loading">
                 {{
@@ -687,7 +710,12 @@ const submitCancel = () =>
                 v-if="underGuarantee"
                 v-model="receiveForm.remedy"
                 :label="t('return-staff-actions.label-remedy')"
-                :hint="t('return-staff-actions.hint-remedy')"
+                :hint="
+                    item.refundOnProof
+                        ? t('return-staff-actions.hint-remedy-locked')
+                        : t('return-staff-actions.hint-remedy')
+                "
+                :disabled="item.refundOnProof === true"
                 persistent-hint
                 inline
                 class="w-full"
