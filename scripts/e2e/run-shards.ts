@@ -54,9 +54,9 @@ import { createDemoScratchDirectory, removeDemoScratchDirectory } from '../demo/
 import { ANTIBOT_SPEC_GLOBS, FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
 import { ANTIBOT_BACKEND_ENV } from './antibot-backend';
 import { SHARD_SINK_PORT_BASE, sinkUrlForPort } from './webhook-sink';
-import { SECONDS, weighSpecs, balanceShards } from './shard-balancer';
+import { weighSpecs, balanceShards } from './shard-balancer';
 import { printFlakyReport, resetFlakyReport } from './flaky-report';
-import { readSpecDurations } from './spec-durations';
+import { resolveSpecSeconds } from './spec-durations';
 import { runWatched } from './shard-process';
 import { failScript } from '../fail-script';
 import { countFinishedSpecs, judgeShard } from './shard-verdict';
@@ -117,17 +117,13 @@ const specs = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT })
  * new file, no runs recorded — is left out entirely so `weighSpecs` schedules it at the mean
  * instead of at a false zero.
  */
-const recordedDurations = readSpecDurations();
+const { seconds: durations, unmeasured } = resolveSpecSeconds(specs.map(({ file }) => file));
 
-/** Seconds per spec, measured where known and guessed by basename otherwise. */
-const durations: Record<string, number> = Object.fromEntries(
-    specs
-        .map(({ file }): [string, number | undefined] => [
-            file,
-            recordedDurations[file] ?? SECONDS[path.basename(file, '.cy.ts')]
-        ])
-        .filter((entry): entry is [string, number] => entry[1] !== undefined)
-);
+if (unmeasured.length > 0)
+    console.warn(
+        `[e2e-shard] ${String(unmeasured.length)} spec(s) have no recorded seconds, weighed at the mean: ` +
+            'run `npm run e2e:spec-seconds` to refresh scripts/e2e/spec-seconds.json.'
+    );
 
 /*
  * An empty match is a broken runner, never an empty suite — this repo always has specs. Without

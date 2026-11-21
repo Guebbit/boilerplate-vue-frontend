@@ -58,10 +58,16 @@ Tags come from [`@cypress/grep`](https://github.com/cypress-io/cypress/tree/deve
 | Nightly  | every test         | empty    | 4 (`LIVE_SHARDS` in the `plan` job) per session mode, plus the antibot entry | 45 min         |
 
 - **The `grep` input** (`workflow_call` and `workflow_dispatch`) takes any `@cypress/grep` expression: space is OR, `+` is AND, `-` is NOT. Run `grep: '@smoke'` by hand from the Actions tab to reproduce the push tier. It reaches Cypress as `E2E_GREP_TAGS`, which `cypress.config.ts` puts in `expose.grepTags`. (v7 reads `expose`, not `env`: a `CYPRESS_grepTags` variable is silently ignored.)
-- **The matrix.** Live specs share one seeded Mongo and reset it between specs, so slices cannot share a database: each matrix job has its own services and runs its slice sequentially. `scripts/e2e/print-live-shard.ts <i> <n>` prints slice `i` of `n` as a `--spec` value, balanced by recorded duration like the demo shards, and `npm run test:e2e:live` runs it (`E2E_SPEC=<specs>`). Between them the slices cover the suite exactly once. Raise `LIVE_SHARDS` as journeys are added; the full run is ~85-115 min sequential.
+- **The matrix.** Live specs share one seeded Mongo and reset it between specs, so slices cannot share a database: each matrix job has its own services and runs its slice sequentially. `scripts/e2e/print-live-shard.ts <i> <n>` prints slice `i` of `n` as a `--spec` value, balanced by recorded duration like the demo shards (see [Shard weights](#shard-weights)), and `npm run test:e2e:live` runs it (`E2E_SPEC=<specs>`). Between them the slices cover the suite exactly once. Raise `LIVE_SHARDS` as journeys are added; the full run is ~85-115 min sequential.
 - **An empty tier warns, it does not fail.** If no spec carries the tag, the run ends with a warning annotation ("No spec carries @smoke") rather than Cypress's "no spec files were found". Until the first `@smoke` journey lands, the push tier therefore runs nothing: it is green and says so.
 - **By hand**, `E2E_GREP_TAGS=@smoke npm run test:e2e:live` runs the smoke tier locally.
 - **The `session-mode` input** (`jwt`, the default, or `cookie`) sets the backend's `NODE_SESSION_MODE` and the journeys' `E2E_SESSION_MODE` together, so both always agree. The schedule passes no input, so the nightly runs every slice once per mode (the antibot entry stays `jwt`: it is about the challenge, not the session); the push tier stays `jwt`, since the demo run already covers both modes on every push. By hand, export both before the recipe below, e.g. `NODE_SESSION_MODE=cookie` for the backend and `E2E_SESSION_MODE=cookie` for `npm run test:e2e:live`; `harness.cy.ts` fails if the two disagree. Journeys about one mode's own machinery skip themselves in the other (`skipUnlessSessionMode`).
+
+### Shard weights
+
+Both the demo shards and the nightly slices weigh a spec by seconds, read in this order: this checkout's `reports/e2e/durations.jsonl` (what `cypress.config.ts` records), then the committed medians in `scripts/e2e/spec-seconds.json`, then the hand-written `SECONDS` table by file name, then the mean of the known ones with a warning. A CI runner has no recordings, so the committed file is what balances it. A 0 s entry counts as no measurement.
+
+To refresh it: download the nightly's `e2e-durations-*` artifacts, concatenate them into one file, run `npm run e2e:spec-seconds -- <file>`, and commit `spec-seconds.json`. The command refuses to write when the file holds nothing for any current spec.
 
 ### The antibot run
 

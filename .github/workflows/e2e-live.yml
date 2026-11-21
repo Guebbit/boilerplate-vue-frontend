@@ -568,6 +568,17 @@ jobs:
                   retention-days: 14
                   if-no-files-found: ignore
 
+            - name: Upload spec durations
+              # Every slice's measured seconds per spec, for `npm run e2e:spec-seconds` to turn into
+              # the committed medians the balancer weighs with.
+              if: always()
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+              with:
+                  name: e2e-durations-${{ matrix.shard }}-${{ matrix.session-mode }}
+                  path: reports/e2e/durations.jsonl
+                  retention-days: 14
+                  if-no-files-found: ignore
+
             - name: Upload accessibility reports
               # Same artifact `ci.yml`'s demo-profile job uploads, from the live stack: every axe
               # finding `cy.checkPageA11y()` saw, written to `reports/a11y/` — advisory ones too.
