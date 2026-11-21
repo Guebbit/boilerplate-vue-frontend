@@ -4,6 +4,7 @@ import {
     getErrorMessage,
     rethrowUnlessAbsent,
     absentIs,
+    isGatewayFailure,
     isOutcomeUnknown,
     isPreconditionFailed,
     isTransportFailure,
@@ -171,6 +172,28 @@ describe('isOutcomeUnknown', () => {
         ['no envelope at all', undefined]
     ])('is false for %s', (_case, error) => {
         expect(isOutcomeUnknown(error)).toBe(false);
+    });
+});
+
+describe('isGatewayFailure', () => {
+    it.each([
+        ['a 502 with only the synthesized problem', { status: 502, errors: [{ code: 'X' }] }],
+        ['a 504 with no body', { status: 504 }],
+        ['a 503 with no occurrence id', { status: 503, errors: [{ code: 'SERVICE_UNAVAILABLE' }] }]
+    ])('is true for %s: the API did not write it', (_case, error) => {
+        expect(isGatewayFailure(error)).toBe(true);
+    });
+
+    it.each([
+        [
+            "the API's own 500, which carries its occurrence id",
+            { status: 500, instance: 'urn:uuid:3b9f7c52-4d2e-4a57-9f8b-0f3c6a1d2e11' }
+        ],
+        ['a 4xx the API refused with', { status: 422, errors: [{ code: 'X' }] }],
+        ['a lost connection', { status: 0 }],
+        ['no envelope at all', undefined]
+    ])('is false for %s', (_case, error) => {
+        expect(isGatewayFailure(error)).toBe(false);
     });
 });
 

@@ -69,6 +69,11 @@ interface AnsweredRejection {
     status: number;
     /** The envelope's error list, when the reply carried one. */
     errors?: unknown;
+    /**
+     * The occurrence id (`urn:uuid:…`) the API's own problem bodies carry. The client's synthesized
+     * problems for a bare proxy answer never do.
+     */
+    instance?: unknown;
 }
 
 /**
@@ -161,6 +166,25 @@ export const keepsIdempotencyKey = (error: unknown): boolean => {
     if (!isAnswered(error)) return true;
     return error.status === 409 && firstErrorCode(error) === ERROR_CODES.IDEMPOTENCY_IN_FLIGHT;
 };
+
+/**
+ * Whether a rejected call is a 5xx the API did NOT write: a gateway or proxy gave up (502, 503,
+ * 504) and the answer that reached the client carries no problem body of the API's own.
+ *
+ * It matters for a write that has to be applied once. The API's own 500 is stored under the key and
+ * means the call did not take effect; a gateway's 5xx says nothing about it — the server may have
+ * applied the call and only the answer was lost. The same key must go out again, so the stored
+ * outcome is replayed instead of the write running twice.
+ *
+ * Read off `instance`, which every problem the API sends carries and the client's own synthesized
+ * problems never do. A real app 500 whose request id was never minted reads as a gateway failure:
+ * the key is kept, which only costs one replay.
+ *
+ * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
+ * @returns `true` when the API itself did not answer, though something did.
+ */
+export const isGatewayFailure = (error: unknown): boolean =>
+    isAnswered(error) && error.status >= 500 && typeof error.instance !== 'string';
 
 /**
  * Whether the API answered `409 IDEMPOTENCY_OUTCOME_UNKNOWN`: a do-not-retry write (refund, ship,

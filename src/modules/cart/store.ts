@@ -30,7 +30,12 @@ import type {
     CheckoutRequest,
     MergeCartResponse
 } from '@types';
-import { rethrowUnlessAbsent, isRetryableFailure } from '@/infrastructure/utils/errors';
+import {
+    rethrowUnlessAbsent,
+    isRetryableFailure,
+    isGatewayFailure,
+    keepsIdempotencyKey
+} from '@/infrastructure/utils/errors';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -527,7 +532,8 @@ export const useCartStore = defineStore('cart', () => {
 
     /**
      * One `POST /cart/merge` of these lines under this key: the cart takes the answer, exactly the
-     * lines that were sent leave the guest list, and a retryable failure keeps the attempt.
+     * lines that were sent leave the guest list, and a failure that may still be running or may have
+     * been applied (no answer, a gateway's 5xx, or `409 IDEMPOTENCY_IN_FLIGHT`) keeps the attempt.
      *
      * @param sent - The lines this call carries.
      * @param key - The `Idempotency-Key` it travels under.
@@ -546,7 +552,14 @@ export const useCartStore = defineStore('cart', () => {
                     return response;
                 })
                 .catch((error: unknown) => {
-                    if (!isRetryableFailure(error)) writeMergeAttempt(undefined);
+                    /**
+                     * The API's own 5xx is stored for the key and means nothing was written (the
+                     * merge is one write), so it ends the attempt. A gateway's 5xx may be a merge
+                     * the server applied whose answer was lost: the key stays, and the retry
+                     * replays the stored success instead of adding the lines twice.
+                     */
+                    if (!keepsIdempotencyKey(error) && !isGatewayFailure(error))
+                        writeMergeAttempt(undefined);
                     // The list itself is what the server refused: carrying it to the next
                     // sign-in would only refuse again, with a toast each time.
                     if (isMergeRefusedForGood(error))
@@ -579,8 +592,9 @@ export const useCartStore = defineStore('cart', () => {
      *
      * On an answer, exactly the lines that were sent leave the guest cart: anything the guest
      * added while the call was out stays for the next merge. A failure leaves it as it was, to be
-     * tried again at the next sign-in; a retryable one (no answer, a 5xx) also keeps the key, any
-     * other outcome ends the attempt.
+     * tried again at the next sign-in; a failure that may still be running (no answer, or the API's
+     * `IDEMPOTENCY_IN_FLIGHT`) also keeps the key, any other outcome, a 5xx included, ends the
+     * attempt.
      *
      * The lines that are not what was asked, that are short of stock or that could not be added
      * become {@link mergeReport}. A line the cart could not take at all also becomes one

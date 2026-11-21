@@ -447,11 +447,11 @@ describe('the merge Idempotency-Key', () => {
         });
     });
 
-    it('is the same on the retry of a merge that never got an answer, whatever the failure', async () => {
+    it('is the same on the retry of a merge that never got an answer', async () => {
         const store = freshStore();
         store.addGuestItem('p1', 2);
-        vi.mocked(mergeCart).mockRejectedValueOnce(apiRejection(503, 'FAILED'));
-        vi.mocked(mergeCart).mockReturnValueOnce(Promise.reject(new Error('Network Error')));
+        vi.mocked(mergeCart).mockRejectedValueOnce(new Error('Network Error'));
+        vi.mocked(mergeCart).mockRejectedValueOnce(new Error('Network Error'));
 
         await store.mergeGuestCart().catch(() => undefined);
         await store.mergeGuestCart().catch(() => undefined);
@@ -462,10 +462,54 @@ describe('the merge Idempotency-Key', () => {
         expect(keyOfCall(2)).toBe(keyOfCall(0));
     });
 
+    it('is the same on the retry of a merge the API still has running (409 in flight)', async () => {
+        const store = freshStore();
+        store.addGuestItem('p1', 2);
+        vi.mocked(mergeCart).mockRejectedValueOnce(apiRejection(409, 'IDEMPOTENCY_IN_FLIGHT'));
+        await store.mergeGuestCart().catch(() => undefined);
+
+        await store.mergeGuestCart();
+
+        expect(keyOfCall(1)).toBe(keyOfCall(0));
+    });
+
+    it("is fresh after the API's own 5xx: it stores that answer for the key, and nothing was written", async () => {
+        const store = freshStore();
+        store.addGuestItem('p1', 2);
+        // The API's own problems carry the occurrence id; a gateway's bare answer does not.
+        vi.mocked(mergeCart).mockRejectedValueOnce({
+            ...apiRejection(500, 'INTERNAL_SERVER_ERROR'),
+            instance: 'urn:uuid:3b9f7c52-4d2e-4a57-9f8b-0f3c6a1d2e11'
+        });
+        await store.mergeGuestCart().catch(() => undefined);
+        expect(localStorage.getItem(GUEST_MERGE_ATTEMPT_STORAGE_KEY)).toBeNull();
+
+        await store.mergeGuestCart();
+
+        expect(keyOfCall(1)).not.toBe(keyOfCall(0));
+    });
+
+    it.each([502, 503, 504])(
+        'is the same after a gateway %i: the server may have merged and only the answer was lost',
+        async (status) => {
+            const store = freshStore();
+            store.addGuestItem('p1', 2);
+            vi.mocked(mergeCart).mockRejectedValueOnce(
+                apiRejection(status, 'INTERNAL_SERVER_ERROR')
+            );
+            await store.mergeGuestCart().catch(() => undefined);
+            expect(localStorage.getItem(GUEST_MERGE_ATTEMPT_STORAGE_KEY)).not.toBeNull();
+
+            await store.mergeGuestCart();
+
+            expect(keyOfCall(1)).toBe(keyOfCall(0));
+        }
+    );
+
     it('survives a reload: a retry from a new page load is still the same call', async () => {
         const first = freshStore();
         first.addGuestItem('p1', 2);
-        vi.mocked(mergeCart).mockRejectedValueOnce(apiRejection(503, 'FAILED'));
+        vi.mocked(mergeCart).mockRejectedValueOnce(new Error('Network Error'));
         await first.mergeGuestCart().catch(() => undefined);
         first.$dispose();
 
@@ -773,7 +817,7 @@ describe('the merge report', () => {
 
 describe('the guest list when the session ends', () => {
     it('is cleared, with the pending merge key, once a retryable failure meets a sign-out', async () => {
-        vi.mocked(mergeCart).mockRejectedValueOnce(apiRejection(503, 'FAILED'));
+        vi.mocked(mergeCart).mockRejectedValueOnce(new Error('Network Error'));
         const store = freshStore();
         store.addGuestItem('p1', 2);
         await signInAs('a');
