@@ -15,6 +15,7 @@
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { SECONDS } from './shard-balancer';
 
 /** Where every Cypress process appends its measured spec durations. Gitignored under `reports/`. */
 export const SPEC_DURATIONS_FILE = path.resolve(
@@ -70,4 +71,81 @@ export const readSpecDurations = (file = SPEC_DURATIONS_FILE): Record<string, nu
         }
     }
     return durations;
+};
+
+/** Where the committed median seconds per spec path live, so a CI runner with no history still balances. */
+export const SPEC_SECONDS_FILE = `${import.meta.dirname}/spec-seconds.json`;
+
+/**
+ * The median recorded seconds per spec path, over every run in the report.
+ *
+ * A median, not the latest: one slow run (a cold runner, a retry) must not move a spec's weight.
+ *
+ * @param file - a durations report, one JSON entry per line
+ * @param only - when given, specs outside it are left out
+ * @returns spec path to median seconds, rounded to whole seconds, keys sorted for a stable diff
+ */
+export const medianSpecSeconds = (
+    file = SPEC_DURATIONS_FILE,
+    only?: ReadonlySet<string>
+): Record<string, number> => {
+    const runs: Record<string, number[]> = {};
+    for (const line of existsSync(file) ? readFileSync(file, 'utf8').split('\n') : []) {
+        if (line.trim() === '') continue;
+        try {
+            // Same single writer as `readSpecDurations`: a line that parses is a SpecDuration.
+            const entry = JSON.parse(line) as SpecDuration;
+            if (only === undefined || only.has(entry.spec))
+                (runs[entry.spec] ??= []).push(entry.seconds);
+        } catch {
+            /* skipped, see readSpecDurations */
+        }
+    }
+    return Object.fromEntries(
+        Object.entries(runs)
+            .toSorted(([a], [b]) => a.localeCompare(b))
+            .map(([spec, values]) => {
+                const sorted = values.toSorted((a, b) => a - b);
+                const middle = Math.floor(sorted.length / 2);
+                const median =
+                    sorted.length % 2 === 1
+                        ? sorted[middle]
+                        : (sorted[middle - 1] + sorted[middle]) / 2;
+                return [spec, Math.round(median)];
+            })
+    );
+};
+
+/**
+ * Seconds per spec for the balancer: this checkout's own recordings first, then the committed
+ * medians, then the hand-written table by basename.
+ *
+ * A recorded 0 s is no measurement (a spec that skipped itself), so it counts as none.
+ * A spec in none of them is absent from `seconds` (the balancer weighs it at the mean) and named
+ * in `unmeasured`, so a caller can warn instead of letting a new spec be weighed silently.
+ *
+ * @param files - every spec to weigh, as repo-relative posix paths
+ * @param recorded - this checkout's recordings, {@link readSpecDurations} by default
+ * @param committed - the committed medians, read from {@link SPEC_SECONDS_FILE} by default
+ * @returns the known seconds per spec path, and the specs with none
+ */
+export const resolveSpecSeconds = (
+    files: string[],
+    recorded: Partial<Record<string, number>> = readSpecDurations(),
+    committed: Partial<Record<string, number>> = existsSync(SPEC_SECONDS_FILE)
+        ? (JSON.parse(readFileSync(SPEC_SECONDS_FILE, 'utf8')) as Record<string, number>) // our own writer's output
+        : {}
+): { seconds: Record<string, number>; unmeasured: string[] } => {
+    const seconds: Record<string, number> = {};
+    const unmeasured: string[] = [];
+    for (const file of files) {
+        const basename = path.basename(file, '.cy.ts');
+        const known =
+            recorded[file] ??
+            committed[file] ??
+            (Object.hasOwn(SECONDS, basename) ? SECONDS[basename] : undefined);
+        if (known === undefined || known <= 0) unmeasured.push(file);
+        else seconds[file] = known;
+    }
+    return { seconds, unmeasured };
 };
