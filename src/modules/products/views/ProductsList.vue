@@ -17,6 +17,7 @@ export default {
  * The catalogue is public, so the split is on what the viewer may DO, not on being signed in.
  */
 import { computed, onMounted } from 'vue';
+import { useSlot } from '@/kernel/slots';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -88,6 +89,20 @@ const {
     loading,
     facets
 } = storeToRefs(useProductsStore());
+
+/**
+ * The availability watcher `inventory` contributes: it reads the availability of the products on
+ * this page for the cards' badges and buttons (read when the page changes and when the shopper
+ * comes back to the tab, but not more often than every 30 s). Details change rarely, so the list
+ * keeps its five minutes; stock changes with every sale. A slot because `inventory` owns the read
+ * and `products` cannot depend on it (`@/kernel/availability`).
+ */
+const availabilityWatchers = useSlot('availability-watch');
+
+/**
+ * The ids on the page, for the watcher.
+ */
+const pageProductIds = computed(() => pageItemList.value.map((product) => product.id));
 
 /**
  * Whether the signed-in visitor may see the admin-only actions (create, edit, delete).
@@ -524,6 +539,13 @@ const handleHardDelete = (productId: string, title: string) =>
                 data-test="products-grid"
             >
                 <TableLoadingBar v-if="loading" />
+                <component
+                    :is="watcher"
+                    v-for="(watcher, index) in availabilityWatchers"
+                    :key="index"
+                    :product-ids="pageProductIds"
+                    :stale-time="30 * 1000"
+                />
                 <ul class="grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     <li v-for="product in pageItemList" :key="product.id">
                         <ProductCard :product="product" />

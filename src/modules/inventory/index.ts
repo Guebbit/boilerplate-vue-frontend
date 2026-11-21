@@ -13,7 +13,10 @@
 
 export * from './store';
 export * from './composables/use-product-picker';
+export * from './composables/use-stock-count';
+export * from './composables/use-watch-availability';
 export * from './domain';
+export { default as AvailabilityWatcher } from './components/AvailabilityWatcher.vue';
 export { default as BackorderLimitDialog } from './components/BackorderLimitDialog.vue';
 export { default as MovementLedger } from './components/MovementLedger.vue';
 export { default as OpeningStockField } from './components/OpeningStockField.vue';

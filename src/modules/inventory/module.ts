@@ -88,6 +88,10 @@ export default {
     slots: {
         'product-create-extras': [
             defineAsyncComponent(() => import('./components/OpeningStockField.vue'))
+        ],
+        // The availability reads behind the product views' badges: renders nothing, see `@/kernel/availability`.
+        'availability-watch': [
+            defineAsyncComponent(() => import('./components/AvailabilityWatcher.vue'))
         ]
     }
 } satisfies AppModule;

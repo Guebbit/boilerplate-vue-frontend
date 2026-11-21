@@ -100,6 +100,13 @@ flowchart LR
 
 ## Cross-cutting strategies
 
+### Array query parameters
+
+The shared axios instance repeats an array parameter (`?id=a&id=b`, `paramsSerializer.indexes: null`
+in `client.ts`), which is what the contract declares (`style: form, explode: true`) and all the
+backend reads. axios' own default is `?id[]=a&id[]=b`, refused as an unknown field `id[]` (a `422`).
+`tests/unit/infrastructure/http/array-parameters.spec.ts` builds a real generated call and reads the URL.
+
 ### Auth-first routing
 
 Route guards run on every navigation. A guard that refuses a guest redirects to Login with `?continue=` preserved so the user lands back after login. A `401` on an API call is not a redirect: the interceptor renews the token and replays the request once, and only a dead session (the refresh answered 401/403) signs the visitor out.

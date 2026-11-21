@@ -20,7 +20,8 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aProduct } from '../../../../tests/support/unit/fixtures.ts';
-import type { Product } from '@types';
+import type { Product, ProductAvailability } from '@types';
+import { clearAvailability, recordAvailability } from '@/kernel/availability.ts';
 
 // The shop states the backorder promise; these cases are about the wording around it.
 vi.mock('@/modules/shop', async (importOriginal) => {
@@ -52,18 +53,32 @@ const SlotProbe = defineComponent({
 });
 
 /**
- * Mounts a card for `product`, with `contributions` in the `product-actions` slot.
+ * Mounts a card for `product`, with `contributions` in the `product-actions` slot, and the
+ * availability the watcher (rendered by the list) would already have read: in stock unless a case says otherwise,
+ * `null` for a read that has not landed.
  */
-const mountCard = (product: Product, contributions: Component[] = []) =>
-    mount(ProductCard, {
+const mountCard = (
+    product: Product,
+    contributions: Component[] = [],
+    availability: Partial<ProductAvailability> | null = {}
+) => {
+    if (availability)
+        recordAvailability(
+            product.id,
+            { productId: product.id, availability: 'in_stock', ...availability },
+            0
+        );
+    return mount(ProductCard, {
         props: { product },
         global: {
             plugins: [router, vuetify, i18n],
             provide: { [SLOTS_KEY as symbol]: { 'product-actions': contributions } }
         }
     });
+};
 
 beforeEach(() => {
+    clearAvailability();
     setActivePinia(createPinia());
     return loadLocale('en').then(() => router.push('/en/products').then(() => router.isReady()));
 });
@@ -77,13 +92,15 @@ describe('ProductCard — what a shopper reads', () => {
     });
 
     it('marks a product with nothing left as out of stock', () => {
-        const wrapper = mountCard(aProduct({ inStock: false }));
+        const wrapper = mountCard(aProduct(), [], { availability: 'out_of_stock' });
 
         expect(wrapper.get('[data-test=product-card-availability]').text()).toBe('Out of stock');
     });
 
     it('marks an off-sale product as not available, ahead of its stock', () => {
-        const wrapper = mountCard(aProduct({ purchasable: false, inStock: true }));
+        const wrapper = mountCard(aProduct({ purchasable: false }), [], {
+            availability: 'out_of_stock'
+        });
 
         expect(wrapper.get('[data-test=product-card-availability]').text()).toBe(
             'Not available right now'
@@ -94,19 +111,20 @@ describe('ProductCard — what a shopper reads', () => {
     });
 
     it('reads a preorder whose allowance is full as sold out', () => {
-        const wrapper = mountCard(
-            aProduct({ preorder: true, inStock: false, releaseDate: '2027-03-15' })
-        );
+        const wrapper = mountCard(aProduct({ releaseDate: '2027-03-15' }), [], {
+            availability: 'out_of_stock'
+        });
         const badge = wrapper.get('[data-test=product-card-availability]');
 
         expect(badge.text()).toBe('Out of stock');
         expect(badge.attributes('data-shelf')).toBe('out-of-stock');
     });
 
-    it('tells a preorder from sold out, with the date it ships from', () => {
-        const wrapper = mountCard(
-            aProduct({ preorder: true, inStock: true, releaseDate: '2027-03-15' })
-        );
+    it('tells a preorder from sold out, with the date the server says it ships from', () => {
+        const wrapper = mountCard(aProduct(), [], {
+            availability: 'preorder',
+            availabilityDate: '2027-03-15'
+        });
         const badge = wrapper.get('[data-test=product-card-availability]');
 
         expect(badge.text()).toMatch(/^Preorder · ships .*2027/);
@@ -114,10 +132,14 @@ describe('ProductCard — what a shopper reads', () => {
     });
 
     it('tells a backorder from sold out, always with its promise', () => {
-        const dated = mountCard(
-            aProduct({ backorder: true, inStock: false, restockDate: '2027-03-15' })
-        );
-        const undated = mountCard(aProduct({ backorder: true, inStock: false }));
+        const dated = mountCard(aProduct({ restockDate: '2027-03-15' }), [], {
+            availability: 'backorder',
+            availabilityDate: '2027-03-15'
+        });
+        const undated = mountCard(aProduct({ id: 'p-undated' }), [], {
+            availability: 'backorder',
+            availabilityDate: '2027-01-20'
+        });
 
         const badge = dated.get('[data-test=product-card-availability]');
         expect(badge.text()).toMatch(/^Backorder · ships by .*2027/);
@@ -127,14 +149,17 @@ describe('ProductCard — what a shopper reads', () => {
         );
     });
 
-    it.each([[3], [undefined]])(
-        'marks an in-stock product with %j available as in stock — the flag decides, not the count',
-        (available) => {
-            const wrapper = mountCard(aProduct({ inStock: true, available }));
+    it('marks an in-stock product as in stock', () => {
+        const wrapper = mountCard(aProduct());
 
-            expect(wrapper.get('[data-test=product-card-availability]').text()).toBe('In stock');
-        }
-    );
+        expect(wrapper.get('[data-test=product-card-availability]').text()).toBe('In stock');
+    });
+
+    it('shows no badge until the availability is loaded, rather than a wrong one', () => {
+        const wrapper = mountCard(aProduct(), [], null);
+
+        expect(wrapper.find('[data-test=product-card-availability]').exists()).toBe(false);
+    });
 
     it('links the title, and only the title, to the product page', () => {
         const wrapper = mountCard(aProduct({ id: 'p9', title: 'Oak stool' }));

@@ -28,6 +28,8 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
+import { useSlot } from '@/kernel/slots';
+import { availabilityOf } from '@/kernel/availability.ts';
 import { useProductsStore } from '../store';
 import { productsSchema } from '../schemas.ts';
 import { useTranslatedEntityForm } from '../composables/use-translated-entity-form.ts';
@@ -82,6 +84,19 @@ const { id } = defineProps<{
  * Product store's admin-record fetch and update actions.
  */
 const { fetchProductForEdit, updateProduct } = useProductsStore();
+
+/**
+ * The availability watcher `inventory` contributes: whether the product is a preorder right now,
+ * which the release-date hint says, is the server's `availability`, read fresh (`staleTime` 0)
+ * since a release date passes without any edit. A slot because `inventory` owns the read
+ * (`@/kernel/availability`).
+ */
+const availabilityWatchers = useSlot('availability-watch');
+
+/**
+ * The product id as the watcher takes it.
+ */
+const watchedIds = computed(() => (id ? [id] : []));
 
 /**
  * Whether the admin record is currently loading.
@@ -436,6 +451,13 @@ const asideFields = computed<DetailFieldRow[]>(() => [
 
 <template>
     <div id="product-edit-page">
+        <component
+            :is="watcher"
+            v-for="(watcher, index) in availabilityWatchers"
+            :key="index"
+            :product-ids="watchedIds"
+            :stale-time="0"
+        />
         <ItemDetailLayout accent="primary">
             <template #hero>
                 <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
@@ -568,7 +590,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             type="date"
                             :label="t('product-edit-page.label-release-date')"
                             :hint="
-                                adminProduct?.preorder
+                                (id ? availabilityOf(id)?.availability === 'preorder' : false)
                                     ? t('product-edit-page.hint-release-date-preorder')
                                     : t('product-edit-page.hint-release-date')
                             "

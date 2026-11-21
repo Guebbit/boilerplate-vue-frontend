@@ -19,14 +19,15 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import Product from '../views/ProductTarget.vue';
 import { useProductsStore } from '../store';
+import { clearAvailability, recordAvailability, recordStockCount } from '@/kernel/availability.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
-import type { Product as ProductType } from '@types';
-import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
+import type { Product as ProductType, ProductAvailability } from '@types';
+import { NO_PRODUCT_ACTIONS, aProduct } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -51,13 +52,26 @@ const SlotProbe = defineComponent({
 /**
  * Mounts the detail page with `product` already the store's `currentProduct` — nothing depends on
  * the route's own fetch, which is what lets a single spec cover a shape the demo dataset does not
- * happen to seed today.
+ * happen to seed today. The availability is what `inventory`'s watcher would already have read into
+ * the kernel port: no module contributes the watcher here, so nothing is fetched.
  *
  * @param product - The shape under test.
  * @param contributions - What other modules would put in the `product-actions` slot.
+ * @param availability - What the availability read answered; in stock unless a case says otherwise,
+ *  `null` for a read that has not landed.
  * @returns The mounted wrapper.
  */
-const mountProduct = (product: ProductType, contributions: Component[] = []) => {
+const mountProduct = (
+    product: ProductType,
+    contributions: Component[] = [],
+    availability: Partial<ProductAvailability> | null = {}
+) => {
+    if (availability)
+        recordAvailability(
+            product.id,
+            { productId: product.id, availability: 'in_stock', ...availability },
+            0
+        );
     const products = useProductsStore();
     vi.spyOn(products, 'watchProduct').mockImplementation(() => noopWatchHandle());
     products.addProduct(product);
@@ -74,6 +88,7 @@ const mountProduct = (product: ProductType, contributions: Component[] = []) => 
 };
 
 beforeEach(() => {
+    clearAvailability();
     setActivePinia(createPinia());
     return loadLocale('en').then(() =>
         router.push('/en/products/placeholder').then(() => router.isReady())
@@ -82,19 +97,20 @@ beforeEach(() => {
 
 describe('the shelf', () => {
     it('shows an out-of-stock product as sold out', () => {
-        const wrapper = mountProduct({
-            id: 'p-out-of-stock',
-            title: 'Sold out widget',
-            price: '9.99',
-            currency: 'EUR',
-            inStock: false,
-            lowStock: false,
-            buyable: false,
-            actions: NO_PRODUCT_ACTIONS,
-            onHand: 3,
-            reserved: 3,
-            available: 0
-        });
+        const wrapper = mountProduct(
+            {
+                id: 'p-out-of-stock',
+                title: 'Sold out widget',
+                price: '9.99',
+                currency: 'EUR',
+                inStock: false,
+                lowStock: false,
+                buyable: false,
+                actions: NO_PRODUCT_ACTIONS
+            },
+            [],
+            { availability: 'out_of_stock' }
+        );
 
         expect(wrapper.get('[data-test=product-stock]').text()).toContain('Out of stock');
     });
@@ -132,7 +148,8 @@ describe('the shelf', () => {
         expect(wrapper.find('[data-test=product-no-withdrawal]').exists()).toBe(false);
     });
 
-    it('shows the stock left for an in-stock product', () => {
+    it('shows the shelf count beside the signal to a stock reader, as the watcher recorded it', () => {
+        recordStockCount('p-in-stock', 4);
         const wrapper = mountProduct({
             id: 'p-in-stock',
             title: 'Available widget',
@@ -141,18 +158,14 @@ describe('the shelf', () => {
             inStock: true,
             lowStock: false,
             buyable: true,
-            actions: NO_PRODUCT_ACTIONS,
-            onHand: 5,
-            reserved: 1,
-            available: 4
+            actions: NO_PRODUCT_ACTIONS
         });
 
-        expect(wrapper.get('[data-test=product-stock]').text()).not.toContain('Out of stock');
         expect(wrapper.get('[data-test=product-stock]').text()).toContain('4');
     });
 
-    // A shopper's product carries the flags only — no counters to print.
-    it('shows only "In stock" to a reader without the counters', () => {
+    // A shopper has no count recorded: the signal alone.
+    it('shows only "In stock" when no shelf count was recorded', () => {
         const wrapper = mountProduct({
             id: 'p-flags-only',
             title: 'Widget',
@@ -180,6 +193,69 @@ describe('the shelf', () => {
         });
 
         expect(wrapper.get('[data-test=product-stock]').text()).toContain('Low stock');
+    });
+
+    it('names the release date of a preorder, from the availability', () => {
+        const wrapper = mountProduct(aProduct({ id: 'p-pre' }), [], {
+            availability: 'preorder',
+            availabilityDate: '2027-03-15'
+        });
+
+        expect(wrapper.get('[data-test=product-stock]').text()).toMatch(/2027/);
+    });
+
+    it('reads the empty-value glyph until the availability is known', () => {
+        const wrapper = mountProduct(aProduct({ id: 'p-unknown' }), [], null);
+
+        expect(wrapper.get('[data-test=product-stock]').text()).toContain('—');
+        expect(wrapper.get('[data-test=product-stock]').text()).not.toContain('In stock');
+    });
+});
+
+/** What the stand-in watcher renders: nothing. */
+const renderNothing = () => h('span');
+
+describe('the availability-watch slot', () => {
+    /** Records the props the page hands the contributed watcher. */
+    const seen: { productIds: readonly string[]; staleTime: number; withStockCount: boolean }[] =
+        [];
+
+    /** A stand-in for `inventory`'s watcher: renders nothing and notes what it was given. */
+    const WatchProbe = defineComponent({
+        props: {
+            productIds: { type: Array, required: true },
+            staleTime: { type: Number, required: true },
+            withStockCount: { type: Boolean, default: false }
+        },
+        setup: (props) => {
+            seen.push({
+                productIds: props.productIds as string[],
+                staleTime: props.staleTime,
+                withStockCount: props.withStockCount
+            });
+            return renderNothing;
+        }
+    });
+
+    it('hands the contributed watcher this page’s product, no age allowed, and asks for the shelf count', () => {
+        seen.length = 0;
+        const product = aProduct({ id: 'p-watched' });
+        const products = useProductsStore();
+        vi.spyOn(products, 'watchProduct').mockImplementation(() => noopWatchHandle());
+        products.addProduct(product);
+        products.selectedProductId = product.id;
+
+        mount(Product, {
+            props: { id: product.id },
+            global: {
+                plugins: [router, vuetify, i18n],
+                provide: {
+                    [SLOTS_KEY as symbol]: { 'availability-watch': [WatchProbe] }
+                }
+            }
+        });
+
+        expect(seen).toEqual([{ productIds: ['p-watched'], staleTime: 0, withStockCount: true }]);
     });
 });
 

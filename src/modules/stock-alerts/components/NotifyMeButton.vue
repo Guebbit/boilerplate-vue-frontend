@@ -14,6 +14,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Product } from '@types';
+import { availabilityOf } from '@/kernel/availability.ts';
 import { useStockAlertsStore } from '../store';
 
 /**
@@ -47,10 +48,11 @@ const { loading } = storeToRefs(alerts);
 const { message: error, report: reportError, clear: clearError } = useBlockingError();
 
 /**
- * Whether the product cannot be ordered right now: the server's `buyable`, the same rule that
- * decides a product is back. A product that can be ordered is not offered this button.
+ * Whether the product cannot be ordered right now: the server's `out_of_stock`, which covers sold
+ * out and off sale, the same answer that decides a product is back. A product that can be ordered,
+ * or whose availability is not known yet, is not offered this button.
  */
-const offered = () => !product.buyable;
+const offered = () => availabilityOf(product.id)?.availability === 'out_of_stock';
 
 /**
  * Toggles the request: asked becomes canceled, anything else is asked.
