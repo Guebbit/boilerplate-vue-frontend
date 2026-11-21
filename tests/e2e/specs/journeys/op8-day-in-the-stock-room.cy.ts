@@ -61,9 +61,11 @@ describe('OP8 · A day in the stock room', () => {
             cy.get('[data-test=receipt-note] input').type('OP8 supplier delivery');
             cy.get('[data-test=receipt-submit]').click();
             cy.get('[data-test=receipt-error]').should('not.exist');
-            cy.apiAs<ProductLike>('admin', 'GET', `/products/${product.id}`).should((found) => {
-                expect(Number(found?.available)).to.equal(STARTING_UNITS + DELIVERED);
-            });
+            cy.apiAs<ProductLike>('admin', 'GET', `/inventory/levels/${product.id}`).should(
+                (found) => {
+                    expect(Number(found?.available)).to.equal(STARTING_UNITS + DELIVERED);
+                }
+            );
 
             cy.step('damaged units are written off, with a note');
             pickProduct('adjust-product', title);
@@ -72,9 +74,11 @@ describe('OP8 · A day in the stock room', () => {
             cy.get('[data-test=adjust-note] input').type('OP8 dropped pallet');
             cy.get('[data-test=adjust-submit]').click();
             cy.get('[data-test=adjust-error]').should('not.exist');
-            cy.apiAs<ProductLike>('admin', 'GET', `/products/${product.id}`).should((found) => {
-                expect(Number(found?.available)).to.equal(STARTING_UNITS + DELIVERED - DAMAGED);
-            });
+            cy.apiAs<ProductLike>('admin', 'GET', `/inventory/levels/${product.id}`).should(
+                (found) => {
+                    expect(Number(found?.available)).to.equal(STARTING_UNITS + DELIVERED - DAMAGED);
+                }
+            );
 
             cy.step('the product is no longer low stock');
             cy.reload();

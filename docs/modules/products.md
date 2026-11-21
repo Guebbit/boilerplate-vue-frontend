@@ -45,20 +45,21 @@ dictionary through `src/modules/products/tests/products-store.ts`, so no product
 This page is about the details. Availability has its own lifetime, [below](#availability).
 
 Products are cached for **five minutes** (`staleTime` in `store.ts`), and an expired entry keeps
-rendering while the refetch runs. That window is the lists': a stock count a few minutes old on a
-grid is fine, because the server checks stock again at add-to-cart and at checkout.
+rendering while the refetch runs. That window is the lists': a price or title a few minutes old on a
+grid is fine, because the server re-checks the product at add-to-cart and at checkout. Stock is not
+in this answer at all: it is the availability read below, with its own lifetime.
 
 The **product page** does not wait for it. `ProductTarget.vue` watches its record with `staleTime: 0`, so
 every open renders the cached copy at once and swaps the fresh one in (stale-while-revalidate, the
-default behaviour of the query library the toolkit sits on). The shopper's own cart and checkout
-writes also end the window early, through `invalidateProductsCache` — the one handle `cart` reaches
-through the barrel.
+default behaviour of the query library the toolkit sits on). A checkout the server refuses for good
+also ends the window early, through `invalidateProductsCache` — the one handle `cart` reaches
+through the barrel. A cart write does not: stock is the availability read.
 
 ```mermaid
 flowchart LR
     L["List read<br/>(5-minute window)"] --> C[("products cache")]
     P["Product page opens"] -->|"staleTime 0: refetch"| C
-    W["Cart or checkout write"] -->|"invalidateProductsCache"| C
+    W["Checkout refused for good"] -->|"invalidateProductsCache"| C
     C -->|"cached copy at once,<br/>fresh copy swapped in"| V["What the shopper sees"]
 ```
 
@@ -127,9 +128,9 @@ segment above a dynamic one regardless of order, so `create` could never be swal
 but the users routes read the same way, and a reader should not have to know the ranking rules to
 be sure.
 
-Stock is read-only here. `onHand`, `reserved` and `available` arrive serialized on every product,
-and no form on these screens writes them: changing stock is an [`inventory`](./inventory.md)
-operation.
+The product carries no stock. No form on these screens writes it, and none reads it from the
+product: a shopper's signal is the availability read, and a stock reader's counters come from
+`GET /inventory/levels/{id}`. Changing stock is an [`inventory`](./inventory.md) operation.
 
 ## Product states on screen
 

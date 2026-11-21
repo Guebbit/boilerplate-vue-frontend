@@ -23,7 +23,6 @@ import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useInventoryStore } from '../store.ts';
-import { invalidateProductsCache } from '@/modules/products';
 import { useProductPicker, useProductPickerPin } from '../composables/use-product-picker.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -153,9 +152,6 @@ const submitForm = () =>
                     )
                 );
                 form.value.note = '';
-                // The catalogue caches its own copy of the counters: mark it stale so every
-                // product screen refetches. Fire-and-forget — a failed refetch is not a failed write.
-                invalidateProductsCache();
             })
             .catch((error: unknown) => {
                 // A refusal that names a field lands on it; the 409 has no field, so it blocks here.

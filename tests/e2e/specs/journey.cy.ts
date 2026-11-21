@@ -42,7 +42,7 @@ describe('The customer journey', () => {
         cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
         cy.get('[data-test=product-stock]').invoke('text').should('not.match', /\d/);
         cy.subjectId('product.rich').then((productId) => {
-            cy.apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`).then(
+            cy.apiAs<{ available: number }>('admin', 'GET', `/inventory/levels/${productId}`).then(
                 (product) => {
                     stockBeforeBuying = Number(product?.available);
                 }
@@ -115,11 +115,13 @@ describe('The customer journey', () => {
         cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
         cy.subjectId('product.rich').then((productId) => {
             // Read as the admin again, retried until the cancel's release has landed.
-            cy.apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`).should(
-                (product) => {
-                    expect(product?.available).to.equal(stockBeforeBuying);
-                }
-            );
+            cy.apiAs<{ available: number }>(
+                'admin',
+                'GET',
+                `/inventory/levels/${productId}`
+            ).should((product) => {
+                expect(product?.available).to.equal(stockBeforeBuying);
+            });
         });
     });
 });

@@ -72,9 +72,6 @@ const mountWishlist = (
         title: PRODUCT_TITLE,
         price: '1.00',
         currency: 'EUR',
-        inStock: true,
-        lowStock: false,
-        buyable: true,
         actions: NO_PRODUCT_ACTIONS
     });
     // `onMounted` fetches the lines and then the products; both are seeded above, so both are

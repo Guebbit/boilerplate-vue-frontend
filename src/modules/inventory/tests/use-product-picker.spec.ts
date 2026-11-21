@@ -42,9 +42,6 @@ const WIDGET: Product = {
     title: 'Widget',
     price: '9.99',
     currency: 'EUR',
-    inStock: true,
-    lowStock: false,
-    buyable: true,
     actions: NO_PRODUCT_ACTIONS
 };
 
@@ -54,9 +51,6 @@ const GADGET: Product = {
     title: 'Gadget',
     price: '4.50',
     currency: 'EUR',
-    inStock: true,
-    lowStock: false,
-    buyable: true,
     actions: NO_PRODUCT_ACTIONS
 };
 

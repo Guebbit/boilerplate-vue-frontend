@@ -68,13 +68,7 @@ const IN_STOCK: Product = {
     title: 'Available widget',
     price: '9.99',
     currency: 'EUR',
-    inStock: true,
-    lowStock: false,
-    buyable: true,
-    actions: NO_PRODUCT_ACTIONS,
-    onHand: 5,
-    reserved: 1,
-    available: 4
+    actions: NO_PRODUCT_ACTIONS
 };
 
 /**

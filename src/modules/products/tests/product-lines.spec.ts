@@ -49,9 +49,6 @@ const answerWithVisibleIds = () =>
                         title: `Title of ${id}`,
                         price: '1.00',
                         currency: 'EUR',
-                        inStock: true,
-                        lowStock: false,
-                        buyable: true,
                         actions: NO_PRODUCT_ACTIONS
                     })),
                     meta: { totalItems: ids.length, page: 1, pageSize: 100, totalPages: 1 }

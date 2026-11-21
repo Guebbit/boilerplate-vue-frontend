@@ -25,9 +25,6 @@ const PRODUCT: Product = {
     title: 'Widget',
     price: '1.00',
     currency: 'EUR',
-    inStock: true,
-    lowStock: false,
-    buyable: true,
     actions: NO_PRODUCT_ACTIONS
 };
 

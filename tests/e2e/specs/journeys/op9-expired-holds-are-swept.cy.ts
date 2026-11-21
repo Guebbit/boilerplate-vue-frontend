@@ -43,9 +43,11 @@ describe('OP9 · Expired holds are swept', () => {
 
                 cy.step('the customer checks out by card and does not pay');
                 cy.loginAs('user');
-                cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).then((product) => {
-                    shelf.before = Number(product?.available);
-                });
+                cy.apiAs<ProductLike>('admin', 'GET', `/inventory/levels/${productId}`).then(
+                    (product) => {
+                        shelf.before = Number(product?.available);
+                    }
+                );
                 cy.visit(`/en/products/${productId}`);
                 addOpenProductToCart();
                 cy.goToCart();
@@ -54,7 +56,7 @@ describe('OP9 · Expired holds are swept', () => {
                 cy.get('[data-test=payment-submit]').should('exist');
                 cy.get('[data-test=payment-deadline]').should('exist');
                 idFromLocation().then((orderId) => {
-                    cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).should(
+                    cy.apiAs<ProductLike>('admin', 'GET', `/inventory/levels/${productId}`).should(
                         (product) => {
                             expect(
                                 Number(product?.available),
@@ -79,7 +81,7 @@ describe('OP9 · Expired holds are swept', () => {
                     cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`).should((order) => {
                         expect(order?.status).to.equal('canceled');
                     });
-                    cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).should(
+                    cy.apiAs<ProductLike>('admin', 'GET', `/inventory/levels/${productId}`).should(
                         (product) => {
                             expect(Number(product?.available)).to.equal(shelf.before);
                         }

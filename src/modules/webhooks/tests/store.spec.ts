@@ -76,6 +76,17 @@ const lastRequest = () => {
 };
 
 /**
+ * How many times the subscription's own record was read.
+ */
+const subscriptionReads = () =>
+    vi
+        .mocked(orvalMutator)
+        .mock.calls.filter(
+            ([config]) =>
+                (config as { url: string }).url === `/webhooks/subscriptions/${SUBSCRIPTION.id}`
+        ).length;
+
+/**
  * The JSON body of the most recent request.
  */
 const lastBody = (schema: ZodType) => contractRequest(schema, lastRequest().data);
@@ -362,6 +373,26 @@ describe('useWebhooksStore', () => {
                 expect(store.currentSubscription).toMatchObject({ id: SUBSCRIPTION.id });
                 scope.stop();
             });
+        });
+
+        /**
+         * A subscription's health is written by deliveries, not by an edit, so a kept copy would
+         * never learn it is old: every open asks the server again (a 304 while nothing moved).
+         */
+        it('asks the server again when the same record is opened a second time', () => {
+            const store = useWebhooksStore();
+            const first = effectScope();
+            first.run(() => store.watchSubscription(() => SUBSCRIPTION.id));
+
+            return flush()
+                .then(() => {
+                    first.stop();
+                    effectScope().run(() => store.watchSubscription(() => SUBSCRIPTION.id));
+                    return flush();
+                })
+                .then(() => {
+                    expect(subscriptionReads()).toBe(2);
+                });
         });
 
         it('clears the selection for an undefined id, without any call', () => {

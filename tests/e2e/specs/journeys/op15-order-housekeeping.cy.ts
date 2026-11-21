@@ -58,11 +58,13 @@ describe('OP15 · Order housekeeping', () => {
                     cy.subjectId('product.rich').then((productId) => {
                         const shelf = { before: 0 };
                         cy.loginAs('manager');
-                        cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).then(
-                            (product) => {
-                                shelf.before = Number(product?.available);
-                            }
-                        );
+                        cy.apiAs<ProductLike>(
+                            'admin',
+                            'GET',
+                            `/inventory/levels/${productId}`
+                        ).then((product) => {
+                            shelf.before = Number(product?.available);
+                        });
 
                         cy.step(
                             'only a canceled order can be hidden: an open one offers no delete'
@@ -124,7 +126,12 @@ describe('OP15 · Order housekeeping', () => {
                         cy.get('[data-test=row-view]').should('not.exist');
                         customerListing(unpaidId).should('deep.equal', []);
                         eventually(
-                            () => cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`),
+                            () =>
+                                cy.apiAs<ProductLike>(
+                                    'admin',
+                                    'GET',
+                                    `/inventory/levels/${productId}`
+                                ),
                             (product) => Number(product?.available) > shelf.before
                         ).should((product) => {
                             expect(Number(product?.available)).to.equal(shelf.before + 1);

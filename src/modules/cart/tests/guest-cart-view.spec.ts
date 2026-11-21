@@ -56,9 +56,6 @@ const aProduct = (id: string, price: string): Product => ({
     title: `Product ${id}`,
     price,
     currency: 'EUR',
-    inStock: true,
-    lowStock: false,
-    buyable: true,
     actions: NO_PRODUCT_ACTIONS
 });
 

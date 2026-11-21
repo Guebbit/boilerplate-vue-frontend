@@ -146,7 +146,7 @@ describe('ProductEdit — release date', () => {
     const RELEASE = '2027-03-15';
 
     it('shows the day of a dated product in the input, as the server sent it', () =>
-        mountHydrated({ releaseDate: RELEASE, preorder: true }).then((wrapper) => {
+        mountHydrated({ releaseDate: RELEASE }).then((wrapper) => {
             const input = wrapper.get('[data-test=product-release-date-field] input');
 
             expect((input.element as HTMLInputElement).value).toBe('2027-03-15');

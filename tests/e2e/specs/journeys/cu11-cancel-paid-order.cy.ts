@@ -32,7 +32,7 @@ interface OrderLike {
  */
 const unitsAvailable = (productId: string): Cypress.Chainable<number> =>
     cy
-        .apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`)
+        .apiAs<{ available: number }>('admin', 'GET', `/inventory/levels/${productId}`)
         .then((product) => Number(product?.available));
 
 describe('CU11 · I cancel a paid order and get my money back', () => {
@@ -96,11 +96,13 @@ describe('CU11 · I cancel a paid order and get my money back', () => {
                 orderMailTo('user', orderId, 'Your refund has been issued');
 
                 cy.step('the units are back on the shelf');
-                cy.apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`).should(
-                    (product) => {
-                        expect(product?.available).to.equal(shelf.before + shelf.units);
-                    }
-                );
+                cy.apiAs<{ available: number }>(
+                    'admin',
+                    'GET',
+                    `/inventory/levels/${productId}`
+                ).should((product) => {
+                    expect(product?.available).to.equal(shelf.before + shelf.units);
+                });
                 cy.visit(`/en/products/${productId}`);
                 cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
 

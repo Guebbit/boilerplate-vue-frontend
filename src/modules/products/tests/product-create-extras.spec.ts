@@ -61,9 +61,7 @@ beforeEach(() => {
                 parseOrvalFixture('POST', '/products', {
                     id: 'p2',
                     title: 'New',
-                    price: '1.00',
-                    inStock: false,
-                    lowStock: false
+                    price: '1.00'
                 })
             );
         return Promise.resolve(undefined);

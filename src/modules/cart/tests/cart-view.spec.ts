@@ -1290,9 +1290,6 @@ const product = (id: string, noWithdrawal: boolean) => ({
     title: `Product ${id}`,
     price: '10.00',
     currency: 'EUR',
-    inStock: true,
-    lowStock: false,
-    buyable: true,
     actions: NO_PRODUCT_ACTIONS,
     noWithdrawal
 });

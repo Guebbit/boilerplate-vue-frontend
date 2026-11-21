@@ -115,8 +115,8 @@ const TRANSLATION_LOCALES_KEY = ['translation-locales'];
 /**
  * Marks everything cached about products stale, and refetches what is on screen.
  *
- * Exported through the barrel for a write in another module that moves the numbers a product page
- * shows (the shopper's own cart and checkout move stock): cached copies keep rendering while the
+ * Exported through the barrel for a caller that learns the cached details are out of date (a
+ * checkout the server refused over a changed product): cached copies keep rendering while the
  * refetch runs, so nothing flickers. TanStack matches the key by PREFIX, so every list, page,
  * search and record is reached:
  * https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientinvalidatequeries
@@ -344,9 +344,9 @@ export const useProductsStore = defineStore('products', () => {
              * — an expired entry keeps rendering while the refetch runs — so the cost of the
              * shorter window is a background request, not a spinner.
              *
-             * The product PAGE does not wait for it: `ProductTarget.vue` refetches on every open, because
-             * that is where a stock number gets read. The shopper's own cart and checkout writes
-             * also end this window early (`invalidateProductsCache`).
+             * The product PAGE does not wait for it: `ProductTarget.vue` refetches on every open. A
+             * checkout the server refuses for good also ends this window early
+             * (`invalidateProductsCache`).
              */
             staleTime: 5 * 60 * 1000
         }

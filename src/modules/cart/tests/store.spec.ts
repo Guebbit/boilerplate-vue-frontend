@@ -642,8 +642,9 @@ describe('useCartStore', () => {
     });
 
     /**
-     * The shopper's own writes move what the product pages say (a reservation at checkout above
-     * all), so each one ends the products cache's five-minute window early.
+     * A checkout the server refuses for good says the cached product details are out of date (a
+     * product pulled, a price moved), so it ends the products cache's five-minute window early. The
+     * shopper's own cart writes do not: stock is the availability read, not part of the details.
      */
     describe('the products cache', () => {
         beforeEach(() =>
@@ -651,27 +652,6 @@ describe('useCartStore', () => {
                 .fetchCart()
                 .then(() => undefined)
         );
-
-        it.each([
-            ['addCartItem', (store: ReturnType<typeof useCartStore>) => store.addCartItem('p1', 1)],
-            [
-                'updateCartItem',
-                (store: ReturnType<typeof useCartStore>) => store.updateCartItem('p1', 2)
-            ],
-            [
-                'removeCartItem',
-                (store: ReturnType<typeof useCartStore>) => store.removeCartItem('p1')
-            ],
-            ['clearCart', (store: ReturnType<typeof useCartStore>) => store.clearCart()],
-            ['reorder', (store: ReturnType<typeof useCartStore>) => store.reorder('o1')],
-            ['checkout', (store: ReturnType<typeof useCartStore>) => store.checkout()]
-        ])('is invalidated by %s', (_name, write) => {
-            const spy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
-
-            return write(useCartStore()).then(() => {
-                expect(spy).toHaveBeenCalledWith({ queryKey: ['products'] });
-            });
-        });
 
         it('is invalidated by a checkout the server refused for good', () => {
             const spy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);

@@ -85,9 +85,10 @@ const historyTo = useHistoryLink(() => (currentSubscription.value ? id : undefin
 
 /**
  * Selects and loads the subscription whenever the route id changes; a missing or forbidden one
- * leaves for the Error page instead of sitting on placeholders.
+ * leaves for the Error page instead of sitting on placeholders. `staleTime: 0`: the failure streak
+ * and the auto-disable are written by deliveries, so a kept copy would never learn it is old.
  */
-watchSubscription(() => id, { onError: useMissingRecord() });
+watchSubscription(() => id, { staleTime: 0, onError: useMissingRecord() });
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.

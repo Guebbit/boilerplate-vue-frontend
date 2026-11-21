@@ -103,9 +103,6 @@ describe('the shelf', () => {
                 title: 'Sold out widget',
                 price: '9.99',
                 currency: 'EUR',
-                inStock: false,
-                lowStock: false,
-                buyable: false,
                 actions: NO_PRODUCT_ACTIONS
             },
             [],
@@ -121,9 +118,6 @@ describe('the shelf', () => {
             title: 'Engraved bowl',
             price: '19.99',
             currency: 'EUR',
-            inStock: true,
-            lowStock: false,
-            buyable: true,
             actions: NO_PRODUCT_ACTIONS,
             noWithdrawal: true
         });
@@ -139,9 +133,6 @@ describe('the shelf', () => {
             title: 'Plain bowl',
             price: '9.99',
             currency: 'EUR',
-            inStock: true,
-            lowStock: false,
-            buyable: true,
             actions: NO_PRODUCT_ACTIONS
         });
 
@@ -155,9 +146,6 @@ describe('the shelf', () => {
             title: 'Available widget',
             price: '9.99',
             currency: 'EUR',
-            inStock: true,
-            lowStock: false,
-            buyable: true,
             actions: NO_PRODUCT_ACTIONS
         });
 
@@ -171,28 +159,10 @@ describe('the shelf', () => {
             title: 'Widget',
             price: '9.99',
             currency: 'EUR',
-            inStock: true,
-            lowStock: false,
-            buyable: true,
             actions: NO_PRODUCT_ACTIONS
         });
 
         expect(wrapper.get('[data-test=product-stock]').text()).toContain('In stock');
-    });
-
-    it('warns "Low stock" when the server raises the flag, with no number', () => {
-        const wrapper = mountProduct({
-            id: 'p-low',
-            title: 'Widget',
-            price: '9.99',
-            currency: 'EUR',
-            inStock: true,
-            lowStock: true,
-            buyable: true,
-            actions: NO_PRODUCT_ACTIONS
-        });
-
-        expect(wrapper.get('[data-test=product-stock]').text()).toContain('Low stock');
     });
 
     it('names the release date of a preorder, from the availability', () => {
@@ -267,9 +237,6 @@ describe('the product-actions slot', () => {
                 title: 'Slotted widget',
                 price: '1.00',
                 currency: 'EUR',
-                inStock: true,
-                lowStock: false,
-                buyable: true,
                 actions: NO_PRODUCT_ACTIONS
             },
             [SlotProbe]
@@ -284,9 +251,6 @@ describe('the product-actions slot', () => {
             title: 'Bare widget',
             price: '1.00',
             currency: 'EUR',
-            inStock: true,
-            lowStock: false,
-            buyable: true,
             actions: NO_PRODUCT_ACTIONS
         });
 
@@ -307,9 +271,6 @@ describe('a barebones product', () => {
             title: 'Bare widget',
             price: '1.00',
             currency: 'EUR',
-            inStock: true,
-            lowStock: false,
-            buyable: true,
             actions: NO_PRODUCT_ACTIONS
         });
 
@@ -322,9 +283,6 @@ describe('a barebones product', () => {
             title: 'Full widget',
             price: '1.00',
             currency: 'EUR',
-            inStock: true,
-            lowStock: false,
-            buyable: true,
             actions: NO_PRODUCT_ACTIONS,
             description: 'Everything a widget could want',
             categories: ['tools']
@@ -348,9 +306,6 @@ describe('the edit button', () => {
         title: 'Widget',
         price: '1.00',
         currency: 'EUR',
-        inStock: true,
-        lowStock: false,
-        buyable: true,
         actions: { update: false, delete: false, restore: false, hardDelete: false }
     };
 
@@ -389,9 +344,6 @@ describe('the page view', () => {
             title: 'Viewed widget',
             price: '9.99',
             currency: 'EUR',
-            inStock: true,
-            lowStock: false,
-            buyable: true,
             actions: NO_PRODUCT_ACTIONS
         });
 
@@ -425,9 +377,6 @@ const aShelfProduct = (): ProductType => ({
     title: 'Widget',
     price: '9.99',
     currency: 'EUR',
-    inStock: true,
-    lowStock: false,
-    buyable: true,
     actions: NO_PRODUCT_ACTIONS
 });
 

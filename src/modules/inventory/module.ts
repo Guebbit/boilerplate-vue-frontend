@@ -14,8 +14,7 @@ import routes from './routes';
 /**
  * The stock ledger and the preorder board, admin-side.
  *
- * A recorded movement changes stock, so the stock-movement form asks `products` to drop its cached
- * catalogue (`invalidateProductsCache`); the preorder board mounts `delivery`'s second tab. Deleting
+ * The preorder board mounts `delivery`'s second tab. Deleting
  * this module removes the boards and the ledger behind them; every shelf count stays correct, every
  * WHY goes unrecorded.
  *

@@ -73,6 +73,11 @@ response, secret included, to the view that needs it for the one-time reveal. `t
 asserts this directly: after either call, the plaintext never appears anywhere in
 `JSON.stringify(store.subscriptions)`.
 
+**A subscription is never kept.** The store's `staleTime` is 0, and so is the detail page's watcher:
+a subscription's health (the failure streak, the auto-disable) is written by deliveries, not by an
+edit, so nothing on this side could tell a kept copy it is old. Every open and every list read asks
+again, and the server answers a 304 while nothing moved.
+
 ::: tip Deleting this module
 Nothing outside `src/modules/webhooks/` references it — no store, no schema. `rm -rf` the folder
 and its line in `src/modules.ts`; `src/ui/organisms/SecretRevealModal.vue` stays (`api-keys` uses

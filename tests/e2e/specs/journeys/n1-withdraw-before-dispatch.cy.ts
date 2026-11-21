@@ -46,7 +46,7 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
         cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
         const shelf = { before: 0 };
         cy.subjectId('product.barebones').then((productId) => {
-            cy.apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`).then(
+            cy.apiAs<{ available: number }>('admin', 'GET', `/inventory/levels/${productId}`).then(
                 (product) => {
                     shelf.before = Number(product?.available);
                 }
@@ -115,11 +115,13 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
             cy.step('the stock is back on the shelf');
             cy.subjectId('product.barebones').then((productId) => {
                 // Read as the admin, retried until the cancel's release has landed.
-                cy.apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`).should(
-                    (product) => {
-                        expect(product?.available).to.equal(shelf.before);
-                    }
-                );
+                cy.apiAs<{ available: number }>(
+                    'admin',
+                    'GET',
+                    `/inventory/levels/${productId}`
+                ).should((product) => {
+                    expect(product?.available).to.equal(shelf.before);
+                });
             });
 
             cy.step('the acknowledgement mail names the order');

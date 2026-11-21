@@ -9,7 +9,6 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import StockMovementForm from '../components/StockMovementForm.vue';
 import { useInventoryStore } from '../store.ts';
-import { queryClient } from '@/infrastructure/query-client.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -101,16 +100,6 @@ describe('the receipt form', () => {
 
         return submitAmount(wrapper, 2.5, 'receipt').then(() => {
             expect(receiveSpy).not.toHaveBeenCalled();
-        });
-    });
-
-    it('marks the catalogue stale after a write lands, so product screens refetch their counters', () => {
-        const wrapper = mountForm('receipt');
-        vi.spyOn(useInventoryStore(), 'receive').mockResolvedValue(undefined);
-        const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
-
-        return submitAmount(wrapper, 5, 'receipt').then(() => {
-            expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['products'] });
         });
     });
 });

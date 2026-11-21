@@ -303,17 +303,11 @@ export const aProduct = (overrides: Partial<Product> = {}): Product => {
         title: 'Walnut desk',
         price: '120.00',
         currency: 'EUR',
-        inStock: true,
-        lowStock: false,
         active: true,
         actions: NO_PRODUCT_ACTIONS,
         ...overrides
     };
-    // The server's rule, kept coarse: on sale and something to order (shelf or open backorder).
-    return contractBody<Product>(GetProductByIdResponse, {
-        buyable: product.purchasable !== false && (product.inStock || product.backorder === true),
-        ...product
-    });
+    return contractBody<Product>(GetProductByIdResponse, product);
 };
 
 /**

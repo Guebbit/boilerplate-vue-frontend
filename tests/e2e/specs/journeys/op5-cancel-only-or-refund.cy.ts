@@ -54,7 +54,7 @@ describe('OP5 · Cancel only versus cancel and refund', () => {
                 cy.subjectId('product.rich').then((productId) => {
                     const shelf = { before: 0, units: 0 };
                     cy.loginAs('admin');
-                    cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).then(
+                    cy.apiAs<ProductLike>('admin', 'GET', `/inventory/levels/${productId}`).then(
                         (product) => {
                             shelf.before = Number(product?.available);
                         }
@@ -121,7 +121,7 @@ describe('OP5 · Cancel only versus cancel and refund', () => {
                         orderMailTo('user', orderId, 'Your refund has been issued');
 
                     cy.step('both cancellations put their units back on the shelf');
-                    cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).should(
+                    cy.apiAs<ProductLike>('admin', 'GET', `/inventory/levels/${productId}`).should(
                         (product) => {
                             expect(Number(product?.available)).to.equal(shelf.before + shelf.units);
                         }

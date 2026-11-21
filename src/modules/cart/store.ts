@@ -274,21 +274,16 @@ export const useCartStore = defineStore('cart', () => {
      *
      * @param call - The generated client call.
      * @param cartOf - Picks the cart out of the answer.
-     * @param invalidateProducts - Whether the write makes cached products stale: the shopper's own
-     *  write does, a shipping pick or a read does not.
      * @returns A promise resolving with the answer, as `fetchAny` does.
      */
     const replaceCartFrom = <T>(
         call: () => Promise<T>,
-        cartOf: (data: T) => CartResponse,
-        invalidateProducts: boolean
+        cartOf: (data: T) => CartResponse
     ): Promise<T | undefined> =>
         fetchTracked(() => {
             const store = takeCartSlot();
             return call().then((data) => {
                 store(cartOf(data));
-                // The shopper's own write: cached products are stale now, not in five minutes.
-                if (invalidateProducts) invalidateProductsCache();
                 return data;
             });
         });
@@ -297,14 +292,10 @@ export const useCartStore = defineStore('cart', () => {
      * {@link replaceCartFrom} for a call whose whole answer is the cart.
      *
      * @param call - The generated client call, answering with the whole cart.
-     * @param invalidateProducts - As in {@link replaceCartFrom}.
      * @returns A promise resolving with the answer's cart.
      */
-    const replaceCart = (
-        call: () => Promise<CartResponse>,
-        invalidateProducts = true
-    ): Promise<CartResponse | undefined> =>
-        replaceCartFrom(call, (data) => data, invalidateProducts);
+    const replaceCart = (call: () => Promise<CartResponse>): Promise<CartResponse | undefined> =>
+        replaceCartFrom(call, (data) => data);
 
     /**
      * Fetches the full cart (items + summary) and stores it.
@@ -312,7 +303,7 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the cart response.
      */
     const fetchCart = () =>
-        (signInRead ?? Promise.resolve()).then(() => replaceCart(() => getCart(), false));
+        (signInRead ?? Promise.resolve()).then(() => replaceCart(() => getCart()));
 
     /**
      * Whether a background read is out, so a slow server is never asked again on top of itself.
@@ -396,7 +387,7 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the updated cart response.
      */
     const setShippingMethod = (shippingMethodId: string | null) =>
-        replaceCart(() => setCartShippingMethod({ shippingMethodId }), false);
+        replaceCart(() => setCartShippingMethod({ shippingMethodId }));
 
     /**
      * Removes a product's line from the cart entirely.
@@ -453,8 +444,9 @@ export const useCartStore = defineStore('cart', () => {
     };
 
     /**
-     * Settles a failed checkout, then rethrows it. A refusal (out of stock, a changed basket) is
-     * the server saying what the cached products said differently, so their cache goes too.
+     * Settles a failed checkout, then rethrows it. A refusal (a product pulled from sale, a changed
+     * price or basket) is the server saying what the cached product details said differently, so
+     * their cache goes too. Stock is not among them: it is the availability read, never cached here.
      *
      * @param error - What the checkout call rejected with.
      * @returns A promise that always rejects with `error`.
@@ -512,8 +504,6 @@ export const useCartStore = defineStore('cart', () => {
                         )
                     );
                     endCheckoutAttempt();
-                    // The order reserved stock: every cached `available` is out of date.
-                    invalidateProductsCache();
                     return response;
                 })
                 .catch(rejectFailedCheckout);
@@ -532,8 +522,7 @@ export const useCartStore = defineStore('cart', () => {
                 sendKeyed(reorderIdempotencyKeys.forSubject(orderId), (options) =>
                     apiReorder({ orderId }, options)
                 ),
-            ({ cart: updated }) => updated,
-            true
+            ({ cart: updated }) => updated
         );
 
     /**

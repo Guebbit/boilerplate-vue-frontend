@@ -41,17 +41,21 @@ describe('CU6 · Out of stock between wishlist and checkout', () => {
 
         cy.step('the stocktake finds none left: the admin takes every free unit off the shelf');
         cy.subjectId('product.barebones').then((productId) => {
-            cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).then((product) => {
-                const free = product?.available ?? 0;
-                expect(free, 'the shelf had units to take').to.be.greaterThan(0);
-                cy.apiAs('admin', 'POST', `/inventory/levels/${productId}/adjust`, {
-                    delta: -free,
-                    note: 'CU6 stocktake'
-                });
-            });
-            cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).should((product) => {
-                expect(product?.available).to.equal(0);
-            });
+            cy.apiAs<ProductLike>('admin', 'GET', `/inventory/levels/${productId}`).then(
+                (product) => {
+                    const free = product?.available ?? 0;
+                    expect(free, 'the shelf had units to take').to.be.greaterThan(0);
+                    cy.apiAs('admin', 'POST', `/inventory/levels/${productId}/adjust`, {
+                        delta: -free,
+                        note: 'CU6 stocktake'
+                    });
+                }
+            );
+            cy.apiAs<ProductLike>('admin', 'GET', `/inventory/levels/${productId}`).should(
+                (product) => {
+                    expect(product?.available).to.equal(0);
+                }
+            );
         });
 
         cy.step('moving it to the cart still works: adding never looks at stock');

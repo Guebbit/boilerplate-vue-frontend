@@ -129,7 +129,17 @@ export const useWebhooksStore = defineStore('webhooks', () => {
 
             remove: (id) => deleteWebhookSubscription(id)
         },
-        { resourceKey: 'webhooks-subscriptions', queryClient }
+        {
+            resourceKey: 'webhooks-subscriptions',
+            queryClient,
+            /**
+             * Zero, not the toolkit's one-hour default: a subscription's health (the failure streak,
+             * the auto-disable) is written by deliveries, not by an edit, so nothing here would ever
+             * tell a kept copy it is old. Every open and every list read asks again; the answer is a
+             * 304 while nothing moved.
+             */
+            staleTime: 0
+        }
     );
 
     /**

@@ -32,9 +32,6 @@ vi.mock('@api', async (importOriginal) => ({
                         title: 'Widget',
                         price: '9.99',
                         currency: 'GBP',
-                        inStock: true,
-                        lowStock: false,
-                        buyable: true,
                         actions: NO_PRODUCT_ACTIONS
                     }
                 ],

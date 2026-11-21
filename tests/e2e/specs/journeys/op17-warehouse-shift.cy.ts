@@ -107,7 +107,7 @@ describe('OP17 · A warehouse shift', () => {
             cy.get('[data-test=receipt-submit]').click();
             cy.wait('@receipt').its('response.statusCode').should('be.within', 200, 299);
             cy.get('[data-test=receipt-error]').should('not.exist');
-            cy.apiAs<{ available: number }>('warehouse', 'GET', `/products/${product.id}`)
+            cy.apiAs<{ available: number }>('warehouse', 'GET', `/inventory/levels/${product.id}`)
                 .its('available')
                 .should('equal', 5);
         });

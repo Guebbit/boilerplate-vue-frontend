@@ -52,8 +52,6 @@ const serverHolds = (title: string) =>
             title,
             price: '9.99',
             currency: 'EUR',
-            inStock: true,
-            lowStock: false,
             actions: NO_PRODUCT_ACTIONS
         })
     );

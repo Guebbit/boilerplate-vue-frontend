@@ -25,7 +25,7 @@ interface ProductLike {
  * @param units - how many are expected to be free
  */
 const expectAvailable = (productId: string, units: number): void => {
-    cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).should((product) => {
+    cy.apiAs<ProductLike>('admin', 'GET', `/inventory/levels/${productId}`).should((product) => {
         expect(product?.available, `${String(units)} free`).to.equal(units);
     });
 };

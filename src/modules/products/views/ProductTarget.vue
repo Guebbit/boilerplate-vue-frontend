@@ -104,8 +104,9 @@ const onMissingRecord = useMissingRecord();
  * the caller's language.
  *
  * `staleTime: 0` makes every open a refetch (the lists keep the store's five minutes): the cached
- * copy renders at once and the fresh one is swapped in — stale-while-revalidate — because this
- * page is where a stock number is read.
+ * copy renders at once and the fresh one is swapped in — stale-while-revalidate — so an edit made
+ * elsewhere shows on the page that carries the details. The server answers a 304 while nothing
+ * changed. The stock signal is not part of this answer: it is the availability read below.
  */
 watchProduct(() => id, { staleTime: 0, onError: onMissingRecord });
 
@@ -191,8 +192,6 @@ const stockLabel = computed(() => {
               })
             : t('product-target-page.backorder-undated', { days: backorderPromiseDays.value });
     if (shelf === 'out-of-stock') return t('product-target-page.out-of-stock');
-    // Served until the product answer drops it; the shopper sees the warning, never a number.
-    if (shown.lowStock) return t('product-target-page.low-stock');
     return count === undefined ? t('product-target-page.in-stock') : formatText(count.toString());
 });
 
