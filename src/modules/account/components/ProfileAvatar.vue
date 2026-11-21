@@ -29,6 +29,7 @@ import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
@@ -90,8 +91,33 @@ const busy = computed(() => uploadingAvatar.value || removingAvatar.value);
 const {
     message: avatarError,
     report: reportAvatarError,
+    warn: warnAvatarError,
     clear: clearAvatarError
 } = useBlockingError();
+
+/**
+ * The picture write came back 412: the account moved since it was loaded. This panel owns its
+ * own reload: it re-reads `/account`, which refreshes the `ETag` the next write sends, and the
+ * details form below keeps what is typed (`Profile.vue` skips hydrating a dirty form).
+ */
+const {
+    isStale,
+    handle: handleStaleSave,
+    reloadLatest,
+    clear: clearStale
+} = useStaleRecord({ warn: warnAvatarError, clear: clearAvatarError }, () =>
+    profileStore.fetchProfile(true)
+);
+
+/**
+ * Shows a failed picture write beside the picker: a 412 as the stale warning, anything else as
+ * the blocked error.
+ *
+ * @param error - The rejected value of the upload or the removal.
+ */
+const reportAvatarFailure = (error: unknown) => {
+    if (!handleStaleSave(error)) reportAvatarError(error);
+};
 
 /**
  * Uploads the freshly picked file, validating it first — client-side, for the message rather than
@@ -101,8 +127,11 @@ const {
  */
 watch(pickedFile, (file) => {
     errorMessage.value = undefined;
-    clearAvatarError();
+    // Only a new pick clears the last failure: the reset to `undefined` that follows an upload's
+    // end would otherwise wipe the warning the failure has just raised.
     if (!file) return;
+    clearAvatarError();
+    clearStale();
 
     const parsed = imageUploadSchema.safeParse(file);
     if (!parsed.success) {
@@ -113,7 +142,7 @@ watch(pickedFile, (file) => {
 
     trackUpload(file, (options) => updateProfile({ imageUpload: file }, options))
         .then(() => addMessage(t('profile-page.avatar-success-update')))
-        .catch((error) => reportAvatarError(error))
+        .catch(reportAvatarFailure)
         .finally(() => {
             pickedFile.value = undefined;
         });
@@ -132,9 +161,10 @@ const handleRemove = singleFlight(() =>
         .then((accepted) => {
             if (!accepted) return;
             clearAvatarError();
+            clearStale();
             return updateProfile({ imageUrl: null })
                 .then(() => addMessage(t('profile-page.avatar-success-remove')))
-                .catch((error) => reportAvatarError(error));
+                .catch(reportAvatarFailure);
         })
 );
 </script>
@@ -166,6 +196,22 @@ const handleRemove = singleFlight(() =>
             {{ t('profile-page.avatar-button-remove') }}
         </v-btn>
 
-        <InlineErrorAlert :message="avatarError" class="mt-2" data-test="profile-avatar-error" />
+        <InlineErrorAlert
+            :message="avatarError"
+            :type="isStale ? 'warning' : 'error'"
+            class="mt-2"
+            data-test="profile-avatar-error"
+        />
+        <v-btn
+            v-if="isStale"
+            variant="tonal"
+            color="warning"
+            size="small"
+            class="mt-2"
+            data-test="profile-avatar-reload-latest"
+            @click="reloadLatest"
+        >
+            {{ t('generic.action-reload-latest') }}
+        </v-btn>
     </div>
 </template>

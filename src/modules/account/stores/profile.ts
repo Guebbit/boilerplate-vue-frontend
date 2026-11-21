@@ -188,6 +188,16 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
     const refetchProfile = () => fetchProfile(true).then(() => undefined);
 
     /**
+     * Passes a write's answer through after reading the profile again: an `/account` sub-action
+     * drops the tag held for the record (`infrastructure/http/etag.ts`), and the consent `PATCH`
+     * after it would otherwise go out with no `If-Match`.
+     *
+     * @param answer - What the write answered, handed back untouched.
+     * @returns A promise resolving with `answer` once the profile is refetched.
+     */
+    const withFreshProfile = <T>(answer: T): Promise<T> => refetchProfile().then(() => answer);
+
+    /**
      * {@link refetchProfile}, but only for a signed-in tab: the public email links may be followed
      * by a visitor who holds no session here.
      *
@@ -377,17 +387,18 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
     /**
      * Asks for the pending email change's confirmation link to be mailed again, through `POST
      * /account/email-change/resend`. The backend mails the NEW address only and revokes the link
-     * already delivered, so exactly one stays live. Nothing about the profile changes, so there is
-     * nothing to refetch.
+     * already delivered, so exactly one stays live. Nothing about the profile changes, but the
+     * write drops the tag held for `/account`, so the profile is read again to hand it back.
      *
      * @returns The server's own resend cooldown in seconds, for the button to count down (0 when
      *  nothing was pending). A 429 inside the cooldown rejects instead; its `retryAfter` is the
      *  same number, read by `emailVerifyResendRetryAfter`.
      */
     const resendPendingEmail = (): Promise<number> =>
-        fetchAny(() => apiResendPendingEmail(), { key: ['pending-email'], forced: true }).then(
-            (payload) => payload?.resendAfter ?? 0
-        );
+        fetchAny(() => apiResendPendingEmail().then(withFreshProfile), {
+            key: ['pending-email'],
+            forced: true
+        }).then((payload) => payload?.resendAfter ?? 0);
 
     /**
      * Changes the password of the LIVE session by proving the current one — no email round-trip,
@@ -406,9 +417,11 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
      */
     const changePassword = (currentPassword: string, password: string, passwordConfirm: string) =>
         fetchAny(() =>
-            apiChangePassword({ currentPassword, password, passwordConfirm }).then((data) => {
-                session.adoptSession(data);
-            })
+            apiChangePassword({ currentPassword, password, passwordConfirm })
+                .then((data) => {
+                    session.adoptSession(data);
+                })
+                .then(refetchProfile)
         );
 
     /**
@@ -524,7 +537,7 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
      * @returns A promise resolving with the export, which is `building` until the job settles.
      */
     const requestAccountExport = () =>
-        fetchAny(() => apiRequestAccountExport().then((data) => data));
+        fetchAny(() => apiRequestAccountExport().then(withFreshProfile));
 
     /**
      * Where the caller's export stands: `building`, `ready` (with `expiresAt`) or `failed`. A

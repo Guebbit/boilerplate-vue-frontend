@@ -176,3 +176,37 @@ describe('TaskDetail notes', () => {
             expect(wrapper.find('[data-test=task-note-draft]').exists()).toBe(false);
         }));
 });
+
+/**
+ * Grants (or withholds) `read:AuditLog`, the ability the "History" link is gated on.
+ *
+ * @param canReadAuditLog - Whether to hold the ability.
+ */
+const signIn = (canReadAuditLog: boolean) => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.setAbilities({
+        tenant: canReadAuditLog ? [['read', 'AuditLog']] : [],
+        platform: []
+    });
+};
+
+describe('TaskDetail history', () => {
+    it('links to the audit log filtered on the task, for a caller who may read it', () => {
+        signIn(true);
+
+        return openDetail(aTask({ id: 't1' })).then((wrapper) => {
+            expect(wrapper.get('[data-test=task-history]').attributes('href')).toBe(
+                '/en/audit?target=t1'
+            );
+        });
+    });
+
+    it('is absent for a caller without read:AuditLog', () => {
+        signIn(false);
+
+        return openDetail(aTask({ id: 't1' })).then((wrapper) => {
+            expect(wrapper.find('[data-test=task-history]').exists()).toBe(false);
+        });
+    });
+});

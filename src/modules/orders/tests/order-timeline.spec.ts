@@ -238,6 +238,7 @@ describe('OrderTimeline — leaving a staff note', () => {
         const addNote = vi
             .spyOn(useOrdersStore(), 'addNote')
             .mockResolvedValue({ ...STAFF_ROWS[2], id: 'e4', type: 'note_added', data: {} });
+        const fetchOrder = vi.spyOn(useOrdersStore(), 'fetchOrder').mockResolvedValue(undefined);
         const { wrapper, fetchTimeline } = await mountTimeline(STAFF_ROWS);
 
         await wrapper.get('[data-test="order-timeline-note-text"] textarea').setValue('  Called  ');
@@ -246,6 +247,9 @@ describe('OrderTimeline — leaving a staff note', () => {
 
         expect(addNote).toHaveBeenCalledExactlyOnceWith('o1', 'Called');
         expect(fetchTimeline).toHaveBeenCalledTimes(2);
+        // The note's path sits under the order's, so the transport forgot the order's tag: the order
+        // is read again to hand it back.
+        expect(fetchOrder).toHaveBeenCalledExactlyOnceWith('o1', { forced: true });
         const box = wrapper.get<HTMLTextAreaElement>(
             '[data-test="order-timeline-note-text"] textarea'
         );
@@ -332,6 +336,7 @@ describe('OrderTimeline — withdrawing a note’s text', () => {
     it('removes that note’s text and reads the history again', async () => {
         signIn(true, true);
         const deleteNote = vi.spyOn(useOrdersStore(), 'deleteNote').mockResolvedValue();
+        const fetchOrder = vi.spyOn(useOrdersStore(), 'fetchOrder').mockResolvedValue(undefined);
         const { wrapper, fetchTimeline } = await mountTimeline(NOTE_ROWS);
 
         await wrapper.get('[data-test="order-timeline-note-remove"]').trigger('click');
@@ -339,6 +344,7 @@ describe('OrderTimeline — withdrawing a note’s text', () => {
 
         expect(deleteNote).toHaveBeenCalledExactlyOnceWith('o1', 'n1');
         expect(fetchTimeline).toHaveBeenCalledTimes(2);
+        expect(fetchOrder).toHaveBeenCalledExactlyOnceWith('o1', { forced: true });
     });
 
     it('shows the refusal beside the row and does not read again when the call fails', async () => {

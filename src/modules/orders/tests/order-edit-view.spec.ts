@@ -25,7 +25,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { anOrderListItem } from '../../../../tests/support/unit/fixtures.ts';
+import { aProblem, anOrderListItem } from '../../../../tests/support/unit/fixtures.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import { OrderStatus } from '@api';
@@ -531,6 +531,113 @@ describe('the edit form', () => {
             .then(() => {
                 expect(updateOrder).toHaveBeenCalledWith('o1', { email: 'billing@example.com' });
             });
+    });
+});
+
+/**
+ * The reject envelope `onResponseReject` builds for the API's 412.
+ */
+const PRECONDITION_FAILED = aProblem(412, [
+    { code: 'PRECONDITION_FAILED', message: 'Precondition failed' }
+]);
+
+/**
+ * Mounts the page on the held order and types a new email, ready to submit.
+ *
+ * @param detail - The order the store holds.
+ */
+const mountWithEditedEmail = (detail: Order) => {
+    const mounted = mountFromListCache(detail);
+    return nextTick()
+        .then(() => nextTick())
+        .then(() => {
+            (mounted.wrapper.getComponent('[data-test="order-edit-email"]') as VueWrapper).vm.$emit(
+                'update:modelValue',
+                'billing@example.com'
+            );
+            return nextTick();
+        })
+        .then(() => mounted);
+};
+
+/**
+ * Mounts the page, types a new email and submits into a refused save.
+ *
+ * @param detail - The order the store holds.
+ */
+const submitRefused = (detail: Order) => {
+    vi.spyOn(useOrdersStore(), 'updateOrder').mockRejectedValue(PRECONDITION_FAILED);
+    return mountWithEditedEmail(detail).then((mounted) =>
+        mounted.wrapper
+            .get('form')
+            .trigger('submit')
+            .then(flushPromises)
+            .then(() => mounted)
+    );
+};
+
+describe('a save answered 412', () => {
+    it('warns that the order changed, and offers to reload', () => {
+        signInAsAdmin();
+
+        return submitRefused(anOrder()).then(({ wrapper }) => {
+            const alert = wrapper.get('[data-test=order-edit-form-error]');
+            expect(alert.text()).toContain(i18n.global.t('generic.error-stale-record'));
+            expect(alert.classes().join(' ')).toContain('warning');
+            expect(wrapper.find('[data-test=order-edit-reload-latest]').exists()).toBe(true);
+        });
+    });
+
+    it('re-reads the order past the cache on "reload latest", and clears the warning', () => {
+        signInAsAdmin();
+
+        return submitRefused(anOrder()).then(({ wrapper, fetchOrder }) => {
+            fetchOrder.mockClear();
+            return wrapper
+                .get('[data-test=order-edit-reload-latest]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(fetchOrder).toHaveBeenCalledWith('o1', { forced: true });
+                    expect(wrapper.find('[data-test=order-edit-reload-latest]').exists()).toBe(
+                        false
+                    );
+                });
+        });
+    });
+
+    it('does the same when the 412 follows an action on the order', () => {
+        signInAsAdmin();
+        const detail = anOrder({ actions: anAction({ cancel: true }) });
+        const cancelOrder = vi
+            .spyOn(useOrdersStore(), 'cancelOrder')
+            .mockResolvedValue({ ...detail, status: OrderStatus.canceled });
+        const updateOrder = vi
+            .spyOn(useOrdersStore(), 'updateOrder')
+            .mockRejectedValue(PRECONDITION_FAILED);
+
+        return mountWithEditedEmail(detail).then(({ wrapper }) =>
+            wrapper
+                .get('[data-test=button-cancel-only]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    // The cancel went through and nothing was refused yet.
+                    expect(cancelOrder).toHaveBeenCalledTimes(1);
+                    expect(updateOrder).not.toHaveBeenCalled();
+                    expect(wrapper.find('[data-test=order-edit-reload-latest]').exists()).toBe(
+                        false
+                    );
+                    return wrapper.get('form').trigger('submit');
+                })
+                .then(flushPromises)
+                .then(() => {
+                    expect(updateOrder).toHaveBeenCalledTimes(1);
+                    expect(wrapper.find('[data-test=order-edit-reload-latest]').exists()).toBe(
+                        true
+                    );
+                })
+        );
     });
 });
 

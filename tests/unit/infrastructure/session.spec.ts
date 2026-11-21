@@ -780,6 +780,69 @@ describe('session modes', () => {
     });
 });
 
+/** A staff answer's activity: 30 idle minutes, 20 left, 2 hours before the cap. */
+const STAFF_ACTIVITY = {
+    lastActiveAt: '2026-01-01T00:00:00.000Z',
+    idleTimeoutSeconds: 1800,
+    idleRemainingSeconds: 1200,
+    lifetimeRemainingSeconds: 7200
+};
+
+/** Signs in with a staff idle clock, as `GET /account` or a login would set it. */
+const signedInWithIdleClock = () => {
+    const store = signedIn();
+    store.setViewer(
+        { id: '1', email: 'a@b.c', role: 'editor' },
+        { abilities: viewOf([]).abilities, activity: STAFF_ACTIVITY }
+    );
+    return store;
+};
+
+describe('the idle deadline across tabs', () => {
+    it('is broadcast by an answer that sets it, and by this tab’s own requests', () => {
+        const postMessage = vi.spyOn(BroadcastChannel.prototype, 'postMessage');
+        const store = signedInWithIdleClock();
+        expect(postMessage).toHaveBeenCalledWith({
+            type: 'activity',
+            endsAt: store.idle?.endsAt
+        });
+
+        postMessage.mockClear();
+        store.noteActivity();
+
+        // This tab's request: the timeout less the server's one-minute stamp interval, from now.
+        expect(postMessage).toHaveBeenCalledWith({
+            type: 'activity',
+            endsAt: store.idle?.endsAt
+        });
+    });
+
+    it('moves on a deadline another tab broadcast', () => {
+        const store = signedInWithIdleClock();
+        const channel = new BroadcastChannel('session');
+        const endsAt = Date.now() + 999_000;
+
+        channel.postMessage({ type: 'activity', endsAt });
+
+        return vi
+            .waitFor(() => expect(store.idle?.endsAt).toBe(endsAt))
+            .finally(() => channel.close());
+    });
+
+    it('ignores the old message shape, which carried a request time and not a deadline', async () => {
+        const store = signedInWithIdleClock();
+        const before = store.idle?.endsAt;
+        const channel = new BroadcastChannel('session');
+
+        channel.postMessage({ type: 'activity', at: Date.now() + 999_000 });
+        // A message that did nothing leaves nothing to wait for: let the channel deliver it.
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        channel.close();
+
+        expect(store.idle?.endsAt).toBe(before);
+    });
+});
+
 /** The other person's account id: a valid object id, as the contract requires. */
 const SECOND_PERSON = '65e1a0000000000000000e99';
 

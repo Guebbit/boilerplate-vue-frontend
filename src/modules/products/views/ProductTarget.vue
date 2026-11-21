@@ -16,6 +16,7 @@ export default {
  */
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed, watch } from 'vue';
+import { useHistoryLink } from '@/kernel/history-link.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -135,6 +136,12 @@ watch(
     },
     { immediate: true }
 );
+
+/**
+ * The History link: the audit log filtered on the product. Hidden without `read:AuditLog`, or on a
+ * build with no audit log.
+ */
+const historyTo = useHistoryLink(() => currentProduct.value?.id);
 
 /**
  * Session store, read for whether the visitor is signed in.
@@ -354,6 +361,9 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     :to="routerLinkI18n({ name: 'ProductEdit', params: { id: currentProduct.id } })"
                 >
                     {{ t('product-target-page.button-go-to-edit') }}
+                </v-btn>
+                <v-btn v-if="historyTo" variant="tonal" data-test="product-history" :to="historyTo">
+                    {{ t('generic.button-history') }}
                 </v-btn>
                 <v-btn variant="tonal" :to="routerLinkI18n({ name: 'ProductsList' })">
                     {{ t('product-target-page.button-go-to-list') }}

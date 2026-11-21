@@ -26,6 +26,7 @@
         "confirm": "Conferma",
         "error-stale-record": "Qualcun altro ha modificato questo elemento mentre lo stavi modificando. Ricarica per vedere la sua versione: le modifiche non salvate andranno perse.",
         "action-reload-latest": "Ricarica l'ultima versione",
+        "button-history": "Cronologia",
         "fix-errors": "Correggi gli errori evidenziati nel modulo.",
         "unsaved-changes-title": "Modifiche non salvate",
         "unsaved-changes-message": "Ci sono modifiche non salvate. Lasciare la pagina e perderle?",
@@ -51,7 +52,10 @@
         "message": "Per la tua sicurezza questa sessione termina dopo un periodo di inattività. Termina tra {time}.",
         "button-stay": "Resta connesso",
         "button-leave": "Esci",
-        "ended": "La sessione è terminata per inattività. Accedi di nuovo."
+        "ended": "La sessione è terminata per inattività. Accedi di nuovo.",
+        "lifetime-title": "La sessione sta per terminare",
+        "lifetime-message": "Per la tua sicurezza una sessione ha una durata massima, per quanto tu sia attivo. Questa termina tra {time}. Salva il lavoro ora, poi accedi di nuovo.",
+        "button-dismiss": "Salvo il lavoro"
     },
     "session-expired": {
         "message": "La tua sessione è scaduta. Accedi di nuovo."

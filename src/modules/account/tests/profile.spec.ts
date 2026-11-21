@@ -256,7 +256,8 @@ describe('requestAccountExport', () => {
         useAccountProfileStore()
             .requestAccountExport()
             .then((data) => {
-                expect(requestedUrls().at(-1)).toBe('/account/export');
+                // The write drops the tag held for `/account`; the profile is read again to hand it back.
+                expect(requestedUrls()).toEqual(['/account/export', '/account']);
                 expect(data).toEqual(EXPORT);
             }));
 });
@@ -287,11 +288,12 @@ describe('the self-service actions', () => {
         useAccountProfileStore()
             .changePassword('old-secret', 'New-secret-1!', 'New-secret-1!')
             .then(() => {
-                const last = vi.mocked(orvalMutator).mock.calls.at(-1)![0] as {
+                // The write drops the tag held for `/account`; the profile is read again to hand it back.
+                expect(requestedUrls()).toEqual(['/account/password', '/account']);
+                const last = vi.mocked(orvalMutator).mock.calls[0][0] as {
                     url: string;
                     data: Record<string, unknown>;
                 };
-                expect(last.url).toBe('/account/password');
                 expect(
                     Object.keys(
                         contractRequest(schemas.ChangePasswordBody, last.data) as object

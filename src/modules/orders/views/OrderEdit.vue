@@ -50,6 +50,7 @@ import {
     normalizeAmount
 } from '@/infrastructure/utils/money.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -433,7 +434,26 @@ const { heroTitle, heroDescription, orderStatus } = useOrderHero(
  * The edit form's own blocked state — a failed save blocks this specific form, separate from
  * the operator's action buttons below it.
  */
-const { message: formError, report: reportFormError, clear: clearFormError } = useBlockingError();
+const {
+    message: formError,
+    report: reportFormError,
+    warn: warnFormError,
+    clear: clearFormError
+} = useBlockingError();
+
+/**
+ * The save came back 412: the order moved since it was loaded (an action, a payment, another
+ * operator). "Reload latest" re-reads it past the store's cache, which re-hydrates the form and
+ * refreshes the `ETag` the next save sends (`infrastructure/http/etag.ts`).
+ */
+const {
+    isStale,
+    handle: handleStaleSave,
+    reloadLatest,
+    clear: clearStale
+} = useStaleRecord({ warn: warnFormError, clear: clearFormError }, () =>
+    id ? fetchOrder(id, { forced: true }) : Promise.resolve()
+);
 
 /**
  * Validates the form and persists the order changes.
@@ -449,6 +469,7 @@ const { message: formError, report: reportFormError, clear: clearFormError } = u
  */
 const submitForm = () => {
     clearFormError();
+    clearStale();
     return handleSubmit(() => {
         if (!id) return;
         const email = form.value.email || undefined;
@@ -459,6 +480,7 @@ const submitForm = () => {
             addMessage(t('order-edit-page.success-update'));
         });
     }).catch((error) => {
+        if (handleStaleSave(error)) return;
         applyServerErrors(error, { onUnmapped: () => reportFormError(error) });
     });
 };
@@ -559,7 +581,21 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             </v-btn>
                         </div>
 
-                        <InlineErrorAlert :message="formError" data-test="order-edit-form-error" />
+                        <InlineErrorAlert
+                            :message="formError"
+                            :type="isStale ? 'warning' : 'error'"
+                            data-test="order-edit-form-error"
+                        />
+                        <v-btn
+                            v-if="isStale"
+                            variant="tonal"
+                            color="warning"
+                            data-test="order-edit-reload-latest"
+                            :loading="loading"
+                            @click="reloadLatest"
+                        >
+                            {{ t('generic.action-reload-latest') }}
+                        </v-btn>
                     </fieldset>
                 </form>
 

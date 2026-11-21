@@ -17,6 +17,7 @@ export default {
  */
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed, onMounted } from 'vue';
+import { useHistoryLink } from '@/kernel/history-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Undo2 } from 'lucide-vue-next';
@@ -59,6 +60,12 @@ const { currentReturn } = storeToRefs(useReturnsStore());
  * The order's page, or nothing when this build ships none.
  */
 const orderLink = useOrderLink();
+
+/**
+ * The History link: the audit log filtered on the return. Hidden without `read:AuditLog`, or on a
+ * build with no audit log.
+ */
+const historyTo = useHistoryLink(() => currentReturn.value?.id);
 
 /**
  * Signed-in caller: only staff are shown the exceptions a staff-opened return recorded.
@@ -258,6 +265,9 @@ onMounted(refresh);
                 <ReturnStaffActions v-if="detail" :item="detail" @changed="refresh" />
                 <v-btn v-if="orderTo" variant="tonal" data-test="return-order-link" :to="orderTo">
                     {{ t('return-target-page.button-order') }}
+                </v-btn>
+                <v-btn v-if="historyTo" variant="tonal" data-test="return-history" :to="historyTo">
+                    {{ t('generic.button-history') }}
                 </v-btn>
                 <v-btn variant="tonal" :to="routerLinkI18n({ name: 'ReturnsList' })">
                     {{ t('return-target-page.button-list') }}

@@ -245,11 +245,20 @@ export const useSessionStore = defineStore('session', () => {
     const expiredSignal = ref(0);
 
     /**
-     * The staff idle clock, from the server's own numbers: how long the session may sit unused
-     * and when it last saw a request (this client's epoch milliseconds). `undefined` for a
-     * shopper, whose session never idles out, and until the first answer lands.
+     * The staff idle clock, from the server's own numbers: how long the session may sit unused,
+     * and the moment it ends for inactivity on THIS client's clock (`endsAt`, epoch milliseconds).
+     * `endsAt` is the answer's receipt time plus the seconds the server said were left, never the
+     * server's timestamp measured against this browser's clock, which may be wrong.
+     * `undefined` for a shopper, whose session never idles out, and until the first answer lands.
      */
-    const idle = ref<{ timeoutMs: number; lastActiveAt: number }>();
+    const idle = ref<{ timeoutMs: number; endsAt: number }>();
+
+    /**
+     * The moment the staff lifetime cap ends the session, on this client's clock (epoch
+     * milliseconds). Activity cannot move it. `undefined` for a shopper, when the cap is off, and
+     * until the first answer lands.
+     */
+    const lifetimeEndsAt = ref<number>();
 
     /**
      * Bumped when the session ended for inactivity — the server answered `SESSION_IDLE`, or the
@@ -456,19 +465,28 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
-     * Records the idle clock the server answered: from `GET /account`, a sign-in or a touch.
+     * Records the clocks the server answered: from `GET /account`, a sign-in or a touch.
+     * Each deadline is the moment this answer landed plus the seconds the server said are left
+     * (the idea of OAuth's `expires_in`, RFC 6749 §5.1).
      *
-     * @param activity - the server's clock; `idleTimeoutSeconds` is absent for a shopper, whose
-     *  session never idles out
+     * @param activity - the server's clock; the idle fields are absent for a shopper, whose session
+     *  never idles out, and the lifetime one for a shopper or with the cap off
      */
     const applyActivity = (activity: SessionActivity) => {
-        idle.value = activity.idleTimeoutSeconds
-            ? {
-                  timeoutMs: activity.idleTimeoutSeconds * 1000,
-                  lastActiveAt: Date.parse(activity.lastActiveAt)
-              }
-            : undefined;
-        if (idle.value) sessionChannel?.postMessage({ type: 'activity', at: Date.now() });
+        const receivedAt = Date.now();
+        idle.value =
+            activity.idleTimeoutSeconds === undefined || activity.idleRemainingSeconds === undefined
+                ? undefined
+                : {
+                      timeoutMs: activity.idleTimeoutSeconds * 1000,
+                      endsAt: receivedAt + activity.idleRemainingSeconds * 1000
+                  };
+        lifetimeEndsAt.value =
+            activity.lifetimeRemainingSeconds === undefined
+                ? undefined
+                : receivedAt + activity.lifetimeRemainingSeconds * 1000;
+        if (idle.value)
+            sessionChannel?.postMessage({ type: 'activity', endsAt: idle.value.endsAt });
     };
 
     /**
@@ -617,6 +635,7 @@ export const useSessionStore = defineStore('session', () => {
         // The record versions the last person read are theirs; the next one must not send them.
         clearEtags();
         idle.value = undefined;
+        lifetimeEndsAt.value = undefined;
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
         // js-toolkit `deleteCookie(name)`: rewrites it already expired on `path=/`, where both live.
         deleteCookie(BROWSER_STORAGE_NAME.isAuth);
@@ -627,24 +646,34 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
-     * Records that the session saw a request at `at`, without telling the other tabs.
+     * Moves the idle deadline without telling the other tabs.
      *
-     * @param at - epoch milliseconds
+     * @param endsAt - epoch milliseconds, this client's clock
      */
-    const markActive = (at: number) => {
-        if (idle.value) idle.value = { ...idle.value, lastActiveAt: at };
+    const markIdleEnd = (endsAt: number) => {
+        if (idle.value) idle.value = { ...idle.value, endsAt };
     };
+
+    /**
+     * How long the server may go without saving a session's activity stamp, in milliseconds.
+     * It writes the stamp at most once a minute (the backend's `ACTIVITY_STAMP_INTERVAL_MS`), so a request this tab just made may be judged from a stamp up
+     * to this old.
+     */
+    const SERVER_STAMP_INTERVAL_MS = 60_000;
 
     /**
      * Records that THIS tab just made a request the server counts as the person acting, and tells
      * the other tabs: they share one session, so one idle clock. Called by the request interceptor
      * for every request that is not marked passive.
+     *
+     * The deadline is the timeout minus the server's save interval, so this guess never outlasts the
+     * server's own stamp; the next answer that carries `idleRemainingSeconds` replaces it.
      */
     const noteActivity = () => {
         if (!idle.value) return;
-        const at = Date.now();
-        markActive(at);
-        sessionChannel?.postMessage({ type: 'activity', at });
+        const endsAt = Date.now() + idle.value.timeoutMs - SERVER_STAMP_INTERVAL_MS;
+        markIdleEnd(endsAt);
+        sessionChannel?.postMessage({ type: 'activity', endsAt });
     };
 
     /**
@@ -681,13 +710,14 @@ export const useSessionStore = defineStore('session', () => {
     const onBroadcast = (event: MessageEvent<unknown>) => {
         // Defensive, not just typed: this channel is a cross-tab boundary — another tab could be
         // running an older or newer build with a different message shape.
-        const message = event.data as { type?: unknown; at?: unknown } | undefined;
+        const message = event.data as { type?: unknown; endsAt?: unknown } | undefined;
         if (message?.type === 'logout') clearSessionLocally();
         // Another tab signed in: the shared session is now that person's, so this tab re-reads it.
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- rereadSession never rejects (a failed re-read is dropped)
         if (message?.type === 'login') void rereadSession();
         // Another tab acted: the server's one idle clock is shared by every tab of this session.
-        if (message?.type === 'activity' && typeof message.at === 'number') markActive(message.at);
+        if (message?.type === 'activity' && typeof message.endsAt === 'number')
+            markIdleEnd(message.endsAt);
     };
 
     sessionChannel?.addEventListener('message', onBroadcast);
@@ -771,6 +801,7 @@ export const useSessionStore = defineStore('session', () => {
         isAuth,
         expiredSignal,
         idle,
+        lifetimeEndsAt,
         idleSignal,
         noteActivity,
         touchSession,

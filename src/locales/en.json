@@ -26,6 +26,7 @@
         "confirm": "Confirm",
         "error-stale-record": "Someone else changed this while you were editing. Reload to see their version — your unsaved changes will be replaced.",
         "action-reload-latest": "Reload latest version",
+        "button-history": "History",
         "fix-errors": "Please fix the highlighted form errors.",
         "unsaved-changes-title": "Unsaved changes",
         "unsaved-changes-message": "You have changes that are not saved. Leave this page and lose them?",
@@ -51,7 +52,10 @@
         "message": "For your security this session ends after a period of inactivity. It ends in {time}.",
         "button-stay": "Stay signed in",
         "button-leave": "Sign out",
-        "ended": "Your session ended after a period of inactivity. Please sign in again."
+        "ended": "Your session ended after a period of inactivity. Please sign in again.",
+        "lifetime-title": "Your session is about to end",
+        "lifetime-message": "For your security a session has a maximum length, however active you are. This one ends in {time}. Save your work now, then sign in again.",
+        "button-dismiss": "I'll save my work"
     },
     "session-expired": {
         "message": "Your session has expired. Please sign in again."

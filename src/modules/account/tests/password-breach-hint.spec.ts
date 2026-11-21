@@ -19,6 +19,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/support/unit/orval-fixture-schema.ts';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 import { configAnswer } from '../../../../tests/support/unit/config-answer.ts';
 import { resetConfig } from '@/infrastructure/config.ts';
 
@@ -132,6 +133,12 @@ describe('ProfilePasswordChange', () => {
     it('never blocks the submit — advisory only, even while flagged breached', () => {
         responses['POST /account/password/check'] = { breached: true };
         responses['POST /account/password'] = { token: 'rotated-jwt' };
+        responses['GET /account'] = accountView({
+            id: 'u1',
+            username: 'ada',
+            email: 'ada@example.com',
+            role: 'customer'
+        });
         const wrapper = mountPasswordChangeForm();
 
         return (

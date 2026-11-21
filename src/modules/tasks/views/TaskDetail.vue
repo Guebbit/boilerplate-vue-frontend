@@ -17,6 +17,7 @@ export default {
  * re-reads.
  */
 import { computed, ref, watch } from 'vue';
+import { useHistoryLink } from '@/kernel/history-link.ts';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -54,6 +55,12 @@ const session = useSessionStore();
 const store = useTasksStore();
 
 const { task } = storeToRefs(store);
+
+/**
+ * The History link: the audit log filtered on this task. Hidden without `read:AuditLog`, or on a
+ * build with no audit log.
+ */
+const historyTo = useHistoryLink(() => task.value?.id);
 
 /**
  * What a 404 or a 403 on the read does: the shell's Error page.
@@ -237,6 +244,15 @@ const handleNote = () =>
                     @click="handle(() => store.reopen(task!.id), t('tasks-page.success-status'))"
                 >
                     {{ t('tasks-page.button-reopen') }}
+                </v-btn>
+                <v-btn
+                    v-if="historyTo"
+                    size="small"
+                    variant="tonal"
+                    data-test="task-history"
+                    :to="historyTo"
+                >
+                    {{ t('generic.button-history') }}
                 </v-btn>
             </div>
         </v-card>

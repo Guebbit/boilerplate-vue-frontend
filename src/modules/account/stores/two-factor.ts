@@ -50,6 +50,19 @@ interface LoginChallenge {
 }
 
 /**
+ * Re-reads the profile, then hands back the value a write produced. Every 2FA write changes the
+ * user record and drops the tag held for `/account` (`infrastructure/http/etag.ts`); the read
+ * hands it back, so the profile's next save is still checked.
+ *
+ * @param value - What the write returned.
+ * @returns A promise resolving with that same value once the profile is fresh.
+ */
+const refetchProfileThen = <T>(value: T) =>
+    useAccountProfileStore()
+        .fetchProfile(true)
+        .then(() => value);
+
+/**
  * Account-wide 2FA: status, enrollment, and the login-time challenge.
  *
  * Deliberately one store rather than three: the enrollment machine and the status list answer the
@@ -143,13 +156,14 @@ export const useAccountTwoFactorStore = defineStore('account-two-factor', () => 
         );
 
     /**
-     * Re-reads the status, then hands back the value a write produced. A named step so the write
-     * wrappers stay inside the nesting cap.
+     * Re-reads the status and the profile, then hands back the value a write produced. A named
+     * step so the write wrappers stay inside the nesting cap.
      *
      * @param value - What the write returned.
-     * @returns A promise resolving with that same value once `status` is fresh.
+     * @returns A promise resolving with that same value once `status` and the profile are fresh.
      */
-    const refetchStatusThen = <T>(value: T) => fetchStatus().then(() => value);
+    const refetchStatusThen = <T>(value: T) =>
+        Promise.all([fetchStatus(), refetchProfileThen(value)]).then(() => value);
 
     /**
      * Begins — or restarts — enrollment of one method. Calling this on an already-armed method
@@ -178,7 +192,7 @@ export const useAccountTwoFactorStore = defineStore('account-two-factor', () => 
                                 resendAfter: data.resendAfter,
                                 expiresAt: data.expiresAt
                             });
-                        return data;
+                        return refetchProfileThen(data);
                     }),
                 { key: ['setup'], forced: true }
             )
@@ -233,7 +247,7 @@ export const useAccountTwoFactorStore = defineStore('account-two-factor', () => 
      * @returns A promise resolving once `status` reflects the removal.
      */
     const removeMethod = (method: string, code: string) =>
-        fetchAny(() => apiRemoveTwoFactorMethod(method, { code }).then(() => fetchStatus()), {
+        fetchAny(() => apiRemoveTwoFactorMethod(method, { code }).then(refetchStatusThen), {
             key: ['remove'],
             forced: true
         });
@@ -245,7 +259,7 @@ export const useAccountTwoFactorStore = defineStore('account-two-factor', () => 
      * @returns A promise resolving once `status` reflects 2FA being off.
      */
     const disableAll = (code: string) =>
-        fetchAny(() => apiDisableTwoFactor({ code }).then(() => fetchStatus()), {
+        fetchAny(() => apiDisableTwoFactor({ code }).then(refetchStatusThen), {
             key: ['disable'],
             forced: true
         });

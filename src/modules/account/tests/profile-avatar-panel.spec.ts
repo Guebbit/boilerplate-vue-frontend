@@ -1,7 +1,9 @@
 /**
  * @module
  * `ProfileAvatar.vue`'s remove button: offered only while the account has a picture. An account
- * with none carries no `imageUrl`, so there is nothing to clear and no button to press.
+ * with none carries no `imageUrl`, so there is nothing to clear and no button to press. And a
+ * picture write answered 412 (the account moved since it was loaded): the panel warns in place and
+ * offers its own "reload latest", which re-reads `/account`.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
@@ -12,12 +14,18 @@ import ProfileAvatar from '../components/ProfileAvatar.vue';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { i18n } from '@/i18n';
 import vuetify from '@/ui/vuetify';
+import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
+import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 
 wireModulesIntoCore();
 
 /** The store's write, shared so a case can count its calls. */
 const updateProfile = vi.fn();
+
+/** The store's profile read, shared so a case can count its calls. */
+const fetchProfile = vi.fn();
 
 /** The record the panel reads; a test sets it before mounting. */
 const profile = ref<{ imageUrl?: string } | undefined>();
@@ -31,7 +39,8 @@ vi.mock('../stores/profile.ts', () => ({
         profile,
         uploadingAvatar: ref(false),
         removingAvatar: ref(false),
-        updateProfile
+        updateProfile,
+        fetchProfile
     })
 }));
 
@@ -74,5 +83,85 @@ describe('ProfileAvatar — the remove button', () => {
 
         expect(confirm).toHaveBeenCalledTimes(1);
         expect(updateProfile).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('ProfileAvatar — a picture write answered 412', () => {
+    /** The reject envelope `onResponseReject` builds for the API's 412. */
+    const PRECONDITION_FAILED = aProblem(412, [
+        { code: 'PRECONDITION_FAILED', message: 'Precondition failed' }
+    ]);
+
+    /**
+     * Mounts the panel and picks a file whose upload the API refuses with the 412.
+     */
+    const uploadRefused = () => {
+        updateProfile.mockRejectedValue(PRECONDITION_FAILED);
+        const wrapper = mountPanel('/images/ada.png');
+        emitOn(
+            wrapper.findComponent(FormImageUpload),
+            'update:modelValue',
+            new File(['pixels'], 'avatar.png', { type: 'image/png' })
+        );
+        return vi
+            .waitFor(() => expect(updateProfile).toHaveBeenCalled())
+            .then(() => flushPromises())
+            .then(() => wrapper);
+    };
+
+    it('warns that the account changed, and offers to reload', () =>
+        uploadRefused().then((wrapper) => {
+            const alert = wrapper.get('[data-test=profile-avatar-error]');
+            expect(alert.text()).toContain(i18n.global.t('generic.error-stale-record'));
+            expect(alert.classes().join(' ')).toContain('warning');
+            expect(wrapper.find('[data-test=profile-avatar-reload-latest]').exists()).toBe(true);
+        }));
+
+    it('warns the same way when the removal is refused', () => {
+        updateProfile.mockRejectedValue(PRECONDITION_FAILED);
+        vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+        const wrapper = mountPanel('/images/ada.png');
+
+        return wrapper
+            .get('[data-test=profile-avatar-remove]')
+            .trigger('click')
+            .then(flushPromises)
+            .then(() => {
+                expect(wrapper.find('[data-test=profile-avatar-reload-latest]').exists()).toBe(
+                    true
+                );
+            });
+    });
+
+    it('re-reads the account past the cache on "reload latest", and clears the warning', () => {
+        fetchProfile.mockResolvedValue(undefined);
+
+        return uploadRefused().then((wrapper) =>
+            wrapper
+                .get('[data-test=profile-avatar-reload-latest]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(fetchProfile).toHaveBeenCalledWith(true);
+                    expect(wrapper.find('[data-test=profile-avatar-reload-latest]').exists()).toBe(
+                        false
+                    );
+                })
+        );
+    });
+
+    it('shows any other failure as a plain error, with no reload offer', () => {
+        updateProfile.mockRejectedValue(aProblem(500, [{ code: 'INTERNAL', message: 'Boom' }]));
+        const wrapper = mountPanel('/images/ada.png');
+        emitOn(
+            wrapper.findComponent(FormImageUpload),
+            'update:modelValue',
+            new File(['pixels'], 'avatar.png', { type: 'image/png' })
+        );
+
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=profile-avatar-reload-latest]').exists()).toBe(false);
+            expect(wrapper.get('[data-test=profile-avatar-error]').text()).not.toBe('');
+        });
     });
 });

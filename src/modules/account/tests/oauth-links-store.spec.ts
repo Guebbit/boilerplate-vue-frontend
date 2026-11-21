@@ -9,6 +9,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { startProviderLink, useAccountOAuthLinksStore } from '../stores/oauth-links.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 import { parseOrvalFixture } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
@@ -40,6 +41,12 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
+        'GET /account': accountView({
+            id: 'u1',
+            username: 'ada',
+            email: 'ada@example.com',
+            role: 'customer'
+        }),
         'GET /account/oauth/links': {
             links: [{ provider: 'google', connectedAt: '2026-01-01T00:00:00.000Z' }]
         },
@@ -61,16 +68,19 @@ describe('useAccountOAuthLinksStore', () => {
         });
     });
 
-    it('unlinkProvider deletes the one link and keeps the links the answer carries, with no reload', () => {
+    it('unlinkProvider deletes the one link, keeps the links the answer carries and reads the profile again', () => {
         const store = useAccountOAuthLinksStore();
 
         return store
             .fetchLinks()
             .then(() => store.unlinkProvider('google'))
             .then(() => {
+                // The list is not read again; the profile is, since the write changed the user record
+                // and dropped the tag held for `/account`.
                 expect(requests()).toEqual([
                     'GET /account/oauth/links',
-                    'DELETE /account/oauth/links/google'
+                    'DELETE /account/oauth/links/google',
+                    'GET /account'
                 ]);
                 expect(store.links).toEqual([]);
             });
