@@ -26,6 +26,7 @@
         "confirm": "Confirm",
         "error-stale-record": "Someone else changed this while you were editing. Reload to see their version — your unsaved changes will be replaced.",
         "action-reload-latest": "Reload latest version",
+        "button-history": "History",
         "fix-errors": "Please fix the highlighted form errors.",
         "unsaved-changes-title": "Unsaved changes",
         "unsaved-changes-message": "You have changes that are not saved. Leave this page and lose them?",

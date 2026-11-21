@@ -22,11 +22,15 @@ import {
  * @param method - HTTP verb of the request that produced it.
  * @param url - Request URL.
  * @param etag - The `ETag` header, when the API sent one.
+ * @param location - The `Content-Location` header, when the API sent one.
  */
-const answered = (method: string, url: string, etag?: string) =>
+const answered = (method: string, url: string, etag?: string, location?: string) =>
     asStub<AxiosResponse>({
         config: { method, url },
-        headers: etag === undefined ? {} : { etag }
+        headers: {
+            ...(etag === undefined ? {} : { etag }),
+            ...(location === undefined ? {} : { 'content-location': location })
+        }
     });
 
 /**
@@ -108,11 +112,95 @@ describe('onEtagResponse', () => {
         expect(knownEtag('/products/p1')).toBeUndefined();
     });
 
-    it('does not take a tag from an action answer, even one that carries a header', () => {
+    it('does not take a tag from an action answer that names no record', () => {
         onEtagResponse(answered('post', '/products/p1/restore', '"999"'));
 
         expect(knownEtag('/products/p1')).toBeUndefined();
     });
+
+    it('keeps the new tag of a held record an action answer names by Content-Location', () => {
+        onEtagResponse(answered('get', '/orders/o1', '"100"'));
+
+        onEtagResponse(answered('post', '/orders/o1/cancel', '"200"', '/orders/o1'));
+
+        expect(knownEtag('/orders/o1')).toBe('"200"');
+    });
+
+    it('reads a Content-Location that is an absolute URL by its path', () => {
+        onEtagResponse(answered('get', '/users/u1', '"100"'));
+
+        onEtagResponse(
+            answered('post', '/users/u1/activate', '"200"', 'https://api.example.com/users/u1')
+        );
+
+        expect(knownEtag('/users/u1')).toBe('"200"');
+    });
+
+    it('ignores the tag of an action answer whose Content-Location names a record not held', () => {
+        onEtagResponse(answered('post', '/orders/o1/cancel', '"200"', '/orders/o1'));
+
+        expect(knownEtag('/orders/o1')).toBeUndefined();
+    });
+
+    it('drops the held tag when an action answers a Content-Location but no tag', () => {
+        onEtagResponse(answered('get', '/orders/o1', '"100"'));
+
+        onEtagResponse(answered('post', '/orders/o1/cancel', undefined, '/orders/o1'));
+
+        expect(knownEtag('/orders/o1')).toBeUndefined();
+    });
+
+    it('takes no tag from a PUT or a DELETE that names a held record by Content-Location', () => {
+        onEtagResponse(answered('get', '/orders/o1', '"100"'));
+        onEtagResponse(answered('get', '/webhooks/subscriptions/s1', '"300"'));
+
+        onEtagResponse(answered('put', '/orders/o1/shipping-address', '"200"', '/orders/o1'));
+        onEtagResponse(
+            answered(
+                'delete',
+                '/webhooks/subscriptions/s1/secrets/k1',
+                '"400"',
+                '/webhooks/subscriptions/s1'
+            )
+        );
+
+        expect(knownEtag('/orders/o1')).toBeUndefined();
+        expect(knownEtag('/webhooks/subscriptions/s1')).toBeUndefined();
+    });
+});
+
+/**
+ * The writes that move a held record and answer with no tag. Each drops the tag, so the next save
+ * goes out unconditionally unless the caller reads the record again first (the store does, and
+ * a plain GET then hands the new tag back).
+ */
+describe('a write that moves a held record and answers without a tag', () => {
+    it.each([
+        ['an address PUT', 'put', '/orders/o1/shipping-address', '/orders/o1'],
+        ['a billing address PUT', 'put', '/orders/o1/billing-address', '/orders/o1'],
+        ['a payment', 'post', '/orders/o1/payments', '/orders/o1'],
+        ['an order note', 'post', '/orders/o1/timeline/notes', '/orders/o1'],
+        ['a withdrawn note', 'delete', '/orders/o1/timeline/notes/e1', '/orders/o1'],
+        [
+            'a secret DELETE',
+            'delete',
+            '/webhooks/subscriptions/s1/secrets/k1',
+            '/webhooks/subscriptions/s1'
+        ],
+        ['an account sub-action', 'post', '/account/email-change/resend', '/account']
+    ])(
+        '%s drops the tag, and the next read hands the new one back',
+        (_name, method, path, held) => {
+            onEtagResponse(answered('get', held, '"100"'));
+
+            onEtagResponse(answered(method, path));
+            expect(knownEtag(held)).toBeUndefined();
+            expect(ifMatchOf(onEtagRequest(outgoing('patch', held)))).toBeUndefined();
+
+            onEtagResponse(answered('get', held, '"200"'));
+            expect(ifMatchOf(onEtagRequest(outgoing('patch', held)))).toBe('"200"');
+        }
+    );
 });
 
 describe('onEtagRequest', () => {

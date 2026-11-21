@@ -235,7 +235,20 @@ const showOlder = () => {
 };
 
 /**
- * Saves the typed note, then reads the history again so the new row appears.
+ * Reads the order again after a note write. A note moves nothing on the order, but its path sits
+ * under the order's, so the transport forgets the order's tag (`infrastructure/http/etag.ts`); the
+ * read hands it back, so the order form's next save is still checked. A failed read shows beside
+ * the history, like its own.
+ *
+ * @returns A promise settling once the order is read.
+ */
+const rereadOrder = () =>
+    useOrdersStore()
+        .fetchOrder(props.orderId, { forced: true })
+        .catch((error: unknown) => reportReadError(error));
+
+/**
+ * Saves the typed note, then reads the history and the order again so the new row appears.
  *
  * @returns A promise settling once the call finished; a refusal stays beside the box.
  */
@@ -249,7 +262,7 @@ const saveNote = () => {
         .then(() => {
             noteText.value = '';
             addMessage(t('order-timeline.note-saved'));
-            return load();
+            return Promise.all([load(), rereadOrder()]);
         })
         .catch((error: unknown) => reportNoteError(error))
         .finally(() => {
@@ -258,7 +271,8 @@ const saveNote = () => {
 };
 
 /**
- * Withdraws the text of one note, then reads the history again so the row shows without it.
+ * Withdraws the text of one note, then reads the history and the order again so the row shows
+ * without it.
  *
  * @param eventId - the `note_added` row
  * @returns A promise settling once the call finished; a refusal stays beside the row.
@@ -271,7 +285,7 @@ const removeNoteText = (eventId: string) => {
         .then(() => {
             removingNoteId.value = undefined;
             addMessage(t('order-timeline.note-removed'));
-            return load();
+            return Promise.all([load(), rereadOrder()]);
         })
         .catch((error: unknown) => reportRemoveError(error));
 };

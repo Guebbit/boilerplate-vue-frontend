@@ -11,6 +11,7 @@ import TwoFactorEnroll from '../components/TwoFactorEnroll.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 import { parseOrvalFixture } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
@@ -30,6 +31,13 @@ vi.mock('@/infrastructure/http', () => ({
  */
 const mountEnroll = () => {
     responses = {
+        // The profile is read again after a setup: it changed the user record.
+        'GET /account': accountView({
+            id: 'u1',
+            username: 'ada',
+            email: 'ada@example.com',
+            role: 'customer'
+        }),
         'POST /account/2fa/methods/email/setup': {
             method: 'email',
             delivers: true,

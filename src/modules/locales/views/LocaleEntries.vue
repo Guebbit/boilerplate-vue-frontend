@@ -16,6 +16,7 @@ export default {
  * an edit is visible immediately.
  */
 import { computed, ref, watch } from 'vue';
+import { useHistoryLink } from '@/kernel/history-link.ts';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -83,6 +84,12 @@ const { capabilities, apps, filters, pageItemList, pageCurrent, entriesPageTotal
  * The language whose rows this page shows, from `/locales/:tag`.
  */
 const tag = computed(() => String(route.params.tag));
+
+/**
+ * The History link: the audit log filtered on this language (its tag is the record's target).
+ * Hidden without `read:AuditLog`, or on a build with no audit log.
+ */
+const historyTo = useHistoryLink(tag);
 
 /**
  * This language's manifest row, for the header. Absent until the manifest loads.
@@ -431,6 +438,9 @@ const handleExport = () => {
             >
                 <BookOpenText :size="16" class="mr-1" aria-hidden="true" />
                 {{ t('locale-entries-page.button-dictionary') }}
+            </v-btn>
+            <v-btn v-if="historyTo" variant="text" data-test="locale-history" :to="historyTo">
+                {{ t('generic.button-history') }}
             </v-btn>
             <v-btn variant="tonal" data-test="entries-export" @click="handleExport">
                 <Download :size="16" class="mr-1" aria-hidden="true" />

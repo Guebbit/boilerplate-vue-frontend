@@ -141,16 +141,29 @@ sequenceDiagram
 ```
 
 - **`src/infrastructure/http/etag.ts` is the whole transport half.** A success interceptor keeps the
-  tag a GET or PATCH answered with (a PUT answers none, so its held tag is dropped); a request interceptor sends it as `If-Match` on the next
+  tag a GET or PATCH answered with, or a POST answered with an `ETag` and a `Content-Location` that names a record it holds (a PUT answers none, so its held tag is dropped); a request interceptor sends it as `If-Match` on the next
   PUT or PATCH of that path. A DELETE sends none: it is optional (RFC 9110 §13.1.1), staff delete on
   purpose, and the server would still answer 412 to one that was sent. A resource never read here is written unconditionally — the API's own default.
-- **An action forgets the tag.** `POST /orders/1/cancel` changes the row and answers no tag, so
-  everything held under that path is dropped rather than sent stale. A sign-out drops all of them.
+- **A write forgets the tag it did not answer.** `PUT /orders/1/shipping-address` changes the row and
+  answers no tag, so everything held under that path is dropped rather than sent stale. A cancel is
+  the exception: its answer carries the order's new tag and a `Content-Location: /orders/1`, which
+  is kept. A sign-out drops all of them.
+- **A write that moves a held record reads it again.** The transport drops the tag and says nothing
+  about the new one, so the store reads the record back (a plain `GET` hands the new tag over);
+  without it the next save would go out unchecked. The order after an address `PUT`, a payment or a
+  note; the webhook after a secret `DELETE`. `/account` follows one rule: **re-read `GET /account`
+  after every write that changes the user record**: an email change (request, cancel, resend,
+  confirm), the password, the export request, the avatar, every two-factor write (setup, confirm,
+  remove, disable, backup codes) and an OAuth unlink. Writes that do not change it (the idle touch,
+  `POST /account/password/check`, the verification resend, sessions revoke, logout-all, the address
+  book, which is not part of the `/account` answer) still drop the tag and are not re-read: the next
+  profile save goes out unconditional, which is accepted because the profile page reads on mount.
 - **A form handles the refusal with `useStaleRecord`** (`src/infrastructure/utils/use-stale-record.ts`):
   a `412` becomes a _warning_ through the form's own `useBlockingError` — nothing is wrong with the
   request, the record moved — plus a "reload latest" button that re-reads the record, re-hydrates the
   form and, by that read, refreshes the tag. The stale edit is never resent on its own.
-- **Where it is wired:** every edit form of a versioned resource (`grep useStaleRecord src`). Anything
+- **Where it is wired:** every edit form of a versioned resource (`grep useStaleRecord src`), the
+  profile picture panel included (it reloads `/account` and leaves the details form's typing alone). Anything
   built on the generated client gets the header for free; only a form that wants to _answer_ a 412
   needs the composable.
 

@@ -50,6 +50,9 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
+/** The store the write cases drive. */
+type Store = ReturnType<typeof useAccountTwoFactorStore>;
+
 /** URLs of every request the mocked transport has seen, in call order. */
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
@@ -85,7 +88,14 @@ beforeEach(() => {
     responses = {
         // The caller's own rules. The session store fetches these for every identified viewer,
         // so every spec that logs somebody in needs an answer for them.
-        'GET /account/2fa': STATUS_OFF
+        'GET /account/2fa': STATUS_OFF,
+        // Every 2FA write reads the profile again: it changed the user record.
+        'GET /account': accountView({
+            id: 'u1',
+            username: 'ada',
+            email: 'ada@example.com',
+            role: 'customer'
+        })
     };
 });
 
@@ -239,13 +249,56 @@ describe('the enrollment machine', () => {
             .removeMethod('email', '123456')
             .then(() => store.disableAll('123456'))
             .then(() => {
-                expect(requestedUrls()).toEqual([
-                    '/account/2fa/methods/email/remove',
-                    '/account/2fa',
-                    '/account/2fa/disable',
-                    '/account/2fa'
-                ]);
+                expect(requestedUrls().filter((url) => url === '/account/2fa')).toHaveLength(2);
             });
+    });
+});
+
+describe('a write that changes the user record reads the profile again', () => {
+    // The write drops the tag held for `/account`; the read hands it back, so the profile's next
+    // save is still checked.
+    it.each([
+        [
+            'setupMethod',
+            'POST /account/2fa/methods/email/setup',
+            (s: Store) => s.setupMethod('email')
+        ],
+        [
+            'confirmMethod',
+            'POST /account/2fa/methods/email/confirm',
+            (s: Store) => s.confirmMethod('email', '123456')
+        ],
+        [
+            'removeMethod',
+            'POST /account/2fa/methods/email/remove',
+            (s: Store) => s.removeMethod('email', '123456')
+        ],
+        ['disableAll', 'POST /account/2fa/disable', (s: Store) => s.disableAll('123456')],
+        [
+            'regenerateBackupCodes',
+            'POST /account/2fa/backup-codes',
+            (s: Store) => s.regenerateBackupCodes('123456')
+        ]
+    ])('%s', (_name, key, write) => {
+        responses['POST /account/2fa/methods/email/setup'] = {
+            method: 'email',
+            delivers: false
+        };
+        responses['POST /account/2fa/methods/email/confirm'] = { method: 'email' };
+        responses['POST /account/2fa/methods/email/remove'] = undefined;
+        responses['POST /account/2fa/disable'] = undefined;
+        responses['POST /account/2fa/backup-codes'] = { codes: [] };
+
+        return write(useAccountTwoFactorStore()).then(() => {
+            const urls = vi
+                .mocked(orvalMutator)
+                .mock.calls.map(
+                    (call) =>
+                        `${(call[0] as { method: string }).method.toUpperCase()} ${(call[0] as { url: string }).url}`
+                );
+            expect(urls).toContain(key);
+            expect(urls).toContain('GET /account');
+        });
     });
 });
 
@@ -317,7 +370,10 @@ describe('proving a factor before changing one', () => {
             .then(() => {
                 const bodies = vi
                     .mocked(orvalMutator)
-                    .mock.calls.map((call) => (call[0] as { data?: unknown }).data);
+                    .mock.calls.filter((call) =>
+                        (call[0] as { url: string }).url.endsWith('/setup')
+                    )
+                    .map((call) => (call[0] as { data?: unknown }).data);
                 expect(bodies).toEqual([undefined, { code: '123456' }]);
             });
     });

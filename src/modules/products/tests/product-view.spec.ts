@@ -325,3 +325,52 @@ describe('the page view', () => {
         });
     });
 });
+
+/**
+ * A staff caller, holding `read:AuditLog` or not.
+ *
+ * @param canReadAuditLog - Whether to hold the ability.
+ */
+const signInAsStaff = (canReadAuditLog: boolean) => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'operator1', email: 'operator@example.com', role: 'admin' };
+    session.setAbilities({
+        tenant: canReadAuditLog ? [['read', 'AuditLog']] : [],
+        platform: []
+    });
+};
+
+/**
+ * A bare product to show the page for.
+ */
+const aShelfProduct = (): ProductType => ({
+    id: 'p1',
+    title: 'Widget',
+    price: '9.99',
+    currency: 'EUR',
+    inStock: true,
+    lowStock: false,
+    buyable: true,
+    actions: NO_PRODUCT_ACTIONS
+});
+
+describe('the "History" link', () => {
+    it('links to the audit log filtered on the product, for a caller who may read it', () => {
+        signInAsStaff(true);
+
+        const wrapper = mountProduct(aShelfProduct());
+
+        expect(wrapper.get('[data-test=product-history]').attributes('href')).toBe(
+            '/en/audit?target=p1'
+        );
+    });
+
+    it('is absent for a caller without read:AuditLog', () => {
+        signInAsStaff(false);
+
+        const wrapper = mountProduct(aShelfProduct());
+
+        expect(wrapper.find('[data-test=product-history]').exists()).toBe(false);
+    });
+});

@@ -1,6 +1,6 @@
 /**
  * @module
- * Conditional writes, client side: remember the `ETag` a GET or PATCH answered with, and send it
+ * Conditional writes, client side: remember the `ETag` a GET, a PATCH or an action answered with, and send it
  * back as `If-Match` on the next PUT/PATCH of the same resource. The server refuses with 412
  * when someone else changed the record in between; a form turns that into "reload".
  * A DELETE carries none: staff delete on purpose, and the server would still check one if sent
@@ -81,9 +81,12 @@ const isUnder = (path: string, key: string): boolean => path === key || path.sta
  * Response interceptor: keeps the tag a resource answers with, and drops tags an answer without one
  * has just made stale.
  *
- * A successful action on a resource (`POST /orders/1/cancel`, a restore) changes the row but says
- * nothing about its new version, so every tag held under that path goes — the next edit then goes
- * out unconditionally rather than with a tag that is certain to be refused.
+ * A successful write under a held path changes the row, so every tag held under that path goes —
+ * the next edit then goes out unconditionally rather than with a tag that is certain to be refused.
+ * One exception: a POST answer that carries an `ETag` and a `Content-Location` naming a record we
+ * hold (cancel, override-status, activate) hands over that record's NEW tag, and it is kept.
+ * The contract says so itself (`x-versioned` posts), and RFC 9110 §8.7 trusts a `Content-Location`
+ * for another URL when both share an owner, which ours do.
  *
  * @param response - A successful response.
  * @returns The same response, untouched: this observes, it never unwraps.
@@ -92,9 +95,19 @@ export const onEtagResponse = (response: AxiosResponse): AxiosResponse => {
     const method = response.config.method?.toLowerCase() ?? 'get';
     const key = toPathname(response.config.url);
     const tag: unknown = response.headers.etag;
+    const location: unknown = response.headers['content-location'];
+
+    // Read before the drop below: "held" means held when the action was sent.
+    const named =
+        method === 'post' && typeof location === 'string' && location
+            ? toPathname(location)
+            : undefined;
+    const heldNamed = named !== undefined && tags.has(named) ? named : undefined;
 
     if (method !== 'get') for (const held of tags.keys()) if (isUnder(key, held)) tags.delete(held);
 
-    if (TAGGING_METHODS.has(method) && typeof tag === 'string' && tag) tags.set(key, tag);
+    if (typeof tag !== 'string' || !tag) return response;
+    if (TAGGING_METHODS.has(method)) tags.set(key, tag);
+    else if (heldNamed) tags.set(heldNamed, tag);
     return response;
 };

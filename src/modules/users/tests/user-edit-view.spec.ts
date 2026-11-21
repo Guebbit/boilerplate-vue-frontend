@@ -338,6 +338,21 @@ describe('UserEdit — a save answered 412', () => {
             expect(wrapper.find('[data-test=user-edit-reload-latest]').exists()).toBe(true);
         }));
 
+    it('does the same when the 412 follows an action on the user', () => {
+        mockRefusedPatch();
+        const wrapper = mountPage();
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=user-edit-activate]').trigger('click'))
+            .then(flushPromises)
+            .then(() => wrapper.get('[data-test=user-edit-username] input').setValue('ada2'))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(postsTo('/users/u1/activate')).toHaveLength(1);
+                expect(wrapper.find('[data-test=user-edit-reload-latest]').exists()).toBe(true);
+            });
+    });
+
     it('re-reads the user past the store cache on "reload latest", and clears the warning', () =>
         submitRefused().then((wrapper) => {
             const readsBefore = userReads();

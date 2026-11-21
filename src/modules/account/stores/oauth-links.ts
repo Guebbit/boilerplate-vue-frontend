@@ -15,6 +15,7 @@ import {
 } from '@api';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import type { OAuthLink } from '@types';
+import { useAccountProfileStore } from './profile.ts';
 
 /**
  * Starts connecting a provider to the signed-in account: the server issues a short-lived connect
@@ -80,13 +81,22 @@ export const useAccountOAuthLinksStore = defineStore('account-oauth-links', () =
     /**
      * Disconnects one provider. The answer is the links the account still has, so the list is
      * taken from it with no second read. The server asks for a fresh session; the shared step-up
-     * prompt answers that, so nothing here handles it.
+     * prompt answers that, so nothing here handles it. The write changes the user record and drops
+     * the tag held for `/account` (`infrastructure/http/etag.ts`), so the profile is read again.
      *
      * @param provider - Registry key from {@link fetchLinks}, e.g. `'google'`.
-     * @returns A promise resolving with the links left.
+     * @returns A promise resolving with the links left, once the profile is fresh.
      */
     const unlinkProvider = (provider: string) =>
-        fetchAny(() => apiUnlinkOAuthProvider(provider).then(applyLinks));
+        fetchAny(() =>
+            apiUnlinkOAuthProvider(provider)
+                .then(applyLinks)
+                .then((left) =>
+                    useAccountProfileStore()
+                        .fetchProfile(true)
+                        .then(() => left)
+                )
+        );
 
     return { links, loading, fetchLinks, unlinkProvider };
 });

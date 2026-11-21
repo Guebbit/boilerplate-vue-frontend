@@ -3,8 +3,8 @@
  * `WebhookTarget`'s two confirm-then-write controls, removing a signing secret and deleting the
  * subscription: a second press made before the first answer must not ask again or write again.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router';
 import WebhookTarget from '../views/WebhookTarget.vue';
@@ -18,6 +18,9 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import type { WebhookSubscription } from '@types';
 
 wireModulesIntoCore();
+
+// A page left mounted by one case would still answer the next case's store actions.
+enableAutoUnmount(afterEach);
 
 /** The real route tree, so the page's links resolve. */
 const router = createRouter({

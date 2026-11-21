@@ -17,6 +17,7 @@ export default {
  * shows only when the record's own `actions` flag says the server would accept it.
  */
 import { computed, ref } from 'vue';
+import { useHistoryLink } from '@/kernel/history-link.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
@@ -75,6 +76,12 @@ const {
  * The subscription being displayed.
  */
 const { currentSubscription, writingSubscription } = storeToRefs(useWebhooksStore());
+
+/**
+ * The History link: the audit log filtered on the subscription. Hidden without `read:AuditLog`, or on
+ * a build with no audit log.
+ */
+const historyTo = useHistoryLink(() => (currentSubscription.value ? id : undefined));
 
 /**
  * Selects and loads the subscription whenever the route id changes; a missing or forbidden one
@@ -522,6 +529,9 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     "
                 >
                     {{ t('webhook-target-page.button-go-to-deliveries') }}
+                </v-btn>
+                <v-btn v-if="historyTo" variant="tonal" data-test="webhook-history" :to="historyTo">
+                    {{ t('generic.button-history') }}
                 </v-btn>
                 <v-btn variant="tonal" :to="routerLinkI18n({ name: 'WebhooksList' })">
                     {{ t('webhook-target-page.button-go-to-list') }}

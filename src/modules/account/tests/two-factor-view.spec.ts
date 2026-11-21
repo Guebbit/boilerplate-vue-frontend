@@ -15,6 +15,7 @@ import ProfileTwoFactor from '../components/ProfileTwoFactor.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 import { parseOrvalFixture } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
@@ -54,7 +55,16 @@ const ARMED_TOTP = { method: 'totp', delivers: false, enrolledAt: '2026-01-01T00
  */
 const mountPanel = (status: Record<string, unknown>) => {
     setActivePinia(createPinia());
-    responses = { 'GET /account/2fa': status };
+    // `GET /account`: every 2FA write reads the profile again, its record having changed.
+    responses = {
+        'GET /account/2fa': status,
+        'GET /account': accountView({
+            id: 'u1',
+            username: 'ada',
+            email: 'ada@example.com',
+            role: 'customer'
+        })
+    };
     return mount(ProfileTwoFactor, {
         attachTo: document.body,
         global: { plugins: [vuetify, i18n] }
