@@ -8,8 +8,10 @@
  * such cap and carries on past the same day.
  *
  * Both clocks move together (`travelEverywhere`): the server's decides when the session ends. The
- * editor "stays busy" by moving between two pages every 27 minutes, inside the 30-minute idle limit
- * and inside the 28.5 minutes at which the page itself asks "still there?", so the only rule left
+ * editor "stays busy" by moving between two pages every 25 minutes, inside the 30-minute idle limit
+ * and inside the 27 minutes at which the page itself asks "still there?" (the page assumes the
+ * server last saw the request a minute earlier than it did, so its prompt opens two minutes before
+ * 29 minutes), so the only rule left
  * to end the session is the cap. Both session modes: a bearer session and a cookie session end the
  * same way.
  *
@@ -26,12 +28,12 @@ const MINUTE_MS = 60_000;
 
 /**
  * How far each move of the busy editor is from the last: under the 30-minute staff idle limit and
- * under the 28.5 minutes at which the page's own countdown opens its dialog.
+ * under the 27 minutes at which the page's own countdown opens its dialog.
  */
-const HOP_MINUTES = 27;
+const HOP_MINUTES = 25;
 
-/** Hops that keep the editor busy up to 23 h 51 min after sign-in: inside the 24-hour cap. */
-const HOPS_INSIDE_THE_CAP = 53;
+/** Hops that keep the editor busy up to 23 h 45 min after sign-in: inside the 24-hour cap. */
+const HOPS_INSIDE_THE_CAP = 57;
 
 /** The code the idle rule answers with: the journey must see the CAP end the session, not this. */
 const IDLE_CODE = 'SESSION_IDLE';
@@ -101,7 +103,7 @@ describe('FR23 · A busy staff session still ends after a day', () => {
             cy.visit(editPath);
             cy.get('[data-test=product-price-field] input').should('not.have.value', '');
 
-            cy.step('every 27 minutes they move between pages: never idle, and still signed in');
+            cy.step('every 25 minutes they move between pages: never idle, and still signed in');
             for (let hop = 0; hop < HOPS_INSIDE_THE_CAP; hop += 1) {
                 cy.travelEverywhere(HOP_MINUTES * MINUTE_MS);
                 stayBusy(editPath);
