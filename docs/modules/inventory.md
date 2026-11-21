@@ -3,7 +3,7 @@
 ::: tip At a glance
 **Owns** — the admin stock board and the ledger behind it, the preorder limit, and the staff preorder board.
 **Depends on** — [`products`](./products.md), read as-is, to put names on rows; [`delivery`](./delivery.md), for the board's fulfillment-order tab and per-product counts.
-**Breaks if you change** — nothing outside this folder. No module depends on it.
+**Breaks if you change** — the availability the product views show: this module is the only writer of `@/kernel/availability`, through the `availability-watch` slot. No module imports it.
 :::
 
 | Fact          | This module                                                                    |
@@ -15,6 +15,7 @@
 The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 - → `products` **customer-supplier** — Asks the products store to drop its cached catalogue after a recorded movement (`invalidateProductsCache`), and reads the ledger's titles through `useProductLines`.
+- → `products` **open-host** — Contributes `AvailabilityWatcher` to the `availability-watch` slot the product list, page and edit form render, and writes what it reads into `@/kernel/availability`; see [products](./products.md#availability).
 - → `delivery` **published-language** — Mounts `PreorderFulfillmentTable` and reads `usePreorderSummaries` on the preorder board; the fulfillment orders stay `delivery`'s.
 
 ## The story

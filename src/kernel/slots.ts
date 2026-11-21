@@ -22,10 +22,15 @@ import type { Component, InjectionKey } from 'vue';
  * - `product-create-extras`: the product create form, beside its fields; receives
  *   `{ registerAfterCreate }`, a function taking a step to run with the new product's id once it
  *   exists. Stock is not a product field, so `inventory` puts its opening-stock field here.
+ * - `availability-watch`: a product view that shows stock (the list, the page, the edit form) renders
+ *   it so the availability of what is on screen is read; receives `{ productIds, staleTime,
+ *   withStockCount }` and renders nothing. A slot, not an import, because `inventory` owns the read
+ *   and `products` cannot depend on it; the value comes back through `@/kernel/availability`.
  * - `app-bar`: the shell's app bar, beside the account menu; receives nothing. A contribution
  *   owns its own visibility, because it is mounted for guests too.
  */
-export type SlotName = 'product-actions' | 'product-create-extras' | 'app-bar';
+export type SlotName =
+    'product-actions' | 'product-create-extras' | 'availability-watch' | 'app-bar';
 
 /**
  * The collected contributions: slot name to the components every enabled module put there, in

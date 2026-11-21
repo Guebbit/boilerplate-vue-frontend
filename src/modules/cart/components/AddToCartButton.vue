@@ -16,6 +16,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Product } from '@types';
 import { shelfStateOf } from '@/modules/products';
+import { availabilityOf } from '@/kernel/availability.ts';
 import { formatDay } from '@/infrastructure/utils/formatters.ts';
 import { useCartStore } from '../store';
 import { backorderPromiseDays } from '@/modules/shop';
@@ -56,13 +57,19 @@ const cartStore = useCartStore();
 const { loading } = storeToRefs(cartStore);
 
 /**
- * The shelf as the shopper reads it, from the flags every reader gets (`purchasable`, `inStock`;
- * the exact counters are for stock readers only). Off sale and sold out both hold the button back;
- * a preorder does not, it is bought now and ships from its release date, and a backorder is bought
- * now and ships by its restock date (or within the shop's promised days), which the button states
- * under itself. Whether the button works at all is the server's `buyable`.
+ * The shelf as the shopper reads it: `purchasable` and the server's availability. Off sale and sold
+ * out both hold the button back; a preorder does not, it is bought now and ships from its release
+ * date, and a backorder is bought now and ships by its restock date (or within the shop's promised
+ * days), which the button states under itself. Absent while the availability is loading.
  */
-const shelf = computed(() => shelfStateOf(product));
+const shelf = computed(() => shelfStateOf(product, availabilityOf(product.id)));
+
+/**
+ * Whether the product can be ordered now: anything but sold out, off sale, or not known yet.
+ */
+const orderable = computed(
+    () => shelf.value === 'in-stock' || shelf.value === 'preorder' || shelf.value === 'backorder'
+);
 
 /**
  * The label the button wears: the action, or why it is not on offer.
@@ -81,7 +88,9 @@ const label = computed(() => {
  */
 const promise = computed(() =>
     product.restockDate
-        ? t('add-to-cart-button.backorder-ships-by', { date: formatDay(product.restockDate) })
+        ? t('add-to-cart-button.backorder-ships-by', {
+              date: formatDay(availabilityOf(product.id)?.availabilityDate)
+          })
         : t('add-to-cart-button.backorder-ships-undated', { days: backorderPromiseDays.value })
 );
 
@@ -124,7 +133,7 @@ const handleAddToCart = () => {
         <v-btn
             color="primary"
             data-test="add-to-cart"
-            :disabled="!product.buyable || loading"
+            :disabled="!orderable || loading"
             @click="handleAddToCart"
         >
             <ShoppingCart :size="18" class="mr-1" aria-hidden="true" />

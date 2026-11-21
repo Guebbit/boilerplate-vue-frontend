@@ -18,7 +18,8 @@ The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 - `inventory` → **customer-supplier** — Asks the products store to drop its cached catalogue after a recorded movement (`invalidateProductsCache`), and reads the ledger's titles through `useProductLines`.
 - `cart` → **customer-supplier** — Reads its lines' products through `useProductLines` and asks the cache to drop after a checkout (`invalidateProductsCache`).
 - `wishlist` → **conformist** — Joins its saved lines to their product records through `useProductLines`, read as they are.
-- `stock-alerts` → **conformist** — Reads the shelf state (`shelfStateOf`) and the titles (`useProductLines`) as they are.
+- `stock-alerts` → **conformist** — Reads the shelf state (`shelfStateOf`), the availability (`@/kernel/availability`) and the titles (`useProductLines`) as they are.
+- `cart` also reads the availability (`@/kernel/availability`, `shelfStateOf`) for its add-to-cart button.
 
 ## The story
 
@@ -41,6 +42,8 @@ dictionary through `src/modules/products/tests/products-store.ts`, so no product
 
 ## How fresh the numbers are
 
+This page is about the details. Availability has its own lifetime, [below](#availability).
+
 Products are cached for **five minutes** (`staleTime` in `store.ts`), and an expired entry keeps
 rendering while the refetch runs. That window is the lists': a stock count a few minutes old on a
 grid is fine, because the server checks stock again at add-to-cart and at checkout.
@@ -58,6 +61,41 @@ flowchart LR
     W["Cart or checkout write"] -->|"invalidateProductsCache"| C
     C -->|"cached copy at once,<br/>fresh copy swapped in"| V["What the shopper sees"]
 ```
+
+## Availability {#availability}
+
+What a shopper is told about stock is its own read, apart from the product record. The product
+answers `GET /products/{id}` and the lists carry the details; `availability` (`in_stock`,
+`out_of_stock`, `preorder`, `backorder`) and its `availabilityDate` come from
+`GET /products/{id}/availability` and `GET /products/availability?id=…`, which the backend caches
+for a minute and clears on every sale.
+
+They are held in `@/kernel/availability`, keyed by product id, and are never merged into the product
+record: the toolkit's `addRecord` replaces a whole record, so the next details fetch would wipe the
+availability and the two lifetimes would tangle. A reader joins the two:
+`shelfStateOf(product, availabilityOf(product.id))`.
+
+**Why the kernel.** The product views (card, page, edit form) need the answer as a value: a badge, a
+stock label, a hint. A slot hands a host a component, never a value back. The read is
+[`inventory`](./inventory.md)'s, and `inventory` already depends on `products`, so `products`
+importing it would be a cycle. So the state sits in the kernel, the pattern of `@/kernel/work-counts`:
+one writer (`inventory`), many readers (`products`, `cart`, `stock-alerts`).
+
+**Who asks, and how fresh.** A host view renders the `availability-watch` slot, which `inventory`
+fills with a renderless `AvailabilityWatcher`; it reads, a card or button only reads the port:
+
+| Host                       | `staleTime` | Also re-reads when                       |
+| -------------------------- | ----------- | ---------------------------------------- |
+| product page, product edit | 0           | the tab regains focus or becomes visible |
+| list (the cards' grid)     | 30 s        | the tab regains focus or becomes visible |
+
+The watcher reads when the ids change and when the shopper comes back, the way the cart does. A batch
+is at most 100 ids; a product the server leaves out (unknown, or hidden from this viewer) is recorded
+as left out, which is not the same as "not asked yet". A card shows no badge, and the add-to-cart
+button stays disabled, until the answer lands. The port is emptied, and read again, when another
+person signs in: staff see hidden products a guest does not. A stock reader also gets the shelf count
+beside the signal on the product page (`with-stock-count`), read from `GET /inventory/levels/{id}`;
+nobody else makes that call.
 
 ## The list is two presentations
 
@@ -96,31 +134,34 @@ operation.
 ## Product states on screen
 
 The backend keeps two independent flags, `active` (can a shopper see it) and `purchasable` (can it
-be bought, stock aside), and derives a third, read-only one, `preorder` (on sale, with a
-`releaseDate` still ahead). The screens rank them in one place, `src/modules/products/domain/shelf-state.ts`, so the card, the
-product page and the add-to-cart button never disagree: **off sale outranks a preorder, which outranks the stock badge**.
+be bought, stock aside), and tells shoppers what stock allows through `availability` (see
+[Availability](#availability)). The screens rank them in one place,
+`src/modules/products/domain/shelf-state.ts`, so the card, the product page and the add-to-cart
+button never disagree: **off sale outranks the availability**.
 
-| `purchasable` | `preorder` | `inStock` | Shelf state    | Card badge                | Add to cart                         |
-| ------------- | ---------- | --------- | -------------- | ------------------------- | ----------------------------------- |
-| `false`       | any        | any       | `off-sale`     | "Not available right now" | disabled, "Not available right now" |
-| `true`        | `true`     | any       | `preorder`     | "Preorder · ships {date}" | enabled, "Preorder"                 |
-| `true`        | `false`    | `false`   | `out-of-stock` | "Out of stock"            | disabled, "Out of stock"            |
-| `true`        | `false`    | `true`    | `in-stock`     | "In stock"                | enabled                             |
+| `purchasable` | `availability` | Shelf state    | Card badge                | Add to cart                                                          |
+| ------------- | -------------- | -------------- | ------------------------- | -------------------------------------------------------------------- |
+| `false`       | any            | `off-sale`     | "Not available right now" | disabled, "Not available right now"                                  |
+| `true`        | `preorder`     | `preorder`     | "Preorder · ships {date}" | enabled, "Preorder"                                                  |
+| `true`        | `backorder`    | `backorder`    | "Backorder · ships by …"  | enabled, "Backorder"                                                 |
+| `true`        | `out_of_stock` | `out-of-stock` | "Out of stock"            | disabled, "Out of stock"                                             |
+| `true`        | `in_stock`     | `in-stock`     | "In stock"                | enabled                                                              |
+| any           | not loaded yet | none           | no badge                  | disabled (an off-sale product still reads "Not available right now") |
 
 ```mermaid
 flowchart TD
-    A[product] --> B{purchasable false?}
+    A[product + availability] --> B{purchasable false?}
     B -- yes --> C[off-sale]
-    B -- no --> D{preorder true?}
-    D -- yes --> E[preorder: buyable now, ships from releaseDate]
-    D -- no --> F{inStock?}
-    F -- yes --> G[in-stock]
-    F -- no --> H[out-of-stock]
+    B -- no --> D{availability loaded?}
+    D -- no --> N[no state yet]
+    D -- yes --> E[in-stock · preorder · backorder · out-of-stock]
 ```
 
 A preorder's shelf may be empty: its units are claimed against the preorder allowance
-(`backorderLimit`, set on the [stock board](./inventory.md)), not the shelf, so `inStock` is not
-asked. The shopper never sees the allowance; a full one shows up as "Sold out" on the cart line.
+(`backorderLimit`, set on the [stock board](./inventory.md)), not the shelf, which the server folds
+into `availability`: a full allowance reads `out_of_stock`. The shopper never sees the allowance. A
+backorder names its day from `availabilityDate`, except when the product sets no `restockDate`:
+then the badge says "within {days} days", since the server's date only counts those days from today.
 
 Staff set the date with the "Release date" field on the create and edit forms
 (`<input type="date">`, sent as the plain `YYYY-MM-DD` day; at most one year ahead, which the

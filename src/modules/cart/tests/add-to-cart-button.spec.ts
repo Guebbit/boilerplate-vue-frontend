@@ -16,7 +16,8 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
-import type { CartResponse, Product } from '@types';
+import type { CartResponse, Product, ProductAvailability } from '@types';
+import { clearAvailability, recordAvailability } from '@/kernel/availability.ts';
 import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 // The shop states the backorder promise; these cases are about the wording around it.
@@ -86,14 +87,22 @@ const signIn = () => {
 };
 
 /**
- * Mounts the button for a product.
+ * Mounts the button for a product, whose availability the host would already have read.
  *
  * @param product - The shape under test.
+ * @param answer - What the availability read answered; in stock unless a case says otherwise.
  */
-const mountButton = (product: Product) =>
-    mount(AddToCartButton, { props: { product }, global: { plugins: [vuetify, i18n] } });
+const mountButton = (product: Product, answer: Partial<ProductAvailability> = {}) => {
+    recordAvailability(
+        product.id,
+        { productId: product.id, availability: 'in_stock', ...answer },
+        0
+    );
+    return mount(AddToCartButton, { props: { product }, global: { plugins: [vuetify, i18n] } });
+};
 
 beforeEach(() => {
+    clearAvailability();
     // The guest cart is saved in `localStorage`, which outlives a test's pinia.
     localStorage.clear();
     setActivePinia(createPinia());
@@ -103,14 +112,7 @@ beforeEach(() => {
 describe('the shelf', () => {
     it('blocks buying what is out of stock', () => {
         signIn();
-        const wrapper = mountButton({
-            ...IN_STOCK,
-            inStock: false,
-            buyable: false,
-            onHand: 3,
-            reserved: 3,
-            available: 0
-        });
+        const wrapper = mountButton(IN_STOCK, { availability: 'out_of_stock' });
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
         expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Out of stock');
@@ -118,27 +120,31 @@ describe('the shelf', () => {
 
     it('blocks buying what is off sale, and says so instead of "Out of stock"', () => {
         signIn();
-        const wrapper = mountButton({ ...IN_STOCK, purchasable: false, buyable: false });
+        const wrapper = mountButton(
+            { ...IN_STOCK, purchasable: false },
+            { availability: 'out_of_stock' }
+        );
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
         expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Not available right now');
     });
 
-    it('ranks off sale above a sold-out shelf', () => {
+    it('holds the button back until the availability is known', () => {
         signIn();
-        const wrapper = mountButton({
-            ...IN_STOCK,
-            purchasable: false,
-            inStock: false,
-            buyable: false
+        const wrapper = mount(AddToCartButton, {
+            props: { product: IN_STOCK },
+            global: { plugins: [vuetify, i18n] }
         });
 
-        expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Not available right now');
+        expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
     });
 
     it('lets a preorder with allowance left be bought, and says "Preorder"', () => {
         signIn();
-        const wrapper = mountButton({ ...IN_STOCK, inStock: true, preorder: true });
+        const wrapper = mountButton(IN_STOCK, {
+            availability: 'preorder',
+            availabilityDate: '2027-03-15'
+        });
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeUndefined();
         expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Preorder');
@@ -146,19 +152,14 @@ describe('the shelf', () => {
 
     it('lets a backorder be bought and states its promise, a date or 30 days', () => {
         signIn();
-        const dated = mountButton({
-            ...IN_STOCK,
-            inStock: false,
-            backorder: true,
-            buyable: true,
-            restockDate: '2027-03-15'
-        });
-        const undated = mountButton({
-            ...IN_STOCK,
-            inStock: false,
-            backorder: true,
-            buyable: true
-        });
+        const dated = mountButton(
+            { ...IN_STOCK, restockDate: '2027-03-15' },
+            { availability: 'backorder', availabilityDate: '2027-03-15' }
+        );
+        const undated = mountButton(
+            { ...IN_STOCK, id: 'p-undated' },
+            { availability: 'backorder', availabilityDate: '2027-01-20' }
+        );
 
         expect(dated.get('[data-test=add-to-cart]').attributes('disabled')).toBeUndefined();
         expect(dated.get('[data-test=add-to-cart]').text()).toContain('Backorder');
@@ -168,12 +169,7 @@ describe('the shelf', () => {
 
     it('shuts a preorder whose allowance is full, as out of stock', () => {
         signIn();
-        const wrapper = mountButton({
-            ...IN_STOCK,
-            inStock: false,
-            preorder: true,
-            buyable: false
-        });
+        const wrapper = mountButton(IN_STOCK, { availability: 'out_of_stock' });
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
         expect(wrapper.get('[data-test=add-to-cart]').text()).not.toContain('Preorder');

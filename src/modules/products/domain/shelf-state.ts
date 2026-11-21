@@ -1,12 +1,11 @@
 /**
  * @module
- * What a shopper is told about a product's shelf, in one value: off sale outranks a preorder,
- * which outranks the stock badge, unless the preorder's allowance is full; an empty shelf of a
- * product the shop keeps selling reads backorder. Pure: reads only the flags every reader gets
- * (`purchasable`, `preorder`, `backorder`, `inStock`), never a count.
+ * What a shopper is told about a product's shelf, in one value. Off sale outranks the server's
+ * `availability`, which is Google Merchant's (`in_stock`, `out_of_stock`, `preorder`, `backorder`).
+ * Pure: reads the product's `purchasable` and its availability, never a count.
  * One home so the card, the product page and the add-to-cart button never disagree.
  */
-import type { Product } from '@types';
+import type { Product, ProductAvailability } from '@types';
 
 /**
  * The shelf as a shopper sees it: `off-sale` ("Not available right now"), `preorder` (buyable now,
@@ -16,22 +15,33 @@ import type { Product } from '@types';
 export type ShelfState = 'off-sale' | 'preorder' | 'backorder' | 'out-of-stock' | 'in-stock';
 
 /**
- * Ranks the product's flags into the one state to show.
+ * Ranks the product's flag and its availability into the one state to show.
  *
- * @param product - The product, as any reader gets it.
- * @returns `off-sale` when `purchasable` is `false`, else `preorder` when the server says the
- *  product is sold before its release date and some of its allowance is left (`inStock` counts
- *  the allowance for a preorder, not the shelf), else `backorder` when the shelf is empty but the
- *  shop keeps selling, else `out-of-stock` when nothing is left, else `in-stock`. An absent
- *  `purchasable` reads as on sale.
+ * @param product - The product's details; only `purchasable` is read. An absent one reads as on sale.
+ * @param availability - What `GET /products/{id}/availability` answered, `undefined` while it is not loaded.
+ * @returns `off-sale` when `purchasable` is `false` (the server calls that `out_of_stock` too; the
+ *  details tell them apart), else the availability's own state, or `undefined` while it is unknown.
  */
-export const shelfStateOf = ({
-    purchasable,
-    preorder,
-    backorder,
-    inStock
-}: Pick<Product, 'purchasable' | 'preorder' | 'backorder' | 'inStock'>): ShelfState => {
+export const shelfStateOf = (
+    { purchasable }: Pick<Product, 'purchasable'>,
+    availability: Pick<ProductAvailability, 'availability'> | undefined
+): ShelfState | undefined => {
     if (purchasable === false) return 'off-sale';
-    if (!inStock) return backorder === true ? 'backorder' : 'out-of-stock';
-    return preorder === true ? 'preorder' : 'in-stock';
+    switch (availability?.availability) {
+        case 'in_stock': {
+            return 'in-stock';
+        }
+        case 'preorder': {
+            return 'preorder';
+        }
+        case 'backorder': {
+            return 'backorder';
+        }
+        case 'out_of_stock': {
+            return 'out-of-stock';
+        }
+        default: {
+            return undefined;
+        }
+    }
 };

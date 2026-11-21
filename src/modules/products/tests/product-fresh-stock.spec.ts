@@ -1,9 +1,10 @@
 /**
  * @module
- * The product page is where a stock number gets read, so opening it refetches even when the list
- * read the same product a moment ago (inside the store's five-minute window): the cached copy
- * renders at once, the fresh one is swapped in. The shopper's own cart and checkout writes end the
- * window early too. Real store and real page; `@api` is mocked at `getProductById`.
+ * The product page refetches its details on every open even when a list read the same product a
+ * moment ago (inside the store's five-minute window): the cached copy renders at once and the fresh
+ * one is swapped in. The shopper's own cart and checkout writes end the window early too. Real store
+ * and real page; `@api` is mocked at `getProductById`. The availability is another read (inventory's
+ * watcher, `inventory/tests/use-watch-availability.spec.ts`).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
@@ -39,24 +40,21 @@ const router = createRouter({
 });
 
 /**
- * Answers `GET /products/p1` with `available` units on the shelf, as the API would.
+ * Answers `GET /products/p1`: the details, carrying `title`.
  *
- * @param available - the stock the server reports
+ * @param title - the title the server reports
  * @returns the mocked-response promise
  */
-const serverHolds = (available: number) =>
+const serverHolds = (title: string) =>
     Promise.resolve(
         asStub<Awaited<ReturnType<typeof getProductById>>>({
             id: 'p1',
-            title: 'Widget',
+            title,
             price: '9.99',
             currency: 'EUR',
-            inStock: available > 0,
+            inStock: true,
             lowStock: false,
-            actions: NO_PRODUCT_ACTIONS,
-            onHand: available,
-            reserved: 0,
-            available
+            actions: NO_PRODUCT_ACTIONS
         })
     );
 
@@ -74,13 +72,12 @@ const openPage = () =>
     });
 
 /**
- * The stock the page currently shows.
+ * The title the page currently shows.
  *
  * @param wrapper - the mounted page
- * @returns the stat's text
+ * @returns the hero's text
  */
-const shownStock = (wrapper: ReturnType<typeof openPage>) =>
-    wrapper.get('[data-test=product-stock]').text();
+const shownTitle = (wrapper: ReturnType<typeof openPage>) => wrapper.text();
 
 beforeEach(() => {
     setActivePinia(createPinia());
@@ -90,18 +87,19 @@ beforeEach(() => {
 
 describe('opening the product page', () => {
     it('shows the cached copy at once, then swaps in the fresh one', () => {
-        vi.mocked(getProductById).mockImplementationOnce(() => serverHolds(7));
+        vi.mocked(getProductById).mockImplementationOnce(() => serverHolds('Widget'));
         // A list read of the same product a moment ago: inside the five-minute window.
         return useProductsStore()
             .fetchProduct('p1')
             .then(() => {
-                vi.mocked(getProductById).mockImplementationOnce(() => serverHolds(2));
+                vi.mocked(getProductById).mockImplementationOnce(() => serverHolds('Widget v2'));
                 const wrapper = openPage();
 
-                expect(shownStock(wrapper)).toContain('7');
+                expect(shownTitle(wrapper)).toContain('Widget');
+                expect(shownTitle(wrapper)).not.toContain('Widget v2');
                 return flushPromises().then(() => {
                     expect(getProductById).toHaveBeenCalledTimes(2);
-                    expect(shownStock(wrapper)).toContain('2');
+                    expect(shownTitle(wrapper)).toContain('Widget v2');
                     wrapper.unmount();
                 });
             });
@@ -110,7 +108,7 @@ describe('opening the product page', () => {
 
 describe('invalidateProductsCache', () => {
     it('marks a fresh cached record stale, so the next read asks the server', () => {
-        vi.mocked(getProductById).mockImplementation(() => serverHolds(7));
+        vi.mocked(getProductById).mockImplementation(() => serverHolds('Widget'));
         const store = useProductsStore();
 
         return store

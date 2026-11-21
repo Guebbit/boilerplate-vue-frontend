@@ -9,6 +9,7 @@
  * page run together and the request that goes out is what is asserted.
  */
 import { afterEach, describe, expect, it, beforeEach, vi } from 'vitest';
+import { defineComponent, h } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 import { searchProducts } from '@api';
 import { createPinia, setActivePinia } from 'pinia';
@@ -21,6 +22,7 @@ import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts'
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
+import { SLOTS_KEY } from '@/kernel/slots';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
@@ -108,10 +110,12 @@ const mounted: { unmount: () => void }[] = [];
 /**
  * Mounts the page and lets its first search land.
  */
-const mountList = async () => {
+const mountList = async (slots: Record<string, unknown[]> = {}) => {
     const wrapper = mount(ProductsList, {
         global: {
-            plugins: [router, vuetify, i18n]
+            plugins: [router, vuetify, i18n],
+            // An `InjectionKey` is a typed symbol; the mount options want the plain one.
+            provide: { [SLOTS_KEY as symbol]: slots }
         }
     });
     mounted.push(wrapper);
@@ -130,6 +134,36 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     return loadLocale('en').then(() => router.push('/en/products').then(() => router.isReady()));
+});
+
+describe('ProductsList — the availability-watch slot', () => {
+    /** The props the page handed the contributed watcher, one entry per render. */
+    const seen: { productIds: readonly string[]; staleTime: number }[] = [];
+
+    /** A stand-in for `inventory`'s watcher: renders nothing and notes what it was given. */
+    const WatchProbe = defineComponent({
+        props: {
+            productIds: { type: Array, required: true },
+            staleTime: { type: Number, required: true }
+        },
+        // Recorded on each render: the ids arrive after the first search lands.
+        setup: (props) => () => {
+            seen.push({
+                productIds: [...(props.productIds as string[])],
+                staleTime: props.staleTime
+            });
+            return h('span');
+        }
+    });
+
+    it('hands the contributed watcher the ids on the page, allowing 30 seconds of age', async () => {
+        seen.length = 0;
+        answerWith('Walnut desk', 'Oak stool');
+
+        await mountList({ 'availability-watch': [WatchProbe] });
+
+        expect(seen.at(-1)).toEqual({ productIds: ['p0', 'p1'], staleTime: 30_000 });
+    });
 });
 
 describe('ProductsList — grid for shoppers, table for staff', () => {

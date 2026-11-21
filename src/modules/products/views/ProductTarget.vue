@@ -22,6 +22,7 @@ import { storeToRefs } from 'pinia';
 import { useProductsStore } from '../store';
 import { shelfStateOf } from '../domain';
 import { useSlot } from '@/kernel/slots';
+import { availabilityOf, stockCountOf } from '@/kernel/availability.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { Calendar, Circle, Clock, Euro, FileText, Hash, Package, Tag } from 'lucide-vue-next';
@@ -108,6 +109,20 @@ const onMissingRecord = useMissingRecord();
 watchProduct(() => id, { staleTime: 0, onError: onMissingRecord });
 
 /**
+ * The availability watcher `inventory` contributes: the product's stock signal is its own read
+ * beside the details (`GET /products/{id}/availability`), with `staleTime: 0` too: this page is
+ * where a stock number is read, so every open asks again, and coming back to the tab does as well.
+ * A stock reader's shelf count rides along. A slot because `inventory` owns the read and `products`
+ * cannot depend on it (`@/kernel/availability`).
+ */
+const availabilityWatchers = useSlot('availability-watch');
+
+/**
+ * The product id as the watcher takes it.
+ */
+const watchedIds = computed(() => (id ? [id] : []));
+
+/**
  * Reports the page view to the analytics relay, once per product opened. The response cache hides
  * most product reads from the server, so the page says it; a no-op until the visitor has agreed.
  */
@@ -139,30 +154,39 @@ const { isAuth } = storeToRefs(session);
 const productActions = useSlot('product-actions');
 
 /**
- * What the stock stat reads. A stock reader sees the exact `available` count; everyone else only
- * the two flags the server publishes, so a competitor cannot read the shelf.
+ * What the stock stat reads: the server's availability, and for a stock reader the shelf count
+ * beside it (`GET /inventory/levels/{id}`). Everyone else gets the signal alone, so a competitor
+ * cannot read the shelf.
  *
  * @returns the stat's value.
  */
 const stockLabel = computed(() => {
     const shown = currentProduct.value;
     if (!shown) return formatText(undefined);
+    const availability = availabilityOf(shown.id);
+    // A stock reader's shelf count, read by the watcher; `undefined` for everyone else.
+    const count = stockCountOf(shown.id);
+    const shelf = shelfStateOf(shown, availability);
+    // Not read yet: the empty-value glyph, not a guess.
+    if (shelf === undefined) return formatText(undefined);
     // Off sale outranks the stock badge: the product is listed, but cannot be bought.
-    const shelf = shelfStateOf(shown);
     if (shelf === 'off-sale') return t('product-target-page.off-sale');
     // A preorder is bought before it exists: the shelf may be empty, the date is what matters.
     if (shelf === 'preorder')
-        return t('product-target-page.preorder', { date: formatDay(shown.releaseDate) });
+        return t('product-target-page.preorder', {
+            date: formatDay(availability?.availabilityDate)
+        });
     // A backorder is bought now and ships by its restock date, or within 30 days when none is named.
     if (shelf === 'backorder')
         return shown.restockDate
-            ? t('product-target-page.backorder', { date: formatDay(shown.restockDate) })
+            ? t('product-target-page.backorder', {
+                  date: formatDay(availability?.availabilityDate)
+              })
             : t('product-target-page.backorder-undated', { days: backorderPromiseDays.value });
-    if (!shown.inStock) return t('product-target-page.out-of-stock');
+    if (shelf === 'out-of-stock') return t('product-target-page.out-of-stock');
+    // Served until the product answer drops it; the shopper sees the warning, never a number.
     if (shown.lowStock) return t('product-target-page.low-stock');
-    return shown.available === undefined
-        ? t('product-target-page.in-stock')
-        : formatText(shown.available.toString());
+    return count === undefined ? t('product-target-page.in-stock') : formatText(count.toString());
 });
 
 /**
@@ -184,6 +208,14 @@ const asideFields = computed<DetailFieldRow[]>(() => [
 
 <template>
     <div id="product-target">
+        <component
+            :is="watcher"
+            v-for="(watcher, index) in availabilityWatchers"
+            :key="index"
+            :product-ids="watchedIds"
+            :stale-time="0"
+            with-stock-count
+        />
         <ItemDetailLayout accent="primary">
             <template #hero>
                 <ItemDetailHero

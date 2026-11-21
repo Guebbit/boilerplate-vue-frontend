@@ -12,33 +12,11 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import type { Product } from '@types';
-import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
+import type { Product, ProductAvailability } from '@types';
+import { clearAvailability, recordAvailability } from '@/kernel/availability.ts';
+import { aProduct } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
-
-/**
- * A product, sold out unless the test says otherwise.
- *
- * @param overrides - The flags a case bends.
- */
-const aProduct = (overrides: Partial<Product> = {}): Product => {
-    const product = {
-        id: 'p1',
-        title: 'Widget',
-        price: '1.00',
-        currency: 'EUR',
-        inStock: false,
-        lowStock: false,
-        ...overrides
-    };
-    // The server's answer, coarsely: on sale and something to order.
-    return {
-        buyable: product.purchasable !== false && (product.inStock || product.backorder === true),
-        ...product,
-        actions: product.actions ?? NO_PRODUCT_ACTIONS
-    };
-};
 
 /**
  * Signs a visitor in, since the button only exists for one.
@@ -50,12 +28,20 @@ const signIn = () => {
 };
 
 /**
- * Mounts the button with the store already holding `asked` product ids.
+ * Mounts the button with the store already holding `asked` product ids, and the availability its
+ * host would have read.
  *
  * @param product - The product the button belongs to.
  * @param asked - Ids with an open request.
+ * @param availability - What the availability read answered; sold out unless a case says otherwise,
+ *  `null` for a read that has not landed.
  */
-const mountButton = (product: Product, asked: string[] = []) => {
+const mountButton = (
+    product: Product,
+    asked: string[] = [],
+    availability: ProductAvailability['availability'] | null = 'out_of_stock'
+) => {
+    if (availability) recordAvailability(product.id, { productId: product.id, availability }, 0);
     const alerts = useStockAlertsStore();
     alerts.items = asked.map((productId) => ({ productId, createdAt: '2026-10-18T00:00:00Z' }));
     // Decoration on the page, not under test — no transport to answer a real fetch here.
@@ -70,6 +56,7 @@ const mountButton = (product: Product, asked: string[] = []) => {
 };
 
 beforeEach(() => {
+    clearAvailability();
     setActivePinia(createPinia());
     return loadLocale('en');
 });
@@ -80,26 +67,39 @@ describe('the notify-me button', () => {
     });
 
     it.each([
-        ['in stock', { inStock: true }],
-        ['a preorder with allowance', { inStock: true, preorder: true }],
-        ['a backorder', { inStock: false, backorder: true }]
-    ])('is not offered for a product that can be ordered: %s', (_label, flags) => {
+        ['in stock', 'in_stock'],
+        ['a preorder with allowance', 'preorder'],
+        ['a backorder', 'backorder']
+    ] as const)('is not offered for a product that can be ordered: %s', (_label, availability) => {
         signIn();
 
-        expect(mountButton(aProduct(flags)).wrapper.find('[data-test=notify-me]').exists()).toBe(
-            false
-        );
+        expect(
+            mountButton(aProduct(), [], availability).wrapper.find('[data-test=notify-me]').exists()
+        ).toBe(false);
     });
 
-    it.each([
-        ['sold out', {}],
-        ['off sale', { purchasable: false, inStock: true }]
-    ])('is offered for a product that cannot be ordered: %s', (_label, flags) => {
+    it('is offered for a product that is sold out', () => {
         signIn();
 
-        expect(mountButton(aProduct(flags)).wrapper.find('[data-test=notify-me]').exists()).toBe(
-            true
-        );
+        expect(mountButton(aProduct()).wrapper.find('[data-test=notify-me]').exists()).toBe(true);
+    });
+
+    it('is offered for a product that is off sale, which the server also calls out_of_stock', () => {
+        signIn();
+
+        expect(
+            mountButton(aProduct({ purchasable: false }))
+                .wrapper.find('[data-test=notify-me]')
+                .exists()
+        ).toBe(true);
+    });
+
+    it('is not offered until the availability is known', () => {
+        signIn();
+
+        expect(
+            mountButton(aProduct(), [], null).wrapper.find('[data-test=notify-me]').exists()
+        ).toBe(false);
     });
 
     it('asks to be told, and then reads "You\'ll be told"', async () => {
@@ -118,7 +118,7 @@ describe('the notify-me button', () => {
 
     it('cancels a request already open, even if the product can be ordered by now', async () => {
         signIn();
-        const { alerts, wrapper } = mountButton(aProduct({ inStock: true }), ['p1']);
+        const { alerts, wrapper } = mountButton(aProduct(), ['p1'], 'in_stock');
         const cancel = vi.spyOn(alerts, 'cancel').mockResolvedValue([]);
 
         await wrapper.get('[data-test=notify-me]').trigger('click');
