@@ -72,13 +72,6 @@ describe('onEtagResponse', () => {
         expect(knownEtag('/users/u1')).toBe('"200"');
     });
 
-    it('treats the hard-delete spelling as the same resource', () => {
-        onEtagResponse(answered('get', '/products/p1', '"100"'));
-
-        expect(knownEtag('/products/p1')).toBe('"100"');
-        expect(knownEtag('/products/p1/hard')).toBe('"100"');
-    });
-
     it('returns the response itself, untouched: it observes, never unwraps', () => {
         const response = answered('get', '/products/p1', '"100"');
 
@@ -123,14 +116,17 @@ describe('onEtagResponse', () => {
 });
 
 describe('onEtagRequest', () => {
-    it.each(['put', 'patch', 'delete', 'PATCH'])(
-        'sends the known tag as If-Match on a %s',
-        (method) => {
-            onEtagResponse(answered('get', '/products/p1', '"100"'));
+    it.each(['put', 'patch', 'PATCH'])('sends the known tag as If-Match on a %s', (method) => {
+        onEtagResponse(answered('get', '/products/p1', '"100"'));
 
-            expect(ifMatchOf(onEtagRequest(outgoing(method, '/products/p1')))).toBe('"100"');
-        }
-    );
+        expect(ifMatchOf(onEtagRequest(outgoing(method, '/products/p1')))).toBe('"100"');
+    });
+
+    it('sends no If-Match on a DELETE, even for a resource whose tag is known', () => {
+        onEtagResponse(answered('get', '/products/p1', '"100"'));
+
+        expect(ifMatchOf(onEtagRequest(outgoing('delete', '/products/p1')))).toBeUndefined();
+    });
 
     it('sends nothing on a read or a POST', () => {
         onEtagResponse(answered('get', '/products/p1', '"100"'));
@@ -157,12 +153,6 @@ describe('onEtagRequest', () => {
         const config = onEtagRequest(outgoing('patch', 'https://api.example.com/users/u1'));
 
         expect(ifMatchOf(config)).toBe('"100"');
-    });
-
-    it('sends the hard-delete request the tag of its resource', () => {
-        onEtagResponse(answered('get', '/users/u1', '"100"'));
-
-        expect(ifMatchOf(onEtagRequest(outgoing('delete', '/users/u1/hard')))).toBe('"100"');
     });
 });
 

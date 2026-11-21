@@ -1,8 +1,10 @@
 /**
  * @module
  * Conditional writes, client side: remember the `ETag` a GET or PATCH answered with, and send it
- * back as `If-Match` on the next PUT/PATCH/DELETE of the same resource. The server refuses with 412
+ * back as `If-Match` on the next PUT/PATCH of the same resource. The server refuses with 412
  * when someone else changed the record in between; a form turns that into "reload".
+ * A DELETE carries none: staff delete on purpose, and the server would still check one if sent
+ * (RFC 9110 §13.1.1).
  *
  * Wired onto the shared axios instance by `index.ts`, so every edit form gets it without knowing.
  * A leaf of the http tier: it imports `url.ts` and nothing of this app.
@@ -17,36 +19,23 @@ import { toPathname } from './url.ts';
 const tags = new Map<string, string>();
 
 /**
- * The hard-delete spelling (`/users/{id}/hard`) is another path for the same row, so it shares
- * the row's tag.
- */
-const VIEW_SUFFIX = /\/hard$/;
-
-/**
  * Methods whose answer carries the row's tag. A PUT answers none (RFC 9110 §9.3.4), so the tag
  * held for it is dropped and the next conditional write re-reads first.
  */
 const TAGGING_METHODS = new Set(['get', 'patch']);
 
 /**
- * Methods that take an `If-Match`.
+ * Methods that take an `If-Match`. DELETE is left out on purpose: it is optional in RFC 9110 and a
+ * delete from our screens is never refused for a stale version.
  */
-const CONDITIONAL_METHODS = new Set(['put', 'patch', 'delete']);
-
-/**
- * The resource a request is about.
- *
- * @param url - Request URL, absolute or relative.
- * @returns Its pathname without a view suffix.
- */
-const resourceKey = (url: string | undefined): string => toPathname(url).replace(VIEW_SUFFIX, '');
+const CONDITIONAL_METHODS = new Set(['put', 'patch']);
 
 /**
  * The tag currently held for a resource, or `undefined` when it was never read through here.
  *
  * @param url - The resource's path, e.g. `/products/abc`.
  */
-export const knownEtag = (url: string): string | undefined => tags.get(resourceKey(url));
+export const knownEtag = (url: string): string | undefined => tags.get(toPathname(url));
 
 /**
  * Forgets the tag held for one resource, so the next write of it goes out unconditionally.
@@ -55,7 +44,7 @@ export const knownEtag = (url: string): string | undefined => tags.get(resourceK
  * @param url - The resource's path, e.g. `/locales/es/apps/demo-fe/entries`.
  */
 export const forgetEtag = (url: string): void => {
-    tags.delete(resourceKey(url));
+    tags.delete(toPathname(url));
 };
 
 /**
@@ -67,7 +56,7 @@ export const clearEtags = (): void => {
 };
 
 /**
- * Request interceptor: attaches `If-Match` to a PUT/PATCH/DELETE of a resource whose tag is known.
+ * Request interceptor: attaches `If-Match` to a PUT/PATCH of a resource whose tag is known.
  * A caller that set its own `If-Match` keeps it; a resource never read here goes out
  * unconditionally, which is the API's own default.
  *
@@ -78,7 +67,7 @@ export const onEtagRequest = (config: InternalAxiosRequestConfig): InternalAxios
     const method = config.method?.toLowerCase() ?? 'get';
     if (!CONDITIONAL_METHODS.has(method) || config.headers.has('If-Match')) return config;
 
-    const tag = tags.get(resourceKey(config.url));
+    const tag = tags.get(toPathname(config.url));
     if (tag) config.headers.set('If-Match', tag);
     return config;
 };
@@ -101,12 +90,10 @@ const isUnder = (path: string, key: string): boolean => path === key || path.sta
  */
 export const onEtagResponse = (response: AxiosResponse): AxiosResponse => {
     const method = response.config.method?.toLowerCase() ?? 'get';
-    const key = resourceKey(response.config.url);
+    const key = toPathname(response.config.url);
     const tag: unknown = response.headers.etag;
 
-    if (method !== 'get')
-        for (const held of tags.keys())
-            if (isUnder(toPathname(response.config.url), held)) tags.delete(held);
+    if (method !== 'get') for (const held of tags.keys()) if (isUnder(key, held)) tags.delete(held);
 
     if (TAGGING_METHODS.has(method) && typeof tag === 'string' && tag) tags.set(key, tag);
     return response;
