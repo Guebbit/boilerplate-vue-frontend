@@ -348,6 +348,10 @@ Conventional Commits, enforced by commitlint on the `commit-msg` hook.
     working-tree copy. Check `git diff --cached --name-status` shows only the deletions, then run a
     plain `git commit`.
 - The container engine is **podman** (rootless). `docker` here is the podman shim.
+- **NEVER PRUNE.** No `podman` or `docker` `system`, `volume`, `image`, `container`, `network` or `builder`
+  `prune`, and no removal by "unused", `--all` or a wide filter. This machine hosts unrelated projects, and a
+  prune deletes their data with no undo. Remove only the containers, volumes and images you created, by name
+  or by label. Anything else needs the user's yes for that exact item.
 - MUST NOT run subagents that implement concurrently in the same working tree.
 - The pre-commit hook runs `lint-staged`, which fixes eslint and prettier on the staged files and puts
   the fixes in the same commit (the design-policy lint over `src` stays check-only), runs
