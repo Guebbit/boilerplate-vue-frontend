@@ -142,8 +142,8 @@ sequenceDiagram
 
 - **`src/infrastructure/http/etag.ts` is the whole transport half.** A success interceptor keeps the
   tag a GET or PATCH answered with (a PUT answers none, so its held tag is dropped); a request interceptor sends it as `If-Match` on the next
-  PUT, PATCH or DELETE of that path. `/…/hard` is another path for the same
-  resource. A resource never read here is written unconditionally — the API's own default.
+  PUT or PATCH of that path. A DELETE sends none: it is optional (RFC 9110 §13.1.1), staff delete on
+  purpose, and the server would still answer 412 to one that was sent. A resource never read here is written unconditionally — the API's own default.
 - **An action forgets the tag.** `POST /orders/1/cancel` changes the row and answers no tag, so
   everything held under that path is dropped rather than sent stale. A sign-out drops all of them.
 - **A form handles the refusal with `useStaleRecord`** (`src/infrastructure/utils/use-stale-record.ts`):
