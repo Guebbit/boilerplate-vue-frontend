@@ -74,6 +74,18 @@ describe('countFinishedSpecs', () => {
         expect(countFinishedSpecs(`(Run Finished)\n${row}`)).toBe(1);
     });
 
+    it('counts the rows of a colour-coded summary, as a CI runner prints it', () => {
+        const green = '\u001B[32m';
+        const red = '\u001B[31m';
+        const reset = '\u001B[39m';
+        const coloured = [
+            '  \u001B[4m(Run Finished)\u001B[24m',
+            `  │ ${green}✔${reset}  login.cy.ts                     00:05        3        3        -        -        - │`,
+            `  │ ${red}✖${reset}  cart/cart.cy.ts                 00:09        4        3        1        -        - │`
+        ].join('\n');
+        expect(countFinishedSpecs(coloured)).toBe(2);
+    });
+
     it('counts a wrapped two-line name once', () => {
         const wrapped = [
             '  (Run Finished)',

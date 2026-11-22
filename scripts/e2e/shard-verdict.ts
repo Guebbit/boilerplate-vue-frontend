@@ -1,3 +1,5 @@
+import { stripVTControlCharacters } from 'node:util';
+
 /**
  * The pure half of "did this shard really pass": exit code, signal, silence and the number of
  * specs Cypress reported finishing, folded into one verdict.
@@ -34,6 +36,9 @@ const RUN_FINISHED = '(Run Finished)';
 /**
  * Counts the spec rows in the LAST final summary table of a Cypress run.
  *
+ * Colour codes are stripped first: on a CI runner Cypress colours the status marks, and the row
+ * pattern would match none of them.
+ *
  * Only the text after the last `(Run Finished)` counts, so an earlier table cannot be added in.
  * Rows are not de-duplicated by name: a long name is truncated in the table and two specs can
  * print the same one. A wrapped name's second line carries no status mark, so it is not a row.
@@ -41,8 +46,11 @@ const RUN_FINISHED = '(Run Finished)';
  * @param output - the shard's whole captured output
  * @returns how many specs Cypress reported as finished
  */
-export const countFinishedSpecs = (output: string): number =>
-    [...output.slice(output.lastIndexOf(RUN_FINISHED) + 1).matchAll(SUMMARY_ROW)].length;
+export const countFinishedSpecs = (output: string): number => {
+    // node:util: removes ANSI escape sequences (https://nodejs.org/api/util.html#utilstripvtcontrolcharactersstr)
+    const plain = stripVTControlCharacters(output);
+    return [...plain.slice(plain.lastIndexOf(RUN_FINISHED) + 1).matchAll(SUMMARY_ROW)].length;
+};
 
 /**
  * Judges a finished shard. Order matters: the most specific cause is named first.

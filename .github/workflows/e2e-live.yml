@@ -164,6 +164,10 @@ env:
     NODE_LEGAL_PHONE: '+39 02 1234567'
     NODE_VAT_RATE_DEFAULT: '0.22'
     NODE_VAT_RATE_REDUCED: '0.10'
+    # The shop's bank-transfer details (the backend's .env-example values): without them the
+    # bank-transfer payment option does not exist and the checkout journey (cu3) cannot pick it.
+    NODE_BANK_TRANSFER_BENEFICIARY: Guebbit Demo Shop
+    NODE_BANK_TRANSFER_IBAN: IT60X0542811101000000123456
     # Throwaway, NOT A SECRET (32-byte hex, like the keys above).
     NODE_METRICS_TOKEN: 786f2f6930240de02a0ad3f60d875d62cb01b6e1122c45b82382f877b398d8e9
     # The provider's webhook signing secret. Known, so a spec can sign a delivery itself
