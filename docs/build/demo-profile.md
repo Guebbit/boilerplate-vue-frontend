@@ -43,7 +43,7 @@ What each concern maps to now:
 
 ### What a journey can do beyond restoring
 
-Four more doors, for the journeys (see [Tests — Journeys](../reference/tests.md#journeys-—-stories-that-cross-modules)):
+Four more doors, for the journeys (see [Tests — Journeys](../reference/tests-e2e.md#journeys-—-stories-that-cross-modules)):
 
 | Need                    | How                                                                                                                                                                                                                                                                    |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

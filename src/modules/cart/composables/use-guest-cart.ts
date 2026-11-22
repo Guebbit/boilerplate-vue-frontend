@@ -4,7 +4,7 @@
  * browser's `localStorage`, its actions, the copy-taking from another tab, and the key a merge of
  * it travels under. Called inside the cart store's setup, so the list lives and dies with the
  * store; the store keeps the one thing that needs the server, sending it (`mergeGuestCart`).
- * @see docs/modules/cart.md
+ * @see docs/modules/cart-guest.md
  */
 import { computed, onScopeDispose, ref, watch } from 'vue';
 import { addGuestLine, guestCartQuantity, removeGuestLines, setGuestLineQuantity } from '../domain';

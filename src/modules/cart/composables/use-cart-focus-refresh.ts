@@ -5,7 +5,7 @@
  * wishlist, a price or a stock change), and coming back is the cheap moment to catch up before
  * "Place order". Not a poll: it fires on the event, costs nothing while the page is left alone, and
  * needs no knob. What a read may do is the store's rule (`pollCart`): it yields to any write in
- * flight and drops an answer a fresher call has overtaken. See `docs/modules/cart.md`.
+ * flight and drops an answer a fresher call has overtaken. See `docs/modules/cart-guest.md`.
  */
 import { onScopeDispose } from 'vue';
 import { debug } from '@/infrastructure/utils/logger.ts';

@@ -55,6 +55,7 @@ flowchart TD
 | [Contracts](./contracts.md)               | `openapi.yaml`, `asyncapi.yaml`, the generated `contracts/`, Orval and Spectral config                           |
 | [Scripts & Hooks](./scripts.md)           | `scripts/`, `.husky/`                                                                                            |
 | [Tests](./tests.md)                       | `tests/` and the co-located module suites                                                                        |
+| [E2E & Journeys](./tests-e2e.md)          | `tests/e2e/` — the real-browser suite and the journeys that cross modules                                        |
 | [Ops & Assets](./ops.md)                  | `docker/`, `.github/`, compose files, `public/`, the docs site                                                   |
 
 ---

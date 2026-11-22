@@ -125,8 +125,10 @@ flowchart TD
 
 Both write the same `filters.sort` (the API's CSV, so it lives in the URL) through
 `useServerSort`, and both re-search from page 1: the server sorts the whole catalogue, never the
-page the browser holds. See [`sorting`](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/sorting.md)
-in the backend for the grammar and the per-resource whitelist.
+page the browser holds. The
+whitelist is the enum of the `ProductSort` schema in `openapi.yaml` (`createdAt`, `price`, `title`,
+each with or without a leading `-`, at most 3), and the comma separation is the parameter's
+`style: form, explode: false`.
 
 `products/create` is declared before `products/:id` in `routes.ts`. vue-router ranks a static
 segment above a dynamic one regardless of order, so `create` could never be swallowed as an id —

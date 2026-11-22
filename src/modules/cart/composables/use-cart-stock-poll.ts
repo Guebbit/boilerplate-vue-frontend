@@ -4,7 +4,7 @@
  * flag follows the shelf. Opt-in: with `VITE_CART_STOCK_POLL_SECONDS` unset, `0` or invalid it
  * registers nothing at all, no timer and no listener. Called from the page's setup, so "the page
  * is open" is the composable's own lifetime; the checkout is the same page. See
- * `docs/modules/cart.md`.
+ * `docs/modules/cart-guest.md`.
  *
  * Runs only while all of these hold, and stops for good once the person changes:
  *

@@ -48,7 +48,7 @@ is the one flag every dialog binds so it fills the screen below 600 px.
 `use-return-focus.ts` hands focus back to the control that opened a dialog once it closes. A dialog
 with no `activator` has nobody for Vuetify to return focus to, so Escape would otherwise drop a
 keyboard user on the page body; every dialog calls it with its open flag, and the
-[FR12 journey](./tests.md#journeys-—-stories-that-cross-modules) proves it end to end.
+[FR12 journey](./tests-e2e.md#journeys-—-stories-that-cross-modules) proves it end to end.
 
 `use-leave-guard.ts` stops a half-typed record form being thrown away: the router's leave hook asks
 through the confirm dialog ("Leave / Stay"), and a tab close or reload gets the browser's own

@@ -58,8 +58,8 @@ Its button asks (`requestAccountExport`, `202`); the API builds the file in the 
 a link to `account-export`. That page reads the status first and offers the one button (`downloadAccountExport`, which saves
 the file as JSON) only when it is ready. A button rather than a download on arrival, so a mail
 scanner that prefetches the link triggers nothing. The request and the download need a fresh
-session, which the step-up interceptor asks for in place; the status read does not. See the
-backend's [data export](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account.md#data-export).
+session, which the step-up interceptor asks for in place; the status read does not. The
+export's request and status shapes are in the contract (`openapi.yaml`, the `/account/export` paths).
 
 **The one dependency is validation, not screens.** Every form here validates against
 `usersSchema`/`usersPasswordSchema` from the [`users`](./users.md) barrel, so _what makes a valid
@@ -240,8 +240,9 @@ the server asked for it, never from a guess about the profile.
 
 A wrong answer is a 422 and the dialog says "code" or "password" by the method on show (with a code
 field on show it shows the server's own sentence, which says which proof was wrong); it stays
-open either way. See the backend's
-[step-up for an account with no password](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account-sessions.md#step-up-for-an-account-with-no-password).
+open either way. The
+proofs an account with no password can give are named by `GET /account/reauth` in the contract
+(`openapi.yaml`).
 
 Both this and the token refresh de-duplicate through the same `infrastructure/http/single-flight.ts`
 helper: several requests failing in the same tick must join one attempt, never start one each. For

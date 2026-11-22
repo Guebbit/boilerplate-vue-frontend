@@ -164,8 +164,8 @@ sale without being shown the customer list. The call carries an `Idempotency-Key
 
 The form takes no payment. The order opens waiting for payment and holds its stock for about 15
 minutes, so staff record the cash on it at once (the cash form is on `OrderEdit`), then ship and deliver
-it from the order page. The backend side, and what happens to a walk-in buyer's email, are in
-[Creating an order](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/orders-creation-and-exports.md#creating-an-order).
+it from the order page. What the server does with a walk-in buyer's email is in the contract's
+`POST /orders` description (`openapi.yaml`).
 
 ```mermaid
 flowchart LR
