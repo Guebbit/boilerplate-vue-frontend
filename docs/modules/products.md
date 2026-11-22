@@ -81,7 +81,7 @@ record: the toolkit's `addRecord` replaces a whole record, so the next details f
 availability and the two lifetimes would tangle. A reader joins the two:
 `shelfStateOf(product, availabilityOf(product.id))`.
 
-**Why the kernel.** The product views (card, page, edit form) need the answer as a value: a badge, a
+**Why the kernel.** The product views (card, page) need the answer as a value: a badge, a
 stock label, a hint. A slot hands a host a component, never a value back. The read is
 [`inventory`](./inventory.md)'s, and `inventory` already depends on `products`, so `products`
 importing it would be a cycle. So the state sits in the kernel, the pattern of `@/kernel/work-counts`:
@@ -90,10 +90,10 @@ one writer (`inventory`), many readers (`products`, `cart`, `stock-alerts`).
 **Who asks, and how fresh.** A host view renders the `availability-watch` slot, which `inventory`
 fills with a renderless `AvailabilityWatcher`; it reads, a card or button only reads the port:
 
-| Host                       | `staleTime` | Also re-reads when                       |
-| -------------------------- | ----------- | ---------------------------------------- |
-| product page, product edit | 0           | the tab regains focus or becomes visible |
-| list (the cards' grid)     | 30 s        | the tab regains focus or becomes visible |
+| Host                   | `staleTime` | Also re-reads when                       |
+| ---------------------- | ----------- | ---------------------------------------- |
+| product page           | 0           | the tab regains focus or becomes visible |
+| list (the cards' grid) | 30 s        | the tab regains focus or becomes visible |
 
 The watcher reads when the ids change and when the shopper comes back, the way the cart does. A batch
 is at most 100 ids; a product the server leaves out (unknown, or hidden from this viewer) is recorded
@@ -182,6 +182,9 @@ no screen does zone maths. Every place that prints a promise date (`releaseDate`
 time and no shift in any browser zone. An edit sends it only when it changed: moving it later notifies the buyers who
 already paid, so an untouched date must not travel. Clearing the field sends `null` and ends the
 preorder.
+The edit form's "preorder now" hint says so while the saved date is after the shop's today (the backend's
+`isPreorder` rule), not while `availability` reads `preorder`: it reads `out_of_stock` once the allowance is
+sold, yet the paid buyers the hint warns about still wait.
 
 A hidden product is a 404 for a shopper, so there is nothing to rank: a cart or wishlist line that
 points at one reads "No longer available" (see [cart](./cart.md#a-product-that-is-gone)). Staff

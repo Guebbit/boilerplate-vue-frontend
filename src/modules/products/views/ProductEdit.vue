@@ -29,8 +29,6 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
-import { useSlot } from '@/kernel/slots';
-import { availabilityOf } from '@/kernel/availability.ts';
 import { useProductsStore } from '../store';
 import { productsSchema } from '../schemas.ts';
 import { useTranslatedEntityForm } from '../composables/use-translated-entity-form.ts';
@@ -58,7 +56,7 @@ import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { backorderPromiseDays } from '@/modules/shop';
+import { backorderPromiseDays, shopTimeZone } from '@/modules/shop';
 import { toFormTranslations, toPatchFields } from '../translations-body.ts';
 import { dayChange } from '../release-date.ts';
 import { useReleaseDateConfirm } from '../composables/use-release-date-confirm.ts';
@@ -85,19 +83,6 @@ const { id } = defineProps<{
  * Product store's admin-record fetch and update actions.
  */
 const { fetchProductForEdit, updateProduct } = useProductsStore();
-
-/**
- * The availability watcher `inventory` contributes: whether the product is a preorder right now,
- * which the release-date hint says, is the server's `availability`, read fresh (`staleTime` 0)
- * since a release date passes without any edit. A slot because `inventory` owns the read
- * (`@/kernel/availability`).
- */
-const availabilityWatchers = useSlot('availability-watch');
-
-/**
- * The product id as the watcher takes it.
- */
-const watchedIds = computed(() => (id ? [id] : []));
 
 /**
  * Whether the admin record is currently loading.
@@ -146,6 +131,25 @@ void fetchTranslationLocales();
  * rather than a `useStructureCrudApi` slice.
  */
 const adminProduct = ref<Awaited<ReturnType<typeof fetchProductForEdit>>>();
+
+/**
+ * Whether the saved release date is still ahead, on the shop's calendar: the backend's preorder
+ * rule (`isPreorder`: on sale, and a day compared with `shopDayOf`). The hint warns that moving the date
+ * notifies the buyers who already paid, so it keys on the date and not on `availability`, which
+ * reads `out_of_stock` once the preorder allowance is sold while those buyers still exist.
+ */
+const isPreorderNow = computed(() => {
+    const { releaseDate, active, purchasable } = adminProduct.value ?? {};
+    // Hidden or off sale: nothing is sold ahead of the date (absent flags read as `true`).
+    if (!releaseDate || active === false || purchasable === false) return false;
+    // `en-CA` formats a date as `YYYY-MM-DD`, which compares as text like the plain days do; an
+    // empty zone (shop not loaded yet) falls back to the browser's.
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat
+    const today = new Intl.DateTimeFormat('en-CA', {
+        timeZone: shopTimeZone.value || undefined
+    }).format(new Date());
+    return releaseDate > today;
+});
 
 /**
  * (Re)loads the admin record for `id`.
@@ -465,13 +469,6 @@ const asideFields = computed<DetailFieldRow[]>(() => [
 
 <template>
     <div id="product-edit-page">
-        <component
-            :is="watcher"
-            v-for="(watcher, index) in availabilityWatchers"
-            :key="index"
-            :product-ids="watchedIds"
-            :stale-time="0"
-        />
         <ItemDetailLayout accent="primary">
             <template #hero>
                 <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
@@ -604,7 +601,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             type="date"
                             :label="t('product-edit-page.label-release-date')"
                             :hint="
-                                (id ? availabilityOf(id)?.availability === 'preorder' : false)
+                                isPreorderNow
                                     ? t('product-edit-page.hint-release-date-preorder')
                                     : t('product-edit-page.hint-release-date')
                             "

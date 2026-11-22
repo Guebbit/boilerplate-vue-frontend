@@ -12,6 +12,7 @@ import { useCartStore } from '../store.ts';
 import { MAX_GUEST_LINES } from '../domain';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { addCartItem } from '@api';
+import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -220,6 +221,30 @@ describe('a guest adding', () => {
             'as many different products'
         );
     });
+
+    it('says "not added" as a warning when stock held the whole add back', async () => {
+        const cart = useCartStore();
+        // Three are held and three are all that can be bought, so one more adds nothing.
+        cart.guestLines = [{ productId: IN_STOCK.id, quantity: 3 }];
+        const wrapper = mountButton(IN_STOCK, { quantityAvailable: 3 });
+
+        await wrapper.get('[data-test=add-to-cart]').trigger('click');
+
+        expect(cart.guestLines).toEqual([{ productId: IN_STOCK.id, quantity: 3 }]);
+        const [toast] = useNotificationsStore().messages;
+        expect(toast?.message).toContain('No more can be added right now');
+        expect(toast?.type).toBe(EToastType.WARNING);
+    });
+
+    it('says "added" as a success when stock held nothing back', async () => {
+        const wrapper = mountButton(IN_STOCK, { quantityAvailable: 3 });
+
+        await wrapper.get('[data-test=add-to-cart]').trigger('click');
+
+        const [toast] = useNotificationsStore().messages;
+        expect(toast?.message).toBe('Product added to cart.');
+        expect(toast?.type).not.toBe(EToastType.WARNING);
+    });
 });
 
 /**
@@ -239,6 +264,41 @@ describe('adding', () => {
 
         expect(addSpy).toHaveBeenCalledWith(IN_STOCK.id, 1);
         expect(fetchCartSpy).not.toHaveBeenCalled();
+    });
+
+    it('says "not added" as a warning when the server clamped the add', async () => {
+        signIn();
+        const cart = useCartStore();
+        vi.spyOn(cart, 'addCartItem').mockResolvedValue({
+            ...EMPTY_CART,
+            warnings: [
+                {
+                    code: 'MERCHANDISE_NOT_ENOUGH_STOCK',
+                    productId: IN_STOCK.id,
+                    requested: 6,
+                    resulting: 5
+                }
+            ]
+        });
+
+        await mountButton(IN_STOCK).get('[data-test=add-to-cart]').trigger('click');
+        await flushPromises();
+
+        const [toast] = useNotificationsStore().messages;
+        expect(toast?.message).toContain('No more can be added right now');
+        expect(toast?.type).toBe(EToastType.WARNING);
+    });
+
+    it('says "added" as a success when the server took it as asked', async () => {
+        signIn();
+        vi.spyOn(useCartStore(), 'addCartItem').mockResolvedValue(EMPTY_CART);
+
+        await mountButton(IN_STOCK).get('[data-test=add-to-cart]').trigger('click');
+        await flushPromises();
+
+        const [toast] = useNotificationsStore().messages;
+        expect(toast?.message).toBe('Product added to cart.');
+        expect(toast?.type).not.toBe(EToastType.WARNING);
     });
 
     it("never lets a previous account's in-memory cart shape the quantity it sends", async () => {
