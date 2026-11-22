@@ -108,6 +108,19 @@ flowchart TD
 - The notice is the session store's own, one per ending (the refresh is single-flight), and is
   not repeated per request. A refresh that failed in passing keeps the session and replays nothing.
 
+### A staff session has a lifetime cap, and the idle prompt warns about it
+
+The server ends a staff session after its idle timeout, and also after a maximum length that
+activity cannot extend. `IdleSessionDialog.vue` counts both down from the server's own seconds (not
+the browser clock) and opens two minutes before whichever ends first:
+
+- **Idle:** "Stay signed in" is a touch and keeps the session.
+- **Lifetime cap:** there is no "stay signed in". The dialog says to save the work and sign in
+  again, and can be closed (`I'll save my work`) so the work can be saved. When the cap runs out
+  the session ends as an expiry.
+
+The server enforces both limits either way; the dialog is the courtesy.
+
 ## Where token logic lives
 
 | Concern                            | File                                                                                                                                                  |
