@@ -22,7 +22,7 @@ import type { Component, InjectionKey } from 'vue';
  * - `product-create-extras`: the product create form, beside its fields; receives
  *   `{ registerAfterCreate }`, a function taking a step to run with the new product's id once it
  *   exists. Stock is not a product field, so `inventory` puts its opening-stock field here.
- * - `availability-watch`: a product view that shows stock (the list, the page, the edit form) renders
+ * - `availability-watch`: a product view that shows stock (the list, the page) renders
  *   it so the availability of what is on screen is read; receives `{ productIds, staleTime,
  *   withStockCount }` and renders nothing. A slot, not an import, because `inventory` owns the read
  *   and `products` cannot depend on it; the value comes back through `@/kernel/availability`.

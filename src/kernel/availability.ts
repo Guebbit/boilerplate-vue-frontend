@@ -3,7 +3,7 @@
  * What shoppers are told about each product's stock, held here so the screens that show it can read
  * it without importing the module that fills it.
  *
- * Why it is here and not in `products`: the product views (card, page, edit form) need the answer as
+ * Why it is here and not in `products`: the product views (card, page) need the answer as
  * a VALUE (a badge, a stock label, a hint), which a slot cannot hand back to its host. Why it is not
  * in `products`' own store: `inventory` is the backend owner of the read (`GET /products/{id}/availability`)
  * and `inventory` already depends on `products`, so `products` importing it back would be a cycle.
