@@ -60,8 +60,10 @@ sweepA11y(
         ['subscriptions list', '/en/webhooks/subscriptions'],
         ['subscription create', '/en/webhooks/subscriptions/create'],
         {
-            // Submitted empty: every field shows its error, and an error message has to be
-            // associated with its field (`aria-describedby`) and announced, not only coloured.
+            /**
+             * Submitted empty: every field shows its error, and an error message has to be
+             * associated with its field (`aria-describedby`) and announced, not only coloured.
+             */
             name: 'subscription create, submitted empty',
             route: '/en/webhooks/subscriptions/create',
             prepare: () => {

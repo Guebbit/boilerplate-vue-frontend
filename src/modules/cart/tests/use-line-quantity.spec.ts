@@ -157,8 +157,10 @@ describe('useLineQuantity — the ways a debounce loses data', () => {
     });
 
     it('flushes on unmount rather than cancelling', () => {
-        // A step made and then navigated away from is a change the visitor asked for. Dropping it
-        // because the timer had 200ms left is the debounce losing the data it exists to protect.
+        /**
+         * A step made and then navigated away from is a change the visitor asked for. Dropping it
+         * because the timer had 200ms left is the debounce losing the data it exists to protect.
+         */
         const { update, calls } = makeUpdate();
         const lines = useLineQuantity(update, vi.fn(), DELAY);
 
@@ -192,8 +194,10 @@ describe('useLineQuantity — checkout and clear must not race a pending step', 
             settled = true;
         });
 
-        // Flushed synchronously — the request is already out — but nothing has answered it yet.
-        // flushPending alone would stop right here, which is the bug this composable had.
+        /**
+         * Flushed synchronously — the request is already out — but nothing has answered it yet.
+         * flushPending alone would stop right here, which is the bug this composable had.
+         */
         expect(calls).toEqual([['p1', 2]]);
         expect(settled).toBe(false);
 
@@ -213,11 +217,15 @@ describe('useLineQuantity — checkout and clear must not race a pending step', 
         const lines = useLineQuantity(update, onError, DELAY);
 
         lines.stepQuantity('p1', 1, 1);
-        // `settle` flushes synchronously, so the rejection is attached in the same tick it is
-        // produced — no gap where nothing has claimed it yet.
+        /**
+         * `settle` flushes synchronously, so the rejection is attached in the same tick it is
+         * produced — no gap where nothing has claimed it yet.
+         */
         await expect(lines.settle()).rejects.toThrow();
-        // The per-line toast is still `onError`'s job — settle rejecting is only the signal a
-        // caller like checkout needs to stop, not a second report of the same failure.
+        /**
+         * The per-line toast is still `onError`'s job — settle rejecting is only the signal a
+         * caller like checkout needs to stop, not a second report of the same failure.
+         */
         expect(onError).toHaveBeenCalledOnce();
     });
 
@@ -227,9 +235,11 @@ describe('useLineQuantity — checkout and clear must not race a pending step', 
 
         lines.stepQuantity('p1', 1, 1);
         await vi.advanceTimersByTimeAsync(DELAY);
-        // Request A ("p1", 2) is now out, unresolved. A second click arrives before it answers,
-        // and is flushed immediately rather than waiting out another whole debounce window — the
-        // overlap this bug needs: two requests for the same line in flight at once.
+        /**
+         * Request A ("p1", 2) is now out, unresolved. A second click arrives before it answers,
+         * and is flushed immediately rather than waiting out another whole debounce window — the
+         * overlap this bug needs: two requests for the same line in flight at once.
+         */
         lines.stepQuantity('p1', 2, 1);
         lines.flushPending();
         expect(calls).toEqual([
@@ -237,8 +247,10 @@ describe('useLineQuantity — checkout and clear must not race a pending step', 
             ['p1', 3]
         ]);
 
-        // Request A resolves first. `inFlight`'s entry by now holds request B, not A, so an
-        // unconditional delete here would leave a later `settle()` not waiting for B at all.
+        /**
+         * Request A resolves first. `inFlight`'s entry by now holds request B, not A, so an
+         * unconditional delete here would leave a later `settle()` not waiting for B at all.
+         */
         resolvers[0]?.(undefined);
         await vi.advanceTimersByTimeAsync(0);
 

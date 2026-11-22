@@ -26,8 +26,10 @@ sweepA11y(
         ['list', '/en/examples'],
         ['create', '/en/examples/create'],
         {
-            // Submitted empty: every field shows its error, and an error message has to be
-            // associated with its field (`aria-describedby`) and announced, not only coloured.
+            /**
+             * Submitted empty: every field shows its error, and an error message has to be
+             * associated with its field (`aria-describedby`) and announced, not only coloured.
+             */
             name: 'create, submitted empty',
             route: '/en/examples/create',
             prepare: () => {

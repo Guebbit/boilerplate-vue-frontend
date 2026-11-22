@@ -61,13 +61,17 @@ const EXEMPT = new Set<string>([
     '/',
     // shell: the locale container — a RouterView with no view; its children are the pages.
     '/:locale',
-    // shell: the two catch-alls are redirects onto the Error route, which IS swept (as "404"
-    // through a bad URL, and as an explicit status through its own path).
+    /**
+     * shell: the two catch-alls are redirects onto the Error route, which IS swept (as "404"
+     * through a bad URL, and as an explicit status through its own path).
+     */
     ':catchAll(.*)',
     '/:catchAll(.*)',
-    // shell: redirects onto `account`'s locale-prefixed `oauth/callback` route, which IS swept
-    // (under ITS OWN name, in `account`'s sweep) — this shell shim exists only because the
-    // backend's redirect target carries no locale segment to route on.
+    /**
+     * shell: redirects onto `account`'s locale-prefixed `oauth/callback` route, which IS swept
+     * (under ITS OWN name, in `account`'s sweep) — this shell shim exists only because the
+     * backend's redirect target carries no locale segment to route on.
+     */
     '/oauth/callback'
 ]);
 
@@ -125,8 +129,10 @@ const routeMatcher = (route: string): RegExp => {
             return segment.endsWith('?') ? '(?:/[^/]+)?' : '/[^/]+';
         })
         .join('');
-    // Leading slash on both sides so an empty route (Home) and an empty swept path agree: the
-    // sweep's `/en` is Home, and Home's `path: ''` is a bare slash once joined.
+    /**
+     * Leading slash on both sides so an empty route (Home) and an empty swept path agree: the
+     * sweep's `/en` is Home, and Home's `path: ''` is a bare slash once joined.
+     */
     return new RegExp(`^${pattern || '/'}$`);
 };
 
@@ -182,30 +188,38 @@ const unsweptRoutes = ({ name, routes, swept }: RoutedUnit) =>
 
 describe('accessibility coverage', () => {
     it('is not vacuous — some modules serve routes, and the parser sees them', () => {
-        // Guards the assertions below against a refactor that moves routes elsewhere, or
-        // respells them in a way the regex no longer reads, and leaves this file passing over
-        // an empty set.
+        /**
+         * Guards the assertions below against a refactor that moves routes elsewhere, or
+         * respells them in a way the regex no longer reads, and leaves this file passing over
+         * an empty set.
+         */
         expect(routedModules.length).toBeGreaterThan(0);
         expect(routedModules.flatMap(({ routes }) => routes).length).toBeGreaterThan(0);
         expect(shell.routes).toContain('error/:status/:message?');
         expect(shell.routes).toContain('about');
-        // An empty supportedLanguages would make LOCALE_PREFIX's alternation an empty group,
-        // which matches ANY leading slash rather than none — every quoted path in a source file
-        // would misread as "swept", not just the locale-prefixed ones.
+        /**
+         * An empty supportedLanguages would make LOCALE_PREFIX's alternation an empty group,
+         * which matches ANY leading slash rather than none — every quoted path in a source file
+         * would misread as "swept", not just the locale-prefixed ones.
+         */
         expect(supportedLanguages.length).toBeGreaterThan(0);
     });
 
     it('gives every routed module its own a11y sweep', () => {
         const missing = routedModules.filter(({ hasSweep }) => !hasSweep).map(({ name }) => name);
 
-        // Named rather than counted: the failure message is the list of domains serving pages
-        // nobody audits, which is the thing someone has to act on.
+        /**
+         * Named rather than counted: the failure message is the list of domains serving pages
+         * nobody audits, which is the thing someone has to act on.
+         */
         expect(missing).toEqual([]);
     });
 
     it('sweeps every route a module declares', () => {
-        // Each line names the module and the `path:` to add to its sweep — or to EXEMPT, with
-        // a reason, if it genuinely renders nothing.
+        /**
+         * Each line names the module and the `path:` to add to its sweep — or to EXEMPT, with
+         * a reason, if it genuinely renders nothing.
+         */
         expect(routedModules.flatMap((unit) => unsweptRoutes(unit))).toEqual([]);
     });
 
@@ -214,9 +228,11 @@ describe('accessibility coverage', () => {
     });
 
     it('names no swept path that no route serves', () => {
-        // The other direction: a sweep visiting a path that was renamed or deleted audits a
-        // 404 page under the old name, and passes. The shell is left out because its catch-all
-        // makes every path a served one — which is the point of its "404" case.
+        /**
+         * The other direction: a sweep visiting a path that was renamed or deleted audits a
+         * 404 page under the old name, and passes. The shell is left out because its catch-all
+         * makes every path a served one — which is the point of its "404" case.
+         */
         const dead = routedModules.flatMap(({ name, routes, swept }) => {
             const matchers = routes.map((route) => routeMatcher(route));
             return swept

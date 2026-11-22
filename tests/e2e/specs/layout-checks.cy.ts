@@ -170,8 +170,10 @@ describe('the layout checks, on planted fixtures', () => {
                     '<button style="width:30px;height:30px;margin-right:2px">a</button>' +
                     '<button style="width:30px;height:30px">b</button></div>'
             );
-            // The throw happens inside axe's callback, which Cypress reports as an uncaught
-            // rejection rather than a failed command: both doors lead to the same check.
+            /**
+             * The throw happens inside axe's callback, which Cypress reports as an uncaught
+             * rejection rather than a failed command: both doors lead to the same check.
+             */
             const expectComfortFailure = (error: Error) => {
                 expect(error.message).to.contain('[comfort');
                 expect(error.message).to.contain('2.5.8');

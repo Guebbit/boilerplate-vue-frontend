@@ -61,8 +61,10 @@ const backendModulesCalledBy = (moduleName: string): Set<string> => {
     const called = new Set<string>();
     for (const file of listFiles(path.join(MODULES_ROOT, moduleName)))
         for (const name of apiImportsOf(file)) {
-            // A name `@api` also exports as a TYPE (a model, an enum) is not in this map — only a
-            // generated FUNCTION is, since only a function is a call to an operation.
+            /**
+             * A name `@api` also exports as a TYPE (a model, an enum) is not in this map — only a
+             * generated FUNCTION is, since only a function is a call to an operation.
+             */
             const owner = OPERATION_MODULES[name];
             if (owner && owner !== moduleName) called.add(owner);
         }
@@ -76,9 +78,11 @@ describe('a module calls only the backend modules its coupling declares', () => 
     });
 
     it('actually finds cross-module calls to check against dependsOn', () => {
-        // A second canary: this test could otherwise pass vacuously forever if the `@api` import
-        // regex, the `contracts/rest.generated/operation-modules` path, or the module-name matching ever
-        // broke — no violations found is meaningless unless calls were found at all.
+        /**
+         * A second canary: this test could otherwise pass vacuously forever if the `@api` import
+         * regex, the `contracts/rest.generated/operation-modules` path, or the module-name matching ever
+         * broke — no violations found is meaningless unless calls were found at all.
+         */
         const totalCalls = moduleNames().reduce(
             (total, moduleName) => total + backendModulesCalledBy(moduleName).size,
             0

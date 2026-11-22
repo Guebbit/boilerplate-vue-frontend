@@ -16,16 +16,20 @@ import { contractResponse } from '../../support/unit/orval-fixture-schema.ts';
  * `@api` is mocked at the network boundary; everything else is real.
  */
 
-// `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
-// the real generated envelope types would refuse, and that looseness is the point of a mock.
+/**
+ * `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
+ * the real generated envelope types would refuse, and that looseness is the point of a mock.
+ */
 const getLocalesMock = vi.fn();
 
 /** Stub for the locale-messages API call. */
 const getLocaleMessagesMock = vi.fn();
 
 vi.mock('@api', async (importOriginal) => ({
-    // The generated const objects are not network calls — the module under test may compare
-    // against them, so the real ones have to survive the mock.
+    /**
+     * The generated const objects are not network calls — the module under test may compare
+     * against them, so the real ones have to survive the mock.
+     */
     ...(await importOriginal<Record<string, unknown>>()),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     listLocales: (options?: { timeout?: number }) => getLocalesMock(options),
@@ -141,8 +145,10 @@ describe('fetchRemoteLocales', () => {
         return expect(fetchRemoteLocales()).resolves.toEqual(['es']);
     });
 
-    // A deployed file the shop has switched off keeps its row in every caller's manifest, as off.
-    // A visitor gets the deployed file alone (`static`); there is nothing of theirs to preview.
+    /**
+     * A deployed file the shop has switched off keeps its row in every caller's manifest, as off.
+     * A visitor gets the deployed file alone (`static`); there is nothing of theirs to preview.
+     */
     it('leaves out a deployed language the shop has switched off', () => {
         getLocalesMock.mockResolvedValue(
             contractResponse(schemas.ListLocalesResponse, {
@@ -173,8 +179,10 @@ describe('fetchRemoteLocales', () => {
     });
 
     it('drops a language that claims no app at all', () => {
-        // Off-contract on purpose (`apps` has `minItems: 1`), so not run through the schema:
-        // this is the defence against a counterpart that breaks that rule.
+        /**
+         * Off-contract on purpose (`apps` has `minItems: 1`), so not run through the schema:
+         * this is the defence against a counterpart that breaks that rule.
+         */
         getLocalesMock.mockResolvedValue({
             locales: [capability('en'), { ...capability('es'), apps: [] }],
             default: 'en',
@@ -271,9 +279,11 @@ describe('mergeRemoteLocales', () => {
             });
     });
 
-    // The frontend bundles its own copy of `it`; only the manifest's `active: false` tells it to
-    // stop. Taken out of the list, the switcher stops offering it and the locale guard redirects
-    // an `/it/…` address to the default language.
+    /**
+     * The frontend bundles its own copy of `it`; only the manifest's `active: false` tells it to
+     * stop. Taken out of the list, the switcher stops offering it and the locale guard redirects
+     * an `/it/…` address to the default language.
+     */
     it('takes a bundled language away once the shop has switched it off', () => {
         getLocalesMock.mockResolvedValue(
             contractResponse(schemas.ListLocalesResponse, {
@@ -293,8 +303,10 @@ describe('mergeRemoteLocales', () => {
         });
     });
 
-    // The manifest differs per caller: a re-read after sign-out must drop the draft language the
-    // signed-in read added, and a re-read after sign-in must bring it back.
+    /**
+     * The manifest differs per caller: a re-read after sign-out must drop the draft language the
+     * signed-in read added, and a re-read after sign-in must bring it back.
+     */
     it('follows the caller: a draft language appears on sign-in and goes on sign-out', () => {
         getLocalesMock.mockResolvedValue(manifest(true));
         return mergeRemoteLocales()
@@ -309,8 +321,10 @@ describe('mergeRemoteLocales', () => {
             });
     });
 
-    // A draft is an offered language that is switched off: the switcher labels it, and choosing it
-    // is the opt-in to preview its product text.
+    /**
+     * A draft is an offered language that is switched off: the switcher labels it, and choosing it
+     * is the opt-in to preview its product text.
+     */
     it('marks a staff-visible switched-off language as a draft, and a live one not', () => {
         getLocalesMock.mockResolvedValue(
             contractResponse(schemas.ListLocalesResponse, {
@@ -386,8 +400,10 @@ describe('mergeRemoteLocales', () => {
         });
     });
 
-    // The default language is the target of every redirect: taking it away would leave the locale
-    // guard redirecting to an address it then redirects again.
+    /**
+     * The default language is the target of every redirect: taking it away would leave the locale
+     * guard redirecting to an address it then redirects again.
+     */
     it.each([
         ['default', 'it', 'en'],
         ['fallback', 'en', 'it']

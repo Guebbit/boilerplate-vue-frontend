@@ -30,8 +30,10 @@ import * as schemas from '@api/schemas';
 wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({
-    // A delete answers with no `data` at all — every OTHER write here answers with the record —
-    // so the method picks which envelope shape this default resolves.
+    /**
+     * A delete answers with no `data` at all — every OTHER write here answers with the record —
+     * so the method picks which envelope shape this default resolves.
+     */
     orvalMutator: vi.fn((config: { url: string; method: string }) =>
         Promise.resolve(
             parseOrvalFixture(
@@ -122,8 +124,10 @@ describe('useUsersStore', () => {
                 }));
 
         it('sends a Blob avatar, not only a File', () =>
-            // The contract types the field as Blob, and encoders that recurse into anything that
-            // is not a File (axios' `toFormData` among them) drop a plain Blob silently.
+            /**
+             * The contract types the field as Blob, and encoders that recurse into anything that
+             * is not a File (axios' `toFormData` among them) drop a plain Blob silently.
+             */
             useUsersStore()
                 .createUser({
                     email: 'ada@example.com',
@@ -186,8 +190,10 @@ describe('useUsersStore', () => {
     });
 
     describe('updateUser', () => {
-        // PATCH, not PUT — `UserEdit.vue` sends only the fields its form holds,
-        // and a PUT would clear every field it omits (RFC 9110 §9.3.4).
+        /**
+         * PATCH, not PUT — `UserEdit.vue` sends only the fields its form holds,
+         * and a PUT would clear every field it omits (RFC 9110 §9.3.4).
+         */
         it('patches JSON when no new avatar is attached', () =>
             useUsersStore()
                 .updateUser('u1', { username: 'ada2' })
@@ -268,9 +274,11 @@ describe('useUsersStore', () => {
                 })
             );
 
-            // `Once`, deliberately: the suite's `beforeEach` calls `vi.clearAllMocks()`, which
-            // clears recorded calls but NOT an implementation set with `mockReturnValue`. A
-            // persistent override here would hand every later test this same settled promise.
+            /**
+             * `Once`, deliberately: the suite's `beforeEach` calls `vi.clearAllMocks()`, which
+             * clears recorded calls but NOT an implementation set with `mockReturnValue`. A
+             * persistent override here would hand every later test this same settled promise.
+             */
             let release!: (value: unknown) => void;
             const transportResponse = new Promise((resolve) => {
                 release = resolve;
@@ -290,10 +298,12 @@ describe('useUsersStore', () => {
                 })
                 .then(() => {
                     expect(store.users.u1.imageUrl).toBe('https://cdn.example.com/avatars/ada.png');
-                    // The read shape never answers `null` for `imageUrl` today — a cleared field
-                    // still resolves to the default placeholder URL until Step 1b's "null clears"
-                    // read-shape change lands. What this test pins is the OPTIMISTIC guess, not
-                    // this response value.
+                    /**
+                     * The read shape never answers `null` for `imageUrl` today — a cleared field
+                     * still resolves to the default placeholder URL until Step 1b's "null clears"
+                     * read-shape change lands. What this test pins is the OPTIMISTIC guess, not
+                     * this response value.
+                     */
                     release({
                         id: 'u1',
                         username: 'ada2',
@@ -557,9 +567,11 @@ describe('useUsersStore', () => {
                     expect(lastRequest()).toMatchObject({ url: '/users/search', method: 'POST' });
                     expect(lastBody()).toMatchObject({
                         text: 'ada',
-                        // Passed through under its own name here — contrast with the products
-                        // store, where the same field is sent as `productId`. The filter box
-                        // searches for one id; the API reads a batch.
+                        /**
+                         * Passed through under its own name here — contrast with the products
+                         * store, where the same field is sent as `productId`. The filter box
+                         * searches for one id; the API reads a batch.
+                         */
                         id: ['u1'],
                         email: 'ada@example.com',
                         username: 'ada',
@@ -587,8 +599,10 @@ describe('useUsersStore', () => {
         });
 
         it('watchSearchUsers keeps active:false distinct from "no filter"', () => {
-            // A truthiness check on `active` would drop `false` and silently return active AND
-            // inactive users when an admin asked for inactive ones only.
+            /**
+             * A truthiness check on `active` would drop `false` and silently return active AND
+             * inactive users when an admin asked for inactive ones only.
+             */
             respondWithItems([]);
             const store = useUsersStore();
             store.filters = { active: false };

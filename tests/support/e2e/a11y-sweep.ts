@@ -112,9 +112,11 @@ const MATRIX_ORDER: readonly ViewportName[] = [
 
 /** Expands the terse `[name, route]` spelling into a full sweep case. */
 const toCase = (entry: A11ySweepEntry): A11ySweepCase => {
-    // `Array.isArray` narrows its argument to `any[]` in the standard lib typings — a stdlib
-    // quirk, not a real `any` — so the tuple shape is restored by a cast rather than read
-    // straight off the narrowed array.
+    /**
+     * `Array.isArray` narrows its argument to `any[]` in the standard lib typings — a stdlib
+     * quirk, not a real `any` — so the tuple shape is restored by a cast rather than read
+     * straight off the narrowed array.
+     */
     if (Array.isArray(entry)) {
         const [name, route] = entry as readonly [string, A11ySweepRoute];
         return { name, route };
@@ -299,8 +301,10 @@ export const sweepA11y = (
             it(`has no serious or critical violations on ${sweepCase.name}`, () => {
                 reachState(sweepCase);
                 cy.checkPageA11y(sweepCase.name);
-                // The layout matrix is markup, not backend: the demo profile's jwt leg is enough
-                // (`docs/build/layout-sweep.md`), and the other legs keep today's length.
+                /**
+                 * The layout matrix is markup, not backend: the demo profile's jwt leg is enough
+                 * (`docs/build/layout-sweep.md`), and the other legs keep today's length.
+                 */
                 cy.env(['sessionMode', 'liveProfile']).then(({ sessionMode, liveProfile }) => {
                     if (sessionMode === 'jwt' && liveProfile !== true)
                         sweepLayout(sweepCase, sweepCase.viewport ?? 'desktop');

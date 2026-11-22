@@ -10,8 +10,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { onDownloadResponse, saveDownload } from '@/infrastructure/http/download.ts';
 
-// `downloadBlob` saves through a throwaway link, which jsdom cannot do; what matters is what it
-// is handed.
+/**
+ * `downloadBlob` saves through a throwaway link, which jsdom cannot do; what matters is what it
+ * is handed.
+ */
 vi.mock('@guebbit/js-toolkit', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@guebbit/js-toolkit')>()),
     downloadBlob: vi.fn()

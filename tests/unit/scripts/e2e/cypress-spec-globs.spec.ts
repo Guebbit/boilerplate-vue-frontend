@@ -127,8 +127,10 @@ describe('nothing spells the spec set by hand', () => {
         '%s reads the constant instead of inlining a glob',
         (file) => {
             const lines = codeLinesOf(file);
-            // A GLOB, not a mention: a `*` reaching a `.cy.ts`. `path.basename(file, '.cy.ts')`
-            // is neither, and stripping an extension is not spelling the set.
+            /**
+             * A GLOB, not a mention: a `*` reaching a `.cy.ts`. `path.basename(file, '.cy.ts')`
+             * is neither, and stripping an extension is not spelling the set.
+             */
             const inlined = lines.filter((line) => /\*[^\s"']*\.cy\.ts|\{cy,spec\}/.test(line));
 
             expect(inlined, `${file} inlines a spec glob`).toEqual([]);

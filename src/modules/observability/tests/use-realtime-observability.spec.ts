@@ -79,8 +79,10 @@ describe('useRealtimeObservability', () => {
             return loadComposable().then(({ useRealtimeObservability }) => {
                 useRealtimeObservability().connect();
 
-                // The names come from the generated per-stream constant, whose order is the
-                // contract's and means nothing: what is asserted is the set.
+                /**
+                 * The names come from the generated per-stream constant, whose order is the
+                 * contract's and means nothing: what is asserted is the set.
+                 */
                 const [url, eventNames] = vi.mocked(createSseClient).mock.calls[0] ?? [];
                 expect(url).toBe('https://api.example.com/observability/events');
                 expect((eventNames ?? []).toSorted()).toEqual([

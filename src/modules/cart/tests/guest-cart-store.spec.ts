@@ -553,8 +553,10 @@ describe('the merge Idempotency-Key', () => {
 
         await store.mergeGuestCart();
 
-        // The call that may have been applied is replayed under its own key; only what is new
-        // travels under a key of its own.
+        /**
+         * The call that may have been applied is replayed under its own key; only what is new
+         * travels under a key of its own.
+         */
         expect(keyOfCall(2)).not.toBe(keyOfCall(0));
     });
 

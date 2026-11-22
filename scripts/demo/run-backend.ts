@@ -49,8 +49,10 @@ try {
 
 /** Spawns the backend demo command, forwarding signals and mirroring its exit code. */
 const boot = (argv: readonly string[]) => {
-    // The backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see
-    // `scratch-directory.ts` for the tmpfs it was filling.
+    /**
+     * The backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see
+     * `scratch-directory.ts` for the tmpfs it was filling.
+     */
     const scratchDirectory = createDemoScratchDirectory();
 
     const [command, ...commandArguments] = argv;
@@ -59,30 +61,40 @@ const boot = (argv: readonly string[]) => {
         env: {
             ...process.env,
             TMPDIR: scratchDirectory,
-            // Every e2e npm script serves the built/dev FE on :8085 (cypress.config.ts's
-            // baseUrl), never the backend's own `.env` default of :8080 — without this the OAuth
-            // callback and any emailed link redirect the browser at a port nothing is listening
-            // on here.
+            /**
+             * Every e2e npm script serves the built/dev FE on :8085 (cypress.config.ts's
+             * baseUrl), never the backend's own `.env` default of :8080 — without this the OAuth
+             * callback and any emailed link redirect the browser at a port nothing is listening
+             * on here.
+             */
             NODE_FRONTEND_URL: 'http://localhost:8085',
-            // This repo's own port, not whatever NODE_PORT happened to inherit from the
-            // shell or `.env` — see SINGLE_PROCESS_DEMO_PORT's docstring. NODE_PORT: the Node
-            // twin's own `demo` script. SERVER_PORT: Laravel's `artisan serve`, the same pairing
-            // `run-shards.ts` already forwards both of for the sharded case.
+            /**
+             * This repo's own port, not whatever NODE_PORT happened to inherit from the
+             * shell or `.env` — see SINGLE_PROCESS_DEMO_PORT's docstring. NODE_PORT: the Node
+             * twin's own `demo` script. SERVER_PORT: Laravel's `artisan serve`, the same pairing
+             * `run-shards.ts` already forwards both of for the sharded case.
+             */
             NODE_PORT: String(SINGLE_PROCESS_DEMO_PORT),
             SERVER_PORT: String(SINGLE_PROCESS_DEMO_PORT),
-            // Marks this as a throwaway demo instance, same as `run-shards.ts`'s per-shard
-            // backends set it — kept symmetric with that file rather than read by anything here.
+            /**
+             * Marks this as a throwaway demo instance, same as `run-shards.ts`'s per-shard
+             * backends set it — kept symmetric with that file rather than read by anything here.
+             */
             NODE_DEMO: 'true',
-            // The webhook receiver Cypress hosts beside this backend (`webhook-sink.ts`): the
-            // seeded subscription points at it, and the SSRF guard exempts exactly its host.
+            /**
+             * The webhook receiver Cypress hosts beside this backend (`webhook-sink.ts`): the
+             * seeded subscription points at it, and the SSRF guard exempts exactly its host.
+             */
             NODE_WEBHOOK_DEMO_SINK_URL: sinkUrlForPort(SINGLE_PROCESS_SINK_PORT),
             // `npm run backend:demo -- --antibot`: the human-challenge provider on (`antibot-backend.ts`).
             ...(wantsAntibotBackend(process.argv.slice(2)) ? ANTIBOT_BACKEND_ENV : {})
         }
     });
 
-    // `start-server-and-test` ends this wrapper with a signal; the backend under it must get the
-    // same one, so its `mongod.stop()` runs and the scratch directory below has nothing left in it.
+    /**
+     * `start-server-and-test` ends this wrapper with a signal; the backend under it must get the
+     * same one, so its `mongod.stop()` runs and the scratch directory below has nothing left in it.
+     */
     for (const signal of ['SIGTERM', 'SIGINT'] as const)
         process.on(signal, () => {
             child.kill(signal);

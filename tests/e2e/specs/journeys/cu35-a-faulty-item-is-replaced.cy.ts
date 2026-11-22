@@ -60,8 +60,10 @@ describe('CU35 · A faulty item is replaced', () => {
                 cy.get('[data-test=order-return]').should('have.length', 1);
 
                 cy.wait('@openReturn').then(({ request, response }) => {
-                    // the wish goes out, and the server records it
-                    // an intercepted body is `any`: it is the request the form built
+                    /**
+                     * the wish goes out, and the server records it
+                     * an intercepted body is `any`: it is the request the form built
+                     */
                     expect((request.body as ReturnLike).preferredRemedy).to.equal('replace');
                     expect(response?.statusCode).to.equal(201);
                     const opened = response?.body as ReturnLike;

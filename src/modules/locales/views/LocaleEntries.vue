@@ -221,8 +221,10 @@ watch(tag, (nextTag) => {
  */
 const onAmbientError = useAmbientError();
 
-// The header needs this one language (not the whole manifest) and the selects the registry;
-// harmless when the list page already loaded them. Again whenever the route names another tag.
+/**
+ * The header needs this one language (not the whole manifest) and the selects the registry;
+ * harmless when the list page already loaded them. Again whenever the route names another tag.
+ */
 watch(tag, (next) => localesStore.fetchLanguage(next).catch(onAmbientError), { immediate: true });
 // Likewise for the app registry.
 if (apps.value.length === 0) localesStore.fetchApps().catch(onAmbientError);

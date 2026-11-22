@@ -42,8 +42,10 @@ export const router = createRouter({
                 // The shell's two legal pages, which the order button links to.
                 ...(['terms', 'privacy'] as const).map((page) => ({
                     path: page,
-                    // The router's names for these pages (`src/app/utils/static-pages.ts`), spelled out: a module's
-                    // test harness cannot reach the app tier.
+                    /**
+                     * The router's names for these pages (`src/app/utils/static-pages.ts`), spelled out: a module's
+                     * test harness cannot reach the app tier.
+                     */
                     name: page === 'terms' ? 'StaticTerms' : 'StaticPrivacy',
                     component: { template: '<div />' }
                 }))
@@ -115,9 +117,11 @@ export const mountCartPage = (held?: CartResponse): Promise<MountedCartPage> => 
     const cart = useCartStore();
     if (held) cart.cart = held;
     spyOnProductReads().mockResolvedValue([]);
-    // The hold notice on the page reads the account on mount. Left to the network, `GET /account`
-    // reaches whatever listens on the dev API port (a dev server answering HTML, say), and the
-    // junk answer publishes an empty viewer: the cart then resets and the page shows it empty.
+    /**
+     * The hold notice on the page reads the account on mount. Left to the network, `GET /account`
+     * reaches whatever listens on the dev API port (a dev server answering HTML, say), and the
+     * junk answer publishes an empty viewer: the cart then resets and the page shows it empty.
+     */
     vi.spyOn(useAccountProfileStore(), 'fetchProfile').mockResolvedValue(undefined);
     const wrapper = mount(SignedInCart, {
         global: {
@@ -130,8 +134,10 @@ export const mountCartPage = (held?: CartResponse): Promise<MountedCartPage> => 
         }
     });
     const selector = () =>
-        // The wrapper types a CSS-selector lookup without `.vm`; the selector is unique, which is
-        // what the object-selector overload would otherwise prove (`order-edit-view.spec.ts`).
+        /**
+         * The wrapper types a CSS-selector lookup without `.vm`; the selector is unique, which is
+         * what the object-selector overload would otherwise prove (`order-edit-view.spec.ts`).
+         */
         wrapper.getComponent('[data-test=shipping-selector-stub]') as VueWrapper;
     return flushPromises().then(() => ({
         wrapper,

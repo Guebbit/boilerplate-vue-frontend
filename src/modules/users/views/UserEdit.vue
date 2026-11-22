@@ -316,8 +316,10 @@ const submitForm = () => {
 
         return accepted.then((wasAccepted) => {
             if (!wasAccepted) return;
-            // The loaded record is the baseline: only what the admin changed is sent, and an
-            // emptied locale/phone/website becomes `null` (clear) rather than a 422-bound `''`.
+            /**
+             * The loaded record is the baseline: only what the admin changed is sent, and an
+             * emptied locale/phone/website becomes `null` (clear) rather than a 422-bound `''`.
+             */
             return toRequestBody('UpdateUserByIdBody', { username, locale, phone, website }, target)
                 .then((body) =>
                     Object.keys(body).length === 0 && !imageUpload

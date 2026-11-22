@@ -56,9 +56,11 @@ export const useAuditTrail = (endpoint: AuditEndpoint): UseAuditTrailReturn => {
                       actor: filters.actor,
                       action: filters.action,
                       outcome: filters.outcome,
-                      // `datetime-local` has no timezone of its own; the contract wants a real
-                      // ISO instant. An already-ISO `since` (e.g. re-run from a saved filter)
-                      // round-trips unchanged.
+                      /**
+                       * `datetime-local` has no timezone of its own; the contract wants a real
+                       * ISO instant. An already-ISO `since` (e.g. re-run from a saved filter)
+                       * round-trips unchanged.
+                       */
                       since: filters.since ? new Date(filters.since).toISOString() : undefined,
                       page: filters.page,
                       pageSize: filters.pageSize
@@ -68,8 +70,10 @@ export const useAuditTrail = (endpoint: AuditEndpoint): UseAuditTrailReturn => {
                       action: filters.action,
                       outcome: filters.outcome,
                       since: filters.since ? new Date(filters.since).toISOString() : undefined,
-                      // `target` and `ownOrder` exist on the shop trail only. An unticked box
-                      // sends nothing, not `false`: that would hide the flagged rows.
+                      /**
+                       * `target` and `ownOrder` exist on the shop trail only. An unticked box
+                       * sends nothing, not `false`: that would hide the flagged rows.
+                       */
                       target: filters.target || undefined,
                       ownOrder: filters.ownOrder ? true : undefined,
                       page: filters.page,

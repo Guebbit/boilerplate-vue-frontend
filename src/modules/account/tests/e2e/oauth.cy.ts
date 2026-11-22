@@ -43,9 +43,11 @@ describe('Social login (OAuth)', () => {
         cy.get('#home-page').should('exist');
         cy.get('[data-test=user-menu]').should('exist');
 
-        // The identity the fake provider hands back is pre-verified, so a brand-new account
-        // created from it needs no emailed token — same as `loginOrCreateFromOAuth`'s create
-        // branch documents.
+        /**
+         * The identity the fake provider hands back is pre-verified, so a brand-new account
+         * created from it needs no emailed token — same as `loginOrCreateFromOAuth`'s create
+         * branch documents.
+         */
         cy.visit('/en/profile');
         cy.get('[type=email]').should('have.value', 'oauth.demo@example.com');
         cy.get('[data-test=verify-banner]').should('not.exist');
@@ -64,8 +66,10 @@ describe('Social login (OAuth)', () => {
         cy.visit('/en/login');
         cy.get('[data-test=oauth-fake]').should('exist').click();
 
-        // Refused at the callback, with its own code — the remedy is the password reset, not
-        // "verify with the provider".
+        /**
+         * Refused at the callback, with its own code — the remedy is the password reset, not
+         * "verify with the provider".
+         */
         cy.url().should('include', 'error=account_unverified');
         cy.get('#oauth-callback-page').should('exist');
         cy.get('#home-page').should('not.exist');
@@ -90,8 +94,10 @@ describe('Social login (OAuth)', () => {
         cy.emailTo('oauth.demo@example.com').then(({ token }) => {
             cy.visit(`/en/verify-email/confirm#token=${token}`);
         });
-        // Spent as a guest: `signUpUnverified` already signed out, as someone opening the link
-        // from a mailbox on another device would be.
+        /**
+         * Spent as a guest: `signUpUnverified` already signed out, as someone opening the link
+         * from a mailbox on another device would be.
+         */
         cy.get('[data-test=verify-submit]').click();
         cy.get('#home-page').should('exist');
         cy.get('[data-test=user-menu]').should('not.exist');
@@ -116,8 +122,10 @@ describe('Social login (OAuth)', () => {
         cy.url().should('include', '/en/profile');
         cy.get('[data-test=connected-item]').should('have.length', 1);
 
-        // The SAME account, not a duplicate: now the provider signs in to it, and the password
-        // still does too — linking added a second way in, it did not replace the first.
+        /**
+         * The SAME account, not a duplicate: now the provider signs in to it, and the password
+         * still does too — linking added a second way in, it did not replace the first.
+         */
         cy.logout();
         cy.visit('/en/login');
         cy.get('[data-test=oauth-fake]').should('exist').click();

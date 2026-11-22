@@ -35,9 +35,11 @@ interface RefusalBody {
  * @param orderId - the order to withdraw from
  */
 const apiRefusesWithdrawal = (orderId: string): void => {
-    // The harness's tasks are called directly, not through `support/e2e/harness`: importing that
-    // module would import `scenario.ts` too, and this spec would then keep its own copy of the
-    // backend's description, stale after every live reset.
+    /**
+     * The harness's tasks are called directly, not through `support/e2e/harness`: importing that
+     * module would import `scenario.ts` too, and this spec would then keep its own copy of the
+     * backend's description, stale after every live reset.
+     */
     cy.env(['apiUrl']).then(({ apiUrl }) => {
         cy.accountOf('user').then(({ email, password }) => {
             cy.task<Device>('deviceLogin', { apiUrl: String(apiUrl), email, password }).then(

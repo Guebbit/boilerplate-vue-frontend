@@ -71,8 +71,10 @@ const stayBusy = (editPath: string): void => {
     cy.location('pathname').should('equal', '/en/products');
     cy.go('back');
     cy.location('pathname').should('equal', editPath);
-    // The price arrives from an authenticated read: waiting for it is waiting for the move to have
-    // counted as the editor acting, before the clock moves again.
+    /**
+     * The price arrives from an authenticated read: waiting for it is waiting for the move to have
+     * counted as the editor acting, before the clock moves again.
+     */
     cy.get('[data-test=product-price-field] input').should('not.have.value', '');
 };
 

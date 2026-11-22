@@ -135,8 +135,10 @@ actionTable('orders', [
         intercept: { method: 'GET', url: '**/orders/export*', operation: '/orders/export' },
         kind: 'row',
         alert: 'orders-export-error',
-        // A CSV answer is read as text, so the page shows its generic sentence for a 500, not the
-        // envelope's message.
+        /**
+         * A CSV answer is read as text, so the page shows its generic sentence for a 500, not the
+         * envelope's message.
+         */
         message: 'Something went wrong on our side. Please try again.',
         listed: '[data-test=list-row]'
     },

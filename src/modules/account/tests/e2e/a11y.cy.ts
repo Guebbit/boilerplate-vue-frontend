@@ -30,13 +30,17 @@ sweepA11y('account — guest', [
     ['verify email confirm', `/en/verify-email/confirm#token=${UNISSUED_TOKEN}`],
     ['email change confirm', `/en/email-change/confirm#token=${UNISSUED_TOKEN}`],
     ['email change undo', `/en/email-change/undo#token=${UNISSUED_TOKEN}`],
-    // The success path redirects immediately and renders nothing of its own, same as `Logout` —
-    // only the error state (a card plus a link back to login) is a page worth auditing.
+    /**
+     * The success path redirects immediately and renders nothing of its own, same as `Logout` —
+     * only the error state (a card plus a link back to login) is a page worth auditing.
+     */
     ['oauth callback, error', '/en/oauth/callback?error=access_denied'],
     { name: 'login, dark theme', route: '/en/login', theme: 'dark' },
     {
-        // Submitted empty: the sign-in form showing both of its errors — the state that has to
-        // tie each message to its field and announce it, not only colour the border.
+        /**
+         * Submitted empty: the sign-in form showing both of its errors — the state that has to
+         * tie each message to its field and announce it, not only colour the border.
+         */
         name: 'login, submitted empty',
         route: '/en/login',
         prepare: () => {
@@ -104,10 +108,12 @@ sweepA11y(
             }
         },
         {
-            // The same page after the visitor presses the button for an export nobody made: the
-            // 404 lands as an alert next to the button, with the hint to ask for a new one. The
-            // status read says `ready` and the file read says 404, since that is the only way a
-            // button that is enabled can meet a file that is gone.
+            /**
+             * The same page after the visitor presses the button for an export nobody made: the
+             * 404 lands as an alert next to the button, with the hint to ask for a new one. The
+             * status read says `ready` and the file read says 404, since that is the only way a
+             * button that is enabled can meet a file that is gone.
+             */
             name: 'account export download, export gone',
             route: () => {
                 cy.intercept('GET', '**/account/export', {
@@ -132,8 +138,10 @@ sweepA11y(
             }
         },
         {
-            // The address dialog: a modal named by its title, with focus inside it, over a
-            // page that must be hidden from the reader while it is up.
+            /**
+             * The address dialog: a modal named by its title, with focus inside it, over a
+             * page that must be hidden from the reader while it is up.
+             */
             name: 'profile, address dialog open',
             route: '/en/profile',
             prepare: () => {
@@ -142,8 +150,10 @@ sweepA11y(
             }
         },
         {
-            // The authenticator-app enrolment dialog: persistent, named by its title, with the
-            // secret and the code field inside it.
+            /**
+             * The authenticator-app enrolment dialog: persistent, named by its title, with the
+             * secret and the code field inside it.
+             */
             name: 'profile, authenticator enrolment dialog open',
             route: '/en/profile',
             prepare: () => {

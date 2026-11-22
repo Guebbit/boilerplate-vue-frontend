@@ -55,8 +55,10 @@ vi.mock('@guebbit/vue-toolkit', () => ({
     })
 }));
 
-// The i18n key is echoed back so an assertion can name the message the cell chose without
-// depending on the vocabulary.
+/**
+ * The i18n key is echoed back so an assertion can name the message the cell chose without
+ * depending on the vocabulary.
+ */
 vi.mock('vue-i18n', () => ({
     useI18n: () => ({ t: (key: string) => key })
 }));
@@ -345,8 +347,10 @@ describe('handleCellEnter', () => {
     it('saves rather than removes when the cell was never typed into', () => {
         const { editor } = editorWith({ greeting: greetingEntry() });
 
-        // An undefined draft is not an emptied cell: Enter on an untouched cell must not confirm
-        // a removal.
+        /**
+         * An undefined draft is not an emptied cell: Enter on an untouched cell must not confirm
+         * a removal.
+         */
         expect(editor.handleCellEnter(ENGLISH, 'greeting', new Event('keydown'))).toBeUndefined();
         expect(removeEntry).not.toHaveBeenCalled();
     });

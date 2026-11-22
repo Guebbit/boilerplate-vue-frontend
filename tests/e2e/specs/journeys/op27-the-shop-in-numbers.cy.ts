@@ -229,8 +229,10 @@ describe('OP27 · The shop in numbers', () => {
         const stillBack = new Date(Date.now() - 370 * 86_400_000).toISOString().slice(0, 10);
         applyPeriod(farBack, stillBack);
         cy.get('[data-test=card-orders]').should('contain.text', '0');
-        // The sales and operations blocks keep their zeroed cards; their empty copy is for an
-        // answer with no currency at all, which the stats action rows serve.
+        /**
+         * The sales and operations blocks keep their zeroed cards; their empty copy is for an
+         * answer with no currency at all, which the stats action rows serve.
+         */
         cy.get('[data-test=products-empty]').should('exist');
     });
 });

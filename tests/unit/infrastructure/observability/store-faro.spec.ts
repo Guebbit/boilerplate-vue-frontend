@@ -66,10 +66,12 @@ vi.mock('@grafana/faro-web-sdk', () => ({
     NavigationInstrumentation: namedInstrumentation('NavigationInstrumentation')
 }));
 
-// An anonymous `function` rather than a class: a class holding only a constructor is what the lint
-// rejects, and an arrow cannot be used with `new`, which is how the store builds this. Options are
-// read from the body rather than captured — `vi.mock` hoists above `tracingOptions`, so anything
-// evaluated at factory time would hit the temporal dead zone.
+/**
+ * An anonymous `function` rather than a class: a class holding only a constructor is what the lint
+ * rejects, and an arrow cannot be used with `new`, which is how the store builds this. Options are
+ * read from the body rather than captured — `vi.mock` hoists above `tracingOptions`, so anything
+ * evaluated at factory time would hit the temporal dead zone.
+ */
 vi.mock('@grafana/faro-web-tracing', () => ({
     TracingInstrumentation: vi.fn(function (this: { name: string }, options: unknown) {
         this.name = 'TracingInstrumentation';

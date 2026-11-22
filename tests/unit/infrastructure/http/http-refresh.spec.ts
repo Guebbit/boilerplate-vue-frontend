@@ -593,8 +593,10 @@ describe('401 refresh flow', () => {
         it.each([
             ...EXCLUDED_PATHS,
             ABSOLUTE_EXCLUDED_URL,
-            // With a query string: the exclusion matches a PATHNAME, and `?next=` is the shape a
-            // sign-in redirect actually arrives in.
+            /**
+             * With a query string: the exclusion matches a PATHNAME, and `?next=` is the shape a
+             * sign-in redirect actually arrives in.
+             */
             '/account/login?next=/cart'
         ])('never attempts a refresh for a 401 from %s', (url) =>
             loadHttp()
@@ -632,8 +634,10 @@ describe('401 refresh flow', () => {
                     // Call 1: no token yet — a plain 401, the shape that triggers a refresh.
                     if (authorization !== `Bearer ${FRESH_TOKEN}`)
                         return unauthorized('Unauthorized');
-                    // Call 2: refreshed, but the backend's `auth_time` is still the old one — the
-                    // critical action demands a step-up, same as a request never refreshed at all.
+                    /**
+                     * Call 2: refreshed, but the backend's `auth_time` is still the old one — the
+                     * critical action demands a step-up, same as a request never refreshed at all.
+                     */
                     if (checkoutCalls === 2)
                         return HttpResponse.json(
                             aProblem(401, [

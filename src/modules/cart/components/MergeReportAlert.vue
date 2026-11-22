@@ -59,9 +59,11 @@ const REASON_KEYS: Record<MergeLineReason, string> = {
 const titleOf = (productId: string): string =>
     productOf(productId)?.title ?? t('cart-page.merge-alert-unknown-product');
 
-// Vue `watch`: a new report replaces the old one wholesale, so the source changing is "a merge
-// answered". `immediate` covers a report that already exists when the page opens.
-// https://vuejs.org/api/reactivity-core.html#watch
+/**
+ * Vue `watch`: a new report replaces the old one wholesale, so the source changing is "a merge
+ * answered". `immediate` covers a report that already exists when the page opens.
+ * https://vuejs.org/api/reactivity-core.html#watch
+ */
 watch(
     mergeReport,
     (lines) => {

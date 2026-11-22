@@ -38,9 +38,11 @@ export const pollForImageSource = (
 ): Cypress.Chainable<string> =>
     cy
         .get(selector)
-        // A freshly (re)loaded page paints the bundled placeholder until the record has arrived,
-        // so reading `src` at once would see the stand-in on every pass. Wait it out; a record
-        // whose digest is pending carries the pending image, which is not the placeholder.
+        /**
+         * A freshly (re)loaded page paints the bundled placeholder until the record has arrived,
+         * so reading `src` at once would see the stand-in on every pass. Wait it out; a record
+         * whose digest is pending carries the pending image, which is not the placeholder.
+         */
         .should(($image) => {
             const source = $image.attr('src') ?? '';
             expect(source, 'a src that is not the placeholder').to.match(/\S/);

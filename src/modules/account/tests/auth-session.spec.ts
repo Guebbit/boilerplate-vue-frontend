@@ -47,9 +47,11 @@ let responses: Record<string, unknown>;
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        // Unknown endpoint resolves to `undefined` rather than throwing: several actions ignore
-        // their response body entirely, and forcing every one of them into the table above would
-        // make the table a list of the endpoints called rather than of the answers that matter.
+        /**
+         * Unknown endpoint resolves to `undefined` rather than throwing: several actions ignore
+         * their response body entirely, and forcing every one of them into the table above would
+         * make the table a list of the endpoints called rather than of the answers that matter.
+         */
         return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));
@@ -102,8 +104,10 @@ describe('login', () => {
             });
     });
 
-    // The boot reads the mode once (`main.ts`); a fresh tab has no `isAuth` cookie to trigger it
-    // anywhere else, and a login adopted before the answer would behave as `jwt` and hold nothing.
+    /**
+     * The boot reads the mode once (`main.ts`); a fresh tab has no `isAuth` cookie to trigger it
+     * anywhere else, and a login adopted before the answer would behave as `jwt` and hold nothing.
+     */
     it('signs in on a fresh tab whose deployment answered cookie mode at boot', () => {
         responses['GET /config'] = configAnswer({
             session: {
@@ -146,9 +150,11 @@ describe('login', () => {
             .then(() => {
                 const session = useSessionStore();
 
-                // The projection, not the record: the shell is not allowed to know what a `User`
-                // is, so anything beyond these fields leaking in is a regression. `verified`
-                //  is real: the fixture below never sets `verifiedAt`.
+                /**
+                 * The projection, not the record: the shell is not allowed to know what a `User`
+                 * is, so anything beyond these fields leaking in is a regression. `verified`
+                 *  is real: the fixture below never sets `verifiedAt`.
+                 */
                 expect(session.viewer).toEqual({
                     id: 'u1',
                     email: 'ada@example.com',
@@ -184,8 +190,10 @@ describe('login', () => {
 
                 expect(session.can('delete', 'Product')).toBe(true);
                 expect(session.can('update', 'Product')).toBe(true);
-                // Nothing published it, so it is refused — an unrestricted TENANT role is not a
-                // platform operator, and admin's superset stops at the scope boundary.
+                /**
+                 * Nothing published it, so it is refused — an unrestricted TENANT role is not a
+                 * platform operator, and admin's superset stops at the scope boundary.
+                 */
                 expect(session.can('read', 'ObservabilitySnapshot')).toBe(false);
             });
     });
@@ -204,9 +212,11 @@ describe('login', () => {
                 expect(session.can('delete', 'Product')).toBe(true);
                 session.clearSession();
 
-                // The empty abilities, not the previous visitor's: what a screen renders for a
-                // stranger has to be what a stranger is allowed, and the next viewer's rules
-                // arrive with the next fetch.
+                /**
+                 * The empty abilities, not the previous visitor's: what a screen renders for a
+                 * stranger has to be what a stranger is allowed, and the next viewer's rules
+                 * arrive with the next fetch.
+                 */
                 expect(session.can('delete', 'Product')).toBe(false);
                 expect(session.tenantAbility.can('delete', 'Product')).toBe(false);
             });
@@ -224,10 +234,12 @@ describe('login', () => {
     });
 
     it('leaves the session anonymous when the response carries no token', () => {
-        // A `data` with neither shape the union declares is impossible against the real contract
-        // (`orvalMutator` itself would reject it) — this pins `getTokenFromResponse`'s OWN defence
-        // for that state, so it bypasses `parseOrvalFixture` on purpose rather than resolving
-        // through the keyed `responses` table.
+        /**
+         * A `data` with neither shape the union declares is impossible against the real contract
+         * (`orvalMutator` itself would reject it) — this pins `getTokenFromResponse`'s OWN defence
+         * for that state, so it bypasses `parseOrvalFixture` on purpose rather than resolving
+         * through the keyed `responses` table.
+         */
         vi.mocked(orvalMutator).mockImplementationOnce(() => Promise.resolve({}));
 
         return useAccountAuthStore()
@@ -248,11 +260,15 @@ describe('logout', () => {
             .then(() => {
                 const session = useSessionStore();
 
-                // The single-session endpoint: other devices stay signed in, which is what a
-                // shared-machine logout should mean. `logoutEverywhere` is the wide one.
+                /**
+                 * The single-session endpoint: other devices stay signed in, which is what a
+                 * shared-machine logout should mean. `logoutEverywhere` is the wide one.
+                 */
                 expect(requestedUrls().at(-1)).toBe('/account/logout');
-                // The whole point of the action: a stale `isAuth` would let the guards wave the
-                // next navigation through with no token to back it.
+                /**
+                 * The whole point of the action: a stale `isAuth` would let the guards wave the
+                 * next navigation through with no token to back it.
+                 */
                 expect(session.accessToken).toBeUndefined();
                 expect(session.viewer).toBeUndefined();
                 expect(session.isAuth).toBe(false);

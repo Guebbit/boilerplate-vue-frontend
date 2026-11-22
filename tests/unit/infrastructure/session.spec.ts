@@ -24,8 +24,10 @@ const viewOf = (tenant: unknown[], overrides: Parameters<typeof anAccount>[0] = 
         accountView(anAccount({ role: 'customer', ...overrides }), tenant)
     );
 
-// `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
-// the real generated envelope types would refuse, and that looseness is the point of a mock.
+/**
+ * `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
+ * the real generated envelope types would refuse, and that looseness is the point of a mock.
+ */
 /** Stub for the account API's `getAccount`. */
 const getAccountMock = vi.fn();
 
@@ -41,9 +43,11 @@ const logoutMock = vi.fn();
 /** Stub for logout-everywhere. */
 const logoutAllMock = vi.fn();
 
-// Every arrow below forwards to a deliberately untyped `vi.fn()` (see above), so each return is
-// `any` — one disable per line rather than retyping the mocks against the full generated
-// envelope shapes these fixtures intentionally only build part of.
+/**
+ * Every arrow below forwards to a deliberately untyped `vi.fn()` (see above), so each return is
+ * `any` — one disable per line rather than retyping the mocks against the full generated
+ * envelope shapes these fixtures intentionally only build part of.
+ */
 vi.mock('@api', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     getAccount: (options?: unknown) => getAccountMock(options),
@@ -90,9 +94,11 @@ const cookieJar = () =>
 
 describe('setAccessToken — the rememberMe marker, with the isAuth hint left to the backend', () => {
     beforeEach(() => {
-        // Tests earlier in this file call `signedIn()`, which sets these cookies as a side
-        // effect; jsdom keeps `document.cookie` for the whole file, not per test. Cleared through
-        // the store's own method, like production code, rather than a raw assignment.
+        /**
+         * Tests earlier in this file call `signedIn()`, which sets these cookies as a side
+         * effect; jsdom keeps `document.cookie` for the whole file, not per test. Cleared through
+         * the store's own method, like production code, rather than a raw assignment.
+         */
         useSessionStore().clearSession();
     });
 
@@ -156,8 +162,10 @@ describe('setAccessToken — the rememberMe marker, with the isAuth hint left to
      */
     describe('the Secure attribute follows the page scheme', () => {
         const nativeSetter = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie')!.set!;
-        // `vi.spyOn`'s bare `ReturnType` picks the wrong overload for a "set" accessor spy —
-        // named explicitly against the "set" overload's own `Mock<(arg: T[G]) => void>` shape.
+        /**
+         * `vi.spyOn`'s bare `ReturnType` picks the wrong overload for a "set" accessor spy —
+         * named explicitly against the "set" overload's own `Mock<(arg: T[G]) => void>` shape.
+         */
         let setterSpy: Mock<(value: string) => void>;
 
         beforeEach(() => {

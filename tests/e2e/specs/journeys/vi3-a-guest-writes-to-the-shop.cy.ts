@@ -107,8 +107,10 @@ describe('VI3 · A guest writes to the shop', () => {
             expect(tasks).to.have.length(1);
             expect(tasks[0].status).to.equal('spam');
         });
-        // A later honest message is mailed first in line: once its mail has arrived, the bot's
-        // (sent earlier) would have arrived too, so its absence now means it was never sent.
+        /**
+         * A later honest message is mailed first in line: once its mail has arrived, the bot's
+         * (sent earlier) would have arrived too, so its absence now means it was never sent.
+         */
         writeToTheShop(third);
         cy.get('[data-test=contact-subject] input').should('have.value', '');
         cy.emailAbout(third);

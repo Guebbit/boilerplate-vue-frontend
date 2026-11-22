@@ -36,8 +36,10 @@ import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({
-    // A delete answers with no `data` at all — every OTHER write here answers with the record —
-    // so the method picks which envelope shape this default resolves.
+    /**
+     * A delete answers with no `data` at all — every OTHER write here answers with the record —
+     * so the method picks which envelope shape this default resolves.
+     */
     orvalMutator: vi.fn((config: { url?: string; method?: string }) =>
         Promise.resolve(
             parseOrvalFixture(
@@ -170,9 +172,11 @@ describe('useProductsStore', () => {
             useProductsStore()
                 .createProduct({ price: '49.99', ...WORDS })
                 .then((created) => {
-                    // `ProductCreate.vue` routes to `/products/${created.id}` on success, so a
-                    // wrapper that forgot to unwrap `response.data` would navigate to
-                    // `/products/undefined` rather than fail visibly here.
+                    /**
+                     * `ProductCreate.vue` routes to `/products/${created.id}` on success, so a
+                     * wrapper that forgot to unwrap `response.data` would navigate to
+                     * `/products/undefined` rather than fail visibly here.
+                     */
                     expect(created).toEqual({
                         id: 'p1',
                         title: 'T',
@@ -207,8 +211,10 @@ describe('useProductsStore', () => {
                 }));
 
         it('sends a Blob image, not only a File', () =>
-            // The contract types the field as Blob, and encoders that recurse into anything that
-            // is not a File (axios' `toFormData` among them) drop a plain Blob silently.
+            /**
+             * The contract types the field as Blob, and encoders that recurse into anything that
+             * is not a File (axios' `toFormData` among them) drop a plain Blob silently.
+             */
             useProductsStore()
                 .createProduct({
                     price: '49.99',
@@ -327,8 +333,10 @@ describe('useProductsStore', () => {
             useProductsStore()
                 .updateProduct('p1', { price: '9.99' })
                 .then(() => {
-                    // Omission is the merge's own "leave every locale alone" signal — an empty
-                    // object on the wire would be a different, wrong statement.
+                    /**
+                     * Omission is the merge's own "leave every locale alone" signal — an empty
+                     * object on the wire would be a different, wrong statement.
+                     */
                     expect(lastRequest().data).not.toHaveProperty('translations');
                 }));
 
@@ -362,9 +370,11 @@ describe('useProductsStore', () => {
             const store = useProductsStore();
             store.addProduct(PRODUCT);
 
-            // `Once`, deliberately: the suite's `beforeEach` calls `vi.clearAllMocks()`, which
-            // clears recorded calls but NOT an implementation set with `mockReturnValue`. A
-            // persistent override here would hand every later test this same settled promise.
+            /**
+             * `Once`, deliberately: the suite's `beforeEach` calls `vi.clearAllMocks()`, which
+             * clears recorded calls but NOT an implementation set with `mockReturnValue`. A
+             * persistent override here would hand every later test this same settled promise.
+             */
             let release!: (value: unknown) => void;
             const transportResponse = new Promise((resolve) => {
                 release = resolve;
@@ -382,11 +392,13 @@ describe('useProductsStore', () => {
                 imageUpload: new Blob(['x'])
             });
 
-            // `waitFor` rather than a counted number of microtasks: the toolkit awaits
-            // `cancelQueries()` before writing the optimistic record, so how many ticks that
-            // takes is TanStack's business and not something this test should encode. The
-            // request is still unresolved throughout — `release` has not been called yet — so
-            // this can only pass if the store was patched ahead of the response.
+            /**
+             * `waitFor` rather than a counted number of microtasks: the toolkit awaits
+             * `cancelQueries()` before writing the optimistic record, so how many ticks that
+             * takes is TanStack's business and not something this test should encode. The
+             * request is still unresolved throughout — `release` has not been called yet — so
+             * this can only pass if the store was patched ahead of the response.
+             */
             return vi
                 .waitFor(() => {
                     expect(store.products.p1.price).toBe('12.50');
@@ -466,8 +478,10 @@ describe('useProductsStore', () => {
                 }));
     });
 
-    // A staff member's draft-language text and admin-only rows must not outlive their sign-out
-    // in the same tab (the cache scope is the language, not the person).
+    /**
+     * A staff member's draft-language text and admin-only rows must not outlive their sign-out
+     * in the same tab (the cache scope is the language, not the person).
+     */
     describe('a change of viewer', () => {
         it('forgets the cached products', async () => {
             const store = useProductsStore();
@@ -557,8 +571,10 @@ describe('useProductsStore', () => {
                     .fetchProducts()
                     .then((result) => {
                         expect(lastRequest()).toMatchObject({ url: '/products', method: 'GET' });
-                        // `.data.items`, not `.data` — one level too shallow yields the envelope
-                        // itself, which renders as an empty list rather than as an error.
+                        /**
+                         * `.data.items`, not `.data` — one level too shallow yields the envelope
+                         * itself, which renders as an empty list rather than as an error.
+                         */
                         expect(result).toEqual([PRODUCT]);
                     });
             });
@@ -651,8 +667,10 @@ describe('useProductsStore', () => {
                     .watchSearchProducts()
                     .search()
                     .then(() => {
-                        // The SEARCH endpoint, not the list one: the list page filters through
-                        // the DTO route the contract provides for exactly this.
+                        /**
+                         * The SEARCH endpoint, not the list one: the list page filters through
+                         * the DTO route the contract provides for exactly this.
+                         */
                         expect(lastRequest()).toMatchObject({
                             url: '/products/search',
                             method: 'POST'
@@ -660,8 +678,10 @@ describe('useProductsStore', () => {
                         const parameters = lastBody();
                         expect(parameters).toMatchObject({
                             text: 'gad',
-                            // `id`, the name the API actually reads; `productId` filters nothing.
-                            // The filter box searches for one id; the API reads a batch.
+                            /**
+                             * `id`, the name the API actually reads; `productId` filters nothing.
+                             * The filter box searches for one id; the API reads a batch.
+                             */
                             id: ['p1'],
                             priceMin: '5.00',
                             priceMax: '50.00',
@@ -703,8 +723,10 @@ describe('useProductsStore', () => {
                     .search()
                     .catch(() => {})
                     .then(() => {
-                        // The list view has no other way to learn the search failed — without
-                        // this the page simply stops updating with no message.
+                        /**
+                         * The list view has no other way to learn the search failed — without
+                         * this the page simply stops updating with no message.
+                         */
                         expect(onError).toHaveBeenCalledWith(failure, expect.anything());
                     });
             });
@@ -809,9 +831,11 @@ describe('useProductsStore', () => {
                         url: '/products/facets',
                         method: 'GET'
                     });
-                    // Both halves matter: the view reads `store.facets` to render the chips, and
-                    // the caller reads the return value. An implementation that only did one of
-                    // the two would leave either the chips empty or the caller with `undefined`.
+                    /**
+                     * Both halves matter: the view reads `store.facets` to render the chips, and
+                     * the caller reads the return value. An implementation that only did one of
+                     * the two would leave either the chips empty or the caller with `undefined`.
+                     */
                     expect(store.facets).toEqual(FACETS);
                     expect(result).toEqual(FACETS);
                 });

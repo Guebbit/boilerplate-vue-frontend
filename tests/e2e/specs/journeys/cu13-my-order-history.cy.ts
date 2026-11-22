@@ -124,8 +124,10 @@ describe('CU13 · My order history', () => {
         cy.get('[data-test=order-payment-status]').should('contain.text', 'Paid');
         cy.get('[data-test=order-fulfillment-status]').should('contain.text', 'Delivered');
         cy.get('[data-test=order-payment-method]').should('exist');
-        // The seeded delivered order is a pickup: a method and a cost, and no address to show.
-        // The address read-out is CU15's, on an order that chose one.
+        /**
+         * The seeded delivered order is a pickup: a method and a cost, and no address to show.
+         * The address read-out is CU15's, on an order that chose one.
+         */
         cy.get('[data-test=order-shipping]').should('exist');
         cy.get('[data-test=order-shipping-address]').should('not.exist');
         cy.get('[data-test=shipment-status]').should('contain.text', 'Delivered');

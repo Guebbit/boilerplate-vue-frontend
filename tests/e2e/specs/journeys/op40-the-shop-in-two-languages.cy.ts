@@ -78,8 +78,10 @@ describe('OP40 · The shop in two languages', () => {
         });
 
         cy.step('the shop manager’s order list speaks Italian too');
-        // The editor leaves the stale form by loading another page: the browser's own prompt is
-        // accepted by the runner, and the menu sign-out would ask first with a form still dirty.
+        /**
+         * The editor leaves the stale form by loading another page: the browser's own prompt is
+         * accepted by the runner, and the menu sign-out would ask first with a form still dirty.
+         */
         cy.visit('/en');
         cy.switchUser('manager');
         cy.visit('/it/sales/orders');

@@ -157,8 +157,10 @@ describe('the GDPR analytics-consent switch', () => {
     });
 
     it('leaves the field out of the PATCH body entirely when the visitor never touches it', () => {
-        // The trap this pins: absent must mean "leave alone", so an ordinary save of some OTHER
-        // field must not carry a stale `analyticsConsent: false` as if it were a fresh choice.
+        /**
+         * The trap this pins: absent must mean "leave alone", so an ordinary save of some OTHER
+         * field must not carry a stale `analyticsConsent: false` as if it were a fresh choice.
+         */
         const wrapper = mountProfile();
 
         return flushPromises()
@@ -167,8 +169,10 @@ describe('the GDPR analytics-consent switch', () => {
             .then(flushPromises)
             .then(() => {
                 const patch = lastAccountPatch();
-                // Never over the wire: JSON.stringify drops an `undefined`-valued key, which is
-                // exactly the "leave alone" PATCH semantics `UpdateAccountRequest` documents.
+                /**
+                 * Never over the wire: JSON.stringify drops an `undefined`-valued key, which is
+                 * exactly the "leave alone" PATCH semantics `UpdateAccountRequest` documents.
+                 */
                 expect(JSON.stringify(patch?.data)).not.toContain('analyticsConsent');
             });
     });
@@ -324,8 +328,10 @@ describe('the email field, and a pending change', () => {
                 expect(wrapper.get('[data-test=pending-email-error]').text()).toContain(
                     'just sent'
                 );
-                // The 429's own `retryAfter` is what the button counts down: the first press right
-                // after the change was requested lands inside the cooldown its mail started.
+                /**
+                 * The 429's own `retryAfter` is what the button counts down: the first press right
+                 * after the change was requested lands inside the cooldown its mail started.
+                 */
                 expect(wrapper.get('[data-test=pending-email-resend]').text()).toBe(
                     'Resend in 42s'
                 );
@@ -356,9 +362,11 @@ describe('the email field, and a pending change', () => {
         return flushPromises()
             .then(() => {
                 const button = wrapper.get('[data-test=pending-email-resend]');
-                // Neither `.trigger()` call is awaited before the next: both click handlers run
-                // synchronously back to back, before the first request's promise ever settles —
-                // exactly the race a `disabled` bound only after the promise resolves would miss.
+                /**
+                 * Neither `.trigger()` call is awaited before the next: both click handlers run
+                 * synchronously back to back, before the first request's promise ever settles —
+                 * exactly the race a `disabled` bound only after the promise resolves would miss.
+                 */
                 return Promise.all([button.trigger('click'), button.trigger('click')]);
             })
             .then(flushPromises)
@@ -405,8 +413,10 @@ describe('the image field', () => {
             .then(flushPromises)
             .then(() => {
                 const patch = lastAccountPatch();
-                // Not merely falsy: the KEY itself must be absent, the same "absent means
-                // untouched" proof the email and consent fields above pin.
+                /**
+                 * Not merely falsy: the KEY itself must be absent, the same "absent means
+                 * untouched" proof the email and consent fields above pin.
+                 */
                 expect(JSON.stringify(patch?.data)).not.toContain('imageUrl');
             });
     });

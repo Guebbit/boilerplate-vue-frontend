@@ -140,9 +140,11 @@ describe('a book that already holds an address', () => {
             .then(() => wrapper.get('[data-test=address-add]').trigger('click'))
             .then(() => {
                 expect(wrapper.find('[data-test=address-set-default]').exists()).toBe(true);
-                // Opening the SAME dialog for an existing entry, without closing it in between —
-                // the stubbed `v-dialog` renders unconditionally, so the checkbox's visibility is
-                // proven purely off `editingId`, exactly what the component's own `v-if` reads.
+                /**
+                 * Opening the SAME dialog for an existing entry, without closing it in between —
+                 * the stubbed `v-dialog` renders unconditionally, so the checkbox's visibility is
+                 * proven purely off `editingId`, exactly what the component's own `v-if` reads.
+                 */
                 return wrapper.get('[data-test=address-edit]').trigger('click');
             })
             .then(() => {
@@ -183,8 +185,10 @@ describe('a book that already holds an address', () => {
             .then(() => wrapper.get('[data-test=address-dialog] form').trigger('submit'))
             .then(flushPromises)
             .then(() => {
-                // Never `default: false`: the backend ignores a false value entirely, and this
-                // proves the box being unchecked never even puts the key on the wire.
+                /**
+                 * Never `default: false`: the backend ignores a false value entirely, and this
+                 * proves the box being unchecked never even puts the key on the wire.
+                 */
                 expect(lastAddCall()?.data).not.toHaveProperty('default');
             });
     });

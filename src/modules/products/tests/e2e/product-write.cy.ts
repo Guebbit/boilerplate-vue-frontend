@@ -22,18 +22,22 @@ describe('Product write surface', () => {
             const itTitle = `IT lampada ${unique()}`;
 
             cy.visit('/en/products/create');
-            // ` input`, never the `data-test` element itself: Vuetify puts `data-test` on the
-            // field's WRAPPER, and typing at a wrapper lands wherever focus happens to be — which,
-            // with the tab bar's own `v-select` a sibling away, means the first space in a title
-            // opens the language picker and the rest of the string filters it.
+            /**
+             * ` input`, never the `data-test` element itself: Vuetify puts `data-test` on the
+             * field's WRAPPER, and typing at a wrapper lands wherever focus happens to be — which,
+             * with the tab bar's own `v-select` a sibling away, means the first space in a title
+             * opens the language picker and the rest of the string filters it.
+             */
             cy.get('#translation-panel-en [data-test=translation-title-field] input').type(enTitle);
             cy.get('[data-test=product-price-field] input').clear();
             cy.get('[data-test=product-price-field] input').type('19.99');
 
-            // Open the Italian tab and fill it, in the SAME submit as the English one above.
-            // Scoped by the panel's own id, not `:visible`: `v-tabs-window`'s slide transition leaves
-            // both panels reporting nonzero size for a moment, which `:visible` alone can't tell
-            // apart — Cypress's own actionability retry is what actually waits out the animation.
+            /**
+             * Open the Italian tab and fill it, in the SAME submit as the English one above.
+             * Scoped by the panel's own id, not `:visible`: `v-tabs-window`'s slide transition leaves
+             * both panels reporting nonzero size for a moment, which `:visible` alone can't tell
+             * apart — Cypress's own actionability retry is what actually waits out the animation.
+             */
             cy.get('[data-test=translation-tab-add]').click();
             cy.contains('.v-list-item-title', 'Italiano').click();
             /*
@@ -69,9 +73,11 @@ describe('Product write surface', () => {
 
     describe('edit — remove a language and edit another in one save', () => {
         it('the removed language is gone and the edited one is kept', () => {
-            // Three languages, not two: English is this deployment's default language and never
-            // offers the remove action, so the language actually removed here is Italian, and
-            // the one edited alongside it is Spanish — leaving the default untouched by either.
+            /**
+             * Three languages, not two: English is this deployment's default language and never
+             * offers the remove action, so the language actually removed here is Italian, and
+             * the one edited alongside it is Spanish — leaving the default untouched by either.
+             */
             const editedEsTitle = `ES edited ${unique()}`;
 
             cy.createProduct({
@@ -87,17 +93,21 @@ describe('Product write surface', () => {
                 cy.get('[data-test=translation-tab-it]').should('exist');
                 cy.get('[data-test=translation-tab-es]').should('exist');
 
-                // Edit the Spanish tab's title. Scoped by the panel id — see the create spec's
-                // own comment for why `:visible` alone races `v-tabs-window`'s slide transition.
+                /**
+                 * Edit the Spanish tab's title. Scoped by the panel id — see the create spec's
+                 * own comment for why `:visible` alone races `v-tabs-window`'s slide transition.
+                 */
                 cy.get('[data-test=translation-tab-es]').click();
                 cy.get('#translation-panel-es [data-test=translation-title-field]').clear();
                 cy.get('#translation-panel-es [data-test=translation-title-field]').type(
                     editedEsTitle
                 );
 
-                // Remove the Italian tab, in the SAME save as the Spanish edit above. The remove
-                // button lives beside the bar, not inside the tab, and acts on whichever tab is
-                // active — so select Italian first.
+                /**
+                 * Remove the Italian tab, in the SAME save as the Spanish edit above. The remove
+                 * button lives beside the bar, not inside the tab, and acts on whichever tab is
+                 * active — so select Italian first.
+                 */
                 cy.get('[data-test=translation-tab-it]').click();
                 cy.get('[data-test=translation-tab-remove]').click();
                 cy.get('[data-test=translation-tab-it]').should('not.exist');
@@ -105,17 +115,21 @@ describe('Product write surface', () => {
                 cy.get('form').first().submit();
                 cy.contains('Product updated successfully').should('exist');
 
-                // Reload the edit screen: the admin record is refetched after a save, so this is
-                // the server's own answer, not the form's leftover local state.
+                /**
+                 * Reload the edit screen: the admin record is refetched after a save, so this is
+                 * the server's own answer, not the form's leftover local state.
+                 */
                 cy.reload();
                 cy.get('[data-test=translation-tab-it]').should('not.exist');
                 cy.get('[data-test=translation-tab-en]').should('exist');
                 cy.get('[data-test=translation-tab-es]').click();
-                // `data-test=translation-title-field` sits on `<v-text-field>` itself, which
-                // Vuetify renders as a wrapping `<div>` — it has no `.value` of its own. `.type()`/
-                // `.clear()` above work directly on it because Vuetify delegates a click/focus on
-                // the wrapper to the real `<input>` inside; `have.value` needs that `<input>` by
-                // name, or it always reads the wrapper's (nonexistent) value as `''`.
+                /**
+                 * `data-test=translation-title-field` sits on `<v-text-field>` itself, which
+                 * Vuetify renders as a wrapping `<div>` — it has no `.value` of its own. `.type()`/
+                 * `.clear()` above work directly on it because Vuetify delegates a click/focus on
+                 * the wrapper to the real `<input>` inside; `have.value` needs that `<input>` by
+                 * name, or it always reads the wrapper's (nonexistent) value as `''`.
+                 */
                 cy.get('#translation-panel-es [data-test=translation-title-field] input').should(
                     'have.value',
                     editedEsTitle
@@ -132,9 +146,11 @@ describe('Product write surface', () => {
             }).then((product) => {
                 cy.visit(`/en/products/${product.id}/edit`);
 
-                // Blank the Italian tab's title, then switch away to English before saving — the
-                // failure has to surface without the Italian tab being the one on screen. Scoped
-                // by the panel id — see the create spec's own comment for why.
+                /**
+                 * Blank the Italian tab's title, then switch away to English before saving — the
+                 * failure has to surface without the Italian tab being the one on screen. Scoped
+                 * by the panel id — see the create spec's own comment for why.
+                 */
                 cy.get('[data-test=translation-tab-it]').click();
                 cy.get('#translation-panel-it [data-test=translation-title-field]').clear();
                 cy.get('[data-test=translation-tab-en]').click();

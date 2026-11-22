@@ -172,17 +172,21 @@ const mountCart = ({
     vi.spyOn(cart, 'fetchCart').mockResolvedValue(held);
     spyOnProductReads().mockResolvedValue([]);
     seedProducts(...products);
-    // Stubbed, not exercised here: this suite is about checkout's own refusals, and the stubbed
-    // `ShippingSelector` below emits a method on mount purely to unblock the checkout button —
-    // the real `PUT /cart/shipping-method` round trip has its own coverage in `store.spec.ts`.
+    /**
+     * Stubbed, not exercised here: this suite is about checkout's own refusals, and the stubbed
+     * `ShippingSelector` below emits a method on mount purely to unblock the checkout button —
+     * the real `PUT /cart/shipping-method` round trip has its own coverage in `store.spec.ts`.
+     */
     vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
     const checkoutSpy = vi.spyOn(cart, 'checkout');
     // Spied before mounting for the same reason as `checkout`: the component captures it at setup.
     const clearSpy = vi.spyOn(cart, 'clearCart').mockResolvedValue(A_CART);
 
-    // `defineComponent` at a top level, not inline in `stubs` below: TypeScript-ESLint cannot
-    // fully resolve `this.$emit`'s type when the call is nested straight inside the object
-    // literal `mount()`'s own contextual typing flows through.
+    /**
+     * `defineComponent` at a top level, not inline in `stubs` below: TypeScript-ESLint cannot
+     * fully resolve `this.$emit`'s type when the call is nested straight inside the object
+     * literal `mount()`'s own contextual typing flows through.
+     */
     const ShippingSelectorStub = defineComponent({
         emits: ['update:modelValue', 'update:requiresAddress'],
         template: '<div />',
@@ -206,10 +210,12 @@ const mountCart = ({
     return flushPromises().then(() => ({ wrapper, checkoutSpy, clearSpy, cart }));
 };
 
-// The order links point at lazily loaded routes. Load the order page's route component up front
-// (through the router, so no module reaches into `orders`), so a checkout's navigation never
-// starts a first import (`orders/domain/reorder.ts` and the rest of its chain) that could still
-// be pending when this file's environment is torn down.
+/**
+ * The order links point at lazily loaded routes. Load the order page's route component up front
+ * (through the router, so no module reaches into `orders`), so a checkout's navigation never
+ * starts a first import (`orders/domain/reorder.ts` and the rest of its chain) that could still
+ * be pending when this file's environment is torn down.
+ */
 beforeAll(() =>
     Promise.all(
         router.resolve('/en/orders/o1').matched.map((record) => {
@@ -219,8 +225,10 @@ beforeAll(() =>
     )
 );
 
-// Whatever import is still in flight (a navigation the last test left running) must settle before
-// teardown; the flush lets a navigation queued by that test start its import first.
+/**
+ * Whatever import is still in flight (a navigation the last test left running) must settle before
+ * teardown; the flush lets a navigation queued by that test start its import first.
+ */
 afterAll(() => flushPromises().then(() => vi.dynamicImportSettled()));
 
 beforeEach(() => {
@@ -255,8 +263,10 @@ describe('the checkout refusals', () => {
                 .trigger('click')
                 .then(flushPromises)
                 .then(() => {
-                    // Once from `onMounted`, once more from the refusal handler — the second
-                    // is what this case exists to prove.
+                    /**
+                     * Once from `onMounted`, once more from the refusal handler — the second
+                     * is what this case exists to prove.
+                     */
                     expect(cart.fetchCart).toHaveBeenCalledTimes(2);
                 });
         }));
@@ -351,8 +361,10 @@ describe('the checkout refusals', () => {
                     .trigger('click')
                     .then(flushPromises)
                     .then(() => {
-                        // Rendered through the real message, so a wrong title or quantity — the
-                        // mistake a bare "contains 5" cannot see — fails here.
+                        /**
+                         * Rendered through the real message, so a wrong title or quantity — the
+                         * mistake a bare "contains 5" cannot see — fails here.
+                         */
                         const lines = wrapper.findAll('[data-test=checkout-shortfall-line]');
                         expect(lines.map((line) => line.text())).toEqual([
                             i18n.global.t('cart-page.shortfall-line', {
@@ -512,10 +524,12 @@ describe('the checkout refusals', () => {
                 .trigger('click')
                 .then(flushPromises)
                 .then(() => {
-                    // Nothing on-screen names a specific line — the distinguishing behaviour
-                    // for this refusal is the message (asserted at the domain layer's own
-                    // test), not a banner; this proves it is not silently rendered as an
-                    // insufficient-stock case.
+                    /**
+                     * Nothing on-screen names a specific line — the distinguishing behaviour
+                     * for this refusal is the message (asserted at the domain layer's own
+                     * test), not a banner; this proves it is not silently rendered as an
+                     * insufficient-stock case.
+                     */
                     expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
                 });
         }));
@@ -571,9 +585,11 @@ describe('the checkout refusals', () => {
         cart.cart = A_CART;
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(A_CART);
         spyOnProductReads().mockResolvedValue([]);
-        // Stubbed, not exercised: the `v-model` events below drive `shippingMethodId` directly,
-        // which the page's own `watch` persists through this action — its real round trip is
-        // `store.spec.ts`'s concern.
+        /**
+         * Stubbed, not exercised: the `v-model` events below drive `shippingMethodId` directly,
+         * which the page's own `watch` persists through this action — its real round trip is
+         * `store.spec.ts`'s concern.
+         */
         vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
         const checkoutSpy = vi.spyOn(cart, 'checkout');
         checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_SHIPPING_METHOD_WEIGHT'));
@@ -594,9 +610,11 @@ describe('the checkout refusals', () => {
             }
         });
 
-        // `getComponent` with a CSS selector types as `WrapperLike`, which omits `.vm` — the
-        // selector's own uniqueness (one match) is what the object-selector overload would
-        // otherwise prove for us, same reasoning `order-edit-view.spec.ts` documents.
+        /**
+         * `getComponent` with a CSS selector types as `WrapperLike`, which omits `.vm` — the
+         * selector's own uniqueness (one match) is what the object-selector overload would
+         * otherwise prove for us, same reasoning `order-edit-view.spec.ts` documents.
+         */
         const selector = wrapper.getComponent('[data-test=shipping-selector-stub]') as VueWrapper;
         emitOn(selector, 'update:modelValue', 'express');
 
@@ -632,9 +650,11 @@ describe('the checkout payload', () => {
         vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
         const checkoutSpy = vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
 
-        // `defineComponent` at a top level, not inline in `stubs` below: TypeScript-ESLint
-        // cannot fully resolve `this.$emit`'s type when the call is nested straight inside the
-        // object literal `mount()`'s own contextual typing flows through.
+        /**
+         * `defineComponent` at a top level, not inline in `stubs` below: TypeScript-ESLint
+         * cannot fully resolve `this.$emit`'s type when the call is nested straight inside the
+         * object literal `mount()`'s own contextual typing flows through.
+         */
         const ShippingSelectorStub = defineComponent({
             props: ['modelValue', 'requiresAddress'],
             emits: ['update:modelValue', 'update:requiresAddress'],
@@ -662,8 +682,10 @@ describe('the checkout payload', () => {
                 const selector = wrapper.getComponent(
                     '[data-test=shipping-selector-stub]'
                 ) as VueWrapper;
-                // The shopper switches to a method needing no address. `AddressPicker` unmounts;
-                // `addressId` itself is untouched, still 'addr-1'.
+                /**
+                 * The shopper switches to a method needing no address. `AddressPicker` unmounts;
+                 * `addressId` itself is untouched, still 'addr-1'.
+                 */
                 emitOn(selector, 'update:modelValue', 'pickup');
                 emitOn(selector, 'update:requiresAddress', false);
                 return nextRenderTick(wrapper);
@@ -808,8 +830,10 @@ describe('the checkout payload — billing', () => {
 
     it('sends the billing entry the shopper named when it is not the shipping one', () =>
         mountCart().then(({ wrapper, checkoutSpy }) =>
-            // `mountCart` picks `pickup`: nothing ships to an address, so billing stands alone
-            // and carries the picked entry.
+            /**
+             * `mountCart` picks `pickup`: nothing ships to an address, so billing stands alone
+             * and carries the picked entry.
+             */
             wrapper
                 .get('[data-test=cart-checkout]')
                 .trigger('click')
@@ -851,13 +875,15 @@ describe("the checkout/clear buttons' in-flight guard", () => {
             expect(wrapper.get('[data-test=cart-checkout]').attributes('disabled')).toBeUndefined();
             expect(wrapper.get('[data-test=cart-clear]').attributes('disabled')).toBeUndefined();
 
-            // A genuinely pending API call — `cart.loading` is real, TanStack-tracked state now,
-            // so nothing short of an actual in-flight request moves it. Both buttons share the
-            // cart store's own `loading`, the same flag `checkout` and `clearCart` run under, so
-            // either write in flight has to block the other one too.
-            // Rejected, not resolved, once released: a resolved checkout empties the cart
-            // and the buttons this test reads unmount along with it — a rejection settles the
-            // mutation without disturbing the cart this test asserts against afterwards.
+            /**
+             * A genuinely pending API call — `cart.loading` is real, TanStack-tracked state now,
+             * so nothing short of an actual in-flight request moves it. Both buttons share the
+             * cart store's own `loading`, the same flag `checkout` and `clearCart` run under, so
+             * either write in flight has to block the other one too.
+             * Rejected, not resolved, once released: a resolved checkout empties the cart
+             * and the buttons this test reads unmount along with it — a rejection settles the
+             * mutation without disturbing the cart this test asserts against afterwards.
+             */
             let release: ((error: Error) => void) | undefined;
             const gate = new Promise<never>((_resolve, reject) => {
                 release = reject;

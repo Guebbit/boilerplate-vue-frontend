@@ -116,8 +116,10 @@ describe('OP17 · A warehouse shift', () => {
         cy.subjectId('order.paidExpress').then((orderId) => {
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=go-to-edit]').should('not.exist');
-            // Reading every order is not cancelling one: the cancel is the buyer's, so the paid
-            // order shows the warehouse its parcel doors and no cancel, and the server agrees.
+            /**
+             * Reading every order is not cancelling one: the cancel is the buyer's, so the paid
+             * order shows the warehouse its parcel doors and no cancel, and the server agrees.
+             */
             cy.get('[data-test=mark-started]').should('exist');
             cy.get('[data-test=order-cancel]').should('not.exist');
             loginDevice('warehouse').then((device) => {

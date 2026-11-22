@@ -22,8 +22,10 @@ describe('Realtime observability stream', () => {
         cy.get('[data-test=realtime-status]').should('contain.text', 'open');
         cy.get('[data-test=realtime-feed-summary]').should('contain.text', 'snapshot');
 
-        // The number the snapshot showed, before this spec sends anything. The value is the stat
-        // card's only semibold line: its size class is a Tailwind spelling that changes.
+        /**
+         * The number the snapshot showed, before this spec sends anything. The value is the stat
+         * card's only semibold line: its size class is a Tailwind spelling that changes.
+         */
         cy.get('[data-test=realtime-requests] .font-semibold')
             .invoke('text')
             .then((text) => {

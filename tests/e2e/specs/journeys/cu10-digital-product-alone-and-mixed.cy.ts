@@ -53,8 +53,10 @@ describe('CU10 · A digital product, alone and mixed', () => {
         cy.get('[data-test=shipping-selector]').should('not.exist');
         cy.get('[data-test=address-picker]').should('not.exist');
         cy.get('[data-test=cart-shipping-cost]').should('not.exist');
-        // Nothing ships, so there is no shipping address to be "the same as": the book's entries
-        // alone, the default already chosen.
+        /**
+         * Nothing ships, so there is no shipping address to be "the same as": the book's entries
+         * alone, the default already chosen.
+         */
         cy.get('[data-test=billing-address-picker]').should('exist');
         cy.get('[data-test=billing-address-picker-same]').should('not.exist');
         cy.get('[data-test=billing-address-picker] input[type=radio]:checked').should(
@@ -104,8 +106,10 @@ describe('CU10 · A digital product, alone and mixed', () => {
         centsOf('[data-test=cart-shipping-cost]').then((shipping) => {
             cart.shipping = shipping;
         });
-        // Forced: the toasts of the two add-to-carts sit over the foot of the page, and the button
-        // is at the foot. `not.be.disabled` still guards it.
+        /**
+         * Forced: the toasts of the two add-to-carts sit over the foot of the page, and the button
+         * is at the foot. `not.be.disabled` still guards it.
+         */
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click({ force: true });
 
         cy.step(

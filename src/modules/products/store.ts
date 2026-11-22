@@ -210,18 +210,22 @@ export const useProductsStore = defineStore('products', () => {
                     page,
                     pageSize,
                     text: filters.text,
-                    // `id`, not `productId`: the spec names it `id` on both the GET query and the
-                    // POST /products/search body, and that is what the API reads. The API now
-                    // reads a batch of ids; the filter box searches for one, so it's wrapped here.
+                    /**
+                     * `id`, not `productId`: the spec names it `id` on both the GET query and the
+                     * POST /products/search body, and that is what the API reads. The API now
+                     * reads a batch of ids; the filter box searches for one, so it's wrapped here.
+                     */
                     id: filters.id ? [filters.id] : undefined,
                     sort: sortTokensOf(filters.sort, ProductSortItem),
                     priceMin: boundOf(filters.priceMin, getCurrentLocale()),
                     priceMax: boundOf(filters.priceMax, getCurrentLocale()),
                     category: filters.category,
                     tag: filters.tag,
-                    // Admin-only: the public storefront's own search always
-                    // forces `active: true` at the API regardless of what this sends — see
-                    // `SearchProductsRequest.active`'s own doc in the contract.
+                    /**
+                     * Admin-only: the public storefront's own search always
+                     * forces `active: true` at the API regardless of what this sends — see
+                     * `SearchProductsRequest.active`'s own doc in the contract.
+                     */
                     active: filters.active,
                     purchasable: filters.purchasable,
                     deleted: filters.deleted
@@ -232,10 +236,12 @@ export const useProductsStore = defineStore('products', () => {
 
             get: (productId) => getProductById(productId),
 
-            // Multipart only when there is a file: a JSON body is cheaper and, more to the point,
-            // the multipart endpoints are the only ones that have to parse a stream. Either way
-            // `translations` is built by the caller as an object; JSON-encoding it into the one
-            // multipart field that carries it happens here, not at every call site.
+            /**
+             * Multipart only when there is a file: a JSON body is cheaper and, more to the point,
+             * the multipart endpoints are the only ones that have to parse a stream. Either way
+             * `translations` is built by the caller as an object; JSON-encoding it into the one
+             * multipart field that carries it happens here, not at every call site.
+             */
             create: ({ imageUpload, translations, ...productData }, options) =>
                 imageUpload
                     ? createProductWithMultipart(
@@ -248,9 +254,11 @@ export const useProductsStore = defineStore('products', () => {
                       )
                     : apiCreateProduct({ ...productData, translations }, options),
 
-            //
-            // A save that uploads AND clears goes as two requests (`uploadThenClear`): a multipart
-            // part cannot carry `null`, so the clears follow as a JSON PATCH.
+            /**
+             *
+             * A save that uploads AND clears goes as two requests (`uploadThenClear`): a multipart
+             * part cannot carry `null`, so the clears follow as a JSON PATCH.
+             */
             update: (productId, { imageUpload, translations, ...productData }, options) =>
                 imageUpload
                     ? uploadThenClear(
@@ -260,10 +268,12 @@ export const useProductsStore = defineStore('products', () => {
                                   productId,
                                   {
                                       ...rest,
-                                      // `translations` is OPTIONAL on a PATCH: omitting the field entirely
-                                      // means every locale is left alone, which is different from sending
-                                      // an empty map. JSON-encoding `undefined` would produce the string
-                                      // `"undefined"`, so the key itself is left off instead.
+                                      /**
+                                       * `translations` is OPTIONAL on a PATCH: omitting the field entirely
+                                       * means every locale is left alone, which is different from sending
+                                       * an empty map. JSON-encoding `undefined` would produce the string
+                                       * `"undefined"`, so the key itself is left off instead.
+                                       */
                                       ...(translations !== undefined && {
                                           translations: JSON.stringify(translations)
                                       }),
@@ -276,27 +286,31 @@ export const useProductsStore = defineStore('products', () => {
                       )
                     : updateProductById(
                           productId,
-                          // Same omission as the multipart branch above: `translations: undefined`
-                          // would still be a key ON the object, and axios serialises that key
-                          // away only for a top-level `undefined` — inconsistent with the
-                          // multipart branch and not worth relying on either way.
+                          /**
+                           * Same omission as the multipart branch above: `translations: undefined`
+                           * would still be a key ON the object, and axios serialises that key
+                           * away only for a top-level `undefined` — inconsistent with the
+                           * multipart branch and not worth relying on either way.
+                           */
                           { ...productData, ...(translations !== undefined && { translations }) },
                           options
                       ),
 
             remove: (productId) => deleteProductById(productId),
 
-            // Neither the uploaded Blob nor `translations` belongs in the optimistic patch: the
-            // new `imageUrl` comes back from the API, and a product's rendered `title`/
-            // `description` are resolved server-side in the request's language — the body's own
-            // pair is the DEFAULT language, which is not necessarily the one on screen — so this
-            // store has no way to guess them ahead of the response, and they stay whatever they
-            // were until the real one arrives.
-            //
-            // `weight`/`imageUrl`/`taxClass`/`rateType`/`sku`/`releaseDate`/`restockDate` accept `null` on the wire (clears the
-            // field) but the LOCAL `Product` never does; `null` reads as "leave the optimistic
-            // guess alone" here, same as omitting the field, since the real clear only takes
-            // visible effect once the response the two lines above already wait for lands.
+            /**
+             * Neither the uploaded Blob nor `translations` belongs in the optimistic patch: the
+             * new `imageUrl` comes back from the API, and a product's rendered `title`/
+             * `description` are resolved server-side in the request's language — the body's own
+             * pair is the DEFAULT language, which is not necessarily the one on screen — so this
+             * store has no way to guess them ahead of the response, and they stay whatever they
+             * were until the real one arrives.
+             *
+             * `weight`/`imageUrl`/`taxClass`/`rateType`/`sku`/`releaseDate`/`restockDate` accept `null` on the wire (clears the
+             * field) but the LOCAL `Product` never does; `null` reads as "leave the optimistic
+             * guess alone" here, same as omitting the field, since the real clear only takes
+             * visible effect once the response the two lines above already wait for lands.
+             */
             optimisticPatch: ({
                 imageUpload: _uploaded,
                 translations: _translations,
@@ -444,8 +458,10 @@ export const useProductsStore = defineStore('products', () => {
      * @returns A promise resolving with one entry per distinct id, `undefined` where none came back.
      */
     const fetchProductsByIds = (productIds: string[]) => {
-        // What the server itself answered, kept apart from `fetchMultiple`'s result, which is read
-        // back from the dictionary and so still holds a stale record for an id the server dropped.
+        /**
+         * What the server itself answered, kept apart from `fetchMultiple`'s result, which is read
+         * back from the dictionary and so still holds a stale record for an id the server dropped.
+         */
         const answered = new Set<string>();
         let read = false;
         return fetchMultiple(

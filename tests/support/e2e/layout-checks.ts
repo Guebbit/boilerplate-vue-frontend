@@ -151,8 +151,10 @@ export const describeElement = (element: Element): string => {
             siblings.length > 1 ? `:nth-of-type(${String(siblings.indexOf(node) + 1)})` : '';
         steps.unshift(`${node.tagName.toLowerCase()}${classes ? `.${classes}` : ''}${nth}`);
     }
-    // `dataset` lives on HTMLElement; an anchor found by `[data-test]` or by landmark tag is one
-    // (an `instanceof` check would fail across the app window's realm).
+    /**
+     * `dataset` lives on HTMLElement; an anchor found by `[data-test]` or by landmark tag is one
+     * (an `instanceof` check would fail across the app window's realm).
+     */
     const testName = (anchor as HTMLElement | null)?.dataset.test;
     const head = anchor
         ? testName
@@ -420,8 +422,10 @@ interface Scroller {
 
 /** Every box that can hold a scroll offset, recorded before anything is scrolled. */
 const scrollersOf = (page: Page): Scroller[] =>
-    // The page itself is not a scroller to guard: Vuetify clips `html` sideways, but the
-    // visitor scrolls the page up and down, and the window offset is restored on its own.
+    /**
+     * The page itself is not a scroller to guard: Vuetify clips `html` sideways, but the
+     * visitor scrolls the page up and down, and the window offset is restored on its own.
+     */
     [...page.win.document.body.querySelectorAll('*')]
         .filter(
             (element) =>
@@ -493,8 +497,10 @@ const judgeControl = (
     const box = element.getBoundingClientRect();
     const inView =
         box.left >= 0 && box.top >= 0 && box.right <= page.width && box.bottom <= page.height;
-    // Focus scrolls to a control and honours `scroll-padding`; so does this. Only when needed:
-    // most controls are in view, and the scroll is the expensive step.
+    /**
+     * Focus scrolls to a control and honours `scroll-padding`; so does this. Only when needed:
+     * most controls are in view, and the scroll is the expensive step.
+     */
     if (!inView)
         element.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
     if (
@@ -694,12 +700,16 @@ Cypress.Commands.add(
             ]
         });
         cy.document({ log: false }).then((document_) => {
-            // While a dialog or menu is open the page behind it is partly covered, which axe
-            // reads as every control there being "obscured": only the open one is judged.
+            /**
+             * While a dialog or menu is open the page behind it is partly covered, which axe
+             * reads as every control there being "obscured": only the open one is judged.
+             */
             const modal = document_.querySelector(OPEN_OVERLAY) !== null;
             cy.checkA11y(
-                // A field's native `<input>` is 24 px tall (6 px wide beside a row of chips) inside
-                // a `.v-field` that is 48 px or more and takes the tap: the field is the target.
+                /**
+                 * A field's native `<input>` is 24 px tall (6 px wide beside a row of chips) inside
+                 * a `.v-field` that is 48 px or more and takes the tap: the field is the target.
+                 */
                 { ...(modal && { include: [[OPEN_OVERLAY]] }), exclude: [['.v-field input']] },
                 { runOnly: { type: 'rule', values: ['target-size'] } },
                 (violations) => {

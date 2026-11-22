@@ -132,8 +132,10 @@ export const startWebhookSink = (port: number): Promise<WebhookSink> =>
     new Promise((resolve, reject) => {
         let received: SinkRequest[] = [];
 
-        // node:https.createServer: https://nodejs.org/api/https.html#httpscreateserveroptions-requestlistener
-        // `cert` and `key` are the committed test leaf; the CA is the backend's to trust, not ours to serve.
+        /**
+         * node:https.createServer: https://nodejs.org/api/https.html#httpscreateserveroptions-requestlistener
+         * `cert` and `key` are the committed test leaf; the CA is the backend's to trust, not ours to serve.
+         */
         const server: Server = createServer(
             { cert: WEBHOOK_SINK_TLS.cert, key: WEBHOOK_SINK_TLS.key },
             (request, response) => {
@@ -156,8 +158,10 @@ export const startWebhookSink = (port: number): Promise<WebhookSink> =>
                             DEMO_WEBHOOK_SECRET
                         )
                     });
-                    // A path naming `dead` stands for a receiver that is down: the backend counts a
-                    // 5xx as a failed delivery, which is what the retry journeys need to see.
+                    /**
+                     * A path naming `dead` stands for a receiver that is down: the backend counts a
+                     * 5xx as a failed delivery, which is what the retry journeys need to see.
+                     */
                     const status = (request.url ?? '').includes('dead') ? 503 : 200;
                     response.writeHead(status, { 'Content-Type': 'application/json' }).end('{}');
                 });

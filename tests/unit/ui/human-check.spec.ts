@@ -12,9 +12,11 @@ import { logger } from '@/infrastructure/utils/logger.ts';
 import { asStub } from '../../support/stub.ts';
 import { aProblem } from '../../support/unit/fixtures.ts';
 
-// Side-effect only: HumanCheck imports 'altcha' to register <altcha-widget>. Mocked to an empty
-// module so no real custom-element/proof-of-work code runs — the branch under test is which tag
-// gets rendered, not what the tag does once upgraded.
+/**
+ * Side-effect only: HumanCheck imports 'altcha' to register <altcha-widget>. Mocked to an empty
+ * module so no real custom-element/proof-of-work code runs — the branch under test is which tag
+ * gets rendered, not what the tag does once upgraded.
+ */
 vi.mock('altcha', () => ({}));
 
 vi.mock('@/infrastructure/http/antibot.ts', async (importOriginal) => {
@@ -23,8 +25,10 @@ vi.mock('@/infrastructure/http/antibot.ts', async (importOriginal) => {
 });
 
 beforeEach(() => {
-    // The `altcha` branch always fetches a challenge once mounted; unresolved by default it would
-    // reject `.then()` with "Cannot read properties of undefined" in every OTHER case too.
+    /**
+     * The `altcha` branch always fetches a challenge once mounted; unresolved by default it would
+     * reject `.then()` with "Cannot read properties of undefined" in every OTHER case too.
+     */
     vi.mocked(fetchAntibotChallenge).mockResolvedValue({
         parameters: {
             algorithm: 'PBKDF2/SHA-256',

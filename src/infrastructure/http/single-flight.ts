@@ -31,8 +31,10 @@ export const singleFlight = <T>(start: () => Promise<T>): (() => Promise<T>) => 
  */
 export const exclusiveRunner = (): (<T>(start: () => Promise<T>) => Promise<T>) => {
     let inFlight: Promise<unknown> | undefined;
-    // The joined promise is the first caller's, so its result type is that caller's `T`; a later
-    // caller of another type only ever awaits completion.
+    /**
+     * The joined promise is the first caller's, so its result type is that caller's `T`; a later
+     * caller of another type only ever awaits completion.
+     */
     return <T>(start: () => Promise<T>) =>
         (inFlight ??= start().finally(() => {
             inFlight = undefined;

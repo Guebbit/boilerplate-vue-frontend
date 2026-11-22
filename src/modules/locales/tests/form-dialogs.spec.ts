@@ -92,8 +92,10 @@ describe('LanguageFormDialog', () => {
         expect(wrapper.get('[data-test=language-save]').attributes('disabled')).toBeDefined();
     });
 
-    // `active` left the PUT/PATCH bodies: a new language picks its initial state, an existing
-    // one is switched by its own buttons on the board.
+    /**
+     * `active` left the PUT/PATCH bodies: a new language picks its initial state, an existing
+     * one is switched by its own buttons on the board.
+     */
     it('offers the switch on create and not on edit', () => {
         const create = mount(LanguageFormDialog, {
             props: { modelValue: true },

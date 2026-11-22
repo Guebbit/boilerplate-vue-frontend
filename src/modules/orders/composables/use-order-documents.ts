@@ -139,8 +139,10 @@ export const useOrderDocuments = (
             });
     };
 
-    // Refetches the notes whenever the order's invoiced/refunded state moves. The refund path
-    // writes the note after the response, so this reacts to the order changing, not to a click.
+    /**
+     * Refetches the notes whenever the order's invoiced/refunded state moves. The refund path
+     * writes the note after the response, so this reacts to the order changing, not to a click.
+     */
     watch(
         () => [
             targetId(),

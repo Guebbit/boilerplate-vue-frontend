@@ -21,9 +21,11 @@ import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
-// The re-enroll and regenerate confirmations go through the global dialog queue, which needs
-// `DialogHost.vue` mounted to answer for real — this suite is about the secret's storage, not
-// that plumbing, so the confirm is stubbed to always accept (same as `user-target-view.spec.ts`).
+/**
+ * The re-enroll and regenerate confirmations go through the global dialog queue, which needs
+ * `DialogHost.vue` mounted to answer for real — this suite is about the secret's storage, not
+ * that plumbing, so the confirm is stubbed to always accept (same as `user-target-view.spec.ts`).
+ */
 vi.mock('@/ui/dialog.ts', () => ({
     useDialogStore: () => ({ confirm: () => Promise.resolve(true) })
 }));

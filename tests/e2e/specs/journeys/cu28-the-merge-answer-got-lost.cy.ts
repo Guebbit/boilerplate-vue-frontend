@@ -46,9 +46,11 @@ const loseTheFirstMergeAnswer = (): void => {
     let calls = 0;
     cy.intercept('POST', '**/cart/merge', (request) => {
         calls += 1;
-        // `response` fires once the real server has answered: swapping the status HERE is
-        // "applied, then lost". `send(502)` keeps the real body and headers, which a 5xx ignores.
-        // https://docs.cypress.io/api/commands/intercept#Intercepted-responses
+        /**
+         * `response` fires once the real server has answered: swapping the status HERE is
+         * "applied, then lost". `send(502)` keeps the real body and headers, which a 5xx ignores.
+         * https://docs.cypress.io/api/commands/intercept#Intercepted-responses
+         */
         if (calls === 1) request.on('response', (response) => response.send(502));
     }).as('merge');
 };

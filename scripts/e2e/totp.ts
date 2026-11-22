@@ -79,8 +79,10 @@ export const loginTotpCode = (
     now: () => number = Date.now,
     sleep: (ms: number) => Promise<void> = wait
 ): Promise<string> => {
-    // Read the clock a little behind: the backend's own reading is a request away, so a code minted
-    // for a step this side thinks has begun can be one step ahead of what the backend accepts.
+    /**
+     * Read the clock a little behind: the backend's own reading is a request away, so a code minted
+     * for a step this side thinks has begun can be one step ahead of what the backend accepts.
+     */
     const reading = now() - CLOCK_MARGIN_MS;
     const current = Math.floor(reading / 1000 / STEP_SECONDS);
     // A mark from the future belongs to a clock that has since been put back (a restore): forget it.

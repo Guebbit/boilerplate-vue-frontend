@@ -118,8 +118,10 @@ for (const { file, baseline: before, current: after } of comparisons.filter(
 for (const { file } of comparisons.filter(({ verdict }) => verdict === 'removed'))
     console.log(`[mutation-baseline] no longer mutated: ${file}`);
 
-// A `new` file is only ever "recorded" by `--update` — see `formatUnrecorded` for why a plain
-// check refuses to let one pass silently instead.
+/**
+ * A `new` file is only ever "recorded" by `--update` — see `formatUnrecorded` for why a plain
+ * check refuses to let one pass silently instead.
+ */
 if (update)
     for (const { file, current: score } of comparisons.filter(({ verdict }) => verdict === 'new'))
         console.log(`[mutation-baseline] new file recorded: ${file} at ${score!.toFixed(2)}%`);
@@ -134,8 +136,10 @@ const unrecorded = update ? '' : formatUnrecorded(comparisons);
 if (regressions || unrecorded) {
     if (regressions) console.error(`\n[mutation-baseline] ${regressions}\n`);
     if (unrecorded) console.error(`\n[mutation-baseline] ${unrecorded}\n`);
-    // `--update` still rewrites the file, but `nextBaseline` keeps the higher of the two scores,
-    // so a regressed file keeps its old baseline and stays failing until it is fixed.
+    /**
+     * `--update` still rewrites the file, but `nextBaseline` keeps the higher of the two scores,
+     * so a regressed file keeps its old baseline and stays failing until it is fixed.
+     */
     if (update) writeBaseline(nextBaseline(current, baseline));
     process.exit(1);
 }

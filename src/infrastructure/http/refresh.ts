@@ -90,8 +90,10 @@ const replayAsGuest = (
     error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>,
     originalRequest: AxiosRequestConfigWithRetry | undefined
 ) => {
-    // Narrowing cast: the config's header type adds per-name hints, the value is an AxiosHeaders.
-    // AxiosHeaders.from copies it: https://axios-http.com/docs/req_config
+    /**
+     * Narrowing cast: the config's header type adds per-name hints, the value is an AxiosHeaders.
+     * AxiosHeaders.from copies it: https://axios-http.com/docs/req_config
+     */
     const headers = AxiosHeaders.from(originalRequest?.headers as AxiosHeaders | undefined);
     if (!originalRequest || originalRequest._refreshed || !headers.has('Authorization'))
         return onResponseReject(error);
@@ -132,16 +134,20 @@ export const onResponseRejectWithRefresh = (
 ) => {
     const session = useSessionStore();
     const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
-    // A staff session that sat idle too long: refreshing would only mint a token for a session the
-    // server has already ended, so say why and carry on as a guest.
+    /**
+     * A staff session that sat idle too long: refreshing would only mint a token for a session the
+     * server has already ended, so say why and carry on as a guest.
+     */
     if (isIdleRefusal(error, body)) {
         session.signalIdle();
         return replayAsGuest(error, originalRequest);
     }
-    // `_refreshed` is the loop guard: a 401 on the refresh call itself, or on a request already
-    // replayed once, must not trigger another refresh. It does NOT also block a step-up —
-    // that branch has its own `_steppedUp` guard, so a request may be refreshed once and stepped
-    // up once, which is exactly the case an access token that expired between refreshes needs.
+    /**
+     * `_refreshed` is the loop guard: a 401 on the refresh call itself, or on a request already
+     * replayed once, must not trigger another refresh. It does NOT also block a step-up —
+     * that branch has its own `_steppedUp` guard, so a request may be refreshed once and stepped
+     * up once, which is exactly the case an access token that expired between refreshes needs.
+     */
     if (
         error.response?.status === 401 &&
         !originalRequest?._refreshed &&
@@ -149,19 +155,23 @@ export const onResponseRejectWithRefresh = (
     ) {
         if (session.mode === 'cookie') return endCookieSession(error);
         return session.refreshToken().then((token) => {
-            // A failed or tokenless refresh is a failed refresh. `refreshToken` already stored it
-            // (or didn't, on a stale/failed attempt) — this interceptor only decides the replay.
-            // A refresh that ended the session (a definitive 401/403) leaves none: replay as a
-            // guest. One that failed in passing (network, 5xx) keeps the session, so no replay.
+            /**
+             * A failed or tokenless refresh is a failed refresh. `refreshToken` already stored it
+             * (or didn't, on a stale/failed attempt) — this interceptor only decides the replay.
+             * A refresh that ended the session (a definitive 401/403) leaves none: replay as a
+             * guest. One that failed in passing (network, 5xx) keeps the session, so no replay.
+             */
             if (!token && !session.hasSession) return replayAsGuest(error, originalRequest);
             if (!token || !originalRequest) return onResponseReject(error);
             const replay: AxiosRequestConfigWithRetry = { ...originalRequest, _refreshed: true };
             return instance.request(replay);
         });
     }
-    // A 403 on a signed-in request may mean the rules changed under the session (a role taken
-    // away): re-read them (`GET /account` carries them) so the menu and buttons follow. That read
-    // itself is excluded, or a refused read would ask again forever.
+    /**
+     * A 403 on a signed-in request may mean the rules changed under the session (a role taken
+     * away): re-read them (`GET /account` carries them) so the menu and buttons follow. That read
+     * itself is excluded, or a refused read would ask again forever.
+     */
     if (error.response?.status === 403 && session.isAuth && !isAccountRead(originalRequest))
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- reloadAbilities never rejects (a failed read leaves the empty abilities)
         void session.reloadAbilities();

@@ -15,8 +15,10 @@ sweepA11y(
         ['dictionary board', '/en/locales/dictionary'],
         ['translation entries', '/en/locales/it'],
         {
-            // The entry form dialog over the entries table: a modal with three fields, named
-            // by its title, over a page the reader must not be able to wander into.
+            /**
+             * The entry form dialog over the entries table: a modal with three fields, named
+             * by its title, over a page the reader must not be able to wander into.
+             */
             name: 'translation entries, entry dialog open',
             route: '/en/locales/it',
             prepare: () => {
@@ -25,8 +27,10 @@ sweepA11y(
             }
         },
         {
-            // The generic translation door's own screen — a real product's id, resolved off the
-            // running backend rather than baked into a literal (`A11ySweepRoute`'s function form).
+            /**
+             * The generic translation door's own screen — a real product's id, resolved off the
+             * running backend rather than baked into a literal (`A11ySweepRoute`'s function form).
+             */
             name: 'entity translations',
             route: () =>
                 cy

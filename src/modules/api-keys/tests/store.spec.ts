@@ -42,8 +42,10 @@ const API_KEY = {
 };
 
 vi.mock('@/infrastructure/http', () => ({
-    // Only ever hit by POST (mint, which requires `secret`) and DELETE (revoke, bodyless) in this
-    // file — every GET/search test installs its own list-shaped mock before calling.
+    /**
+     * Only ever hit by POST (mint, which requires `secret`) and DELETE (revoke, bodyless) in this
+     * file — every GET/search test installs its own list-shaped mock before calling.
+     */
     orvalMutator: vi.fn((config: { url: string; method: string }) =>
         Promise.resolve(
             parseOrvalFixture(
@@ -170,8 +172,10 @@ describe('useApiKeysStore', () => {
 
         it('patches the cached row with revokedAt, without refetching', () => {
             const store = useApiKeysStore();
-            // Seeded by hand rather than via search: the store's own cache, pre-populated the way
-            // a prior list load would leave it.
+            /**
+             * Seeded by hand rather than via search: the store's own cache, pre-populated the way
+             * a prior list load would leave it.
+             */
             store.addApiKeyRecord({ ...API_KEY });
 
             return store.revokeCredential(API_KEY.id).then(() => {

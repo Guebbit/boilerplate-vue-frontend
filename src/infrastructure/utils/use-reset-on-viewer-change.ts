@@ -22,8 +22,10 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 export const useResetOnViewerChange = (reset: () => void): void => {
     const session = useSessionStore();
 
-    // Vue `watch`: a getter source, so it fires on the id alone, not on every field of the viewer.
-    // https://vuejs.org/api/reactivity-core.html#watch
+    /**
+     * Vue `watch`: a getter source, so it fires on the id alone, not on every field of the viewer.
+     * https://vuejs.org/api/reactivity-core.html#watch
+     */
     watch(
         () => session.viewer?.id,
         (_current, previous) => {

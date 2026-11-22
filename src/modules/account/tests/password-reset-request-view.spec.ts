@@ -40,9 +40,11 @@ const mountPage = () => {
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
-                // Unrelated to this file: HumanCheck's own branching is
-                // tests/unit/ui/human-check.spec.ts's job, and mounting the real thing here would
-                // fire a real GET /config.
+                /**
+                 * Unrelated to this file: HumanCheck's own branching is
+                 * tests/unit/ui/human-check.spec.ts's job, and mounting the real thing here would
+                 * fire a real GET /config.
+                 */
                 HumanCheck: { template: '<div />' }
             }
         }
@@ -90,8 +92,10 @@ describe('PasswordResetRequest', () => {
         request.mockResolvedValue(undefined);
 
         return submitEmail(wrapper, 'ada@example.com').then(() => {
-            // The second argument is `withAntibotToken`'s: `undefined` here, since the stubbed
-            // HumanCheck exposes no token — see `signup-antibot.spec.ts` for the solved-token case.
+            /**
+             * The second argument is `withAntibotToken`'s: `undefined` here, since the stubbed
+             * HumanCheck exposes no token — see `signup-antibot.spec.ts` for the solved-token case.
+             */
             expect(request).toHaveBeenCalledExactlyOnceWith('ada@example.com', undefined);
             expect(wrapper.find('[data-test=password-reset-request-error]').exists()).toBe(false);
         });

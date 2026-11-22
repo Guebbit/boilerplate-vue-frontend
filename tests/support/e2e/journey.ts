@@ -106,8 +106,10 @@ const enterStep = (name: string): Cypress.Chainable<undefined> =>
         currentStep = name;
     });
 
-// `asStub`: a `.then()` whose callback returns nothing types as "subject unchanged", not
-// `Chainable<void>` — the seam `commands.ts` uses for the same reason.
+/**
+ * `asStub`: a `.then()` whose callback returns nothing types as "subject unchanged", not
+ * `Chainable<void>` — the seam `commands.ts` uses for the same reason.
+ */
 Cypress.Commands.add(
     'step',
     asStub<Cypress.CommandFn<'step'>>((name: string) => {
@@ -152,8 +154,10 @@ Cypress.Commands.add(
     'grantClipboard',
     asStub<Cypress.CommandFn<'grantClipboard'>>(() => {
         Cypress.log({ name: 'grantClipboard', displayName: 'CLIPBOARD', message: 'read + write' });
-        // `Browser.grantPermissions`: https://chromedevtools.github.io/devtools-protocol/tot/Browser/#method-grantPermissions
-        // Sent through Cypress' own CDP channel: https://docs.cypress.io/api/cypress-api/automation
+        /**
+         * `Browser.grantPermissions`: https://chromedevtools.github.io/devtools-protocol/tot/Browser/#method-grantPermissions
+         * Sent through Cypress' own CDP channel: https://docs.cypress.io/api/cypress-api/automation
+         */
         return cy.wrap(
             Cypress.automation('remote:debugger:protocol', {
                 command: 'Browser.grantPermissions',

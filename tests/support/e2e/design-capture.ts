@@ -133,8 +133,10 @@ const findScroller = (win: Window): Scroller | null => {
         return box.width >= win.innerWidth - 1 && box.height >= win.innerHeight - 1;
     };
 
-    // An open temporary navigation drawer blocks the page behind its scrim like an overlay does,
-    // but it is not a `.v-overlay`.
+    /**
+     * An open temporary navigation drawer blocks the page behind its scrim like an overlay does,
+     * but it is not a `.v-overlay`.
+     */
     const overlays = [
         ...document_.querySelectorAll(
             '.v-overlay--active, .v-navigation-drawer--temporary.v-navigation-drawer--active'
@@ -219,15 +221,19 @@ const measure = (win: Window): Measured => {
         if (!isVisible(element, win)) continue;
 
         if (position === 'sticky') {
-            // A sticky element inside its own scroll area stays put there; only one that sticks
-            // to the document repeats across pieces.
+            /**
+             * A sticky element inside its own scroll area stays put there; only one that sticks
+             * to the document repeats across pieces.
+             */
             if (!ownScroller(element, win)) stickyRepeats = true;
             continue;
         }
 
         const box = element.getBoundingClientRect();
-        // The skip link sits off screen until focused: no height on screen, nothing to hide.
-        // A closed temporary drawer is translated off screen but keeps its box: not on the picture.
+        /**
+         * The skip link sits off screen until focused: no height on screen, nothing to hide.
+         * A closed temporary drawer is translated off screen but keeps its box: not on the picture.
+         */
         const onScreen =
             box.bottom > 0 &&
             box.top < win.innerHeight &&
@@ -301,8 +307,10 @@ const shootPiece = (
     let scrollY = 0;
     if (scroller && offset !== null)
         cy.window({ log: false }).then(() => {
-            // `instant` skips smooth scrolling, so the position is final when it returns.
-            // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollTo
+            /**
+             * `instant` skips smooth scrolling, so the position is final when it returns.
+             * https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollTo
+             */
             scroller.element.scrollTo({ top: offset, behavior: 'instant' });
             scrollY = scroller.element.scrollTop;
         });
@@ -354,8 +362,10 @@ Cypress.Commands.add('captureDesign', (request: CaptureRequest) => {
         cy.document({ log: false }).then((document_) => {
             (document_.activeElement as HTMLElement | null)?.blur();
         });
-    // The consent banner is hidden by the `analyticsConsent` cookie and tours by the AUT config,
-    // so no overlay of the app's own is left to cover a shot.
+    /**
+     * The consent banner is hidden by the `analyticsConsent` cookie and tours by the AUT config,
+     * so no overlay of the app's own is left to cover a shot.
+     */
 
     cy.window({ log: false }).then((win) => {
         const measured = measure(win);

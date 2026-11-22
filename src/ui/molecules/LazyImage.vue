@@ -28,8 +28,10 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { placeholderImageUrl, resolveImageUrl } from '@/infrastructure/utils/images.ts';
 
-// `eager` takes no default: Vue casts an absent boolean prop to `false` already, and restating it
-// is the one thing `no-useless-default-assignment` is there to catch.
+/**
+ * `eager` takes no default: Vue casts an absent boolean prop to `false` already, and restating it
+ * is the one thing `no-useless-default-assignment` is there to catch.
+ */
 
 /**
  * The image to render and how to render it — see the prop docs on the type below.
@@ -112,9 +114,11 @@ const failed = ref(false);
  */
 const loaded = ref(false);
 
-// A new record in the same component instance (a table row recycled by `v-for`, a route param
-// change) arrives with a URL that has not failed and has not loaded, and must be treated that
-// way: without this, one broken image leaves every subsequent row showing the placeholder.
+/**
+ * A new record in the same component instance (a table row recycled by `v-for`, a route param
+ * change) arrives with a URL that has not failed and has not loaded, and must be treated that
+ * way: without this, one broken image leaves every subsequent row showing the placeholder.
+ */
 watch(
     () => src,
     () => {

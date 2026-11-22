@@ -20,8 +20,10 @@ export default [
     {
         path: 'sales/orders',
         name: 'SalesOrders',
-        // `display`, not `read`: every signed-in account holds `read:Order` (its own orders),
-        // and only the staff action opens the staff page.
+        /**
+         * `display`, not `read`: every signed-in account holds `read:Order` (its own orders),
+         * and only the staff action opens the staff page.
+         */
         meta: {
             access: 'auth',
             can: ['display', 'Order'],

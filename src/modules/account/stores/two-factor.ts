@@ -75,9 +75,11 @@ export const useAccountTwoFactorStore = defineStore('account-two-factor', () => 
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through; `isLoading` backs the per-action computeds below.
      */
-    // Every keyed `fetchAny` below is a WRITE that only borrows a key for its loading flag. The
-    // toolkit caches a keyed read for an hour, so each carries `forced: true` — without it a second
-    // setup, remove or regenerate in one page load answers from the cache and never reaches the API.
+    /**
+     * Every keyed `fetchAny` below is a WRITE that only borrows a key for its loading flag. The
+     * toolkit caches a keyed read for an hour, so each carries `forced: true` — without it a second
+     * setup, remove or regenerate in one page load answers from the cache and never reaches the API.
+     */
     const { loading, isLoading, fetchAny } = useStructureRestApi({
         resourceKey: 'account-two-factor',
         queryClient
@@ -417,8 +419,10 @@ export const useAccountTwoFactorStore = defineStore('account-two-factor', () => 
             apiLoginTwoFactor({
                 challenge: challengeToken,
                 code,
-                // The password step set no cookie, so the box's value is sent again here: the
-                // backend sizes the session cookie from THIS request. Absent for OAuth logins.
+                /**
+                 * The password step set no cookie, so the box's value is sent again here: the
+                 * backend sizes the session cookie from THIS request. Absent for OAuth logins.
+                 */
                 remember: remember ? RememberTier.long : undefined
             }).then((data) => {
                 // `in`, not a property read: `AuthTokens` carries no `deletionPending` at all.

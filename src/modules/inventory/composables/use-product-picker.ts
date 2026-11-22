@@ -52,13 +52,17 @@ export const useProductPicker = () => {
             .then((response) => {
                 results.value = response.items;
             })
-            // A failed search just leaves the previous page showing — the picker has no error
-            // slot of its own, and the caller's own submit will surface a real problem anyway.
+            /**
+             * A failed search just leaves the previous page showing — the picker has no error
+             * slot of its own, and the caller's own submit will surface a real problem anyway.
+             */
             .catch(() => undefined);
     }, DEBOUNCE_MS);
 
-    // Vue `watch(source, callback, { immediate })`: `immediate` runs the first search as soon
-    // as the picker is created, with the initial query.
+    /**
+     * Vue `watch(source, callback, { immediate })`: `immediate` runs the first search as soon
+     * as the picker is created, with the initial query.
+     */
     watch(query, (text) => runSearch(text), { immediate: true });
 
     /**
@@ -89,8 +93,10 @@ export const useProductPicker = () => {
             .then((response) => {
                 pinned.value = response.items[0];
             })
-            // A product that no longer exists (deleted since it was selected) just stays
-            // unresolved — the bound id is still whatever the caller's form holds either way.
+            /**
+             * A product that no longer exists (deleted since it was selected) just stays
+             * unresolved — the bound id is still whatever the caller's form holds either way.
+             */
             .catch(() => undefined);
     };
 

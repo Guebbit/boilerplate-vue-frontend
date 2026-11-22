@@ -54,8 +54,10 @@ describe('supportedLanguages', () => {
     it('is every dictionary in src/locales, and nothing else', () => {
         vi.resetModules();
         return import('@/i18n').then((reloaded) => {
-            // The glob sees the real directory: en.json and it.json ship, es.json deliberately
-            // does not — it is the language the API supplies at runtime.
+            /**
+             * The glob sees the real directory: en.json and it.json ship, es.json deliberately
+             * does not — it is the language the API supplies at runtime.
+             */
             expect(reloaded.supportedLanguages).toEqual(['en', 'it']);
         });
     });
@@ -97,8 +99,10 @@ describe('_loadLocale', () => {
     it('short-circuits when the locale is already loaded', () => {
         const instance = freshInstance();
         loadedLanguages.splice(0, Infinity, 'it');
-        // Registered by hand rather than imported: if the short circuit is broken and the real
-        // file is fetched, this sentinel is overwritten and the assertion fails.
+        /**
+         * Registered by hand rather than imported: if the short circuit is broken and the real
+         * file is fetched, this sentinel is overwritten and the assertion fails.
+         */
         instance.global.setLocaleMessage('it', { sentinel: 'not-from-the-file' });
         return _loadLocale(instance, 'it').then(() => {
             expect(instance.global.t('sentinel')).toBe('not-from-the-file');

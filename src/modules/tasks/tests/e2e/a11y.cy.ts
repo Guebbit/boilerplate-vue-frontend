@@ -17,8 +17,10 @@ sweepA11y(
         ['tasks page', '/en/tasks'],
         {
             name: 'task detail',
-            // No seeded task: file one through the public door, then find it by subject (the
-            // write answers with no body) and open it.
+            /**
+             * No seeded task: file one through the public door, then find it by subject (the
+             * write answers with no body) and open it.
+             */
             route: () =>
                 cy
                     .apiAs('admin', 'POST', '/tasks', {

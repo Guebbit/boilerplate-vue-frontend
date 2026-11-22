@@ -39,8 +39,10 @@ const emailInvalidMessage = () => {
     )
         .filter(({ path }) => path[0] === 'email')
         .map(({ message: text }) => text);
-    // A raw key here would mean the dictionaries never loaded, which would make every
-    // assertion below vacuously true.
+    /**
+     * A raw key here would mean the dictionaries never loaded, which would make every
+     * assertion below vacuously true.
+     */
     expect(message).not.toContain('users-form.');
     return message;
 };
@@ -101,8 +103,10 @@ describe('Login view, language switched mid-form', () => {
             .then(() => nextTick())
             .then(() => {
                 english = emailInvalidMessage();
-                // Against the dictionary's literal string, not just `usersSchema`'s own output —
-                // `users/locales/en.json`'s `users-form.email-invalid` drifting would fail this.
+                /**
+                 * Against the dictionary's literal string, not just `usersSchema`'s own output —
+                 * `users/locales/en.json`'s `users-form.email-invalid` drifting would fail this.
+                 */
                 expect(english).toBe('Check your email address for typos or a missing domain');
                 expect(errorTexts(wrapper)).toContain(english);
                 return loadLocale('it');
@@ -113,8 +117,10 @@ describe('Login view, language switched mid-form', () => {
                 expect(italian).toBe(
                     "Controlla l'indirizzo email: potrebbe contenere un errore di battitura o mancare del dominio"
                 );
-                // Both halves matter: the Italian message is on screen AND the English one is
-                // gone. Asserting only the first would pass on a field that renders both.
+                /**
+                 * Both halves matter: the Italian message is on screen AND the English one is
+                 * gone. Asserting only the first would pass on a field that renders both.
+                 */
                 expect(italian).not.toBe(english);
                 expect(errorTexts(wrapper)).toContain(italian);
                 expect(errorTexts(wrapper)).not.toContain(english);

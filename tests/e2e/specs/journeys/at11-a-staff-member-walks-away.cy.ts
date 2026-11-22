@@ -120,8 +120,10 @@ describe('AT11 · A staff member walks away', () => {
             cy.get('#login-page').should('exist');
 
             cy.step('the other device is refused the same way, by name');
-            // A `jwt` device holds an access token that lapsed long ago, so its idle limit is
-            // met at the refresh; a `cookie` device meets it on the request itself.
+            /**
+             * A `jwt` device holds an access token that lapsed long ago, so its idle limit is
+             * met at the refresh; a `cookie` device meets it on the request itself.
+             */
             cy.env(['sessionMode']).then(({ sessionMode }) => {
                 (sessionMode === 'jwt'
                     ? refreshDevice(device)

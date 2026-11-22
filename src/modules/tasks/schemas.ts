@@ -41,8 +41,10 @@ export const contactSchema = z.object({
     }),
     category: z.enum(TaskCategory).optional(),
     orderNumber: cappedText(createContactTaskBodyOrderNumberMax).optional(),
-    // Never shown to a visitor, so never validated — the BE decides what a filled value means;
-    // this form only has to carry it through unedited.
+    /**
+     * Never shown to a visitor, so never validated — the BE decides what a filled value means;
+     * this form only has to carry it through unedited.
+     */
     website: z.string().optional()
 });
 

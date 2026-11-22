@@ -38,8 +38,10 @@ describe('IN2 · A key follows its minter', () => {
             cy.step('a shopper is promoted to administrator and mints a read key');
             cy.apiAs('admin', 'POST', `/users/${minterId}/assign-role`, { role: 'admin' });
             cy.loginAs('secondShopper');
-            // A staff role grants nothing until an authenticator app is armed, and a key lends only
-            // what its minter holds.
+            /**
+             * A staff role grants nothing until an authenticator app is armed, and a key lends only
+             * what its minter holds.
+             */
             enrolAuthenticatorApp();
             cy.visit('/en/api-keys/create');
             cy.get('[data-test=api-key-name] input').type('in2-reader');

@@ -250,18 +250,22 @@ const {
 const submitForm = () => {
     // `revealErrors` is the whole of it: show the messages, focus the first bad field, say so.
     if (!validate()) return revealErrors();
-    // Valid but unchanged, or a save already in flight: nothing to do — the button is disabled in
-    // both states, so only a keyboard submit reaches here.
+    /**
+     * Valid but unchanged, or a save already in flight: nothing to do — the button is disabled in
+     * both states, so only a keyboard submit reaches here.
+     */
     if (!isDirty.value || savingProfile.value) return;
     clearSaveError();
     clearStale();
-    // No `imageUrl` here, ever: `ProfileAvatar.vue` is the only thing that writes it, through its
-    // own request. Sending the loaded value back on every details save would overwrite whatever
-    // the avatar panel just wrote and orphan the file it uploaded — see `updateProfile`'s docblock.
-    //
-    // The baseline is the loaded profile: an untouched `analyticsConsent` is omitted, and an
-    // emptied phone or website becomes `null` (the clear) instead of a 422-bound `''`. No `email`:
-    // that has its own form below, its own door and its own step-up.
+    /**
+     * No `imageUrl` here, ever: `ProfileAvatar.vue` is the only thing that writes it, through its
+     * own request. Sending the loaded value back on every details save would overwrite whatever
+     * the avatar panel just wrote and orphan the file it uploaded — see `updateProfile`'s docblock.
+     *
+     * The baseline is the loaded profile: an untouched `analyticsConsent` is omitted, and an
+     * emptied phone or website becomes `null` (the clear) instead of a 422-bound `''`. No `email`:
+     * that has its own form below, its own door and its own step-up.
+     */
     const { username, locale, phone, website, analyticsConsent } = form.value;
     return toRequestBody(
         'UpdateAccountBody',
@@ -270,13 +274,17 @@ const submitForm = () => {
     )
         .then((body) => updateProfile(body))
         .then(() => {
-            // Re-baseline on what the server now holds: the store refetched it, and a form
-            // left dirty against a stale baseline would refuse the next hydration forever.
+            /**
+             * Re-baseline on what the server now holds: the store refetched it, and a form
+             * left dirty against a stale baseline would refuse the next hydration forever.
+             */
             setInitialData(profile.value ?? {});
             resetForm();
             addMessage(t('profile-page.success-update'));
-            // Last, and on the SAVED record rather than on the form: the language only follows a
-            // preference the server actually accepted.
+            /**
+             * Last, and on the SAVED record rather than on the form: the language only follows a
+             * preference the server actually accepted.
+             */
             return applyLanguagePreference(profile.value?.locale);
         })
         .catch((error: unknown) => {

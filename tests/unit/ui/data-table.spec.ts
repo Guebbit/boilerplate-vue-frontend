@@ -98,9 +98,11 @@ describe('DataTable — the headers', () => {
     it('shows Vuetify’s own localised text when the caller overrides neither', () => {
         const text = mountTable({ loading: true }).text();
 
-        // Not asserting the exact English string, which would just restate Vuetify's own copy —
-        // the point is that SOMETHING renders, rather than this component's own hard-coded
-        // English default that used to out-rank it regardless of locale.
+        /**
+         * Not asserting the exact English string, which would just restate Vuetify's own copy —
+         * the point is that SOMETHING renders, rather than this component's own hard-coded
+         * English default that used to out-rank it regardless of locale.
+         */
         expect(text.trim().length).toBeGreaterThan(0);
     });
 });

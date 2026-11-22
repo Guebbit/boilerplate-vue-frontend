@@ -20,8 +20,10 @@ export default [
         path: 'sales/preorders',
         name: 'PreordersBoard',
         component: () => import('./views/PreordersBoard.vue'),
-        // `display`: `read:Order` would admit a customer, and the board lists other people's
-        // fulfillment orders; only the staff action on orders opens it.
+        /**
+         * `display`: `read:Order` would admit a customer, and the board lists other people's
+         * fulfillment orders; only the staff action on orders opens it.
+         */
         meta: {
             access: 'auth',
             can: ['display', 'Order'],

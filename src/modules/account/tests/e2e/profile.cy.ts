@@ -47,10 +47,12 @@ describe('Profile access', () => {
     });
 
     it('a token nobody was sent does not verify — the token is the credential', () => {
-        // The confirm route is public (the visitor from the email link is not necessarily
-        // signed in), so the token carries all the authority — and one the API never issued
-        // into its outbox is refused. The happy guest path lives in registration.cy.ts, where
-        // the token comes from an actual signup email.
+        /**
+         * The confirm route is public (the visitor from the email link is not necessarily
+         * signed in), so the token carries all the authority — and one the API never issued
+         * into its outbox is refused. The happy guest path lives in registration.cy.ts, where
+         * the token comes from an actual signup email.
+         */
         cy.visit('/en');
         cy.restore();
         cy.visit('/en/verify-email/confirm#token=a-token-nobody-issued');
@@ -88,18 +90,22 @@ describe('Profile self-service', () => {
             cy.get('.v-overlay-container').contains('.v-list-item', 'italian').click();
             cy.get('#profile-page form button[type=submit]').first().click();
 
-            // Both halves of a language switch: the runtime, and the `:locale` segment the
-            // route guard re-applies on the next navigation. Without the second the page would
-            // read Italian until the visitor clicked anything at all.
+            /**
+             * Both halves of a language switch: the runtime, and the `:locale` segment the
+             * route guard re-applies on the next navigation. Without the second the page would
+             * read Italian until the visitor clicked anything at all.
+             */
             cy.url().should('include', '/it/');
             cy.contains('Salva modifiche').should('exist');
 
-            // The point of storing it on the record rather than in the tab: a fresh session
-            // opens in the language the visitor chose. `loginAs` starts at `/en/login`, so the
-            // Italian landing is the record's doing and not a leftover URL.
-            //
-            // Matched with an anchor rather than `include '/it/'`: login lands on Home, whose
-            // path is `/it` with nothing after it.
+            /**
+             * The point of storing it on the record rather than in the tab: a fresh session
+             * opens in the language the visitor chose. `loginAs` starts at `/en/login`, so the
+             * Italian landing is the record's doing and not a leftover URL.
+             *
+             * Matched with an anchor rather than `include '/it/'`: login lands on Home, whose
+             * path is `/it` with nothing after it.
+             */
             cy.logout();
             cy.loginAs('user');
             cy.url().should('match', /\/it(\/|$)/);
@@ -109,9 +115,11 @@ describe('Profile self-service', () => {
     describe('password change', () => {
         it('changes the password through the current-password flow', () => {
             cy.get('[data-test=toggle-change-password]').click();
-            // the demo customer's real one; the new one satisfies `usersPasswordSchema` — the
-            // submit is not disabled behind an invalid form, it reveals the errors, so the fixture
-            // must pass them.
+            /**
+             * the demo customer's real one; the new one satisfies `usersPasswordSchema` — the
+             * submit is not disabled behind an invalid form, it reveals the errors, so the fixture
+             * must pass them.
+             */
             cy.get('[data-test=current-password] input')
                 .should('not.be.disabled')
                 .type(seedAccount('user').password);
@@ -139,9 +147,11 @@ describe('Profile self-service', () => {
                 .type('BrandNew_Secret1!');
             cy.get('[data-test=submit-password-change]').click();
 
-            // The alert shows the API's own sentence (`errors[0].message`), never the HTTP phrase
-            // the envelope's top-level `message` carries; it is inline next to the form rather
-            // than a toast, and the session survives — the page is still the profile.
+            /**
+             * The alert shows the API's own sentence (`errors[0].message`), never the HTTP phrase
+             * the envelope's top-level `message` carries; it is inline next to the form rather
+             * than a toast, and the session survives — the page is still the profile.
+             */
             cy.get('[data-test=password-change-error]')
                 .should('not.be.empty')
                 .and('not.contain.text', 'Unprocessable Entity');
@@ -174,8 +184,10 @@ describe('Profile self-service', () => {
 
     describe('address book', () => {
         it('shows the seeded default and a new entry joins it without stealing the slot', () => {
-            // The dataset seeds ONE saved address — checkout picks it without asking — so the
-            // book never starts empty for the demo user.
+            /**
+             * The dataset seeds ONE saved address — checkout picks it without asking — so the
+             * book never starts empty for the demo user.
+             */
             cy.get('[data-test=address-item]').should('have.length', 1);
             cy.get('[data-test=address-default]').should('have.length', 1);
 
@@ -254,8 +266,10 @@ describe('Profile self-service', () => {
                 .type('new-address@example.com');
             cy.get('[data-test=profile-email-change-submit]').click();
 
-            // Same template as signup verification — only the link's kind differs — so the
-            // outbox is read the same way `registration.cy.ts` reads its own.
+            /**
+             * Same template as signup verification — only the link's kind differs — so the
+             * outbox is read the same way `registration.cy.ts` reads its own.
+             */
             cy.emailTo('new-address@example.com').then((email) => {
                 expectMailTemplate(email, 'account.verify-request');
                 cy.visit(mailedLinkUrl(email));
@@ -263,9 +277,11 @@ describe('Profile self-service', () => {
             cy.get('[data-test=email-change-submit]').click();
             cy.contains('Email address changed').should('exist');
 
-            // A changed address ends every session — the backend revokes them all, the same
-            // treatment a changed password gets — so the proof is a fresh sign-in with the NEW
-            // address and the unchanged password, and the profile showing it.
+            /**
+             * A changed address ends every session — the backend revokes them all, the same
+             * treatment a changed password gets — so the proof is a fresh sign-in with the NEW
+             * address and the unchanged password, and the profile showing it.
+             */
             cy.visit('/en/login');
             cy.get('[type=email]').should('not.be.disabled').clear();
             cy.get('[type=email]').should('not.be.disabled').type('new-address@example.com');

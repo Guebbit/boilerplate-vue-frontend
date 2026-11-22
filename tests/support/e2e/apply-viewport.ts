@@ -18,8 +18,10 @@ export const applyViewport = (name: ViewportName): void => {
     if (touch) cy.enableTouch();
     else cy.resetTouch();
 
-    // Cypress scales the app iframe when the window is smaller than the viewport, but the page
-    // still reports the viewport's size; a mismatch here means the viewport did not apply.
+    /**
+     * Cypress scales the app iframe when the window is smaller than the viewport, but the page
+     * still reports the viewport's size; a mismatch here means the viewport did not apply.
+     */
     cy.window({ log: false }).then((win) => {
         expect([win.innerWidth, win.innerHeight], `viewport ${name}`).to.deep.equal([
             width,

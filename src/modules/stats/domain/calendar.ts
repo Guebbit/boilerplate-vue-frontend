@@ -60,8 +60,10 @@ const midnightOf = (day: string): Date => {
  */
 export const addCalendarDays = (day: string, days: number): string => {
     const moved = midnightOf(day);
-    // `setDate` rolls over month and year ends, and keeps local midnight through a DST change,
-    // which adding `24 * 3600 * 1000` milliseconds would not.
+    /**
+     * `setDate` rolls over month and year ends, and keeps local midnight through a DST change,
+     * which adding `24 * 3600 * 1000` milliseconds would not.
+     */
     moved.setDate(moved.getDate() + days);
     return toCalendarDay(moved);
 };

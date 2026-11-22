@@ -66,8 +66,10 @@ describe('CU16 · A whole purchase in Italian', () => {
             addOpenProductToCart();
 
             cy.step('the cart holds a thousand and more, spelled the Italian way');
-            // A second line, through the API: one line is capped at ten units, which alone stays
-            // under a thousand.
+            /**
+             * A second line, through the API: one line is capped at ten units, which alone stays
+             * under a thousand.
+             */
             cy.subjectProduct('product.inStock').then((bed) => {
                 cy.apiAs('user', 'POST', '/cart/items', { productId: bed.id, quantity: UNITS });
                 cy.goToCart();

@@ -107,8 +107,10 @@ describe('useAccountAddressesStore', () => {
         });
     });
 
-    // A create answers the entry it made (201), which says nothing of a demoted default — so the
-    // store re-reads the book and renders THAT.
+    /**
+     * A create answers the entry it made (201), which says nothing of a demoted default — so the
+     * store re-reads the book and renders THAT.
+     */
     it('posts a new entry, then reloads the book rather than trusting the one row it got back', () => {
         respondWithBook([HOME, WORK], WORK);
         const store = useAccountAddressesStore();
@@ -132,8 +134,10 @@ describe('useAccountAddressesStore', () => {
         });
     });
 
-    // The default is the book's pointer: an action of its own, and the demoted holder is another
-    // row, which only the reload shows.
+    /**
+     * The default is the book's pointer: an action of its own, and the demoted holder is another
+     * row, which only the reload shows.
+     */
     it('makes an entry the default through its own action, then reloads the book', () => {
         respondWithBook(
             [

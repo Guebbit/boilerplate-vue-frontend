@@ -62,8 +62,10 @@ const router = createRouter({
             name: 'NoTitle',
             component: leaf('untitled content')
         },
-        // LayoutDefault's own footer cross-links the four prose pages by name — real routes the
-        // real router declares, needed here purely so `RouterLink` has something to resolve.
+        /**
+         * LayoutDefault's own footer cross-links the four prose pages by name — real routes the
+         * real router declares, needed here purely so `RouterLink` has something to resolve.
+         */
         ...STATIC_PAGES.map((page) => ({
             path: `/${page}`,
             name: staticPageRouteName(page),

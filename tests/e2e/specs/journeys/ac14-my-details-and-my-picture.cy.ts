@@ -90,8 +90,10 @@ describe('AC14 · My details and my picture', () => {
         });
 
         cy.step('uploads an avatar: it is served from the upload path, also after a reload');
-        // The seeded customer already has a picture, so the remove button is no sign the upload
-        // finished: the API holding an uploaded path is.
+        /**
+         * The seeded customer already has a picture, so the remove button is no sign the upload
+         * finished: the API holding an uploaded path is.
+         */
         cy.get('[data-test=profile-avatar-input] input[type=file]').selectFile(
             'tests/e2e/fixtures/sample-image.png',
             { force: true }

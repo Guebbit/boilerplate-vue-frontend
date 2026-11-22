@@ -78,8 +78,10 @@ const requestedUrls = () =>
 
 beforeEach(() => {
     setActivePinia(createPinia());
-    // `reset`, not `clear`: the paging test swaps the implementation, and a reset puts the
-    // table-driven one back for whatever runs after it.
+    /**
+     * `reset`, not `clear`: the paging test swaps the implementation, and a reset puts the
+     * table-driven one back for whatever runs after it.
+     */
     vi.resetAllMocks();
     responses = {
         'GET /locales': { locales: [LANGUAGE], default: 'en', fallback: 'en' },

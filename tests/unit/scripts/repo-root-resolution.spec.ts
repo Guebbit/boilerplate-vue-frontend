@@ -59,8 +59,10 @@ describe('a script that walks up to the repo root lands on it', () => {
             const from = path.dirname(path.join(REPO_ROOT, file));
             const resolved = path.resolve(from, ...Array.from({ length: levels }, () => '..'));
 
-            // `package.json` is the marker rather than a name check: `scripts/` resolves cleanly as a
-            // path and holds no manifest, which is precisely how a short walk passes unnoticed.
+            /**
+             * `package.json` is the marker rather than a name check: `scripts/` resolves cleanly as a
+             * path and holds no manifest, which is precisely how a short walk passes unnoticed.
+             */
             expect(
                 globSync('package.json', { cwd: resolved }),
                 `${file} resolves to ${resolved}`

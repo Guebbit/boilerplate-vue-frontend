@@ -168,8 +168,10 @@ describe('OP21 · The stock counters follow an order', () => {
                     'Adjusted'
                 ]);
             });
-            // Paying a hold writes no row of its own: the paid order keeps its one hold row,
-            // the released one has its hold and its release.
+            /**
+             * Paying a hold writes no row of its own: the paid order keeps its one hold row,
+             * the released one has its hold and its release.
+             */
             for (const [alias, rows] of [
                 ['first', 1],
                 ['second', 2]

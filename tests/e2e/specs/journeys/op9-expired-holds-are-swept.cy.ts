@@ -35,8 +35,10 @@ describe('OP9 · Expired holds are swept', () => {
     });
 
     it('the admin sweeps an unpaid card order: canceled, units back, customer told', () => {
-        // Its own product: the sweep releases EVERY expired hold, so a seeded product's shelf would
-        // also gain the units the seed's unpaid orders hold.
+        /**
+         * Its own product: the sweep releases EVERY expired hold, so a seeded product's shelf would
+         * also gain the units the seed's unpaid orders hold.
+         */
         cy.createProduct({ title: `E2E OP9 ${Date.now()}`, onHand: 5 }).then(
             ({ id: productId }) => {
                 const shelf = { before: 0 };
@@ -72,8 +74,10 @@ describe('OP9 · Expired holds are swept', () => {
                     cy.intercept('POST', '**/inventory/reservations/sweep').as('sweep');
                     cy.get('[data-test=sweep-submit]').click();
                     cy.get('[data-test=app-dialog-confirm]').click();
-                    // The order is read straight after: wait for the sweep to have answered, or a
-                    // loaded machine reads it while the sweep is still running.
+                    /**
+                     * The order is read straight after: wait for the sweep to have answered, or a
+                     * loaded machine reads it while the sweep is still running.
+                     */
                     cy.wait('@sweep').its('response.statusCode').should('equal', 200);
                     cy.get('[data-test=sweep-error]').should('not.exist');
 

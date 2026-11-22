@@ -177,8 +177,10 @@ interface ProductEditForm {
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     weight?: number;
-    // `null` clears the class back to the shop's standard rate — always sent on submit, unlike
-    // `translations`, which is the one field this PATCH merges instead of replacing.
+    /**
+     * `null` clears the class back to the shop's standard rate — always sent on submit, unlike
+     * `translations`, which is the one field this PATCH merges instead of replacing.
+     */
     taxClass?: TaxClass | null;
     categories?: string[];
     tags?: string[];
@@ -283,13 +285,17 @@ activateAutoHydrate(
                   noWithdrawal: adminProduct.value.noWithdrawal ?? false,
                   weight: adminProduct.value.weight,
                   taxClass: adminProduct.value.taxClass ?? null,
-                  // Fresh arrays too, same reason as `translations` below: a chip added then
-                  // discarded via "Reset changes" must not have mutated the fetched record.
+                  /**
+                   * Fresh arrays too, same reason as `translations` below: a chip added then
+                   * discarded via "Reset changes" must not have mutated the fetched record.
+                   */
                   categories: [...(adminProduct.value.categories ?? [])],
                   tags: [...(adminProduct.value.tags ?? [])],
-                  // A fresh object: the admin record's own `translations` must not be mutated by a
-                  // later tab edit — `resetForm()` (the "Reset changes" button) needs it intact to
-                  // hydrate from again. The default language's tab is the stored `source`.
+                  /**
+                   * A fresh object: the admin record's own `translations` must not be mutated by a
+                   * later tab edit — `resetForm()` (the "Reset changes" button) needs it intact to
+                   * hydrate from again. The default language's tab is the stored `source`.
+                   */
                   translations: toFormTranslations(
                       adminProduct.value.source,
                       adminProduct.value.translations,
@@ -409,8 +415,10 @@ const submitForm = () => {
             imageUpload
         } = form.value;
         if (!id || price === undefined) return;
-        // No baseline: the whole form is this save's intent. What the helper adds is the spelling —
-        // a cleared weight or a blank translation description goes as the contract's `null`.
+        /**
+         * No baseline: the whole form is this save's intent. What the helper adds is the spelling —
+         * a cleared weight or a blank translation description goes as the contract's `null`.
+         */
         return confirmReleaseDateMove(id, releaseDate)
             .then((confirmed) => confirmed && confirmRestockDateMove(id, restockDate))
             .then((confirmed) => {

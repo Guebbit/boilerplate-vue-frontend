@@ -51,8 +51,10 @@ let responses: Record<string, unknown>;
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        // A missing stub answers 404 in the envelope shape `onResponseReject` builds — the store
-        // reads `status` off it to tell "no payment yet" from a real failure.
+        /**
+         * A missing stub answers 404 in the envelope shape `onResponseReject` builds — the store
+         * reads `status` off it to tell "no payment yet" from a real failure.
+         */
         if (!(key in responses))
             // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
             return Promise.reject(
@@ -116,8 +118,10 @@ describe('useOrderRefund', () => {
     });
 
     it('withdraws the control once the money is back', () => {
-        // The greying-out, and the reason it is trustworthy: the refreshed record carries
-        // `refund: false`, so the button closes on the server's answer rather than on a guess.
+        /**
+         * The greying-out, and the reason it is trustworthy: the refreshed record carries
+         * `refund: false`, so the button closes on the server's answer rather than on a guess.
+         */
         const { canRefund, refund } = useOrderRefund(ref('o1'));
 
         return settled()

@@ -143,8 +143,10 @@ const oauthDeletion = computed(() => {
 onMounted(() => {
     if (errorMessage.value) return;
 
-    // A signed-in account just connected a provider (`POST /account/oauth/links/:provider`): no
-    // session was minted, none is needed. Say so and go back to where the visitor was.
+    /**
+     * A signed-in account just connected a provider (`POST /account/oauth/links/:provider`): no
+     * session was minted, none is needed. Say so and go back to where the visitor was.
+     */
     if (typeof route.query.linked === 'string') {
         addMessage(
             t('oauth.callback-page.linked', { provider: providerLabel(route.query.linked) })

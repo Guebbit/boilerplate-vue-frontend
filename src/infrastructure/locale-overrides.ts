@@ -216,8 +216,10 @@ export const mergeRemoteLocales = (): Promise<string[]> =>
         draftLanguages.clear();
         for (const tag of drafts) draftLanguages.add(tag);
 
-        // Rebuilt from the folder every time, so a re-read after sign-out drops what only a
-        // signed-in caller (a draft language) was offered.
+        /**
+         * Rebuilt from the folder every time, so a re-read after sign-out drops what only a
+         * signed-in caller (a draft language) was offered.
+         */
         const target = [...new Set([...bundledLocales, ...offered])].filter(
             (locale) => keep.includes(locale) || !switchedOff.includes(locale)
         );

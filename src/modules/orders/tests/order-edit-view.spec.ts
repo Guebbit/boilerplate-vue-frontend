@@ -184,9 +184,11 @@ beforeEach(() => {
 
 describe('a list-cache arrival gains actions', () => {
     it('enables Cancel once the forced re-fetch lands', () => {
-        // `status` is not a form field — the moves this page renders from
-        // `actions` are the cancel/refund/override controls, not a status select, so proving the
-        // re-fetch landed means proving THOSE gain their real state.
+        /**
+         * `status` is not a form field — the moves this page renders from
+         * `actions` are the cancel/refund/override controls, not a status select, so proving the
+         * re-fetch landed means proving THOSE gain their real state.
+         */
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.shipped,
@@ -198,8 +200,10 @@ describe('a list-cache arrival gains actions', () => {
 
         const { wrapper } = mountFromListCache(detail);
 
-        // The mount itself proves nothing yet — `actions` only lands once the forced re-fetch's
-        // promise resolves and Vue re-renders on it.
+        /**
+         * The mount itself proves nothing yet — `actions` only lands once the forced re-fetch's
+         * promise resolves and Vue re-renders on it.
+         */
         return nextTick()
             .then(() => nextTick())
             .then(() => {
@@ -407,8 +411,10 @@ describe('cancelling', () => {
             .then(() => nextTick())
             .then(() => {
                 expect(cancelOrder).toHaveBeenCalledWith('o1', false);
-                // Cancelling the order leaves a sibling `succeeded` payment's `actions.refund`
-                // stale unless the payment itself is re-read too.
+                /**
+                 * Cancelling the order leaves a sibling `succeeded` payment's `actions.refund`
+                 * stale unless the payment itself is re-read too.
+                 */
                 expect(refreshPayment).toHaveBeenCalledTimes(1);
             });
     });
@@ -419,8 +425,10 @@ describe('the correct-status door', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.shipped,
-            // `overrideStatus` left at `anAction`'s empty default — no permission, or nothing left
-            // overridable, read the same way here: the server already decided.
+            /**
+             * `overrideStatus` left at `anAction`'s empty default — no permission, or nothing left
+             * overridable, read the same way here: the server already decided.
+             */
             actions: anAction({ cancel: true, pay: false })
         });
 
@@ -443,9 +451,11 @@ describe('the correct-status door', () => {
                 overrideStatus: [OrderStatus.delivered]
             })
         });
-        // Spied BEFORE mounting: the component destructures `overrideStatus` off the store at
-        // setup time, so a spy attached after mount would replace the store's own method while
-        // the component keeps holding the original, unspied reference.
+        /**
+         * Spied BEFORE mounting: the component destructures `overrideStatus` off the store at
+         * setup time, so a spy attached after mount would replace the store's own method while
+         * the component keeps holding the original, unspied reference.
+         */
         const overrideStatus = vi
             .spyOn(useOrdersStore(), 'overrideStatus')
             .mockResolvedValue({ ...detail, status: OrderStatus.delivered });
@@ -455,14 +465,16 @@ describe('the correct-status door', () => {
             .then(() => nextTick())
             .then(() => {
                 expect(wrapper.find('[data-test=button-override]').exists()).toBe(true);
-                // The select/textarea are Vuetify components, not native inputs — emitting
-                // `update:modelValue` on the component instance is how a v-model bind is driven
-                // in a mounted test, the same as the status-select test above reads through the
-                // component's own props rather than simulating a click-driven menu.
-                //
-                // `getComponent` with a CSS selector types as `WrapperLike`, which omits `.vm` —
-                // the selector's own uniqueness (one match, a Vue SFC, not a DOM-only node) is
-                // what the object-selector overload would otherwise prove for us.
+                /**
+                 * The select/textarea are Vuetify components, not native inputs — emitting
+                 * `update:modelValue` on the component instance is how a v-model bind is driven
+                 * in a mounted test, the same as the status-select test above reads through the
+                 * component's own props rather than simulating a click-driven menu.
+                 *
+                 * `getComponent` with a CSS selector types as `WrapperLike`, which omits `.vm` —
+                 * the selector's own uniqueness (one match, a Vue SFC, not a DOM-only node) is
+                 * what the object-selector overload would otherwise prove for us.
+                 */
                 (
                     wrapper.getComponent('[data-test="override-status-select"]') as VueWrapper
                 ).vm.$emit('update:modelValue', OrderStatus.delivered);
@@ -484,8 +496,10 @@ describe('the correct-status door', () => {
                     OrderStatus.delivered,
                     'carrier scan never arrived'
                 );
-                // `overrideStatus` writes through the store's own `updateTarget`, so a per-view
-                // forced re-fetch would just repeat what the store already guarantees.
+                /**
+                 * `overrideStatus` writes through the store's own `updateTarget`, so a per-view
+                 * forced re-fetch would just repeat what the store already guarantees.
+                 */
                 expect(fetchOrder).not.toHaveBeenCalled();
             });
     });

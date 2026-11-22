@@ -76,8 +76,10 @@ const signupSchema = usersSchema
     .extend({
         password: usersPasswordSchema,
         passwordConfirm: signupPasswordConfirmSchema,
-        // The only required checkbox — the contract's own `enum: [true]` on `termsAccepted`
-        // enforces this server-side too, so a client that skipped this refine would still 422.
+        /**
+         * The only required checkbox — the contract's own `enum: [true]` on `termsAccepted`
+         * enforces this server-side too, so a client that skipped this refine would still 422.
+         */
         termsAccepted: z.boolean().refine((value) => value, {
             error: () => t('signup-page.error-terms-required')
         }),
@@ -200,8 +202,10 @@ const submitForm = () => {
                 email: form.value.email!,
                 password: form.value.password!,
                 passwordConfirm: form.value.passwordConfirm!,
-                // Validated by `signupSchema` above — `true` by the time submission is
-                // allowed to reach here at all.
+                /**
+                 * Validated by `signupSchema` above — `true` by the time submission is
+                 * allowed to reach here at all.
+                 */
                 termsAccepted: form.value.termsAccepted as true,
                 analyticsConsent: form.value.analyticsConsent
             },
@@ -210,8 +214,10 @@ const submitForm = () => {
         )
             .then(() => uploadPickedAvatar())
             .then(() => redirectAfterLogin())
-            // `handleSubmit`'s callback must resolve `void`; `addMessage` now returns the new
-            // message's id (vue-toolkit 5), which this call site has no use for.
+            /**
+             * `handleSubmit`'s callback must resolve `void`; `addMessage` now returns the new
+             * message's id (vue-toolkit 5), which this call site has no use for.
+             */
             .then(() => {
                 addMessage(t('signup-page.success-email-code-sent'));
             })

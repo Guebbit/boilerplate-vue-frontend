@@ -13,8 +13,10 @@
  */
 import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 
-// The ready selector is a board row, not the page shell — a baseline of the loading state
-// would be stable, meaningless, and never fail.
+/**
+ * The ready selector is a board row, not the page shell — a baseline of the loading state
+ * would be stable, meaningless, and never fail.
+ */
 sweepVisual(
     'inventory',
     [

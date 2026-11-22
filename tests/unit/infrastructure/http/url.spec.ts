@@ -29,8 +29,10 @@ describe('toPathname', () => {
     });
 
     it('drops the query string from a relative url', () => {
-        // `/products?page=1` must resolve to the same schema as `/products`, or every paginated
-        // request goes unvalidated.
+        /**
+         * `/products?page=1` must resolve to the same schema as `/products`, or every paginated
+         * request goes unvalidated.
+         */
         expect(toPathname('/products?page=1&pageSize=20')).toBe('/products');
     });
 
@@ -39,8 +41,10 @@ describe('toPathname', () => {
     });
 
     it('adds a leading slash to a path that lacks one', () => {
-        // Every pattern in the table is anchored with `^\/`, so a path without the slash would
-        // match nothing at all.
+        /**
+         * Every pattern in the table is anchored with `^\/`, so a path without the slash would
+         * match nothing at all.
+         */
         expect(toPathname('products')).toBe('/products');
     });
 });

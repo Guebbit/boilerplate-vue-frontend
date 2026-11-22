@@ -82,9 +82,11 @@ describe('AC6 · Give me my data', () => {
         cy.intercept('GET', '**/account/export/file').as('download');
         cy.accountOf('user').then(({ email }) => {
             cy.wrap(email).as('email');
-            // No template filter: a live mail sink cannot say which template a mail came from, and
-            // this inbox holds only the one the request just caused. `expectMailTemplate` checks the
-            // template wherever the outbox can name it.
+            /**
+             * No template filter: a live mail sink cannot say which template a mail came from, and
+             * this inbox holds only the one the request just caused. `expectMailTemplate` checks the
+             * template wherever the outbox can name it.
+             */
             cy.emailTo(email).then((mail) => {
                 expectMailTemplate(mail, 'account.export-ready');
                 cy.wrap(exportLinkOf(mail)).as('firstLink');
@@ -157,8 +159,10 @@ describe('AC6 · Give me my data', () => {
         cy.step('asking again builds a new export, and that file downloads too');
         cy.get('[data-test=profile-export-data] button').click();
         cy.wait('@export').its('response.statusCode').should('equal', 202);
-        // The link no longer names an export (an account has one), so the new mail carries the
-        // same address as the first: the page behind it is what proves the new export.
+        /**
+         * The link no longer names an export (an account has one), so the new mail carries the
+         * same address as the first: the page behind it is what proves the new export.
+         */
         cy.get<string>('@firstLink').then((firstLink) => {
             cy.visit(firstLink);
         });
@@ -192,8 +196,10 @@ describe('AC6 · Give me my data', () => {
         cy.get<string>('@firstLink').then((firstLink) => {
             cy.visit(firstLink);
         });
-        // The page reads the status first: with the export swept there is none, and the download
-        // is held back rather than offered to fail.
+        /**
+         * The page reads the status first: with the export swept there is none, and the download
+         * is held back rather than offered to fail.
+         */
         cy.get('[data-test=account-export-none]').should('be.visible');
         cy.contains('An export is kept for a few days').should('be.visible');
         cy.get('[data-test=account-export-download]').should('be.disabled');
@@ -203,8 +209,10 @@ describe('AC6 · Give me my data', () => {
         cy.get('[data-test=profile-export-data] button').click();
         cy.wait('@export').its('response.statusCode').should('equal', 202);
         cy.intercept('GET', '**/account/export/file').as('download');
-        // The link no longer names an export (an account has one), so the new mail carries the
-        // same address as the first: the page behind it is what proves the new export.
+        /**
+         * The link no longer names an export (an account has one), so the new mail carries the
+         * same address as the first: the page behind it is what proves the new export.
+         */
         cy.get<string>('@firstLink').then((firstLink) => {
             cy.visit(firstLink);
         });

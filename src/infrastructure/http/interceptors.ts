@@ -83,8 +83,10 @@ export const onRequest = (config: InternalAxiosRequestConfig<AxiosRequestData>) 
     // `cookie` mode has no token: the HttpOnly cookie rides along on its own (`withCredentials`).
     if (accessToken.value) config.headers.Authorization = `Bearer ${accessToken.value}`;
     config.headers['Accept-Language'] = getCurrentLocale();
-    // The server counts any request not marked passive as the person acting; this tab keeps its
-    // copy of the idle clock in step, and tells the other tabs.
+    /**
+     * The server counts any request not marked passive as the person acting; this tab keeps its
+     * copy of the idle clock in step, and tells the other tabs.
+     */
     if (hasSession.value && config.headers['Session-Passive'] !== 'true')
         useSessionStore().noteActivity();
 
@@ -93,8 +95,10 @@ export const onRequest = (config: InternalAxiosRequestConfig<AxiosRequestData>) 
         isAnalyticsConsentEnabled() &&
         useAnalyticsConsentStore().choice === 'granted'
     ) {
-        // The backend decodes this the way it decodes any other boolean-shaped header/query value
-        // (`parseFormBoolean`'s TRUTHY set) — verified against its own `request` test.
+        /**
+         * The backend decodes this the way it decodes any other boolean-shaped header/query value
+         * (`parseFormBoolean`'s TRUTHY set) — verified against its own `request` test.
+         */
         config.headers['Analytics-Consent'] = 'true';
     }
 
@@ -179,9 +183,11 @@ const rejectionOf = (
         });
     }
 
-    // no `response` at all — offline, a timeout, CORS, or a canceled request — is not the
-    // same failure as a 500, and must not be reported as one. `status: 0` is what
-    // `isTransportFailure` (`utils/errors.ts`) keys on.
+    /**
+     * no `response` at all — offline, a timeout, CORS, or a canceled request — is not the
+     * same failure as a 500, and must not be reported as one. `status: 0` is what
+     * `isTransportFailure` (`utils/errors.ts`) keys on.
+     */
     if (!error.response) {
         const code = getTransportErrorCode(error);
         const message = translate('api-errors.network');
@@ -196,14 +202,18 @@ const rejectionOf = (
     const { status, statusText } = error.response;
     const fallbackMessage = statusText || error.message || translate('api-errors.unknown');
     const message = getFallbackMessage(status, fallbackMessage);
-    // A 5xx is the server's problem, not this client's, so it is a trace rather than an error
-    // here — opt in with `VITE_APP_LOG_SCOPES=http`.
+    /**
+     * A 5xx is the server's problem, not this client's, so it is a trace rather than an error
+     * here — opt in with `VITE_APP_LOG_SCOPES=http`.
+     */
     if (status >= 500) logger.debug('http', '------------- APP ERROR -------------', error);
 
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract; every catch downstream destructures it
     return Promise.reject({
-        // No `errors` field arrived (a bare proxy error, an empty body) — synthesize the
-        // structured shape callers rely on, with the one item the contract requires.
+        /**
+         * No `errors` field arrived (a bare proxy error, an empty body) — synthesize the
+         * structured shape callers rely on, with the one item the contract requires.
+         */
         ...syntheticProblem(status, statusText || 'Error', getFallbackErrorCode(status), message),
         ...correlation
     });

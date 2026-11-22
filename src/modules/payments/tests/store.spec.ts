@@ -175,8 +175,10 @@ describe('payForOrder', () => {
     });
 
     it('sends the method reference and nothing resembling a card', () => {
-        // The whole reason the field changed shape: with a live provider the card is tokenised in
-        // the provider's own iframe, and a request body carrying digits would mean it was not.
+        /**
+         * The whole reason the field changed shape: with a live provider the card is tokenised in
+         * the provider's own iframe, and a request body carrying digits would mean it was not.
+         */
         const store = usePaymentsStore();
         return store.payForOrder('order-1', 'pm_card_visa').then(() => {
             const confirm = vi
@@ -191,8 +193,10 @@ describe('payForOrder', () => {
     });
 
     it('lets a decline propagate — the caller owns the toast', () => {
-        // `openapi.yaml`'s payments 409 block: a decline is `errors[].code === 'PAYMENT_DECLINED'`,
-        // not an absence — asserting the real shape catches a regression to generic error handling.
+        /**
+         * `openapi.yaml`'s payments 409 block: a decline is `errors[].code === 'PAYMENT_DECLINED'`,
+         * not an absence — asserting the real shape catches a regression to generic error handling.
+         */
         responses['POST /payments/payment-1/confirm'] = {
             status: 409,
             code: 'PAYMENT_DECLINED',

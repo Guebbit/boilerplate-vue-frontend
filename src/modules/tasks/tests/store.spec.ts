@@ -43,8 +43,10 @@ const TASK = {
     subject: 'A question',
     message: 'About the cats',
     status: 'new',
-    // Required by the real contract — absent from the fixture before wiring in `parseOrvalFixture`
-    // ever proved it against the schema, exactly the class of gap this file's own bug fixes.
+    /**
+     * Required by the real contract — absent from the fixture before wiring in `parseOrvalFixture`
+     * ever proved it against the schema, exactly the class of gap this file's own bug fixes.
+     */
     createdAt: '2026-01-01T00:00:00.000Z'
 };
 
@@ -303,11 +305,13 @@ describe('deleteRequest', () => {
             .search()
             .then(() => store.deleteRequest('f1'))
             .then(() => {
-                // A third request, not two: `deleteTarget` marks the resource's active lists
-                // stale on settling, and `watchSearchRequests()` is exactly that — an active
-                // watcher — so it refetches on its own (vue-toolkit 5's structural fix for a
-                // list going stale on screen indefinitely). The refetch is what proves the task
-                // is really gone server-side, not just removed from the local cache.
+                /**
+                 * A third request, not two: `deleteTarget` marks the resource's active lists
+                 * stale on settling, and `watchSearchRequests()` is exactly that — an active
+                 * watcher — so it refetches on its own (vue-toolkit 5's structural fix for a
+                 * list going stale on screen indefinitely). The refetch is what proves the task
+                 * is really gone server-side, not just removed from the local cache.
+                 */
                 expect(requestedUrls()).toEqual(['/tasks/search', '/tasks/f1', '/tasks/search']);
                 expect(store.pageItemList).toEqual([]);
             });

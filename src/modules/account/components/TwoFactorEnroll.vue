@@ -100,8 +100,10 @@ const onAmbientError = useAmbientError();
  */
 const closeAndClear = () => {
     emit('close');
-    // Re-read the status too: a replace disarms the method before its new code is proved, so a
-    // cancel would otherwise leave the panel listing a factor the server no longer holds.
+    /**
+     * Re-read the status too: a replace disarms the method before its new code is proved, so a
+     * cancel would otherwise leave the panel listing a factor the server no longer holds.
+     */
     twoFactor.abandonSetup().catch(onAmbientError);
 };
 
@@ -110,8 +112,10 @@ onMounted(() => {
         setup.value = initialSetup;
         return;
     }
-    // Stays a toast: a failure here closes the dialog immediately (nothing to render without a
-    // setup answer), so an inline alert would have nowhere to stay visible.
+    /**
+     * Stays a toast: a failure here closes the dialog immediately (nothing to render without a
+     * setup answer), so an inline alert would have nowhere to stay visible.
+     */
     void twoFactor
         .setupMethod(method)
         .then((payload) => {

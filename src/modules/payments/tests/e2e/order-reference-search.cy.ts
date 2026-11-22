@@ -16,10 +16,12 @@ describe('Order reference search', () => {
     it('finds the order a pasted RF reference pays', () => {
         cy.loginAs('user');
 
-        // ── Buy something, paying by bank transfer — the one method that mints an RF ──
-        // A digital-only product needs no shipping method and refuses one outright, so
-        // `.first()` alone is no longer guaranteed to land on something this flow can actually
-        // ship — the rich subject is a physical, shippable product.
+        /**
+         * ── Buy something, paying by bank transfer — the one method that mints an RF ──
+         * A digital-only product needs no shipping method and refuses one outright, so
+         * `.first()` alone is no longer guaranteed to land on something this flow can actually
+         * ship — the rich subject is a physical, shippable product.
+         */
         cy.navigateTo('/en/products');
         cy.filterByNarrowestCategoryOf('product.rich');
         cy.get('[data-test=product-card-link]').first().click();
@@ -34,9 +36,11 @@ describe('Order reference search', () => {
         // ── Checkout lands on the new order's own page directly ─────────────────────
         cy.get('#order-target').should('exist');
 
-        // ── The order page shows the reference the checkout froze ───────────────────
-        // Read as displayed, i.e. grouped in 4s — the API tolerates those spaces, so this walks
-        // the same paste a customer would make rather than an exact-value round-trip.
+        /**
+         * ── The order page shows the reference the checkout froze ───────────────────
+         * Read as displayed, i.e. grouped in 4s — the API tolerates those spaces, so this walks
+         * the same paste a customer would make rather than an exact-value round-trip.
+         */
         cy.get('[data-test=transfer-instructions-panel]').should('exist');
         cy.get('[data-test=transfer-reference]')
             .invoke('text')

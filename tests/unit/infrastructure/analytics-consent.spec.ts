@@ -32,8 +32,10 @@ const { useAnalyticsConsentStore, isAnalyticsConsentEnabled } =
     await import('@/infrastructure/analytics-consent.ts');
 
 beforeEach(() => {
-    // jsdom keeps `document.cookie` for the whole file, not per test — cleared through the same
-    // toolkit function the store itself uses, like production code, rather than a raw assignment.
+    /**
+     * jsdom keeps `document.cookie` for the whole file, not per test — cleared through the same
+     * toolkit function the store itself uses, like production code, rather than a raw assignment.
+     */
     deleteCookie('analyticsConsent');
     setActivePinia(createPinia());
 });

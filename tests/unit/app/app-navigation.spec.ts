@@ -187,9 +187,11 @@ vi.mock('vue-i18n', async (importOriginal) => {
         useI18n: () => ({
             // The plural form is echoed so a label built with `t(key, count)` can be asserted on.
             t: (key: string, count?: number) => (count === undefined ? key : `${key}:${count}`),
-            // `AppLanguageSwitcher.vue` (mounted here as a child of the nav it labels) uses this
-            // to decide whether a language has a translated name; real behaviour, not asserted by
-            // this file, so every key "exists".
+            /**
+             * `AppLanguageSwitcher.vue` (mounted here as a child of the nav it labels) uses this
+             * to decide whether a language has a translated name; real behaviour, not asserted by
+             * this file, so every key "exists".
+             */
             te: () => true,
             locale: ref('en')
         })
@@ -259,8 +261,10 @@ const mountNav = (contributions: Slots = {}) => {
                 },
                 // `v-model` becomes a plain attribute on a stub; the aside is always rendered.
                 VNavigationDrawer: { template: '<aside><slot /></aside>' },
-                // Both overlays render their content lazily, on open; here it is always there,
-                // so a menu's entries can be asserted without a click.
+                /**
+                 * Both overlays render their content lazily, on open; here it is always there,
+                 * so a menu's entries can be asserted without a click.
+                 */
                 VMenu: {
                     template:
                         '<div data-test="menu"><slot name="activator" :props="{}" /><slot /></div>'
@@ -430,8 +434,10 @@ describe('Navigation', () => {
     });
 
     it('offers neither when this build ships no sign-in route', () => {
-        // A build with the account module deleted: the shell must not render a button that
-        // navigates nowhere. Route names are strings, so only `hasRoute` can tell.
+        /**
+         * A build with the account module deleted: the shell must not render a button that
+         * navigates nowhere. Route names are strings, so only `hasRoute` can tell.
+         */
         registeredRoutes.value = [];
 
         const { text } = mountNav();
@@ -533,8 +539,10 @@ describe('Navigation', () => {
         expect(pinned.attributes('aria-label')).toBe(
             'navigation.label-pinned:1: navigation.badge-items:3, € 59.97'
         );
-        // The badge wraps the link (nested inside the button it would not show), so the count
-        // is looked up from the wrapper that contains the link, not inside the link.
+        /**
+         * The badge wraps the link (nested inside the button it would not show), so the count
+         * is looked up from the wrapper that contains the link, not inside the link.
+         */
         const badge = wrapper
             .findAll('header [data-test="nav-badge"]')
             .find((candidate) => candidate.find('[data-test="pinned-PinnedThing"]').exists());
@@ -609,8 +617,10 @@ describe('Navigation', () => {
     });
 
     it('sends the signed-in visitor Home instead, on a build with no Logout route', async () => {
-        // Same reasoning as the sign-in/sign-up links above: a route name is a string nothing
-        // type-checks, so a build missing the account module must not throw on logout either.
+        /**
+         * Same reasoning as the sign-in/sign-up links above: a route name is a string nothing
+         * type-checks, so a build missing the account module must not throw on logout either.
+         */
         session.isAuth.value = true;
         session.viewer.value = { email: 'someone@example.com' };
         registeredRoutes.value = [];
@@ -676,8 +686,10 @@ describe('Navigation', () => {
         expect(wrapper.find('#app-drawer').attributes('aria-label')).toBe(
             'navigation.label-drawer'
         );
-        // Both on the right: the hamburger is the bar's last control, and the drawer it opens
-        // slides in from the same edge (the stub keeps the prop as an attribute).
+        /**
+         * Both on the right: the hamburger is the bar's last control, and the drawer it opens
+         * slides in from the same edge (the stub keeps the prop as an attribute).
+         */
         expect(wrapper.findAll('header button').at(-1)?.attributes('aria-controls')).toBe(
             'app-drawer'
         );
@@ -709,8 +721,10 @@ describe('Navigation', () => {
         return (
             hamburger
                 .trigger('click')
-                // Let the drawer take focus first, as it does for a real visitor, so the return
-                // trip is what is asserted rather than a focus that never left.
+                /**
+                 * Let the drawer take focus first, as it does for a real visitor, so the return
+                 * trip is what is asserted rather than a focus that never left.
+                 */
                 .then(() =>
                     vi.waitFor(() => expect(document.activeElement).not.toBe(document.body))
                 )

@@ -8,8 +8,10 @@ import type { AddressInfo } from 'node:net';
 import { startAnalyticsSink } from '../../../../scripts/lighthouse/analytics-sink';
 
 describe('startAnalyticsSink', () => {
-    // The sink is a real loopback listener; the shared MSW server would refuse the call otherwise.
-    // https://mswjs.io/docs/api/passthrough
+    /**
+     * The sink is a real loopback listener; the shared MSW server would refuse the call otherwise.
+     * https://mswjs.io/docs/api/passthrough
+     */
     beforeEach(() => {
         server.use(http.all(/^http:\/\/127\.0\.0\.1:\d+\//, () => passthrough()));
     });

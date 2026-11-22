@@ -122,8 +122,10 @@ const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, applyServe
         }
     );
 
-// The token is the only credential for this action; it must not linger in the URL (a `#token=` fragment) for every
-// pageview and observability event after mount to carry to Umami, Faro and browser history.
+/**
+ * The token is the only credential for this action; it must not linger in the URL (a `#token=` fragment) for every
+ * pageview and observability event after mount to carry to Umami, Faro and browser history.
+ */
 useLinkTokenCleanup(route, router);
 
 /**
@@ -152,8 +154,10 @@ const submitForm = () => {
                 addMessage(t(props.copy.success));
                 return router.push(routerLinkI18n({ name: props.successRoute }));
             })
-            // Swallows `router.push`'s resolved value — a failed navigation is the router's own
-            // `onError` to report, not this form's.
+            /**
+             * Swallows `router.push`'s resolved value — a failed navigation is the router's own
+             * `onError` to report, not this form's.
+             */
             .then(() => undefined)
     ).catch((error) => {
         applyServerErrors(error, { onUnmapped: () => reportSpendError(error) });

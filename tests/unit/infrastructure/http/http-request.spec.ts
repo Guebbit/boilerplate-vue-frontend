@@ -51,8 +51,10 @@ vi.mock('@/infrastructure/analytics-consent.ts', () => ({
     isAnalyticsConsentEnabled: () => analyticsGuestConsentEnabled
 }));
 
-// `translate` is not decoration here: `onResponseReject` calls it to build the 401 message, so a
-// mock without it throws before the refresh logic is ever reached.
+/**
+ * `translate` is not decoration here: `onResponseReject` calls it to build the 401 message, so a
+ * mock without it throws before the refresh logic is ever reached.
+ */
 vi.mock('@/i18n', () => ({
     getCurrentLocale: () => 'it',
     translate: (key: string) => key,
@@ -90,16 +92,20 @@ describe('onRequest', () => {
 
         const config = onRequest(makeConfig());
 
-        // The `Bearer ` prefix is not decoration: the backend's `getTokenBearer` splits on a
-        // space and takes index 1, so a bare token resolves to undefined and reads as anonymous.
+        /**
+         * The `Bearer ` prefix is not decoration: the backend's `getTokenBearer` splits on a
+         * space and takes index 1, so a bare token resolves to undefined and reads as anonymous.
+         */
         expect(config.headers.Authorization).toBe('Bearer abc.def.ghi');
     });
 
     it('omits the Authorization header entirely when anonymous', () => {
         const config = onRequest(makeConfig());
 
-        // Absent, not `Bearer undefined` — the latter is a malformed credential that some
-        // servers answer 400 to rather than treating as anonymous.
+        /**
+         * Absent, not `Bearer undefined` — the latter is a malformed credential that some
+         * servers answer 400 to rather than treating as anonymous.
+         */
         expect(config.headers.Authorization).toBeUndefined();
     });
 
@@ -116,8 +122,10 @@ describe('onRequest', () => {
     });
 
     it('sends the language even when anonymous', () => {
-        // Public pages are localised too; tying the header to authentication would serve every
-        // logged-out visitor the fallback locale.
+        /**
+         * Public pages are localised too; tying the header to authentication would serve every
+         * logged-out visitor the fallback locale.
+         */
         accessToken.value = undefined;
 
         expect(onRequest(makeConfig()).headers['Accept-Language']).toBe('it');
@@ -158,8 +166,10 @@ describe('onRequest', () => {
     });
 
     it('never adds Analytics-Consent for a signed-in caller, even with a stale granted cookie', () => {
-        // The account's own stored preference is authoritative once signed in — see `onRequest`'s
-        // own docblock for why a leftover guest-cookie choice must not override it.
+        /**
+         * The account's own stored preference is authoritative once signed in — see `onRequest`'s
+         * own docblock for why a leftover guest-cookie choice must not override it.
+         */
         accessToken.value = 'abc.def.ghi';
         analyticsGuestConsentEnabled = true;
         analyticsConsentChoice.value = 'granted';

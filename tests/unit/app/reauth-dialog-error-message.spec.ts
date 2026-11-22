@@ -26,8 +26,10 @@ vi.mock('@/infrastructure/reauth.ts', () => ({
     useReauthStore: () => ({ reauth: reauthMock, reauthing: ref(false) })
 }));
 
-// Identity `t`, so an assertion reads the dictionary KEY rather than a translation that would
-// change with the locale — the branch under test is WHICH key is chosen, not its wording.
+/**
+ * Identity `t`, so an assertion reads the dictionary KEY rather than a translation that would
+ * change with the locale — the branch under test is WHICH key is chosen, not its wording.
+ */
 vi.mock('vue-i18n', async (importOriginal) => ({
     ...(await importOriginal<typeof import('vue-i18n')>()),
     useI18n: () => ({ t: (key: string) => key })
@@ -88,8 +90,10 @@ beforeEach(() => {
     reauthMock.mockReset();
 });
 
-// Vuetify's overlay container is appended to <body> once per mount; clearing it keeps one test's
-// dialog out of the next test's document queries.
+/**
+ * Vuetify's overlay container is appended to <body> once per mount; clearing it keeps one test's
+ * dialog out of the next test's document queries.
+ */
 afterEach(() => {
     document.body.replaceChildren();
 });

@@ -64,8 +64,10 @@ describe('cancelOrder', () => {
 
 describe('cancelOrder — the operator choosing what happens to the money', () => {
     it('sends no body at all when nothing was chosen', () => {
-        // A customer cancel is the API's default, and an absent body is what asks for it. Sending
-        // `{ refund: true }` here would state a preference the caller never expressed.
+        /**
+         * A customer cancel is the API's default, and an absent body is what asks for it. Sending
+         * `{ refund: true }` here would state a preference the caller never expressed.
+         */
         const store = useOrdersStore();
 
         return store.cancelOrder('o1').then(() => {

@@ -74,8 +74,10 @@ const payloadSchemas = new Map<SseEventName, zod.ZodType>();
 const payloadSchemaFor = (eventName: SseEventName): zod.ZodType => {
     const cached = payloadSchemas.get(eventName);
     if (cached) return cached;
-    // Zod's own JSON Schema importer — the generated schemas carry no `$ref`, so each is whole.
-    // https://zod.dev/json-schema
+    /**
+     * Zod's own JSON Schema importer — the generated schemas carry no `$ref`, so each is whole.
+     * https://zod.dev/json-schema
+     */
     const built = zod.fromJSONSchema(SSE_EVENT_PAYLOAD_SCHEMAS[eventName]);
     payloadSchemas.set(eventName, built);
     return built;
@@ -148,9 +150,11 @@ export const createSseClient = <TEventName extends SseEventName>(
      * Opens a source and wires every listener to the callbacks.
      */
     const open = () => {
-        // Browser `EventSource`: `withCredentials` sends the session cookie on the (possibly
-        // cross-origin) stream request, which the backend's SSE routes authenticate by.
-        // https://developer.mozilla.org/en-US/docs/Web/API/EventSource/EventSource
+        /**
+         * Browser `EventSource`: `withCredentials` sends the session cookie on the (possibly
+         * cross-origin) stream request, which the backend's SSE routes authenticate by.
+         * https://developer.mozilla.org/en-US/docs/Web/API/EventSource/EventSource
+         */
         const source = new EventSource(url, { withCredentials: true });
         eventSource = source;
 
@@ -168,8 +172,10 @@ export const createSseClient = <TEventName extends SseEventName>(
         for (const eventName of eventNames) {
             source.addEventListener(eventName, (event) => {
                 const payload = parseJsonSafe((event as MessageEvent<string>).data);
-                // `undefined` is `parseJsonSafe`'s failure signal — a malformed frame is dropped;
-                // `null`, `0`, `false` and `""` are legitimate payloads.
+                /**
+                 * `undefined` is `parseJsonSafe`'s failure signal — a malformed frame is dropped;
+                 * `null`, `0`, `false` and `""` are legitimate payloads.
+                 */
                 if (payload === undefined || !passesContract(eventName, payload)) return;
 
                 // Parsed from the wire; validated against this type's schema when the gate is on.

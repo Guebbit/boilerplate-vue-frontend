@@ -49,8 +49,10 @@ export const useLeaveGuard = (
         if (!dirty) saved.value = false;
     });
 
-    // The router's own per-component leave hook: returning false cancels the navigation.
-    // https://router.vuejs.org/guide/advanced/navigation-guards.html#In-Component-Guards
+    /**
+     * The router's own per-component leave hook: returning false cancels the navigation.
+     * https://router.vuejs.org/guide/advanced/navigation-guards.html#In-Component-Guards
+     */
     onBeforeRouteLeave(() => {
         if (!holdsWork()) return true;
         return dialog.confirm({
@@ -74,8 +76,10 @@ export const useLeaveGuard = (
         event.returnValue = '';
     };
 
-    // Registered while the form is dirty only: a permanent listener keeps the page out of the
-    // browser's back/forward cache (Firefox).
+    /**
+     * Registered while the form is dirty only: a permanent listener keeps the page out of the
+     * browser's back/forward cache (Firefox).
+     */
     watch(
         () => holdsWork(),
         (holds) => {

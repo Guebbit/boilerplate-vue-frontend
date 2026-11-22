@@ -51,8 +51,10 @@ describe('Wishlist', () => {
 
     it('the heart saves an unsaved product, then unsaves it', () => {
         cy.loginAs('user');
-        // The starting state is read from the API, so the product chosen is one the heart has
-        // never been pressed on: saving it is what `POST /wishlist/items` has to do.
+        /**
+         * The starting state is read from the API, so the product chosen is one the heart has
+         * never been pressed on: saving it is what `POST /wishlist/items` has to do.
+         */
         cy.apiAs<{ items: { productId: string }[] }>('user', 'GET', '/wishlist').then(
             (wishlist) => {
                 const saved = new Set((wishlist?.items ?? []).map((item) => item.productId));
@@ -109,8 +111,10 @@ describe('Wishlist', () => {
         cy.loginAs('user');
         cy.visit('/en/wishlist');
 
-        // The claim is that moving one REMOVES one, so the starting length is read rather
-        // than asserted: a seed with three saved products tests the same rule.
+        /**
+         * The claim is that moving one REMOVES one, so the starting length is read rather
+         * than asserted: a seed with three saved products tests the same rule.
+         */
         cy.get('[data-test=wishlist-item]').then(($items) => {
             const before = $items.length;
             expect(before, 'the demo user starts with something saved').to.be.greaterThan(0);

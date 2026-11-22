@@ -33,8 +33,10 @@ export const axeViolations = (
     root: Element = document.body,
     options: RunOptions = JSDOM_OPTIONS
 ): Promise<string[]> =>
-    // axe.run(context, options): audits `root`; resolves with `{ violations, passes, ... }`.
-    // https://github.com/dequelabs/axe-core/blob/master/doc/API.md#api-name-axerun
+    /**
+     * axe.run(context, options): audits `root`; resolves with `{ violations, passes, ... }`.
+     * https://github.com/dequelabs/axe-core/blob/master/doc/API.md#api-name-axerun
+     */
     axe
         .run(root, options)
         .then(({ violations }) => violations.map(({ id, nodes }) => `${id}: ${nodes[0]?.html}`));

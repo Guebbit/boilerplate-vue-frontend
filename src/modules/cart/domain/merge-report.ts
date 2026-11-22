@@ -53,8 +53,10 @@ export const changedMergeLines = (
     lines: readonly MergeLineResult[],
     warnings: readonly CartWarning[] = []
 ): MergeReportLine[] => {
-    // A product listed twice has two results and may have two warnings; each warning goes to the
-    // result that ended at its `resulting`, the order the server wrote them in.
+    /**
+     * A product listed twice has two results and may have two warnings; each warning goes to the
+     * result that ended at its `resulting`, the order the server wrote them in.
+     */
     const pending = [...warnings];
     return lines.flatMap(({ productId, requested, resulting, reason }) => {
         const at = pending.findIndex(

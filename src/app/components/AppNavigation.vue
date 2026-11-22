@@ -208,8 +208,10 @@ const visibleSections = computed((): Record<AppNavigationSection, AppNavItem[]> 
             .map(({ name, label, plural, icon, pinned, group }) => ({
                 name,
                 group: group ? t(group) : undefined,
-                // `plural` is optional on the manifest: a module that has not thought about it
-                // gets the singular, which is what every entry wanted before the field existed.
+                /**
+                 * `plural` is optional on the manifest: a module that has not thought about it
+                 * gets the singular, which is what every entry wanted before the field existed.
+                 */
                 title: t(label, plural ?? 1),
                 to: routerLinkI18n({ name }),
                 icon,

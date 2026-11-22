@@ -62,8 +62,10 @@ const codes = Object.keys(errorCodes).toSorted();
  * @returns One `key: value` line, its two-line doc comment above it.
  */
 const renderRow = (code: string): string => {
-    // `Object.hasOwn`, not a nullish check: `codes` is `Object.keys(errorCodes)`, so every one is
-    // declared — see `resolveMessagePayloadType` in `generate-asyncapi-types.ts` for the same guard.
+    /**
+     * `Object.hasOwn`, not a nullish check: `codes` is `Object.keys(errorCodes)`, so every one is
+     * declared — see `resolveMessagePayloadType` in `generate-asyncapi-types.ts` for the same guard.
+     */
     const entry = Object.hasOwn(errorCodes, code) ? errorCodes[code] : undefined;
     const status = entry?.status ?? 0;
     const description = entry?.description ?? '';

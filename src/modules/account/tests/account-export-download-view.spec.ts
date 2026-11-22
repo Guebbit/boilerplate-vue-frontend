@@ -23,8 +23,10 @@ import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
-// `downloadBlob` saves through a throwaway link, which jsdom cannot do; what matters is what it
-// is handed.
+/**
+ * `downloadBlob` saves through a throwaway link, which jsdom cannot do; what matters is what it
+ * is handed.
+ */
 vi.mock('@guebbit/js-toolkit', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@guebbit/js-toolkit')>()),
     downloadBlob: vi.fn()

@@ -96,9 +96,11 @@ export const translationTabErrorCountsFromServerError = (
     error: unknown,
     fallbackLocale: string
 ): TranslationTabErrorCounts => {
-    // Every candidate envelope is a record (an object rejection always is), so picking the
-    // first RECORD would just answer `error` itself every time — the point is picking the first
-    // one that actually CARRIES an `errors` array, same as vue-toolkit's own `findErrorCollection`.
+    /**
+     * Every candidate envelope is a record (an object rejection always is), so picking the
+     * first RECORD would just answer `error` itself every time — the point is picking the first
+     * one that actually CARRIES an `errors` array, same as vue-toolkit's own `findErrorCollection`.
+     */
     const container = [
         error,
         isRecord(error) ? error.data : undefined,

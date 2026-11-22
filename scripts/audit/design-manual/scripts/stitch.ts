@@ -84,10 +84,12 @@ const copyRows = (
 ): void => {
     const rows = Math.min(height, canvas.height - canvasY);
     if (rows <= 0) return;
-    // pngjs `PNG.bitblt(src, dst, srcX, srcY, width, height, deltaX, deltaY)`: copies a pixel
-    // rectangle between two images. srcX/srcY are the rectangle's corner in the source,
-    // width/height its size, deltaX/deltaY where it lands in the destination.
-    // https://github.com/pngjs/pngjs#pngbitbltsrc-dst-srcx-srcy-width-height-deltax-deltay
+    /**
+     * pngjs `PNG.bitblt(src, dst, srcX, srcY, width, height, deltaX, deltaY)`: copies a pixel
+     * rectangle between two images. srcX/srcY are the rectangle's corner in the source,
+     * width/height its size, deltaX/deltaY where it lands in the destination.
+     * https://github.com/pngjs/pngjs#pngbitbltsrc-dst-srcx-srcy-width-height-deltax-deltay
+     */
     PNG.bitblt(source, canvas, 0, sourceY, source.width, rows, 0, canvasY);
 };
 

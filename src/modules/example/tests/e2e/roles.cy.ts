@@ -32,8 +32,10 @@ describe('example, another author’s record', () => {
     });
 
     it('lets a moderator read it but offers no edit, delete or status move', () => {
-        // The moderator holds `display:Example` (read everyone's) but `update`/`delete` only on
-        // their own rows, so the row's `actions` switch the controls off.
+        /**
+         * The moderator holds `display:Example` (read everyone's) but `update`/`delete` only on
+         * their own rows, so the row's `actions` switch the controls off.
+         */
         cy.loginAs('moderator');
         cy.visit(`/en/examples/${ADMIN_PUBLISHED}`);
 

@@ -287,9 +287,11 @@ export const usePaymentsStore = defineStore('payments', () => {
                 })
                 .catch((error: unknown) => {
                     keeper.settle(error);
-                    // Two operators refunding the same payment: the loser's answer says nothing
-                    // is left, and the page still shows the control. An unknown outcome re-reads
-                    // too: the refund may or may not be there, and the page must show which.
+                    /**
+                     * Two operators refunding the same payment: the loser's answer says nothing
+                     * is left, and the page still shows the control. An unknown outcome re-reads
+                     * too: the refund may or may not be there, and the page must show which.
+                     */
                     return rereadAfterFault(
                         target.orderId,
                         error,

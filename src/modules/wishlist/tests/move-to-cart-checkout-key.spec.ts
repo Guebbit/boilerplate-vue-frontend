@@ -60,8 +60,10 @@ vi.mock('@/infrastructure/http', () => ({
  * @returns The header value
  */
 const lastCheckoutKey = (): unknown =>
-    // The generated client passes the per-call options (where the key travels) as the mutator's
-    // second argument, next to the request config.
+    /**
+     * The generated client passes the per-call options (where the key travels) as the mutator's
+     * second argument, next to the request config.
+     */
     (
         vi
             .mocked(orvalMutator)

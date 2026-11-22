@@ -32,13 +32,17 @@ export const useReturnFocus = (isOpen: () => boolean): void => {
             : undefined;
     };
 
-    // A dialog mounted with `v-if` already open never sees the change the watcher below waits for:
-    // its opener is whatever holds focus while it is being set up.
+    /**
+     * A dialog mounted with `v-if` already open never sees the change the watcher below waits for:
+     * its opener is whatever holds focus while it is being set up.
+     */
     if (isOpen()) opener = focusedControl();
 
-    // Vue `watch` runs before the DOM update by default, which is what is wanted on open: Vuetify
-    // has not yet moved focus into the dialog, so `activeElement` is still the opener.
-    // https://vuejs.org/api/reactivity-core.html#watch
+    /**
+     * Vue `watch` runs before the DOM update by default, which is what is wanted on open: Vuetify
+     * has not yet moved focus into the dialog, so `activeElement` is still the opener.
+     * https://vuejs.org/api/reactivity-core.html#watch
+     */
     watch(isOpen, (open) => {
         if (open) {
             opener = focusedControl();
@@ -51,8 +55,10 @@ export const useReturnFocus = (isOpen: () => boolean): void => {
         if (target?.isConnected) void nextTick(() => target.focus({ preventScroll: true }));
     });
 
-    // A dialog mounted with `v-if` is destroyed in the same update that closes it, so the watcher
-    // above never sees the close: the opener still held at that point gets focus back here.
+    /**
+     * A dialog mounted with `v-if` is destroyed in the same update that closes it, so the watcher
+     * above never sees the close: the opener still held at that point gets focus back here.
+     */
     onScopeDispose(() => {
         const target = opener;
         opener = undefined;

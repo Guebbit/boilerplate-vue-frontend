@@ -51,8 +51,10 @@ describe('collectModuleRoutes', () => {
     });
 
     it('refuses two modules declaring the same route name', () => {
-        // Both `makeModule` calls below happen to reuse 'cart' as both name and path — the bug
-        // is exactly that vue-router would keep only the later one, silently.
+        /**
+         * Both `makeModule` calls below happen to reuse 'cart' as both name and path — the bug
+         * is exactly that vue-router would keep only the later one, silently.
+         */
         expect(() =>
             collectModuleRoutes([makeModule('cart'), makeModule('wishlist'), makeModule('cart')])
         ).toThrow('Two routes declare the same name: "cart".');

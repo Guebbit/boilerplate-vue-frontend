@@ -151,31 +151,39 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
         return fetchTarget(
             () =>
                 (known ? Promise.resolve(known) : apiGetAccount()).then((view) => {
-                    // The cached record is the writable `Account`; the view's two extra members
-                    // belong to the session store, and a `PUT` must never send them back.
+                    /**
+                     * The cached record is the writable `Account`; the view's two extra members
+                     * belong to the session store, and a `PUT` must never send them back.
+                     */
                     const { abilities, activity, ...payload } = view;
                     // to handle single-target stores we just need to select the correct identifier
                     selectedIdentifier.value = payload.id;
-                    // Both trackers follow the visitor's own analytics consent, checked fresh on
-                    // every fetch — this store also refetches right after a consent toggle
-                    // (`updateProfile`), which is what turns a withdrawal into a pause.
+                    /**
+                     * Both trackers follow the visitor's own analytics consent, checked fresh on
+                     * every fetch — this store also refetches right after a consent toggle
+                     * (`updateProfile`), which is what turns a withdrawal into a pause.
+                     */
                     const obs = useObservabilityStore();
                     // The account's own answer rules Umami while signed in, over the guest cookie.
                     obs.setUmamiConsent(payload.analyticsConsent === true);
                     obs.setFaroConsent(payload.analyticsConsent === true);
                     useAnalyticsConsentStore().setAccountChoice(payload.analyticsConsent);
-                    // Keep the shell's projection in step with the record just loaded, rules
-                    // included: a screen that renders before them hides what it should show.
+                    /**
+                     * Keep the shell's projection in step with the record just loaded, rules
+                     * included: a screen that renders before them hides what it should show.
+                     */
                     publishViewer(payload, { abilities, activity });
                     return payload;
                 }),
             undefined,
             { forced }
         ).then((payload) => {
-            // Outside `fetchTarget`'s own callback on purpose: `syncGuestAnalyticsConsent` may
-            // call `updateProfile`, which calls back into THIS function — nesting that inside the
-            // callback `fetchTarget` is still tracking as in-flight would re-enter its own loading
-            // state before it ever settles.
+            /**
+             * Outside `fetchTarget`'s own callback on purpose: `syncGuestAnalyticsConsent` may
+             * call `updateProfile`, which calls back into THIS function — nesting that inside the
+             * callback `fetchTarget` is still tracking as in-flight would re-enter its own loading
+             * state before it ever settles.
+             */
             if (!payload) return payload;
             return syncGuestAnalyticsConsent(payload).then(() => payload);
         });
@@ -277,9 +285,11 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
         options?: AxiosRequestConfig
     ) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
-        // Listed field by field rather than spread: a `Partial<Account>` can carry `role`,
-        // `verifiedAt` or `deletedAt`, and none of those is a user's to send. The two branches
-        // differ only in how the picture travels.
+        /**
+         * Listed field by field rather than spread: a `Partial<Account>` can carry `role`,
+         * `verifiedAt` or `deletedAt`, and none of those is a user's to send. The two branches
+         * differ only in how the picture travels.
+         */
         const fields = {
             username: userData.username,
             locale: userData.locale,
@@ -287,9 +297,11 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
             website: userData.website,
             analyticsConsent: userData.analyticsConsent
         };
-        // `in`, not a truthiness check: a caller that means to CLEAR the image passes
-        // `imageUrl: null`, a present key with a falsy value. Only `Profile.vue`'s details form
-        // omits the key outright, which is what keeps its save from re-sending a stale image.
+        /**
+         * `in`, not a truthiness check: a caller that means to CLEAR the image passes
+         * `imageUrl: null`, a present key with a falsy value. Only `Profile.vue`'s details form
+         * omits the key outright, which is what keeps its save from re-sending a stale image.
+         */
         const withImageUrl =
             'imageUrl' in userData ? { ...fields, imageUrl: userData.imageUrl } : fields;
         return updateTarget(
@@ -308,14 +320,18 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
                     publishViewer(data);
                     return data;
                 }),
-            // The new imageUrl comes back from the API; a Blob has no business in store state.
-            // `null` (image, phone, website) is dropped from this OPTIMISTIC patch only — the
-            // toolkit's `Partial<Account>` (the record's read shape) never carries a null, and the
-            // refetch right below corrects the visible state within one round trip regardless.
+            /**
+             * The new imageUrl comes back from the API; a Blob has no business in store state.
+             * `null` (image, phone, website) is dropped from this OPTIMISTIC patch only — the
+             * toolkit's `Partial<Account>` (the record's read shape) never carries a null, and the
+             * refetch right below corrects the visible state within one round trip regardless.
+             */
             optimisticPatch(userData),
             selectedIdentifier.value,
-            // One action, two avatar buttons: each path gets its own bucket key so the picker
-            // and the remove button spin one at a time. `imageUrl: null` is the removal.
+            /**
+             * One action, two avatar buttons: each path gets its own bucket key so the picker
+             * and the remove button spin one at a time. `imageUrl: null` is the removal.
+             */
             { key: updateLoadingKey(imageUpload, userData.imageUrl) }
         ).then((result) =>
             /*
@@ -381,8 +397,10 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
     const cancelPendingEmailChange = () =>
         fetchAny(
             () => apiCancelPendingEmailChange().then(refetchProfile),
-            // Own bucket so the Resend/Cancel buttons spin apart from the form; `forced` skips the
-            // keyed cache a write must never be served from.
+            /**
+             * Own bucket so the Resend/Cancel buttons spin apart from the form; `forced` skips the
+             * keyed cache a write must never be served from.
+             */
             { key: ['pending-email'], forced: true }
         );
 
@@ -461,8 +479,10 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
     const undoEmailChange = (token: string) =>
         fetchAny(() => apiUndoEmailChange({ token }).then(endLocalSession));
 
-    // A session that died on its own leaves the last person's record in the cache, and the shell
-    // is about to re-run the route guard: drop it so nothing of theirs can flash.
+    /**
+     * A session that died on its own leaves the last person's record in the cache, and the shell
+     * is about to re-run the route guard: drop it so nothing of theirs can flash.
+     */
     watch(
         () => session.expiredSignal,
         () => {
@@ -482,8 +502,10 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
         });
     };
 
-    // The consent banner's buttons (and the "Privacy choices" link) answer for the account while
-    // signed in: persist the answer, whose refetch re-applies Umami and the account choice.
+    /**
+     * The consent banner's buttons (and the "Privacy choices" link) answer for the account while
+     * signed in: persist the answer, whose refetch re-applies Umami and the account choice.
+     */
     useAnalyticsConsentStore().$onAction(({ name, after }) => {
         if ((name !== 'grant' && name !== 'deny') || !session.isAuth) return;
         after(() => {
@@ -520,8 +542,10 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
      */
     const requestAccountDelete = () =>
         fetchAny(() => apiRequestAccountDelete().then((data) => data)).then((schedule) => {
-            // After the call settles, not inside it: tearing the session down clears the query
-            // cache the call is still running under, which drops its answer.
+            /**
+             * After the call settles, not inside it: tearing the session down clears the query
+             * cache the call is still running under, which drops its answer.
+             */
             endLocalSession();
             return schedule;
         });

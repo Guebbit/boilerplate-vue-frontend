@@ -55,8 +55,10 @@ const mountView = (View: Component) => {
         global: {
             plugins: [createPinia(), vuetify, i18n],
             stubs: {
-                // Signup's human-check widget fetches its own config on mount — irrelevant here,
-                // same stub `password-reset-request-view.spec.ts` uses for the same reason.
+                /**
+                 * Signup's human-check widget fetches its own config on mount — irrelevant here,
+                 * same stub `password-reset-request-view.spec.ts` uses for the same reason.
+                 */
                 HumanCheck: { template: '<div />' }
             }
         }

@@ -121,8 +121,10 @@ describe('useAuditTrail — platform endpoint', () => {
             }));
 
     it('converts a datetime-local `since` (no timezone) into a real ISO instant', () =>
-        // What a `<input type="datetime-local">` actually yields — no `Z`, no offset — which the
-        // contract's `since` schema rejects outright.
+        /**
+         * What a `<input type="datetime-local">` actually yields — no `Z`, no offset — which the
+         * contract's `since` schema rejects outright.
+         */
         useAuditTrail('platform')
             .fetchPage({ since: '2026-09-24T10:00' })
             .then(() => {

@@ -37,10 +37,12 @@ sweepVisual(
             }
         },
         {
-            // Reached through a real enrollment, not `cy.visit` — the code comes from the demo
-            // outbox, and the backup codes only exist once the confirm call has actually armed
-            // the method. `cy.skipUnlessDemo()` inside `prepare` narrows this ONE case to the
-            // demo profile without touching the rest of the sweep.
+            /**
+             * Reached through a real enrollment, not `cy.visit` — the code comes from the demo
+             * outbox, and the backup codes only exist once the confirm call has actually armed
+             * the method. `cy.skipUnlessDemo()` inside `prepare` narrows this ONE case to the
+             * demo profile without touching the rest of the sweep.
+             */
             name: 'profile, 2FA backup codes',
             route: '/en/profile',
             readySelector: '#profile-page',
@@ -66,8 +68,10 @@ sweepVisual(
     'account — 2FA login challenge',
     [
         {
-            // Same reasoning as the a11y sweep's equivalent case: the challenge is claim-check
-            // state the Pinia store holds in memory, unreachable by `cy.visit` alone.
+            /**
+             * Same reasoning as the a11y sweep's equivalent case: the challenge is claim-check
+             * state the Pinia store holds in memory, unreachable by `cy.visit` alone.
+             */
             name: 'login, 2FA challenge',
             route: '/en/login',
             readySelector: '#login-page',

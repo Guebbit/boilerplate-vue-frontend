@@ -350,8 +350,10 @@ describe('the app-shaped bindings', () => {
     });
 
     it('passes undefined rather than an empty string when no locale is active', async () => {
-        // `Intl` treats `undefined` as "use the runtime default" and `''` as a RangeError, so the
-        // `|| undefined` is what keeps a locale-less boot from throwing on the first date.
+        /**
+         * `Intl` treats `undefined` as "use the runtime default" and `''` as a RangeError, so the
+         * `|| undefined` is what keeps a locale-less boot from throwing on the first date.
+         */
         vi.doMock('@/i18n', () => ({ getCurrentLocale: () => '' }));
 
         const { formatDateTime: withoutLocale } = await import('@/infrastructure/utils/formatters');

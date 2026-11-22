@@ -54,9 +54,11 @@ describe('Analytics, end to end', () => {
                 const addedBefore = before.cart_item_added ?? 0;
 
                 pageviewCount(session, since).then((viewsBefore) => {
-                    // Through the UI, not the API: the point is ONE user action, and it is the
-                    // click that sets both trackers off at once. Any in-stock product walks the
-                    // same path a person does, so the subject is asked for by role.
+                    /**
+                     * Through the UI, not the API: the point is ONE user action, and it is the
+                     * click that sets both trackers off at once. Any in-stock product walks the
+                     * same path a person does, so the subject is asked for by role.
+                     */
                     cy.loginAs('user');
                     cy.subjectId('product.inStock').then((id) => {
                         cy.visit(`/en/products/${id}`);
@@ -65,9 +67,11 @@ describe('Analytics, end to end', () => {
                     cy.get('[data-test=add-to-cart]').should('be.enabled').click();
                     cy.contains('Product added to cart').should('exist');
 
-                    // The control: the browser tracker reached this Umami on this visit. Without
-                    // it a silent frontend and a correct backend look identical to a broken
-                    // backend and a still-emitting frontend — both report one row.
+                    /**
+                     * The control: the browser tracker reached this Umami on this visit. Without
+                     * it a silent frontend and a correct backend look identical to a broken
+                     * backend and a still-emitting frontend — both report one row.
+                     */
                     waitForPageviews(session, since, viewsBefore + 1).then((views) =>
                         expect(
                             views,
@@ -91,11 +95,13 @@ describe('Analytics, end to end', () => {
     });
 
     it('writes no server-owned event for a visit that changes nothing', () => {
-        // The other half of the split. Loading a page writes its pageview and must emit none of
-        // the backend's event names — a reload is not a checkout. Measured as a DELTA rather than
-        // as a count over a window, because whatever the rest of the suite did a minute ago is not
-        // this test's business, and asserting on it would make this spec fail for other people's
-        // reasons.
+        /**
+         * The other half of the split. Loading a page writes its pageview and must emit none of
+         * the backend's event names — a reload is not a checkout. Measured as a DELTA rather than
+         * as a count over a window, because whatever the rest of the suite did a minute ago is not
+         * this test's business, and asserting on it would make this spec fail for other people's
+         * reasons.
+         */
         const since = Date.now() - 60 * 1000;
 
         // Umami's tag loads only after consent, so the visit below is only recorded with a yes.

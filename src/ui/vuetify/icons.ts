@@ -126,7 +126,9 @@ export const lucideIconSet: IconSet = {
      *  resolved from {@link lucideAliases} or passed straight by the caller.
      * @returns The icon vnode, sized relative to the surrounding text.
      */
-    // size/strokeWidth: match Vuetify's default icon-font metrics so lucide icons sit at the
-    // same visual weight as the rest of the UI.
+    /**
+     * size/strokeWidth: match Vuetify's default icon-font metrics so lucide icons sit at the
+     * same visual weight as the rest of the UI.
+     */
     component: (props: IconProps) => h(props.icon as Component, { size: '1.25em', strokeWidth: 2 })
 };

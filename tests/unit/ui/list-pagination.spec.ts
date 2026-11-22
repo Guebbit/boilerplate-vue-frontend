@@ -55,14 +55,18 @@ describe('ListPagination — the render boundary', () => {
     });
 
     it('renders nothing when length is omitted entirely', () => {
-        // The prop default is 0, so an unwired parent hides the pager rather than showing a
-        // broken one.
+        /**
+         * The prop default is 0, so an unwired parent hides the pager rather than showing a
+         * broken one.
+         */
         expect(isRendered(mountPager())).toBe(false);
     });
 
     it('renders nothing for a negative length', () => {
-        // Not reachable through the API, but `totalPages` is arithmetic on a count and a page
-        // size, and this is what the guard does with a nonsense result.
+        /**
+         * Not reachable through the API, but `totalPages` is arithmetic on a count and a page
+         * size, and this is what the guard does with a nonsense result.
+         */
         expect(isRendered(mountPager({ length: -1 }))).toBe(false);
     });
 });
@@ -93,8 +97,10 @@ describe('ListPagination — the model', () => {
     });
 
     it('caps the visible page buttons rather than rendering one per page', async () => {
-        // `total-visible="7"`. Without it a 500-page list renders 500 buttons, which is a real
-        // layout and performance problem on the admin lists.
+        /**
+         * `total-visible="7"`. Without it a 500-page list renders 500 buttons, which is a real
+         * layout and performance problem on the admin lists.
+         */
         const wrapper = mountPager({ length: 500 });
         await nextRenderTick(wrapper);
 

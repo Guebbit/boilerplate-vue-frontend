@@ -146,9 +146,11 @@ const vuetifyHeaders = computed(() =>
             isSortable.value &&
             !('synthetic' in header) &&
             (serverSortKeys === undefined || serverSortKeys.includes(header.key)),
-        // Vuetify's per-column comparator: `() => 0` keeps the server's order, so the header
-        // shows its arrow and reports the click without reshuffling the page it holds.
-        // https://vuetifyjs.com/en/api/v-data-table/#props-headers
+        /**
+         * Vuetify's per-column comparator: `() => 0` keeps the server's order, so the header
+         * shows its arrow and reports the click without reshuffling the page it holds.
+         * https://vuetifyjs.com/en/api/v-data-table/#props-headers
+         */
         ...(serverSortKeys && { sort: () => 0 })
     }))
 );

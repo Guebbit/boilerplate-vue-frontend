@@ -34,8 +34,10 @@ export const headingSlugs = (markdown: string): Set<string> => {
         if (!heading) continue;
 
         const explicit = /\{#([\w-]+)\}\s*$/.exec(heading)?.[1];
-        // The title VitePress slugs is the heading's text: link targets, code ticks and
-        // emphasis marks are not part of it.
+        /**
+         * The title VitePress slugs is the heading's text: link targets, code ticks and
+         * emphasis marks are not part of it.
+         */
         const text = heading
             .replace(/\{#[\w-]+\}\s*$/, '')
             .replaceAll(/\[([^\]]*)\]\([^)]*\)/g, '$1')
@@ -62,8 +64,10 @@ const isCitingFile = (file: string): boolean =>
         file.startsWith('scripts/') ||
         /\.ya?ml$/.test(file) ||
         file === '.env-example') &&
-    // The root bundles, `contracts/` and `shared/` are copies synced from the backend: their `docs/` links name the
-    // BACKEND's pages, which this repo cannot resolve.
+    /**
+     * The root bundles, `contracts/` and `shared/` are copies synced from the backend: their `docs/` links name the
+     * BACKEND's pages, which this repo cannot resolve.
+     */
     !/^(?:openapi|asyncapi[\w.]*)\.yaml$/.test(file) &&
     !file.startsWith('contracts/') &&
     !file.startsWith('shared/') &&

@@ -39,8 +39,10 @@ describe('axios instance defaults', () => {
     it('falls back to same-origin relative calls and a ten second timeout', () => {
         return loadClient({ VITE_API_URL: undefined, VITE_AXIOS_TIMEOUT: undefined }).then(
             ({ instance }) => {
-                // Empty string, not undefined: axios treats an undefined baseURL as "no prefix",
-                // which is the same result by accident rather than by decision.
+                /**
+                 * Empty string, not undefined: axios treats an undefined baseURL as "no prefix",
+                 * which is the same result by accident rather than by decision.
+                 */
                 expect(instance.defaults.baseURL).toBe('');
                 expect(instance.defaults.timeout).toBe(10_000);
             }

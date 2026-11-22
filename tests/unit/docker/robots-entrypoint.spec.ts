@@ -112,8 +112,10 @@ const countOf = (header: string): number => nginxConfig.split(header).length - 1
 
 describe('nginx.conf and the robots header', () => {
     it('sets the robots header wherever it sets the security headers', () => {
-        // `add_header` does not merge across levels: the server and every location with a header
-        // of its own repeat the whole set, so the two counts move together or a response loses one.
+        /**
+         * `add_header` does not merge across levels: the server and every location with a header
+         * of its own repeat the whole set, so the two counts move together or a response loses one.
+         */
         const securityBlocks = countOf('add_header X-Content-Type-Options "nosniff" always;');
 
         expect(securityBlocks).toBeGreaterThanOrEqual(6);

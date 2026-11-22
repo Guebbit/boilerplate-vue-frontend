@@ -112,8 +112,10 @@ beforeEach(() => {
     vi.clearAllMocks();
     responses = {
         'GET /config': configAnswer(),
-        // A minimal `User`, matching `auth-signup.spec.ts`'s own fixture — `SignupResponse` needs
-        // a real object not the bodyless `undefined` a 204 resolves to.
+        /**
+         * A minimal `User`, matching `auth-signup.spec.ts`'s own fixture — `SignupResponse` needs
+         * a real object not the bodyless `undefined` a 204 resolves to.
+         */
         'POST /account/signup': {
             id: 'u1',
             username: 'ada',
@@ -129,10 +131,12 @@ describe('Signup — the antibot header', () => {
 
         return fillAndSubmit(wrapper).then(() => {
             expect(signupRequest()?.headers?.['antibot-challenge-token']).toBe(SOLVED_TOKEN);
-            // Typing the password above queued a breach check this spec doesn't otherwise care
-            // about; without unmounting, its real 500ms debounce fires later — after this test's
-            // own assertions, sometimes mid-way through a LATER spec — and needs a fixture this
-            // one has no reason to carry. Unmounting cancels it (the very fix under test).
+            /**
+             * Typing the password above queued a breach check this spec doesn't otherwise care
+             * about; without unmounting, its real 500ms debounce fires later — after this test's
+             * own assertions, sometimes mid-way through a LATER spec — and needs a fixture this
+             * one has no reason to carry. Unmounting cancels it (the very fix under test).
+             */
             wrapper.unmount();
         });
     });

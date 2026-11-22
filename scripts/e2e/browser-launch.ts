@@ -53,17 +53,21 @@ export const withWindowSize = <TOptions extends LaunchOptions>(
 ): TOptions => {
     if (!browser.isHeadless) return launchOptions;
 
-    // Electron takes its window from BrowserWindow `preferences`, the recipe Cypress documents for
-    // setting the screen size in headless runs.
-    // https://docs.cypress.io/app/references/launching-browsers#Set-screen-size-when-running-headless
+    /**
+     * Electron takes its window from BrowserWindow `preferences`, the recipe Cypress documents for
+     * setting the screen size in headless runs.
+     * https://docs.cypress.io/app/references/launching-browsers#Set-screen-size-when-running-headless
+     */
     if (browser.name === 'electron')
         return {
             ...launchOptions,
             preferences: { ...launchOptions.preferences, width: size.width, height: size.height }
         };
 
-    // Chromium family: `--window-size=W,H` sets the initial window in CSS pixels.
-    // https://peter.sh/experiments/chromium-command-line-switches/#window-size
+    /**
+     * Chromium family: `--window-size=W,H` sets the initial window in CSS pixels.
+     * https://peter.sh/experiments/chromium-command-line-switches/#window-size
+     */
     if (browser.family === 'chromium')
         return {
             ...launchOptions,

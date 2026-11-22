@@ -33,8 +33,10 @@ describe('getFirstApiError', () => {
     });
 
     it('returns undefined for an empty `errors` array', () => {
-        // Legal at the type level — the contract puts no length guarantee on it — so the readers
-        // downstream must never index into it blind.
+        /**
+         * Legal at the type level — the contract puts no length guarantee on it — so the readers
+         * downstream must never index into it blind.
+         */
         expect(getFirstApiError({ errors: [] })).toBeUndefined();
     });
 

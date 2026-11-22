@@ -64,8 +64,10 @@ describe('Cart', () => {
 
     describe('Cart with items', () => {
         beforeEach(() => {
-            // The seed leaves the customer's basket empty: two lines, one of them plural, are put
-            // in through the API so every case below starts from the same cart.
+            /**
+             * The seed leaves the customer's basket empty: two lines, one of them plural, are put
+             * in through the API so every case below starts from the same cart.
+             */
             cy.subjectId('product.inStock').then((productId) => {
                 cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 2 });
             });
@@ -143,8 +145,10 @@ describe('Cart', () => {
         });
 
         it('checks out and redirects to the new order', () => {
-            // `pickup` needs no address, so the checkout button enables on the method alone —
-            // the cart holds physical goods, which now require one to check out at all.
+            /**
+             * `pickup` needs no address, so the checkout button enables on the method alone —
+             * the cart holds physical goods, which now require one to check out at all.
+             */
             cy.get('[data-test=shipping-method-pickup]').click();
             cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
             cy.url().should('match', /\/orders\/[^/]+$/);

@@ -76,18 +76,24 @@ describe('entry chunk budget', () => {
     let buildOutputDirectory: string;
     let html: string;
 
-    // One production build serves every assertion below — `vite build`'s own cost (a handful of
-    // seconds) is why this is a `beforeAll`, not a `beforeEach`.
+    /**
+     * One production build serves every assertion below — `vite build`'s own cost (a handful of
+     * seconds) is why this is a `beforeAll`, not a `beforeEach`.
+     */
     beforeAll(() => {
         buildOutputDirectory = mkdtempSync(path.join(tmpdir(), 'entry-chunk-budget-'));
-        // The locally-installed `vite` binary directly, not `npx vite`: this runs inside the
-        // unit-test suite, so it must not depend on npm resolving or fetching anything.
-        // `vite build --outDir <dir>`: https://vite.dev/guide/cli.html#build
+        /**
+         * The locally-installed `vite` binary directly, not `npx vite`: this runs inside the
+         * unit-test suite, so it must not depend on npm resolving or fetching anything.
+         * `vite build --outDir <dir>`: https://vite.dev/guide/cli.html#build
+         */
         execFileSync(
             path.join(ROOT, 'node_modules', '.bin', 'vite'),
             ['build', '--outDir', buildOutputDirectory],
-            // Vitest sets NODE_ENV=test, which would make this a DEV build (devtools, dev builds
-            // of vue-router and vue-i18n) and hide what `isReportOnly()` pulls in under PROD.
+            /**
+             * Vitest sets NODE_ENV=test, which would make this a DEV build (devtools, dev builds
+             * of vue-router and vue-i18n) and hide what `isReportOnly()` pulls in under PROD.
+             */
             { cwd: ROOT, stdio: 'ignore', env: { ...process.env, NODE_ENV: 'production' } }
         );
         html = readFileSync(path.join(buildOutputDirectory, 'index.html'), 'utf8');
@@ -103,24 +109,30 @@ describe('entry chunk budget', () => {
             0
         );
 
-        // Byte counts in the failure message: the budget and the regression are both easier to
-        // read as KB than as a bare byte count.
+        /**
+         * Byte counts in the failure message: the budget and the regression are both easier to
+         * read as KB than as a bare byte count.
+         */
         expect(size, `first-paint JS grew to ${(size / 1024).toFixed(1)} KB`).toBeLessThanOrEqual(
             ENTRY_CHUNK_BUDGET_BYTES
         );
     });
 
     it('does not eagerly load the response-schema contract chunk', () => {
-        // The schema chunk is real (the bundler names it after its source, `contracts/rest.generated/schemas.zod.ts`) — this
-        // fails closed if the split silently stops happening, not just if it stays but loads early.
+        /**
+         * The schema chunk is real (the bundler names it after its source, `contracts/rest.generated/schemas.zod.ts`) — this
+         * fails closed if the split silently stops happening, not just if it stays but loads early.
+         */
         const schemaChunk = readdirSync(path.join(buildOutputDirectory, 'assets')).find((file) =>
             /^schemas\.zod-.*\.js$/.test(file)
         );
         expect(schemaChunk, 'no schemas.zod-*.js chunk in the build output').toBeDefined();
 
-        // `<script>` and `<link rel="modulepreload">` are what the browser fetches before or at
-        // parse time; a dynamic `import()` elsewhere in the entry chunk's SOURCE is fine — that's
-        // the lazy load itself — so this checks the HTML shell, not the entry chunk's text.
+        /**
+         * `<script>` and `<link rel="modulepreload">` are what the browser fetches before or at
+         * parse time; a dynamic `import()` elsewhere in the entry chunk's SOURCE is fine — that's
+         * the lazy load itself — so this checks the HTML shell, not the entry chunk's text.
+         */
         expect(html).not.toContain(schemaChunk);
     });
 });

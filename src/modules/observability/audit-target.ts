@@ -30,8 +30,10 @@ export const auditTargetLocation = (
 ): RouteLocationRaw | undefined => {
     if (!targetId) return undefined;
 
-    // One literal per route name, each inside its own guard: a type with no page (an API key, a
-    // locale entry, a session) falls through to plain text.
+    /**
+     * One literal per route name, each inside its own guard: a type with no page (an API key, a
+     * locale entry, a session) falls through to plain text.
+     */
     switch (targetType) {
         case 'order': {
             return linkIfRouted(router, 'OrderTarget', { id: targetId });

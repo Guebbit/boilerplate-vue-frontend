@@ -85,8 +85,10 @@ export const useAccountAuthStore = defineStore('account-auth', () => {
         data: Awaited<ReturnType<typeof apiLogin>>,
         remember: boolean
     ): Promise<LoginOutcome> | LoginOutcome => {
-        // `in` rather than a property read: `AuthTokens` carries no `mfaRequired` field at
-        // all, so the union needs a guard TS can narrow on rather than an optional access.
+        /**
+         * `in` rather than a property read: `AuthTokens` carries no `mfaRequired` field at
+         * all, so the union needs a guard TS can narrow on rather than an optional access.
+         */
         if ('mfaRequired' in data)
             return {
                 kind: 'mfa',

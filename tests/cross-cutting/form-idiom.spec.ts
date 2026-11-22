@@ -212,8 +212,10 @@ describe('optionKeysOf — real keys, not a substring match', () => {
     });
 
     it('is not fooled by the word sitting in a comment or an unrelated string', () => {
-        // A plain substring check (`call.includes('revalidateOn')`) would have read this
-        // as complete; nothing here actually supplies it.
+        /**
+         * A plain substring check (`call.includes('revalidateOn')`) would have read this
+         * as complete; nothing here actually supplies it.
+         */
         const call = `useStructureFormValidation(data, schema, {
             // revalidateOn: locale, — deliberately left out for now
             label: 'no revalidateOn here either',

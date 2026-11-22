@@ -135,8 +135,10 @@ export const fillAddressDialog = (address: {
     country: string;
 }): void => {
     cy.get('[data-test=address-dialog]').within(() => {
-        // The five text inputs come in the form's own order; they carry no `data-test` of their
-        // own because the dialog is also the profile's, and its specs address them the same way.
+        /**
+         * The five text inputs come in the form's own order; they carry no `data-test` of their
+         * own because the dialog is also the profile's, and its specs address them the same way.
+         */
         const values = [address.label, address.fullName, address.street, address.zip, address.city];
         for (const [index, value] of values.entries()) {
             cy.get('input').eq(index).should('not.be.disabled').clear();

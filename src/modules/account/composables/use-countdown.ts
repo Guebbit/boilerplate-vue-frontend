@@ -38,10 +38,12 @@ export const useCountdown = (deadline: Ref<number | undefined>) => {
         handle = undefined;
     };
 
-    // `now` is refreshed the moment a deadline is set, not once the first interval fires a second
-    // later — otherwise the first reads count down from whenever this scope was created, which
-    // for a long-lived store is minutes of drift. `flush: 'sync'` is what makes "the moment"
-    // literal: a default watcher would leave one flush cycle reading the stale `now`.
+    /**
+     * `now` is refreshed the moment a deadline is set, not once the first interval fires a second
+     * later — otherwise the first reads count down from whenever this scope was created, which
+     * for a long-lived store is minutes of drift. `flush: 'sync'` is what makes "the moment"
+     * literal: a default watcher would leave one flush cycle reading the stale `now`.
+     */
     watch(
         deadline,
         (value) => {
@@ -128,8 +130,10 @@ export const useCountdownAnnouncement = (
      */
     let announcedThreshold: number | undefined;
 
-    // `flush: 'sync'` for the same reason `useCountdown`'s own deadline watch uses it: the
-    // announcement should update in step with `secondsLeft`, not one flush cycle behind it.
+    /**
+     * `flush: 'sync'` for the same reason `useCountdown`'s own deadline watch uses it: the
+     * announcement should update in step with `secondsLeft`, not one flush cycle behind it.
+     */
     watch(
         secondsLeft,
         (seconds) => {

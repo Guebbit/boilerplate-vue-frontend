@@ -54,8 +54,10 @@ describe('CU27 · I filled a cart before I had signed in', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
-        // The customer's own cart may hold lines already; start from empty so a line can only be
-        // there because this story put it there.
+        /**
+         * The customer's own cart may hold lines already; start from empty so a line can only be
+         * there because this story put it there.
+         */
         cy.apiAs('user', 'DELETE', '/cart/items');
     });
 
@@ -141,8 +143,10 @@ describe('CU27 · I filled a cart before I had signed in', () => {
                 cy.step('a guest adds a product, and the editor then takes it off sale');
                 guestAdds('product.inStock');
                 cy.get('[data-test=nav-badge]').should('contain.text', '1');
-                // The seeded customer also saves this product, and deleting it tells them about
-                // the wishlist line too; take it off the list so the bell holds the merge's message only.
+                /**
+                 * The seeded customer also saves this product, and deleting it tells them about
+                 * the wishlist line too; take it off the list so the bell holds the merge's message only.
+                 */
                 cy.apiAs('user', 'DELETE', `/wishlist/items/${productId}`);
                 cy.apiAs('editor', 'DELETE', `/products/${productId}`);
 

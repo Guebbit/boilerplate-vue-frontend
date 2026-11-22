@@ -72,8 +72,10 @@ export function readUmamiConfig(): UmamiConfig | undefined {
 
     const source = runtimeValue('UMAMI_SRC') ?? import.meta.env.VITE_UMAMI_SRC?.trim();
 
-    // Both are required: a website id with no script to load, or a script with no website to
-    // report to, is a misconfiguration and analytics stays off.
+    /**
+     * Both are required: a website id with no script to load, or a script with no website to
+     * report to, is a misconfiguration and analytics stays off.
+     */
     if (!websiteId || !source) {
         return undefined;
     }

@@ -124,8 +124,10 @@ describe('Authentication', () => {
             cy.get('[type=checkbox]').check();
             cy.get('#signup-page button[type="submit"]').click();
 
-            // `unverified` is a role, not a waiting room: the session starts here and the banner
-            // is what asks for the address, rather than a login form standing in the way.
+            /**
+             * `unverified` is a role, not a waiting room: the session starts here and the banner
+             * is what asks for the address, rather than a login form standing in the way.
+             */
             cy.url().should('not.include', '/signup');
             cy.url().should('not.include', '/login');
             cy.get('#home-page').should('exist');
@@ -221,15 +223,19 @@ describe('Authentication', () => {
         });
     });
 
-    // Live profile only: this is the composed stack's cookie path, `withCredentials: true`
-    // (src/infrastructure/http/index.ts) sending the refresh cookie from :8085 to :3000 with the
-    // real session store behind it. A forced 401 is used instead of reaching into Pinia to clear the
-    // in-memory access token: it drives the exact same interceptor path
-    // (onResponseRejectWithRefresh -> POST /account/refresh -> retry) through a real network
-    // round-trip, without needing a test-only hook into application state.
+    /**
+     * Live profile only: this is the composed stack's cookie path, `withCredentials: true`
+     * (src/infrastructure/http/index.ts) sending the refresh cookie from :8085 to :3000 with the
+     * real session store behind it. A forced 401 is used instead of reaching into Pinia to clear the
+     * in-memory access token: it drives the exact same interceptor path
+     * (onResponseRejectWithRefresh -> POST /account/refresh -> retry) through a real network
+     * round-trip, without needing a test-only hook into application state.
+     */
     describe('Live session refresh (live profile only)', () => {
-        // A regular `function`: Mocha's `this.skip()` needs the test context. `jwt` mode only —
-        // `cookie` mode has no refresh to cross the boundary with.
+        /**
+         * A regular `function`: Mocha's `this.skip()` needs the test context. `jwt` mode only —
+         * `cookie` mode has no refresh to cross the boundary with.
+         */
         it('recovers from a forced 401 by refreshing across the :8085 -> :3000 boundary', function () {
             cy.skipUnlessLive();
             skipUnlessSessionMode(this, 'jwt');
@@ -239,9 +245,11 @@ describe('Authentication', () => {
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
 
             let forced401 = false;
-            // Pinned to the API origin: a bare glob would also match the app's own `/en/orders`
-            // document route. The list reads `POST /orders/search`, never `GET /orders`, so that
-            // is the request to fail once.
+            /**
+             * Pinned to the API origin: a bare glob would also match the app's own `/en/orders`
+             * document route. The list reads `POST /orders/search`, never `GET /orders`, so that
+             * is the request to fail once.
+             */
             cy.env(['apiUrl']).then(({ apiUrl }) => {
                 cy.intercept('POST', `${apiUrl}/account/refresh`).as('refresh');
                 cy.intercept('POST', `${apiUrl}/orders/search`, (request) => {
@@ -256,15 +264,19 @@ describe('Authentication', () => {
 
             cy.reload();
 
-            // The forced 401 must fire, then the retry must reach the API and succeed. Without
-            // these waits the test would pass on the ordinary boot refresh alone.
+            /**
+             * The forced 401 must fire, then the retry must reach the API and succeed. Without
+             * these waits the test would pass on the ordinary boot refresh alone.
+             */
             cy.wait('@ordersSearch').its('response.statusCode').should('eq', 401);
             cy.wait('@ordersSearch').its('response.statusCode').should('eq', 200);
             // Boot refresh + the refresh the 401 triggered.
             cy.get('@refresh.all').should('have.length.at.least', 2);
 
-            // If the refresh cookie hadn't crossed the origin boundary, the retried request would
-            // 401 again and the app would bounce to /login instead of re-rendering the list.
+            /**
+             * If the refresh cookie hadn't crossed the origin boundary, the retried request would
+             * 401 again and the app would bounce to /login instead of re-rendering the list.
+             */
             cy.url().should('not.include', '/login');
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
         });

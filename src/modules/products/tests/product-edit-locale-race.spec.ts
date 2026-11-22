@@ -109,9 +109,11 @@ describe('the edit form under a locales-before-admin-record race', () => {
             props: { id: 'p1' },
             global: {
                 plugins: [router, vuetify, i18n],
-                // Without this, a render error thrown from Vue's own reactivity flush (exactly
-                // what the bug produces) never reaches this spec as a rejection — it is only
-                // observable through the handler.
+                /**
+                 * Without this, a render error thrown from Vue's own reactivity flush (exactly
+                 * what the bug produces) never reaches this spec as a rejection — it is only
+                 * observable through the handler.
+                 */
                 config: { errorHandler: (error: unknown) => renderErrors.push(error) }
             }
         });
@@ -122,8 +124,10 @@ describe('the edit form under a locales-before-admin-record race', () => {
         return flushPromises()
             .then(() => {
                 expect(renderErrors).toHaveLength(0);
-                // The fallback tag is known, but nothing is open yet: `form.translations` has no
-                // `en` entry until the admin record lands.
+                /**
+                 * The fallback tag is known, but nothing is open yet: `form.translations` has no
+                 * `en` entry until the admin record lands.
+                 */
                 expect(wrapper.find('[data-test=translation-tab-en]').exists()).toBe(false);
                 expect(wrapper.find('[data-test=translation-title-field]').exists()).toBe(false);
 

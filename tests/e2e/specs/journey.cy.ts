@@ -23,8 +23,10 @@ describe('The customer journey', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
-        // `cy.restore()` clears the session server-side, but the page in front of it already
-        // booted with the old one — reload so the journey genuinely starts as a guest.
+        /**
+         * `cy.restore()` clears the session server-side, but the page in front of it already
+         * booted with the old one — reload so the journey genuinely starts as a guest.
+         */
         cy.visit('/en');
     });
 
@@ -36,9 +38,11 @@ describe('The customer journey', () => {
         cy.get('[data-test=product-card-link]').first().click();
 
         cy.get('#product-target').should('exist');
-        // A shopper sees the flag, never the count. `#product-target` exists before the product
-        // has loaded and the stat then shows a placeholder, so the flag's words are the proof the
-        // real record has arrived.
+        /**
+         * A shopper sees the flag, never the count. `#product-target` exists before the product
+         * has loaded and the stat then shows a placeholder, so the flag's words are the proof the
+         * real record has arrived.
+         */
         cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
         cy.get('[data-test=product-stock]').invoke('text').should('not.match', /\d/);
         cy.subjectId('product.rich').then((productId) => {
@@ -48,9 +52,11 @@ describe('The customer journey', () => {
                 }
             );
         });
-        // No wall for the cart: a guest may add to a cart kept in the browser, and is told that
-        // checking out and saving need an account. (Nothing is added here, so the sign-in below
-        // has no guest cart to merge.)
+        /**
+         * No wall for the cart: a guest may add to a cart kept in the browser, and is told that
+         * checking out and saving need an account. (Nothing is added here, so the sign-in below
+         * has no guest cart to merge.)
+         */
         cy.get('[data-test=add-to-cart]').should('not.be.disabled');
         cy.contains('Sign in to check out').should('exist');
         cy.get('[data-test=wishlist-toggle]').should('not.exist');
@@ -61,8 +67,10 @@ describe('The customer journey', () => {
         // ── Customer: filter → product → cart → checkout ────────────────────────────
         cy.navigateTo('/en/products');
         cy.filterByNarrowestCategoryOf('product.rich');
-        // The filter is a request; against a fast API the unfiltered list is still on screen for
-        // a beat. One row is the chip's own count, so waiting for it IS waiting for the filter.
+        /**
+         * The filter is a request; against a fast API the unfiltered list is still on screen for
+         * a beat. One row is the chip's own count, so waiting for it IS waiting for the filter.
+         */
         cy.get('[data-test=product-card-link]').should('have.length', 1);
         cy.get('[data-test=product-card-link]').first().click();
         cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
@@ -70,22 +78,28 @@ describe('The customer journey', () => {
         cy.contains('Product added to cart').should('exist');
 
         cy.goToCart();
-        // The demo customer's cart starts empty (the seeded carts belong to other accounts), so
-        // the line just added is the whole cart.
+        /**
+         * The demo customer's cart starts empty (the seeded carts belong to other accounts), so
+         * the line just added is the whole cart.
+         */
         cy.get('[data-test=cart-item]').should('have.length', 1);
         cy.checkoutWith('standard');
 
         // Checkout lands straight on the new order's own page.
         cy.get('#order-target').should('exist');
 
-        // The confirmation email lists what was bought — read from the outbox the way a customer
-        // reads their inbox. The one line the customer's empty cart started with is on it.
-        // (Only the demo profile has a readable outbox; live, the email leaves for real.)
+        /**
+         * The confirmation email lists what was bought — read from the outbox the way a customer
+         * reads their inbox. The one line the customer's empty cart started with is on it.
+         * (Only the demo profile has a readable outbox; live, the email leaves for real.)
+         */
         cy.env(['liveProfile']).then(({ liveProfile }) => {
             if (liveProfile === true) return;
             cy.emailTo(seedAccount('user').email).then((email) => {
-                // The outbox records template variables; the line items are structured data the
-                // order page below asserts far more precisely than a variable dump could.
+                /**
+                 * The outbox records template variables; the line items are structured data the
+                 * order page below asserts far more precisely than a variable dump could.
+                 */
                 expectMailTemplate(email, 'orders.order-confirm');
             });
         });
@@ -99,17 +113,21 @@ describe('The customer journey', () => {
         cy.get('[data-test=order-cancel]').should('not.exist');
         cy.get('[data-test=order-reorder]').should('exist');
 
-        // ── The shelf recovered — same product, same count as the journey began with ─
-        // The walk's toasts stack over the table's action column until dismissed — close them
-        // the way a person does before clicking through the list again.
+        /**
+         * ── The shelf recovered — same product, same count as the journey began with ─
+         * The walk's toasts stack over the table's action column until dismissed — close them
+         * the way a person does before clicking through the list again.
+         */
         cy.get('.v-alert').each((alert) => {
             cy.wrap(alert).find('.v-alert__close button').click();
         });
         cy.get('.v-alert').should('not.exist');
         cy.navigateTo('/en/products');
-        // The store kept the walk's own filter, so the list comes back already narrowed —
-        // clicking the chip again would TOGGLE the filter off, and the row click would then land
-        // on whatever the unfiltered list re-rendered underneath it.
+        /**
+         * The store kept the walk's own filter, so the list comes back already narrowed —
+         * clicking the chip again would TOGGLE the filter off, and the row click would then land
+         * on whatever the unfiltered list re-rendered underneath it.
+         */
         cy.get('[data-test=product-card-link]').should('have.length', 1);
         cy.get('[data-test=product-card-link]').first().click();
         cy.get('[data-test=product-stock]').should('contain.text', 'In stock');

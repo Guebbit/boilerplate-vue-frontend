@@ -25,16 +25,20 @@ export default [
         component: () => import('./views/Signup.vue')
     },
     {
-        // Guest, like `Login`: the challenge token is the credential here, not a session, and a
-        // signed-in visitor has no business on this page.
+        /**
+         * Guest, like `Login`: the challenge token is the credential here, not a session, and a
+         * signed-in visitor has no business on this page.
+         */
         path: 'login/2fa',
         name: 'TwoFactorChallenge',
         meta: { access: 'guest', title: 'two-factor-challenge-page.page-title' },
         component: () => import('./views/TwoFactorChallenge.vue')
     },
     {
-        // Guest like the 2FA step: the claim check from the sign-in is the credential, and a
-        // visitor holding a live session has nothing to restore.
+        /**
+         * Guest like the 2FA step: the claim check from the sign-in is the credential, and a
+         * visitor holding a live session has nothing to restore.
+         */
         path: 'login/restore',
         name: 'AccountRestoreChallenge',
         meta: { access: 'guest', title: 'account-restore-challenge-page.page-title' },
@@ -47,16 +51,20 @@ export default [
         component: () => import('./views/PasswordResetRequest.vue')
     },
     {
-        // Public like the other mailed links: the token is the credential, and the owner may open
-        // it in a browser that is still signed in. A reset ends every session, this tab's too.
+        /**
+         * Public like the other mailed links: the token is the credential, and the owner may open
+         * it in a browser that is still signed in. A reset ends every session, this tab's too.
+         */
         path: 'password-reset/confirm',
         name: 'PasswordResetConfirm',
         meta: { title: 'password-reset-confirm-page.page-title' },
         component: () => import('./views/PasswordResetConfirm.vue')
     },
     {
-        // The first password of an account staff created: the same page and token as a reset, in
-        // setup mode, which always asks for the Terms tick. Public for the same reason.
+        /**
+         * The first password of an account staff created: the same page and token as a reset, in
+         * setup mode, which always asks for the Terms tick. Public for the same reason.
+         */
         path: 'account-setup',
         name: 'AccountSetup',
         meta: { title: 'account-setup-page.page-title' },
@@ -64,9 +72,11 @@ export default [
         component: () => import('./views/PasswordResetConfirm.vue')
     },
     {
-        // Public deliberately: the restore link arrives by email, and the visitor following it is
-        // by definition not logged in (the deletion ended every session) — the token is the
-        // credential.
+        /**
+         * Public deliberately: the restore link arrives by email, and the visitor following it is
+         * by definition not logged in (the deletion ended every session) — the token is the
+         * credential.
+         */
         path: 'account-restore',
         name: 'AccountRestore',
         meta: { title: 'account-restore-page.page-title' },
@@ -87,24 +97,30 @@ export default [
         component: () => import('./views/EmailChangeConfirm.vue')
     },
     {
-        // Public, same reasoning: the undo link goes to the OLD address, whose reader may have no
-        // session at all (that is the point: the change was not theirs).
+        /**
+         * Public, same reasoning: the undo link goes to the OLD address, whose reader may have no
+         * session at all (that is the point: the change was not theirs).
+         */
         path: 'email-change/undo',
         name: 'EmailChangeUndo',
         meta: { title: 'email-change-undo-page.page-title' },
         component: () => import('./views/EmailChangeUndo.vue')
     },
     {
-        // Public: the backend's own redirect (`router/index.ts`'s locale-less `/oauth/callback`
-        // shell) lands an ANONYMOUS browser here mid-flow, before any session is confirmed.
+        /**
+         * Public: the backend's own redirect (`router/index.ts`'s locale-less `/oauth/callback`
+         * shell) lands an ANONYMOUS browser here mid-flow, before any session is confirmed.
+         */
         path: 'oauth/callback',
         name: 'OAuthCallback',
         meta: { title: 'oauth.callback-page.page-title' },
         component: () => import('./views/OAuthCallback.vue')
     },
     {
-        // Signed in, unlike the confirms above: the download is the account's own data, and the
-        // API asks for a fresh session before sending it. The id in the path is not a credential.
+        /**
+         * Signed in, unlike the confirms above: the download is the account's own data, and the
+         * API asks for a fresh session before sending it. The id in the path is not a credential.
+         */
         path: 'account-export',
         name: 'AccountExportDownload',
         meta: { access: 'auth', title: 'account-export-page.page-title' },

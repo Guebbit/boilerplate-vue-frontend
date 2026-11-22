@@ -12,9 +12,11 @@ vi.mock('@/infrastructure/session', () => ({
 
 vi.mock('pinia', () => ({
     storeToRefs: (store: { accessToken: { value: undefined } }) => store,
-    // `@/infrastructure/http` now pulls in `step-up.ts` → `reauth-prompt.ts`, whose
-    // `defineStore('reauth-prompt', ...)` call runs at import time — never invoked by these
-    // onResponseReject-only tests, so a stub that satisfies the call without a real Pinia is enough.
+    /**
+     * `@/infrastructure/http` now pulls in `step-up.ts` → `reauth-prompt.ts`, whose
+     * `defineStore('reauth-prompt', ...)` call runs at import time — never invoked by these
+     * onResponseReject-only tests, so a stub that satisfies the call without a real Pinia is enough.
+     */
     defineStore: () => vi.fn()
 }));
 
@@ -194,8 +196,10 @@ describe('onResponseReject — fallback normalisation', () => {
     });
 
     it('treats exactly 500 as a server error', () =>
-        // The `>= 500` boundary. With `> 500` a plain 500 would fall through and surface the raw
-        // statusText instead — the single most common server failure, mis-messaged.
+        /**
+         * The `>= 500` boundary. With `> 500` a plain 500 would fall through and surface the raw
+         * statusText instead — the single most common server failure, mis-messaged.
+         */
         import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) =>
             expect(onResponseReject(makeAxiosError(500, {}) as never)).rejects.toMatchObject({
                 detail: enMessages['api-errors']['internal-server-error']
@@ -274,8 +278,10 @@ describe('onResponseReject — fallback normalisation', () => {
     });
 
     it('falls back to the axios message when statusText is empty', () =>
-        // `||`, not `??`: axios sets `statusText` to '' rather than undefined on many adapters,
-        // and an empty message would render as a blank error toast.
+        /**
+         * `||`, not `??`: axios sets `statusText` to '' rather than undefined on many adapters,
+         * and an empty message would render as a blank error toast.
+         */
         import('@/infrastructure/http/interceptors.ts').then(({ onResponseReject }) =>
             expect(
                 onResponseReject(

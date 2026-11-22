@@ -113,8 +113,10 @@ describe('PaymentPanel', () => {
     it('offers the test cards in a development build, once the picker has loaded', () => {
         const { wrapper } = mountPanel();
 
-        // The picker is a lazy chunk: its first import compiles the SFC, which under CPU load
-        // outlasts vi.waitFor's default 1s. 15s bounds a hang, it is not a pause.
+        /**
+         * The picker is a lazy chunk: its first import compiles the SFC, which under CPU load
+         * outlasts vi.waitFor's default 1s. 15s bounds a hang, it is not a pause.
+         */
         return vi.waitFor(
             () => {
                 expect(wrapper.find('[data-test=payment-method-select]').exists()).toBe(true);
@@ -288,9 +290,11 @@ describe('PaymentPanel', () => {
             return nextRenderTick(wrapper)
                 .then(() => {
                     expect(wrapper.find('[data-test=payment-status]').exists()).toBe(true);
-                    // fetchPaymentForOrder is stubbed to resolve without touching store.payment,
-                    // so order-1's record is still the only thing in the store — a stand-in for a
-                    // slow response landing after the caller has already moved on.
+                    /**
+                     * fetchPaymentForOrder is stubbed to resolve without touching store.payment,
+                     * so order-1's record is still the only thing in the store — a stand-in for a
+                     * slow response landing after the caller has already moved on.
+                     */
                     return wrapper.setProps({ orderId: 'order-2' });
                 })
                 .then(() => nextRenderTick(wrapper))

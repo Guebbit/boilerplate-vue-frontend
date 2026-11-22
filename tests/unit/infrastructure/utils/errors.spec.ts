@@ -60,9 +60,11 @@ describe('notifyErrorMessages', () => {
         expect(addMessage).toHaveBeenCalledWith(enMessages['api-errors'].unknown);
     });
 
-    // The `&& error` / `&& error.message` guards below each exist to stop an *empty* message
-    // being shown to a user as if it were an explanation. They are individually invisible in a
-    // review and individually easy to drop, so each falsy shape gets its own case.
+    /**
+     * The `&& error` / `&& error.message` guards below each exist to stop an *empty* message
+     * being shown to a user as if it were an explanation. They are individually invisible in a
+     * review and individually easy to drop, so each falsy shape gets its own case.
+     */
 
     it('falls back rather than showing an empty string', () => {
         const addMessage = vi.fn();
@@ -84,24 +86,30 @@ describe('notifyErrorMessages', () => {
     });
 
     it('falls back when the message property is not a string', () => {
-        // e.g. a parsed API body whose `message` is an array of validation errors — rendering
-        // that raw would put "[object Object]" in front of a user.
+        /**
+         * e.g. a parsed API body whose `message` is an array of validation errors — rendering
+         * that raw would put "[object Object]" in front of a user.
+         */
         const addMessage = vi.fn();
         notifyErrorMessages(addMessage, { message: { nested: true } });
         expect(addMessage).toHaveBeenCalledWith(enMessages['api-errors'].unknown);
     });
 
     it('falls back for null without throwing', () => {
-        // `typeof null === 'object'`, so the `error &&` guard is the only thing preventing a
-        // TypeError here — and `null` is what an empty rejected body deserialises to.
+        /**
+         * `typeof null === 'object'`, so the `error &&` guard is the only thing preventing a
+         * TypeError here — and `null` is what an empty rejected body deserialises to.
+         */
         const addMessage = vi.fn();
         expect(() => notifyErrorMessages(addMessage, null)).not.toThrow();
         expect(addMessage).toHaveBeenCalledWith(enMessages['api-errors'].unknown);
     });
 
     it('reports the original value to observability, not the derived message', () => {
-        // The user gets a readable string; telemetry must get the real thing, stack included,
-        // or the report is worthless for debugging.
+        /**
+         * The user gets a readable string; telemetry must get the real thing, stack included,
+         * or the report is worthless for debugging.
+         */
         const error = new Error('network down');
 
         notifyErrorMessages(vi.fn(), error);
@@ -110,8 +118,10 @@ describe('notifyErrorMessages', () => {
     });
 
     it('reports even when the message could not be derived', () => {
-        // The fallback path is the one where telemetry matters most: nobody can act on
-        // "Unknown error" without the underlying value.
+        /**
+         * The fallback path is the one where telemetry matters most: nobody can act on
+         * "Unknown error" without the underlying value.
+         */
         notifyErrorMessages(vi.fn(), 42);
 
         expect(captureExceptionMock).toHaveBeenCalledWith(42);

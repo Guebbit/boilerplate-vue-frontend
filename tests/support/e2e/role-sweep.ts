@@ -217,8 +217,10 @@ export const sweepRoles = (
     describe(`roles — ${label}`, () => {
         for (const persona of personas)
             it(`${persona} gets the pages its rules allow and none else`, function () {
-                // The jwt leg only: the pages and the doors they call do not depend on how the
-                // session is kept, so the cookie leg would repeat the same walk.
+                /**
+                 * The jwt leg only: the pages and the doors they call do not depend on how the
+                 * session is kept, so the cookie leg would repeat the same walk.
+                 */
                 skipUnlessSessionMode(this, 'jwt');
                 const refusals: number[] = [];
                 cy.restore();

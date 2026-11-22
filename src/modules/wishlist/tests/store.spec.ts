@@ -81,9 +81,11 @@ describe('addToWishlist', () => {
         const store = useWishlistStore();
         return store.addToWishlist('p1').then(() => {
             expect(store.items.map(({ productId }) => productId)).toEqual(['p1', 'p2']);
-            // The payload is the whole list, so saving one product also learns about the other:
-            // a store appending locally would hold one line here and be wrong the moment two
-            // tabs save different products.
+            /**
+             * The payload is the whole list, so saving one product also learns about the other:
+             * a store appending locally would hold one line here and be wrong the moment two
+             * tabs save different products.
+             */
             expect(store.isSaved('p2')).toBe(true);
             // The product rides in the body: a saved product is a line written through the list.
             expect(requestedUrls()).toEqual(['/wishlist/items']);
@@ -146,8 +148,10 @@ describe('moveToCart', () => {
             .then(() => store.moveToCart('p1'))
             .then(() => {
                 expect(store.isSaved('p1')).toBe(false);
-                // The cross-module effect: the cart is re-read so the header's badge cannot
-                // lag a write this store initiated.
+                /**
+                 * The cross-module effect: the cart is re-read so the header's badge cannot
+                 * lag a write this store initiated.
+                 */
                 expect(requestedUrls().at(-1)).toBe('/cart');
             });
     });

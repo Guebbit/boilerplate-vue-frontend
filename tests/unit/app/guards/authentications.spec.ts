@@ -35,8 +35,10 @@ vi.mock('@guebbit/vue-toolkit', () => ({
 }));
 
 vi.mock('@/i18n', () => ({
-    // Identity, so the assertions below read the dictionary KEY rather than a translation that
-    // would change with the locale.
+    /**
+     * Identity, so the assertions below read the dictionary KEY rather than a translation that
+     * would change with the locale.
+     */
     translate: (key: string) => key
 }));
 
@@ -98,29 +100,37 @@ describe('canAccess', () => {
         ['auth-only', { access: 'auth' }, guest, false],
         ['auth-only', { access: 'auth' }, customer, true],
         ['auth-only', { access: 'auth' }, owner, true],
-        // The permission half. A rule always implies a session: rules are published for a caller
-        // the server identified, so a stranger is refused before the ability is consulted.
+        /**
+         * The permission half. A rule always implies a session: rules are published for a caller
+         * the server identified, so a stranger is refused before the ability is consulted.
+         */
         ['product-write', { access: 'auth', can: ['update', 'Product'] }, guest, false],
         ['product-write', { access: 'auth', can: ['update', 'Product'] }, customer, false],
         ['product-write', { access: 'auth', can: ['update', 'Product'] }, editor, true],
         ['product-write', { access: 'auth', can: ['update', 'Product'] }, owner, true],
-        // The rule is the whole requirement, and holding a DIFFERENT one is not a partial answer:
-        // this is what the old coarse gate got wrong, letting anyone who could edit a product
-        // reach a screen about accounts.
+        /**
+         * The rule is the whole requirement, and holding a DIFFERENT one is not a partial answer:
+         * this is what the old coarse gate got wrong, letting anyone who could edit a product
+         * reach a screen about accounts.
+         */
         ['user-read', { access: 'auth', can: ['read', 'User'] }, editor, false],
         ['user-read', { access: 'auth', can: ['read', 'User'] }, owner, true],
         // A rule with no `access`: still refused for a stranger, on the same reasoning.
         ['rule-only', { can: ['read', 'User'] }, guest, false],
         ['rule-only', { can: ['read', 'User'] }, owner, true],
-        // `open` is the one exception: a guest passes, and the rule is asked of the signed-in only.
-        // So the cart is a guest's, and a signed-in role with no basket is still turned away.
+        /**
+         * `open` is the one exception: a guest passes, and the rule is asked of the signed-in only.
+         * So the cart is a guest's, and a signed-in role with no basket is still turned away.
+         */
         ['open', { access: 'open' }, guest, true],
         ['open', { access: 'open' }, customer, true],
         ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, guest, true],
         ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, customer, false],
         ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, editor, true],
-        // The staff action: a customer's own-rows `read` opens the plain route and not the
-        // `display` one; staff, who hold both, open either.
+        /**
+         * The staff action: a customer's own-rows `read` opens the plain route and not the
+         * `display` one; staff, who hold both, open either.
+         */
         ['own-orders', { access: 'auth', can: ['read', 'Order'] }, shopper, true],
         ['staff-orders', { access: 'auth', can: ['display', 'Order'] }, shopper, false],
         ['staff-orders', { access: 'auth', can: ['display', 'Order'] }, orderStaff, true],
@@ -229,8 +239,10 @@ describe('enforceRouteAccess', () => {
     });
 
     it('refuses a visitor who holds a different rule on the same subject', () => {
-        // `read` is not `update`, and the guard must not treat one as evidence of the other —
-        // the server does not.
+        /**
+         * `read` is not `update`, and the guard must not treat one as evidence of the other —
+         * the server does not.
+         */
         visitorStanding.isAuth.value = true;
         held.add('read User');
 

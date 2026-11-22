@@ -22,9 +22,11 @@ describe('steppedQuantity', () => {
         expect(steppedQuantity(3, -1)).toBe(2);
     });
 
-    // A double click can outrun the disabled guard, and `quantity: 0` violates the contract.
-    // Asserted against the literal `openapi.yaml` `minimum: 1`, not the module's own
-    // `MIN_LINE_QUANTITY` — the constant drifting from the contract must fail this test.
+    /**
+     * A double click can outrun the disabled guard, and `quantity: 0` violates the contract.
+     * Asserted against the literal `openapi.yaml` `minimum: 1`, not the module's own
+     * `MIN_LINE_QUANTITY` — the constant drifting from the contract must fail this test.
+     */
     it('clamps at the floor instead of reaching zero', () => {
         expect(steppedQuantity(1, -1)).toBe(1);
     });

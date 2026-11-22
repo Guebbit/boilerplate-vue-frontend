@@ -58,8 +58,10 @@ vi.mock('@/infrastructure/http', () => ({
             parseOrvalFixture(
                 config.method,
                 config.url,
-                // Every DELETE answers empty (204), the secret-removal one included; every
-                // other call answers the full record.
+                /**
+                 * Every DELETE answers empty (204), the secret-removal one included; every
+                 * other call answers the full record.
+                 */
                 config.method?.toUpperCase() === 'DELETE' ? undefined : SUBSCRIPTION
             )
         )

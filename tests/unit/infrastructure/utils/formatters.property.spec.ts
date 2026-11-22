@@ -93,8 +93,10 @@ describe('formatText', () => {
     it('returns the fallback for exactly the inputs that carry no text', () =>
         fc.assert(
             fc.property(fc.option(fc.string(), { nil: undefined }), (value) => {
-                // A biconditional, not two separate cases: this is the whole decision rule, and
-                // asserting it both ways is what stops the boundary drifting in one direction.
+                /**
+                 * A biconditional, not two separate cases: this is the whole decision rule, and
+                 * asserting it both ways is what stops the boundary drifting in one direction.
+                 */
                 const isBlank = value === undefined || value.trim().length === 0;
                 expect(formatText(value) === EMPTY_VALUE).toBe(isBlank || value === EMPTY_VALUE);
             }),
@@ -105,8 +107,10 @@ describe('formatText', () => {
         fc.assert(
             fc.property(fc.string({ minLength: 1 }), (value) => {
                 fc.pre(value.trim().length > 0);
-                // The emptiness test trims; the return value does not. A refactor that returned
-                // `value.trim()` would pass every "is it non-empty" assertion above.
+                /**
+                 * The emptiness test trims; the return value does not. A refactor that returned
+                 * `value.trim()` would pass every "is it non-empty" assertion above.
+                 */
                 expect(formatText(` ${value} `)).toBe(` ${value} `);
             }),
             RUN
@@ -156,9 +160,11 @@ describe('formatCurrency', () => {
     it('never throws, for any amount and any currency code', () =>
         fc.assert(
             fc.property(amountText(), fc.string(), (value, currency) => {
-                // A malformed ISO 4217 code makes Intl throw a RangeError, and a product page
-                // must not 500 over a currency string. Generation is what reaches the codes
-                // nobody would think to write down.
+                /**
+                 * A malformed ISO 4217 code makes Intl throw a RangeError, and a product page
+                 * must not 500 over a currency string. Generation is what reaches the codes
+                 * nobody would think to write down.
+                 */
                 expect(() => formatCurrency(value, currency)).not.toThrow();
             }),
             RUN
@@ -167,8 +173,10 @@ describe('formatCurrency', () => {
     it('degrades to a plain number rather than the fallback on a bad currency', () =>
         fc.assert(
             fc.property(amountText(), (value) => {
-                // The failure path must still show the AMOUNT. Returning EMPTY_VALUE here would
-                // hide a real price behind an em dash because of a config typo.
+                /**
+                 * The failure path must still show the AMOUNT. Returning EMPTY_VALUE here would
+                 * hide a real price behind an em dash because of a config typo.
+                 */
                 expect(formatCurrency(value, 'not-a-currency')).not.toBe(EMPTY_VALUE);
             }),
             RUN
@@ -203,12 +211,14 @@ describe('formatFlag', () => {
                 fc.string(),
                 fc.string(),
                 (value, trueLabel, falseLabel) => {
-                    // The expected value is computed first and asserted once, rather than
-                    // branching around two `expect`s — same property, but it states the whole
-                    // decision rule as one expression.
-                    //
-                    // `false` is the classic place this breaks: a `!value` guard would send it
-                    // down the fallback branch alongside null and undefined.
+                    /**
+                     * The expected value is computed first and asserted once, rather than
+                     * branching around two `expect`s — same property, but it states the whole
+                     * decision rule as one expression.
+                     *
+                     * `false` is the classic place this breaks: a `!value` guard would send it
+                     * down the fallback branch alongside null and undefined.
+                     */
                     const expected =
                         value === undefined ? EMPTY_VALUE : value ? trueLabel : falseLabel;
 
@@ -223,8 +233,10 @@ describe('formatDateTime', () => {
     it('never throws, whatever string it is handed', () =>
         fc.assert(
             fc.property(fc.option(fc.string(), { nil: undefined }), (value) => {
-                // The value comes off the wire. An unparseable one yields "Invalid Date", which
-                // is ugly but must not be an exception in a render.
+                /**
+                 * The value comes off the wire. An unparseable one yields "Invalid Date", which
+                 * is ugly but must not be an exception in a render.
+                 */
                 expect(() => formatDateTime(value)).not.toThrow();
             }),
             RUN
@@ -284,9 +296,11 @@ describe('upload predicates', () => {
     it('is case-sensitive about the mime type, matching the backend', () =>
         fc.assert(
             fc.property(fc.constantFrom(...ACCEPTED_UPLOAD_TYPES), (type) => {
-                // Documented rather than assumed: the backend's fileFilter compares verbatim, so
-                // a client-side check that lowercased first would accept files the server then
-                // rejects — a worse experience than rejecting early.
+                /**
+                 * Documented rather than assumed: the backend's fileFilter compares verbatim, so
+                 * a client-side check that lowercased first would accept files the server then
+                 * rejects — a worse experience than rejecting early.
+                 */
                 expect(isAcceptedImageType(makeFile(type.toUpperCase(), 1))).toBe(false);
             }),
             RUN

@@ -95,8 +95,10 @@ describe('the meta viewport (index.html)', () => {
 
     it('never stops the visitor from zooming', () => {
         expect(content).not.toMatch(/user-scalable\s*=\s*(?:no|0)/);
-        // axe's `meta-viewport-large` floor: a cap below 5 is a cap on 200 % text (WCAG 1.4.4).
-        // No cap at all reads as Infinity.
+        /**
+         * axe's `meta-viewport-large` floor: a cap below 5 is a cap on 200 % text (WCAG 1.4.4).
+         * No cap at all reads as Infinity.
+         */
         const maximum = Number(/maximum-scale\s*=\s*([\d.]+)/.exec(content)?.[1] ?? Infinity);
         expect(maximum).toBeGreaterThanOrEqual(5);
     });

@@ -127,8 +127,10 @@ const reportAvatarFailure = (error: unknown) => {
  */
 watch(pickedFile, (file) => {
     errorMessage.value = undefined;
-    // Only a new pick clears the last failure: the reset to `undefined` that follows an upload's
-    // end would otherwise wipe the warning the failure has just raised.
+    /**
+     * Only a new pick clears the last failure: the reset to `undefined` that follows an upload's
+     * end would otherwise wipe the warning the failure has just raised.
+     */
     if (!file) return;
     clearAvatarError();
     clearStale();

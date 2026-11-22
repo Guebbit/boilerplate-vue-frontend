@@ -38,8 +38,10 @@ describe('inventory route access', () => {
     });
 
     it('declares no route this file does not know about', () => {
-        // Catches a new route added without an access decision being made for it — the stock
-        // board and its write forms are otherwise unguarded by any spec.
+        /**
+         * Catches a new route added without an access decision being made for it — the stock
+         * board and its write forms are otherwise unguarded by any spec.
+         */
         expect(routes.map(({ name }) => name).toSorted()).toEqual(
             ['InventoryLedger', 'PreordersBoard'].toSorted()
         );

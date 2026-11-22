@@ -52,12 +52,14 @@ describe('originToRegExp', () => {
      * differs only where the dot is.
      */
     it('escapes regex metacharacters in the origin', () => {
-        // This literal is the plain ORIGIN argument, not a regex — originToRegExp escapes the
-        // dot (and every other metacharacter) before building the RegExp, which is exactly
-        // what this test and the it.each below it assert.
-        // CodeQL may flag this literal (`js/incomplete-hostname-regexp`); that is a false positive,
-        // since it is escaped before any regex is built. GitHub ignores inline suppression
-        // comments, so such an alert is dismissed in the repository's code-scanning tab instead.
+        /**
+         * This literal is the plain ORIGIN argument, not a regex — originToRegExp escapes the
+         * dot (and every other metacharacter) before building the RegExp, which is exactly
+         * what this test and the it.each below it assert.
+         * CodeQL may flag this literal (`js/incomplete-hostname-regexp`); that is a false positive,
+         * since it is escaped before any regex is built. GitHub ignores inline suppression
+         * comments, so such an alert is dismissed in the repository's code-scanning tab instead.
+         */
         const pattern = originToRegExp('https://api.example.com');
 
         expect(pattern.test('https://api.example.com/v1')).toBe(true);
@@ -158,8 +160,10 @@ describe('readFaroConfig', () => {
         expect(readFaroConfig()).toEqual({
             url: 'http://collector/collect',
             appName: 'frontend',
-            // This package's own version, not a hand-maintained fallback — see `__APP_VERSION__`
-            // in `src/globals.d.ts`.
+            /**
+             * This package's own version, not a hand-maintained fallback — see `__APP_VERSION__`
+             * in `src/globals.d.ts`.
+             */
             appVersion: __APP_VERSION__,
             environment: import.meta.env.MODE,
             // No API URL: the API is same-origin, which OpenTelemetry propagates to on its own.

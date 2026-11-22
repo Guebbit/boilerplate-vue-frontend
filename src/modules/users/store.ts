@@ -208,12 +208,14 @@ export const useUsersStore = defineStore('users', () => {
                     ? createUserWithMultipart({ ...userData, imageUpload }, options)
                     : apiCreateUser(userData, options),
 
-            // PATCH, not PUT: `UserEdit.vue` sends only the fields its form actually holds
-            // (the profile fields, an upload) — a PUT's every omitted field would be cleared
-            // instead (RFC 9110 §9.3.4), wiping `locale`/`phone`/etc. on every save.
-            //
-            // A save that uploads AND clears goes as two requests (`uploadThenClear`): a multipart
-            // part cannot carry `null`, so the clears follow as a JSON PATCH.
+            /**
+             * PATCH, not PUT: `UserEdit.vue` sends only the fields its form actually holds
+             * (the profile fields, an upload) — a PUT's every omitted field would be cleared
+             * instead (RFC 9110 §9.3.4), wiping `locale`/`phone`/etc. on every save.
+             *
+             * A save that uploads AND clears goes as two requests (`uploadThenClear`): a multipart
+             * part cannot carry `null`, so the clears follow as a JSON PATCH.
+             */
             update: (userId, { imageUpload, ...userData } = {}, options) =>
                 imageUpload
                     ? uploadThenClear(
@@ -230,14 +232,16 @@ export const useUsersStore = defineStore('users', () => {
 
             remove: (userId) => deleteUserById(userId),
 
-            // The new imageUrl comes back from the API; a Blob has no business in store state —
-            // this is the MULTIPART request shape, which never carries `imageUrl` itself, only
-            // the upload.
-            //
-            // `locale`/`phone`/`website`/`imageUrl` accept `null` on the wire (clears the field)
-            // but the LOCAL `User` never does; `null` reads as "leave the optimistic guess alone"
-            // here, since the real clear only takes visible effect once the response `update:`
-            // above already waits for lands.
+            /**
+             * The new imageUrl comes back from the API; a Blob has no business in store state —
+             * this is the MULTIPART request shape, which never carries `imageUrl` itself, only
+             * the upload.
+             *
+             * `locale`/`phone`/`website`/`imageUrl` accept `null` on the wire (clears the field)
+             * but the LOCAL `User` never does; `null` reads as "leave the optimistic guess alone"
+             * here, since the real clear only takes visible effect once the response `update:`
+             * above already waits for lands.
+             */
             optimisticPatch: ({
                 imageUpload: _uploaded,
                 locale,
@@ -427,8 +431,10 @@ export const useUsersStore = defineStore('users', () => {
     const watchUser: typeof watchOneUser = (idSource, settings) =>
         watchOneUser(() => {
             const userId = toValue(idSource);
-            // Marks the cached copy stale synchronously, ahead of the watcher's own read; a failed
-            // refetch of a watched copy is the watcher's own error to report.
+            /**
+             * Marks the cached copy stale synchronously, ahead of the watcher's own read; a failed
+             * refetch of a watched copy is the watcher's own error to report.
+             */
             if (userId && listStale.take(userId)) invalidateTarget(userId).catch(() => undefined);
             return userId;
         }, settings);

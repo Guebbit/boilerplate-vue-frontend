@@ -119,8 +119,10 @@ describe('the saved preference', () => {
         cy.get('[data-test=language-option-it]').click();
         cy.get('html').should('have.attr', 'lang', 'it');
 
-        // The proof a guest's switch wrote nothing: the account's saved preference still rules
-        // the next login. A guest write would have made the seed user Italian.
+        /**
+         * The proof a guest's switch wrote nothing: the account's saved preference still rules
+         * the next login. A guest write would have made the seed user Italian.
+         */
         cy.loginAs('user');
         cy.get('html').should('have.attr', 'lang', 'en');
     });
@@ -131,11 +133,15 @@ describe('the saved preference', () => {
         cy.get('[data-test=language-option-it]').click();
         cy.get('html').should('have.attr', 'lang', 'it');
 
-        // End the session through the UI, then come back through the ENGLISH login form —
-        // the record's preference, not the form's language, decides where they land.
+        /**
+         * End the session through the UI, then come back through the ENGLISH login form —
+         * the record's preference, not the form's language, decides where they land.
+         */
         cy.logout();
-        // The session is ended only once the viewer chip is gone — a locale-independent fact,
-        // unlike any nav label after the switch above.
+        /**
+         * The session is ended only once the viewer chip is gone — a locale-independent fact,
+         * unlike any nav label after the switch above.
+         */
         cy.contains(seedAccount('user').email).should('not.exist');
         cy.loginAs('user');
 

@@ -80,9 +80,11 @@ const mountPage = () =>
         props: { id: 'u1' },
         global: {
             plugins: [router, vuetify, i18n],
-            // `UserAccessDialog`'s own picker/confirm behaviour is `user-access-dialog.spec.ts`'s
-            // job; stubbing it here lets this suite drive its `confirm`/`cancel` events directly,
-            // rather than fighting `v-dialog`'s teleport and lazy rendering in jsdom.
+            /**
+             * `UserAccessDialog`'s own picker/confirm behaviour is `user-access-dialog.spec.ts`'s
+             * job; stubbing it here lets this suite drive its `confirm`/`cancel` events directly,
+             * rather than fighting `v-dialog`'s teleport and lazy rendering in jsdom.
+             */
             stubs: { UserAccessDialog: true }
         }
     });
@@ -109,9 +111,11 @@ beforeEach(() => {
 /** What the signed-in admin may do to the account — the shape the server answers a row with. */
 
 describe('User (detail page)', () => {
-    // The row's `actions` is the whole answer: the manager reads users and may change none, a
-    // support agent may edit a customer and may not ban, and nobody may touch an account at their
-    // own level or above.
+    /**
+     * The row's `actions` is the whole answer: the manager reads users and may change none, a
+     * support agent may edit a customer and may not ban, and nobody may touch an account at their
+     * own level or above.
+     */
     it('offers no Edit and no access button when the row allows neither update nor ban', () => {
         queueGetResponses(aUser({ id: 'u1', actions: NO_USER_ACTIONS }));
         const wrapper = mountPage();
@@ -132,8 +136,10 @@ describe('User (detail page)', () => {
         });
     });
 
-    // Support holds `update:User` and not `ban:User`: the edit is offered, and the dialog
-    // opens for a role change with its active switch disabled.
+    /**
+     * Support holds `update:User` and not `ban:User`: the edit is offered, and the dialog
+     * opens for a role change with its active switch disabled.
+     */
     it('offers Edit and the access dialog when only update is allowed, as for a support agent', () => {
         queueGetResponses(
             aUser({ id: 'u1', actions: userActionsOf({ update: true, assignRole: true }) })
@@ -186,8 +192,10 @@ describe('User (detail page)', () => {
                     active: true,
                     actions: ALL_USER_ACTIONS
                 });
-                // `UserAccessDialog` itself decides which fields changed; this stub simulates it
-                // having decided on a role AND a status change.
+                /**
+                 * `UserAccessDialog` itself decides which fields changed; this stub simulates it
+                 * having decided on a role AND a status change.
+                 */
                 emitOn(dialog, 'confirm', { role: 'manager', active: false });
             })
             .then(flushPromises)

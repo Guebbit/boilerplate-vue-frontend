@@ -127,8 +127,10 @@ describe('FR5 · Shopping on a phone', () => {
         dismissToasts();
         openDrawer();
         cy.contains(`${DRAWER} [role=button]`, 'Logout').tap();
-        // The drawer closes with the navigation; a tap on the hamburger sent before that would
-        // toggle it shut again instead of opening it.
+        /**
+         * The drawer closes with the navigation; a tap on the hamburger sent before that would
+         * toggle it shut again instead of opening it.
+         */
         cy.get(DRAWER).should('not.be.visible');
         openDrawer();
         cy.get(`${DRAWER} [data-test=nav-login-link-mobile]`).should('be.visible');

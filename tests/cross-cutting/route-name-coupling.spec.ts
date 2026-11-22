@@ -140,8 +140,10 @@ describe('a module names only its own, the shell’s, or a dependsOn sibling’s
     });
 
     it('actually finds cross-module route-name references to check at all', () => {
-        // A second canary, same reasoning as `module-coupling.spec.ts`'s own: this could pass
-        // vacuously forever if the regex, the file listing, or the route-name set ever broke.
+        /**
+         * A second canary, same reasoning as `module-coupling.spec.ts`'s own: this could pass
+         * vacuously forever if the regex, the file listing, or the route-name set ever broke.
+         */
         let totalReferences = 0;
         for (const appModule of enabledModules) {
             const allowed = allowedRouteNamesOf(appModule.name);

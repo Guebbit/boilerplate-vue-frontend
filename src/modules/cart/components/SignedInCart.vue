@@ -24,8 +24,10 @@ import { useOrderLink } from '@/kernel/order-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useCartStore } from '../store.ts';
 import { useLineWarningText } from '../composables/use-line-warning-text';
-// The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`; the
-// clamping half of that rule lives with the stepping itself, in `use-line-quantity.ts`.
+/**
+ * The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`; the
+ * clamping half of that rule lives with the stepping itself, in `use-line-quantity.ts`.
+ */
 import { MIN_LINE_QUANTITY, classifyCheckoutError } from '../domain';
 import CartEmptyState from './CartEmptyState.vue';
 import CartLineCard from './CartLineCard.vue';
@@ -229,8 +231,10 @@ watch([notes, paymentMethodId, addressId], () => {
  */
 const canCheckout = computed(() => {
     if (!cart.value?.checkoutable) return false;
-    // Billing is asked on its own when nothing ships to an address: an entry must be chosen
-    // (the picker pre-selects the default, so this only holds back an empty book).
+    /**
+     * Billing is asked on its own when nothing ships to an address: an entry must be chosen
+     * (the picker pre-selects the default, so this only holds back an empty book).
+     */
     if (!shipsToAddress.value && billingAddressId.value === undefined) return false;
     if (!cartShipping.value?.required) return true;
     if (shippingMethodId.value === undefined) return false;
@@ -255,10 +259,12 @@ const {
     }
 });
 
-// Vue `watch`: a refusal names lines whose product may have changed behind this page (taken off
-// sale, hidden): the server answers only a number, so "off sale" and "removed" are read from the
-// product details, which must be current. Reads them fresh, and the sentences follow.
-// https://vuejs.org/api/reactivity-core.html#watch
+/**
+ * Vue `watch`: a refusal names lines whose product may have changed behind this page (taken off
+ * sale, hidden): the server answers only a number, so "off sale" and "removed" are read from the
+ * product details, which must be current. Reads them fresh, and the sentences follow.
+ * https://vuejs.org/api/reactivity-core.html#watch
+ */
 watch(insufficientStockLines, (lines) => {
     // A failed read leaves the sentence as it was: "sold out" is still true.
     loadProducts(lines.map(({ productId }) => productId)).catch(() => undefined);
@@ -323,11 +329,13 @@ const placing = ref(false);
  */
 const runCheckout = () =>
     placeOrder({
-        // No `shippingMethodId`: the cart holds that choice, persisted via
-        // `PUT /cart/shipping-method` by the `watch` above.
-        // An address only when the chosen method needs one: the picker unmounts on pickup but
-        // leaves `addressId` holding its last value, and the API refuses an address paired with
-        // a method that cannot use it (409 `CART_ADDRESS_NOT_APPLICABLE`).
+        /**
+         * No `shippingMethodId`: the cart holds that choice, persisted via
+         * `PUT /cart/shipping-method` by the `watch` above.
+         * An address only when the chosen method needs one: the picker unmounts on pickup but
+         * leaves `addressId` holding its last value, and the API refuses an address paired with
+         * a method that cannot use it (409 `CART_ADDRESS_NOT_APPLICABLE`).
+         */
         ...(cartShipping.value?.required &&
         shippingMethodRequiresAddress.value &&
         addressId.value !== undefined
@@ -341,19 +349,25 @@ const runCheckout = () =>
         ...(notes.value.trim() === '' ? {} : { notes: notes.value.trim() })
     })
         .then((result) => {
-            // `fetchAny`'s type allows `undefined` on a swallowed failure — this call never
-            // actually takes that path (see `useCartStore.checkout`'s own docblock), but the
-            // guard is what lets `result.id` below type-check, and it is cheap insurance
-            // against a client-side navigation to `/orders/undefined` either way.
+            /**
+             * `fetchAny`'s type allows `undefined` on a swallowed failure — this call never
+             * actually takes that path (see `useCartStore.checkout`'s own docblock), but the
+             * guard is what lets `result.id` below type-check, and it is cheap insurance
+             * against a client-side navigation to `/orders/undefined` either way.
+             */
             if (!result?.id) return;
-            // The order consumed these lines: a step still in its debounce window must not fire
-            // afterwards, where its `PUT` would create the line again in the new, empty cart.
+            /**
+             * The order consumed these lines: a step still in its debounce window must not fire
+             * afterwards, where its `PUT` would create the line again in the new, empty cart.
+             */
             forgetAll();
             clearCheckoutDrafts();
             addMessage(t('cart-page.success-checkout'));
-            // `orders` is not one of cart's declared `dependsOn` reaches — a build
-            // shipping no orders module still completes the checkout, just with nowhere to SHOW
-            // the order it just placed, so it lands Home instead of throwing.
+            /**
+             * `orders` is not one of cart's declared `dependsOn` reaches — a build
+             * shipping no orders module still completes the checkout, just with nowhere to SHOW
+             * the order it just placed, so it lands Home instead of throwing.
+             */
             const target = linkIfRouted(router, 'OrderTarget', { id: result.id }) ?? {
                 name: 'Home'
             };
@@ -382,8 +396,10 @@ const checkout = () => {
     resetRefusals();
     return (
         settle()
-            // Only `settle`'s rejection is absorbed: `useLineQuantity`'s `onError` already
-            // reported it, and the order must not be placed at a stale quantity.
+            /**
+             * Only `settle`'s rejection is absorbed: `useLineQuantity`'s `onError` already
+             * reported it, and the order must not be placed at a stale quantity.
+             */
             .then(runCheckout, () => undefined)
             .finally(() => {
                 placing.value = false;

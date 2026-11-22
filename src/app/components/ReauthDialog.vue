@@ -216,8 +216,10 @@ const submit = () => {
             reauthDialog.resolveStepUp();
         })
         .catch((error: unknown) => {
-            // With a second factor in the call the 422 may be either proof: the server's own
-            // sentence says which, where the fixed wording could only guess.
+            /**
+             * With a second factor in the call the 422 may be either proof: the server's own
+             * sentence says which, where the fixed wording could only guess.
+             */
             errorMessage.value =
                 absentIs(error, 422) && !otpRequired.value ? t(wrongKey) : getErrorMessage(error);
             password.value = '';

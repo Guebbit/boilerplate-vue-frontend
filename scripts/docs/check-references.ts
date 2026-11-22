@@ -215,9 +215,11 @@ const isReal = (
     if (!claim.anchor) return true;
 
     const slugs = anchorsOf(claim.path);
-    // Not a page this repo tracks the heading text of (a non-`.md` file, or one `resolves` only
-    // matched by a spelling other than a bare `.md` file) — the anchor claim goes unchecked, the
-    // same way a peer-repo path already does above.
+    /**
+     * Not a page this repo tracks the heading text of (a non-`.md` file, or one `resolves` only
+     * matched by a spelling other than a bare `.md` file) — the anchor claim goes unchecked, the
+     * same way a peer-repo path already does above.
+     */
     return !slugs || slugs.has(claim.anchor);
 };
 
@@ -234,8 +236,10 @@ const scanPage = (
 ): Scan => {
     const scan: Scan = { tokens: [], findings: [] };
 
-    // Line by line, so the opt-out marker can scope to the one claim that needs it rather than to
-    // a whole page.
+    /**
+     * Line by line, so the opt-out marker can scope to the one claim that needs it rather than to
+     * a whole page.
+     */
     for (const line of markdown.split('\n')) {
         if (line.includes(IGNORE_LINE)) continue;
 
@@ -343,8 +347,10 @@ const run = (): number => {
         .filter((file) => file.endsWith('.md'));
 
     const anchorPages = anchorPageFor(pages);
-    // One read per cited page, not per citation — a heavily-linked page would otherwise reparse
-    // its own headings dozens of times over one sweep.
+    /**
+     * One read per cited page, not per citation — a heavily-linked page would otherwise reparse
+     * its own headings dozens of times over one sweep.
+     */
     const slugsCache = new Map<string, Set<string>>();
     const anchorsOf = (ownPath: string): Set<string> | undefined => {
         const page = anchorPages.get(ownPath) ?? anchorPages.get(`${ownPath}.md`);
@@ -376,8 +382,10 @@ const run = (): number => {
 
     const facts = factFindings(documentPages);
 
-    // Citations written in code, YAML and `.env-example`: a page that moved or a heading that was
-    // renamed leaves them pointing at nothing, and no build opens them.
+    /**
+     * Citations written in code, YAML and `.env-example`: a page that moved or a heading that was
+     * renamed leaves them pointing at nothing, and no build opens them.
+     */
     const tracked = execFileSync('git', ['ls-files'], {
         cwd: ROOT,
         encoding: 'utf8',
