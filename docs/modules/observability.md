@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # observability
 
 ::: tip At a glance
@@ -113,7 +118,7 @@ depend on, or to the app-wide stores in `src/infrastructure/`.
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/observability/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/observability/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 ## Wiring
 
@@ -149,9 +154,9 @@ npm run regenerate
 ## Related pages
 
 - [The dashboard](./observability-dashboard.md) — what the console assembles, and from where
-- [Admin Dashboard](../tools/admin-dashboard.md) — the mechanism behind the panels
-- [Realtime](../tools/realtime.md) — the SSE client and its reconnection behaviour
-- [Observability](../tools/observability.md) — what is measured, and by whom
+- [Admin Dashboard](../operate/admin-dashboard.md) — the mechanism behind the panels
+- [Realtime](../understand/realtime.md) — the SSE client and its reconnection behaviour
+- [Observability](../operate/observability.md) — what is measured, and by whom
 - [Observability endpoints](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/observability.md) — the backend's page for the reads
-- [AsyncAPI Workflow](../api/asyncapi-workflow.md) — where the event types come from
-- [Sitemap & Access Control](../theory/sitemap.md) — the `admin` gate on these screens
+- [AsyncAPI Workflow](../build/asyncapi-workflow.md) — where the event types come from
+- [Sitemap & Access Control](../understand/sitemap.md) — the `admin` gate on these screens

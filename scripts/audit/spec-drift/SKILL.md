@@ -45,15 +45,15 @@ Read ONLY, for everything in scope:
 - Contracts: the root `openapi.yaml` and `asyncapi.yaml` (synced from the backend), this repo's
   own `contracts/*.yaml` (`cookies`, `frontend-links`, `authorization-keys`), plus every
   `src/modules/<module>/module.yaml`.
-- Docs: `docs/modules/<module>*.md`, `docs/theory/*.md`, `docs/api/*.md`, `docs/tools/*.md`.
+- Docs: `docs/modules/<module>*.md`, `docs/understand/*.md`, `docs/build/*.md`, `docs/operate/*.md`, `docs/reference/*.md`.
 - Shared: `shared/rules/*.yaml`.
 
 Do NOT open the implementation (except the YAML files listed above) and do NOT open the test
 files yet.
 
 Under `whole-repo`, each slice follows the module rule; the system slice reads `shared/**` and the
-`docs/tools/*.md` pages that state rules in full. A module or path run reads its own docs and YAML
-in full and searches `shared/**` and `docs/tools/*.md` for scope terms.
+`docs/{understand,build,operate,reference}/*.md` pages that state rules in full. A module or path run reads its own docs and YAML
+in full and searches `shared/**` and `docs/{understand,build,operate,reference}/*.md` for scope terms.
 
 Where two spec files disagree, record both sides.
 
@@ -143,7 +143,7 @@ the individual mismatches.
 
 ## Priors worth using
 
-- `reports/mutation/mutation.json`, see `docs/tools/mutation-testing.md`. A surviving mutant on a
+- `reports/mutation/mutation.json`, see `docs/build/mutation-testing.md`. A surviving mutant on a
   line whose rule the docs state explicitly is a strong candidate. Use it to order the work, never
   as a finding on its own. Never read `reports/stryker-incremental.json`: it is Stryker's cache,
   not a result. A `.vue` file has no mutants: its Stryker entry never exists.

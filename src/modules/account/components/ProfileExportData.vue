@@ -21,7 +21,7 @@ export default {
  * "building", "ready until" or "failed". While it builds, the status is polled.
  *
  * The button's own blocked state, next to it, replaces the toast on failure — see
- * docs/theory/request-flow.md.
+ * docs/understand/request-flow.md.
  */
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -5,7 +5,7 @@
  * Why:    the nightly holds no write access, so it uploads the proposed baseline as an artifact.
  * What:   writes it over `lighthouse-baseline.json`. Review the diff, then commit it as usual.
  * Needs:  the GitHub CLI, logged in (`gh auth login`).
- * See:    docs/tools/lighthouse.md#baseline-and-ratchet
+ * @see docs/build/lighthouse.md#baseline-and-ratchet
  */
 import { pullArtifact } from '../testing/pull-artifact';
 import { LIGHTHOUSE_BASELINE_PATH } from './baseline';

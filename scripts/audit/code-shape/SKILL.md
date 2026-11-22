@@ -24,7 +24,7 @@ doing one of these:
 - **Naming a domain rule** — `isRefundable(order)` is a one-liner whose name is the documentation.
 - **Being shared** — two or more callers today, not one caller and a hope.
 - **Being a boundary** — a port, an adapter, the one place a third-party call is isolated
-  (`docs/theory/layers.md`).
+  (`docs/understand/layers.md`).
 
 Anything else is a candidate. The shapes, with the names the literature gives them:
 
@@ -123,7 +123,7 @@ KEEP reason codes — one per row, never "seems fine":
 
 - `domain-name` — the name states a business rule the inlined expression would hide.
 - `published` — barrel surface (`published: true`), unused on purpose: the barrel is the module's
-  published language (`docs/theory/strategic-ddd.md` §5). Never INLINE or DELETE one. Published
+  published language (`docs/understand/strategic-ddd.md` §5). Never INLINE or DELETE one. Published
   means reachable from `src/modules/<name>/index.ts` through re-exports; any other `index.ts`
   (`src/types/index.ts`, a sub-barrel no module barrel re-exports) is an internal barrel and its
   unused re-export is DELETE.
@@ -137,7 +137,7 @@ KEEP reason codes — one per row, never "seems fine":
   reads it.
 - `slot` — a self-registering extension point: `register*`, a registry entry.
 - `component` — a single-use SFC: a page is built from components, one importer is how that looks.
-- `layout` — the module layout asks for the file: `docs/theory/modules.md#the-module-template`.
+- `layout` — the module layout asks for the file: `docs/understand/modules.md#the-module-template`.
 - `depth` — inlining would push nesting past `max-depth` or the caller past the comment caps.
 - `lookalike` — (jscpd) two blocks shaped alike by the contract or a test table, not by shared
   logic; changing one would not mean changing the other.

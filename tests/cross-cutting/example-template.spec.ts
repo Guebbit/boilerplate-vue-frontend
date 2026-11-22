@@ -1,5 +1,5 @@
 /**
- * The `example` module's docs table (`docs/theory/modules.md#the-module-template`) names real
+ * The `example` module's docs table (`docs/understand/modules.md#the-module-template`) names real
  * files, and no module keeps a status transition table on the client.
  *
  * The server lists the moves a caller may make (the `actions` flags); a client table is a second
@@ -35,7 +35,7 @@ const sourceFiles = (directory: string, prefix = ''): string[] =>
 
 describe('the example docs table names real files', () => {
     it('lists only files and folders that exist', () => {
-        const documentation = readFileSync(path.join(ROOT, 'docs/theory/modules.md'), 'utf8');
+        const documentation = readFileSync(path.join(ROOT, 'docs/understand/modules.md'), 'utf8');
         const section = documentation.slice(documentation.indexOf('## The module template'));
         const named = [
             ...section.matchAll(/`((?:views|components|composables|domain)\/[\w./-]+)`/g)

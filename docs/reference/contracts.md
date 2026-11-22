@@ -1,3 +1,8 @@
+---
+type: reference
+audience: [developer]
+---
+
 # Contracts
 
 The contract is the source of truth, and **this repo does not author it.** `openapi.yaml` and
@@ -39,22 +44,22 @@ regeneration, and the diff will look like the backend broke something.
 
 ## The specs
 
-| File                                                  | What it is                                                                                                                                                                                                                                   | Read next                                        |
-| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `openapi.yaml`                                        | The REST contract, byte-identical with the backend's. Every generated client, every response schema and every mock example comes from it.                                                                                                    | [OpenAPI Workflow](../api/openapi-workflow.md)   |
-| `asyncapi.yaml`                                       | The realtime contract — and only the **public half** of the backend's. The channels a browser can legitimately observe; the internal queues stay over there, which is why this file is shorter than its counterpart and is not a copy of it. | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
-| `authorization-keys.generated.yaml` (in `contracts/`) | The backend's permission-key document, byte-identical. Read for one thing: its `actions:` list, which `gen:permission-vocabulary` turns into `contracts/permission-vocabulary.generated.ts` — the `PermissionAction` type `can()` accepts.   | [Contracts](./contracts.md)                      |
-| `cookies.yaml` (in `contracts/`)                      | Every cookie the backend sets, byte-identical. Merged with `shared/rules/browser-storage.yaml` into the browser-storage inventory; the build fails when a row has no place in that file's order.                                             | [Shared rules](../tools/shared-rules.md)         |
+| File                                                  | What it is                                                                                                                                                                                                                                   | Read next                                          |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `openapi.yaml`                                        | The REST contract, byte-identical with the backend's. Every generated client, every response schema and every mock example comes from it.                                                                                                    | [OpenAPI Workflow](../build/openapi-workflow.md)   |
+| `asyncapi.yaml`                                       | The realtime contract — and only the **public half** of the backend's. The channels a browser can legitimately observe; the internal queues stay over there, which is why this file is shorter than its counterpart and is not a copy of it. | [AsyncAPI Workflow](../build/asyncapi-workflow.md) |
+| `authorization-keys.generated.yaml` (in `contracts/`) | The backend's permission-key document, byte-identical. Read for one thing: its `actions:` list, which `gen:permission-vocabulary` turns into `contracts/permission-vocabulary.generated.ts` — the `PermissionAction` type `can()` accepts.   | [Contracts](./contracts.md)                        |
+| `cookies.yaml` (in `contracts/`)                      | Every cookie the backend sets, byte-identical. Merged with `shared/rules/browser-storage.yaml` into the browser-storage inventory; the build fails when a row has no place in that file's order.                                             | [Shared rules](../understand/shared-rules.md)      |
 
 ## The generated client
 
 Gitignored: `postinstall` (`npm run regenerate`) rebuilds all of it on `npm install` and `npm ci`.
 
-| File                                      | What it is                                                                                                                                                                                                                                                    | Read next                                                                                  |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `contracts/rest.generated/index.ts`       | **Generated** by `npm run gen:api`. One typed function per operation, each routed through the shared axios instance rather than calling the network itself.                                                                                                   | [OpenAPI Workflow](../api/openapi-workflow.md) · [Infrastructure](./src-infrastructure.md) |
-| `contracts/rest.generated/schemas.zod.ts` | **Generated.** A Zod schema per contract shape — what `response-schema-map.ts` points every call site at, so a response that does not match the contract is caught here rather than three components later.                                                   | [Infrastructure](./src-infrastructure.md)                                                  |
-| `orval.config.ts`                         | Tells Orval what to generate and how to route it. Its non-obvious job: eight operations accept the same payload as either JSON or multipart — anything with an optional image — and this is where that duality is resolved so a caller does not have to pick. | [Regenerating](../api/openapi-workflow.md)                                                 |
+| File                                      | What it is                                                                                                                                                                                                                                                    | Read next                                                                                    |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `contracts/rest.generated/index.ts`       | **Generated** by `npm run gen:api`. One typed function per operation, each routed through the shared axios instance rather than calling the network itself.                                                                                                   | [OpenAPI Workflow](../build/openapi-workflow.md) · [Infrastructure](./src-infrastructure.md) |
+| `contracts/rest.generated/schemas.zod.ts` | **Generated.** A Zod schema per contract shape — what `response-schema-map.ts` points every call site at, so a response that does not match the contract is caught here rather than three components later.                                                   | [Infrastructure](./src-infrastructure.md)                                                    |
+| `orval.config.ts`                         | Tells Orval what to generate and how to route it. Its non-obvious job: eight operations accept the same payload as either JSON or multipart — anything with an optional image — and this is where that duality is resolved so a caller does not have to pick. | [Regenerating](../build/openapi-workflow.md)                                                 |
 
 ## Operations this app does not call
 
@@ -84,7 +89,7 @@ Editing this side's copy is the failure the list is worst at describing and best
 There is no third entry for analytics event names: this app emits none
 — pageviews are automatic and everything with a request behind it is reported by the backend — so
 there is no catalogue to publish and nothing to keep in step. See
-[Observability](../tools/observability.md#event-taxonomy).
+[Observability](../operate/observability.md#event-taxonomy).
 
 **Which backend the spec-identity check compares against is `.env`'s `BACKEND_PATH`, not whichever
 one synced last.** This repo pairs with one backend at a time (`boilerplate-node-backend` or

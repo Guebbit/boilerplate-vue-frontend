@@ -18,7 +18,7 @@
  * registered below.
  */
 import { defineConfig } from 'cypress';
-// @cypress/grep: keeps or skips tests by tag (`{ tags: '@smoke' }`) — see docs/tools/live-e2e.md#tiers.
+// @cypress/grep: keeps or skips tests by tag (`{ tags: '@smoke' }`) — see docs/build/live-e2e.md#tiers.
 import { plugin as cypressGrepPlugin } from '@cypress/grep/plugin';
 import { loadEnv } from 'vite';
 import path from 'node:path';
@@ -152,7 +152,7 @@ export default defineConfig({
         grepFilterSpecs: true,
         /*
          * Capture mode: the module accessibility sweeps photograph their cases instead of running
-         * axe (`npm run audit:design:capture`, `docs/tools/design-review.md`). Read when a spec is
+         * axe (`npm run audit:design:capture`, `docs/build/design-review.md`). Read when a spec is
          * collected, because the matrix decides how many tests exist. Off in every other run.
          */
         designCapture: process.env.E2E_DESIGN_CAPTURE === 'true',

@@ -15,7 +15,7 @@ export default {
  * the filters live in the URL so a view can be linked.
  * Here: Edit and Delete follow each row's `actions`; only Create, which has no row, asks `session.can`.
  * The server sorts: a header click writes `sort` into the URL state and re-searches from page 1.
- * See: docs/tools/state-and-routing.md
+ * @see docs/understand/state-and-routing.md
  */
 import { computed } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';

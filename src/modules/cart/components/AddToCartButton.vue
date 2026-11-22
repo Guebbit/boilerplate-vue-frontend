@@ -99,7 +99,7 @@ const promise = computed(() =>
 );
 
 /**
- * The button's own blocked state — see docs/theory/request-flow.md.
+ * The button's own blocked state — see docs/understand/request-flow.md.
  */
 const { message: error, report: reportError, clear: clearError } = useBlockingError();
 

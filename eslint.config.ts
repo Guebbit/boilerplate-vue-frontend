@@ -199,7 +199,7 @@ const boundariesFiles = [
  * stated earlier for the same edge.
  *
  * The ladder, bottom to top: `i18n → infrastructure → ui → kernel → modules(+domain) → app`. A
- * tier may import the ones below it and never the ones above — see `docs/theory/layers.md`. `app`
+ * tier may import the ones below it and never the ones above — see `docs/understand/layers.md`. `app`
  * is the one exception worth naming: nothing may reach it, including a module, which is exactly
  * the gap the ladder closes — `src/kernel/route-link.ts` exists because of it (see its own
  * docblock). `types` is erased at compile time, so every tier may reach it; a resolved import
@@ -579,7 +579,7 @@ const vueSfcConventionRules = {
     'vue/script-indent': 'off',
     'vue/multi-word-component-names': 'off',
     'vue/require-default-prop': 'off',
-    // `docs/theory/web-attack-defences.md`'s XSS row rests on "no v-html in src/" — this is what
+    // `docs/understand/web-attack-defences.md`'s XSS row rests on "no v-html in src/" — this is what
     // makes that true rather than a claim nothing enforces. A future use gets a line disable next
     // to whatever sanitiser justifies it.
     'vue/no-v-html': 'error',
@@ -1063,7 +1063,7 @@ export default defineConfigWithVueTs(
                 {
                     default: 'disallow',
                     message:
-                        '{{from.element.type}} may not depend on {{to.element.type}} — see docs/theory/layers.md.',
+                        '{{from.element.type}} may not depend on {{to.element.type}} — see docs/understand/layers.md.',
                     // Without this, same-element imports are skipped entirely (the plugin's own
                     // `isInternalDependency` default), so the own-barrel disallow and the
                     // spec-vs-own-index split above would never run — both are same-module edges.
@@ -1173,7 +1173,7 @@ export default defineConfigWithVueTs(
                     selector:
                         "TSTypeReference[typeName.name='Record'] > TSTypeParameterInstantiation > TSTypeReference:first-child[typeName.name=/Status$/]",
                     message:
-                        'A table keyed by a server status restates a backend rule. Read the record\u2019s `actions` flags instead (docs/theory/domain-layer.md).'
+                        'A table keyed by a server status restates a backend rule. Read the record\u2019s `actions` flags instead (docs/understand/domain-layer.md).'
                 }
             ]
         }

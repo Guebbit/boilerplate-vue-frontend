@@ -11,7 +11,7 @@
  *
  * While signed in the account's own answer is the effective one (`accountChoice`), the banner
  * opens only when that answer is unknown, and the buttons write the account (the profile store
- * listens to `grant`/`deny`) instead of the guest cookie. See `docs/tools/umami.md#consent`.
+ * listens to `grant`/`deny`) instead of the guest cookie. See `docs/operate/umami.md#consent`.
  */
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';

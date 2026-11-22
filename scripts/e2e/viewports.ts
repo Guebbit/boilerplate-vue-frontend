@@ -4,7 +4,7 @@
  *
  * Pure data, no `cy`, no DOM — the Cypress support, `cypress.config.ts`, Vitest and the Node
  * report tools can all import it. Sizes live here and nowhere else.
- * Reasoning and the band each size stands for: `docs/tools/visual-regression.md`.
+ * Reasoning and the band each size stands for: `docs/build/visual-regression.md`.
  */
 
 /** One device size the suites lay the app out at. */

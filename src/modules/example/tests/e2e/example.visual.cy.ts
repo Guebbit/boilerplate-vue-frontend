@@ -6,7 +6,7 @@
  *
  * Not part of `npm run complete`: run with `npm run test:e2e:visual`, and re-record with
  * `npm run test:e2e:visual:update` only after LOOKING at the diff image. Baselines are recorded
- * inside the pinned image only (`docs/tools/visual-regression.md`).
+ * inside the pinned image only (`docs/build/visual-regression.md`).
  */
 import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 

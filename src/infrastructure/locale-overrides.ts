@@ -47,7 +47,7 @@ import {
  * response already arrives translated and there is nothing for a client to look up. Its overrides
  * (the backend app's rows) are layered onto its files inside the API and never leave it — a
  * frontend that merged them would be adopting the backend's keyspace as its own, and both sides
- * declare a top-level `generic`. See `docs/theory/layers.md`.
+ * declare a top-level `generic`. See `docs/understand/layers.md`.
  */
 
 /**
@@ -93,7 +93,7 @@ const draftLanguages = reactive(new Set<string>());
 
 /**
  * Whether the caller is previewing this language as a draft: it is offered, but switched off.
- * Choosing it is the opt-in to see the product text in it, uncached (see docs/tools/i18n.md).
+ * Choosing it is the opt-in to see the product text in it, uncached (see docs/understand/i18n.md).
  *
  * @param tag - a language tag from the switcher
  */

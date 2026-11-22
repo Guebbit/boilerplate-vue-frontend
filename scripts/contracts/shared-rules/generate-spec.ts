@@ -4,7 +4,7 @@
  * Read by `generate-shared-rules.ts`, never at runtime. Same shapes as the backend's generator,
  * so a rules file written for one side reads the same on the other.
  *
- * See: docs/tools/shared-rules.md
+ * @see docs/understand/shared-rules.md
  */
 
 /**

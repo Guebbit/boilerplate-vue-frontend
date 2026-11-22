@@ -3,7 +3,7 @@
  * The guided-tour catalogue: which tours exist, their versions, and the steps the shell itself
  * owns (the app bar). Module steps arrive through `AppModule.tours`; {@link stepsOfTour} merges
  * both and drops what cannot be shown. Pure functions only — `use-tour.ts` is what talks to the
- * DOM and to driver.js. See `docs/tools/tours.md`.
+ * DOM and to driver.js. See `docs/understand/tours.md`.
  */
 import { collectModuleTours } from '@/kernel/registry';
 import type { AppTourStep } from '@/kernel/registry';

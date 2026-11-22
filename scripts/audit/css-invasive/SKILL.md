@@ -12,7 +12,7 @@ CSS, templates and Vuetify's source. You do not judge how a screen looks.
 GOAL: Find CSS that answers a question Vuetify or Tailwind already answer, in the residual tier:
 what `npm run audit:css` and the design lint cannot decide mechanically. Never re-report a hit
 the scanner already lists. The model proposes; a deterministic oracle disposes
-(`docs/tools/ai-auditing.md`). Here the oracle is the source: every finding cites a `file:line`
+(`docs/build/ai-auditing.md`). Here the oracle is the source: every finding cites a `file:line`
 and one anchor.
 
 SCOPE: the argument you were given: a module name (`locales`), a path, `--diff` or `whole-repo` (`scripts/audit/RULES.md` rule 5).
@@ -29,11 +29,11 @@ Read, in order, and build an **exclusion list** from them. Write it at the top o
 
 1. `scripts/audit/css-invasive/scan.ts` (`CHECKS`): every automated check, by id. A hit of one
    of those is the scanner's, not yours.
-2. `docs/tools/design-lint.md`: the class lint (arbitrary values, `vh`, `white`/`black`, z-index
+2. `docs/build/design-lint.md`: the class lint (arbitrary values, `vh`, `white`/`black`, z-index
    classes, hover-only), `local/theme-token`, and the stylesheet specs.
 3. `tests/cross-cutting/design-tokens.spec.ts`: colour literals, theme names, breakpoints in CSS.
-4. `docs/tools/layout-sweep.md`: a fixed size that really overflows is the sweep's finding.
-5. `docs/tools/touch-testing.md`: a `title`-only hint on a rendered page is the touch scan's.
+4. `docs/build/layout-sweep.md`: a fixed size that really overflows is the sweep's finding.
+5. `docs/build/touch-testing.md`: a `title`-only hint on a rendered page is the touch scan's.
 
 Do not trust a number or a list in this prompt once it is stale: re-read the page.
 
@@ -62,11 +62,11 @@ A floor, not a ceiling. Add an item (`+ name — anchor`) if it names its anchor
 | C2   | **Could a scoped block be Tailwind classes or component props** with no pixel change?                                                                                                                                                                                                                        | https://tailwindcss.com/docs/compatibility                                       |
 | C3   | **Is a Vuetify prop given a repeated magic number** (dialog `max-width`, media `:width`/`:height`)? Should it be a named size, or a `defaults` entry?                                                                                                                                                        | CLAUDE.md "a value used twice is a token"                                        |
 | C4   | **Does each unlayered rule say why it must be unlayered?** Could it sit in a layer after `vuetify-components` instead?                                                                                                                                                                                       | https://developer.mozilla.org/en-US/docs/Web/CSS/@layer; Vuetify 4 upgrade guide |
-| C5   | **Is the stacking order coherent?** The `--z-index-*` tokens against Vuetify's overlay base (2000) and each other; no "+1 to win" value.                                                                                                                                                                     | `docs/theory/design-system.md` (z-index)                                         |
+| C5   | **Is the stacking order coherent?** The `--z-index-*` tokens against Vuetify's overlay base (2000) and each other; no "+1 to win" value.                                                                                                                                                                     | `docs/understand/design-system.md` (z-index)                                     |
 | C6   | **Is any declaration dead?** It sets what is already set, or overrides a property the target never sets.                                                                                                                                                                                                     | Vuetify CSS source (`node_modules/vuetify/lib/components/**.css`)                |
 | C7   | **Does a utility fight a Vuetify component where the scanner cannot see it?** `:class` bindings, class maps in scripts, utilities on a component with no matching prop (a `min-h-11` on `v-chip`: the precedent is `useTouchFriendlySize`).                                                                  | precedent / named rule                                                           |
 | C8   | **Does `:deep` reach into a child we own** (fix the child: a prop or a slot class) or into Vuetify (a prop, a slot or `defaults`)?                                                                                                                                                                           | https://vuejs.org/api/sfc-css-features.html                                      |
-| C9   | **Does a tooltip (`v-tooltip`) hold information nothing visible repeats?** The scanner sees native `title` only.                                                                                                                                                                                             | CLAUDE.md § UI and design; `docs/tools/touch-testing.md`                         |
+| C9   | **Does a tooltip (`v-tooltip`) hold information nothing visible repeats?** The scanner sees native `title` only.                                                                                                                                                                                             | CLAUDE.md § UI and design; `docs/build/touch-testing.md`                         |
 
 ## Step 3 — freeze
 

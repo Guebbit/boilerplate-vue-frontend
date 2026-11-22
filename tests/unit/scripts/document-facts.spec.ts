@@ -8,6 +8,7 @@ import {
     exportedNames,
     fencedContractImports,
     listedPackages,
+    missingFrontMatter,
     missingScripts,
     npmScriptsCited,
     staleListings,
@@ -91,5 +92,44 @@ describe('exportedNames', () => {
         ].join('\n');
 
         expect([...exportedNames(source)]).toEqual(['Product', 'Id', 'listProducts', 'Enum']);
+    });
+});
+
+/** A page of the given markdown, under `docs/build` unless a path is given. */
+const page = (text: string, path = 'docs/build/a.md') => ({ path, text });
+
+describe('missingFrontMatter', () => {
+    it('accepts a page with a known type and a non-empty known audience', () => {
+        const text = '---\ntype: task\naudience: [developer, operator]\n---\n\n# A\n';
+        expect(missingFrontMatter([page(text)])).toEqual([]);
+    });
+
+    it('reports a page with no block at all', () => {
+        expect(missingFrontMatter([page('# A\n')])).toEqual([
+            { page: 'docs/build/a.md', problem: 'no front-matter block (type, audience)' }
+        ]);
+    });
+
+    it('reports an unknown type', () => {
+        const findings = missingFrontMatter([page('---\ntype: essay\naudience: [anyone]\n---\n')]);
+        expect(findings.map((finding) => finding.problem)).toEqual([
+            expect.stringContaining('`type` must be one of')
+        ]);
+    });
+
+    it('reports a missing, empty or unknown audience', () => {
+        const texts = [
+            '---\ntype: task\n---\n',
+            '---\ntype: task\naudience: []\n---\n',
+            '---\ntype: task\naudience: [dev]\n---\n'
+        ];
+        for (const text of texts)
+            expect(missingFrontMatter([page(text)]).map((finding) => finding.problem)).toEqual([
+                expect.stringContaining('`audience` must be a non-empty list')
+            ]);
+    });
+
+    it('leaves the home page alone', () => {
+        expect(missingFrontMatter([page('---\nlayout: home\n---\n', 'docs/index.md')])).toEqual([]);
     });
 });

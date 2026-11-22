@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # stock-alerts
 
 ::: tip At a glance
@@ -13,7 +18,7 @@
 
 ## Its neighbourhood
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 - → `products` **conformist** — Reads the product's shelf state (`shelfStateOf`) to know when the button is offered, and its titles (`useProductLines`) for the list.
 
@@ -37,7 +42,7 @@ disagree with the server.
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/stock-alerts/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/stock-alerts/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 ## Wiring
 

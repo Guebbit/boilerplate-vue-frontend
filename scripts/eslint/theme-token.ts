@@ -71,7 +71,7 @@ const attributeName = (attribute: TemplateAttribute): string | undefined => {
 };
 
 /** Reports colour literals, unknown theme variables and unknown colour props. */
-export const themeToken = ESLintUtils.RuleCreator((name) => `docs/tools/design-lint.md#${name}`)<
+export const themeToken = ESLintUtils.RuleCreator((name) => `docs/build/design-lint.md#${name}`)<
     Options,
     MessageIds
 >({

@@ -5,7 +5,7 @@
  *
  * `collectLayoutFindings` (in `tests/support/e2e/layout-checks.ts`) turns a live page into
  * findings; this judges them. Splitting them keeps the rules unit testable with no DOM.
- * What each check means, and why: `docs/tools/layout-sweep.md`.
+ * What each check means, and why: `docs/build/layout-sweep.md`.
  */
 import type { ViewportName } from './viewports';
 
@@ -59,7 +59,7 @@ const MIN_REASON_LENGTH = 20;
 const PLACEHOLDER_REASON = /^\s*(?:todo|fixme|temp)/i;
 
 /** Where the opt-out contract is written down. */
-const OPT_OUT_DOCS = 'docs/tools/layout-sweep.md#opting-out';
+const OPT_OUT_DOCS = 'docs/build/layout-sweep.md#opting-out';
 
 /**
  * Refuses a reason that is not one. An exemption should be an argument, not a shrug.

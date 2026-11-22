@@ -4,7 +4,7 @@
  * `InjectionKey`, so a rename is a compile error on both sides.
  * Here: the example a screen shows, plus the one mutation a descendant may ask for.
  * Delete it if: no descendant needs what its screen holds.
- * See: docs/theory/modules.md#the-module-template
+ * @see docs/understand/modules.md#the-module-template
  */
 import { provide, inject } from 'vue';
 import type { InjectionKey, Ref } from 'vue';

@@ -3,7 +3,7 @@
  * What Lighthouse is told: the phone profile, the categories, and the switches that keep it quiet.
  *
  * Pure data, so a unit test can pin the profile to Lighthouse's own preset. Reasoning (D2, D4):
- * `docs/tools/lighthouse.md`.
+ * `docs/build/lighthouse.md`.
  */
 import type { CliFlags, Flags } from 'lighthouse';
 import { REPORT_VIEWPORTS } from '../e2e/viewports';

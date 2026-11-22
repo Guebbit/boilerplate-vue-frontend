@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # The checkout flow
 
 The only multi-step flow this client holds, and the one screen where price, stock, address and
@@ -115,5 +120,5 @@ already turned into an order — and it is why checkout lives in this store rath
 - [`cart`](./cart.md) — the module this belongs to
 - [`delivery`](./delivery.md) — the component this flow mounts
 - [`orders`](./orders.md) — where a completed checkout lands
-- [Domain Layer](../theory/domain-layer.md) — why the totals are not computed here
-- [Umami](../tools/umami.md) — the one event this module reports
+- [Domain Layer](../understand/domain-layer.md) — why the totals are not computed here
+- [Umami](../operate/umami.md) — the one event this module reports

@@ -6,7 +6,7 @@
  * with a toast: every real failure still reaches Faro, but the message stays local to the form or
  * panel it blocked instead of joining the toast queue. Lives here rather than in `ui/composables`
  * because it reaches into observability, and `ui` may not — see `eslint.config.ts`'s tier
- * boundary rules. See docs/theory/request-flow.md for which pairing a call site should use.
+ * boundary rules. See docs/understand/request-flow.md for which pairing a call site should use.
  */
 import { ref, type Ref } from 'vue';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';

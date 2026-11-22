@@ -62,7 +62,7 @@ dist-ssr
 
 *.tsbuildinfo
 # Claude Code's local state, except `skills/`: it registers the `scripts/audit/` prompts with
-# Claude Code — see docs/tools/ai-auditing.md.
+# Claude Code — see docs/build/ai-auditing.md.
 /.claude/*
 !/.claude/skills/
 

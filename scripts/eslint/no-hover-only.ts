@@ -91,7 +91,7 @@ const staticClasses = (element: TemplateElement): string =>
     )?.value?.value ?? '';
 
 /** Reports a hover or gesture the user on a phone or a keyboard cannot reach. */
-export const noHoverOnly = ESLintUtils.RuleCreator((name) => `docs/tools/design-lint.md#${name}`)<
+export const noHoverOnly = ESLintUtils.RuleCreator((name) => `docs/build/design-lint.md#${name}`)<
     Options,
     MessageIds
 >({

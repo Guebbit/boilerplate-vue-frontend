@@ -418,7 +418,7 @@ jobs:
         # Cypress against the paired backend's DEMO profile: the real API on an in-memory Mongo,
         # one instance per slice, cache and queue disabled. Fast because nothing persists and
         # nothing is composed — `test-e2e-live` below is the job that attaches the real datastores,
-        # and when the two disagree it wins. See docs/tools/demo-profile.md.
+        # and when the two disagree it wins. See docs/build/demo-profile.md.
         #
         # The sibling checkout is what `scripts/e2e/run-shards.ts` boots, so this job needs it as much
         # as `check` above does — with its dependencies installed, since the demo profile
@@ -426,7 +426,7 @@ jobs:
         #
         # A matrix, ONE SLICE PER RUNNER: the whole suite on one 4-vCPU runner measured ~178 min of
         # Cypress time against a 75-minute limit. `E2E_SLICE` tells the runner which slice it owns
-        # (docs/tools/live-e2e.md#ci-slices). Two axes:
+        # (docs/build/live-e2e.md#ci-slices). Two axes:
         #   - session-mode: `GET /account/session-config`. The backend boots with `NODE_SESSION_MODE`
         #     set to the value and the journeys read the same name, so both ways of staying signed
         #     in are driven through the real UI.

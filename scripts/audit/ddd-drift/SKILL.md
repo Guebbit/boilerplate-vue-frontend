@@ -18,8 +18,8 @@ rule seen from each side. A ROUTE here is the input to that class.
 
 WHAT DDD MEANS HERE: strategic only. Modules are bounded contexts. The context map is each module's docs page
 (`docs/modules/<m>.md` § "Its neighbourhood"); `module.ts` docblocks point at it. A barrel is the published language. `domain/` is thin and pure. The server decides the
-rules; the client reads the `*Actions` flags (`docs/theory/strategic-ddd.md` §4). There is no tactical DDD
-on purpose (`docs/theory/domain-layer.md` §4). Do not ask for aggregates, entities or repositories.
+rules; the client reads the `*Actions` flags (`docs/understand/strategic-ddd.md` §4). There is no tactical DDD
+on purpose (`docs/understand/domain-layer.md` §4). Do not ask for aggregates, entities or repositories.
 
 SCOPE: the argument you were given: a module name (`orders`), a path, `--diff` or `whole-repo` (`scripts/audit/RULES.md` rule 5).
 Empty means `whole-repo`. Drift is relational and is rarely introduced by the change that reveals it,
@@ -69,13 +69,13 @@ still disagree with, and a hand-kept fix is the whole point.
 
 ### 0 — claims first, with the code closed
 
-Read `docs/theory/{strategic-ddd,domain-layer,modules,layers,glossary}.md`, `docs/modules/<m>*.md` and every
+Read `docs/understand/{strategic-ddd,domain-layer,modules,layers}.md`, `docs/reference/glossary.md`, `docs/modules/<m>*.md` and every
 `src/modules/*/{module,index}.ts` docblock. Write one row per claim and freeze the list before you open any
 code. A claim you invent after reading the code is not a claim.
 
 **A `whole-repo` run.** The module pages do not fit one reader. Before you read a page, name the slices at
 the top of `whole-repo.claims.md`: clusters of related modules (sub-pages go with their module;
-`docs/modules/index.md` is read with the theory pages), sized so one reader finishes a slice in one
+`docs/modules/start.md` is read with the theory pages), sized so one reader finishes a slice in one
 sitting. Read the theory pages once, yourself.
 
 - Pass 1, per slice: a fresh read-only helper reads that slice's `docs/modules/*.md`, `module.ts`
@@ -127,7 +127,7 @@ For each hit, find the `*Actions` schema of that resource. Verdict:
 - a flag for it exists and the view ignores it → **DRIFT**
 - no flag exists → **ROUTE**, naming the `openapi.yaml` schema that needs one — even when an operation's
   description states the rule in prose: prose is documentation, a flag is the answer
-  (`docs/theory/strategic-ddd.md` §4, "delete the API" test)
+  (`docs/understand/strategic-ddd.md` §4, "delete the API" test)
 - the literal only labels, colours or picks a notice → **OK**
 
 A ROUTE is a BACKEND contract change and needs the user's yes. Report it. Never fix it, never edit the contract.
@@ -139,7 +139,7 @@ They go in the report and in RULES.md rule 3's plan suggestion; this audit write
 For each edge label on a module page, check what the sibling does with it: reads state, asks for a write, or
 mounts a component. A swapped label is F3. For each module, compare its barrel with its files: no barrel, or a
 barrel narrower than the store, composables, components and domain rules it holds, is F4. An export no
-sibling imports is NOT a finding: unused exports are allowed on purpose (`docs/theory/strategic-ddd.md` §5).
+sibling imports is NOT a finding: unused exports are allowed on purpose (`docs/understand/strategic-ddd.md` §5).
 
 ### 4 — F5 and F6: the `domain/` floor and the labels
 

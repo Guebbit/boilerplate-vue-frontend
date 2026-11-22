@@ -15,7 +15,7 @@ export default {
  * locally, apart from the signed-in cache.
  * Here: one published example; a draft, an archived one and a missing id all answer 404.
  * Delete it if: the module has nothing public.
- * See: docs/theory/request-flow.md
+ * @see docs/understand/request-flow.md
  */
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

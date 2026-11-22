@@ -4,7 +4,7 @@
  * `npm run test:lighthouse:baseline`.
  *
  * Exit 2 when there is no proposed baseline. Review the diff, then commit it as usual.
- * See: docs/tools/lighthouse.md#baseline-and-ratchet
+ * @see docs/build/lighthouse.md#baseline-and-ratchet
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import {

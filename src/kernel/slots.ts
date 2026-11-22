@@ -9,7 +9,7 @@
  * The composition root collects every enabled module's contributions once
  * (`collectModuleSlots`) and provides them under {@link SLOTS_KEY}; the kernel stays ignorant of
  * Pinia and of what a slot's component does. A slot only earns a name here when a second module
- * needs one — see `docs/theory/layers.md`.
+ * needs one — see `docs/understand/layers.md`.
  */
 import { inject } from 'vue';
 import type { Component, InjectionKey } from 'vue';

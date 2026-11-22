@@ -4,7 +4,7 @@
  * a schema reaches for exists in both languages, and resolves to different text. The MECHANISM —
  * that a thunked Zod message re-resolves at parse time — is proven once elsewhere, with an
  * invented schema, in `tests/cross-cutting/schemas-i18n.spec.ts`; this file proves THIS module's
- * schemas and dictionaries actually agree, so it lives with the domain (`docs/theory/modules.md`).
+ * schemas and dictionaries actually agree, so it lives with the domain (`docs/understand/modules.md`).
  *
  * Runs against the real vue-i18n instance, with the modules wired in as `src/main.ts` does: a
  * mocked `t` would assert only that a key was looked up, which stays true when the message is

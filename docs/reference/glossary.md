@@ -1,0 +1,214 @@
+---
+type: reference
+audience: [developer]
+---
+
+# Glossary
+
+The terms each module uses, **defined as that module means them**.
+
+This is deliberately not one flat list. The same word legitimately means different things in two
+modules, and that divergence is the whole point of a bounded context — a `Cart` here is a view of
+the server's cart, and the word means something else entirely in the paired backend, which owns
+the row.
+
+::: tip Where the language actually lives
+In the code. The identifiers **are** the ubiquitous language, and they are what a change has to
+move. This page carries the part an identifier cannot: what the term means, and the constraint
+behind it.
+:::
+
+Many of these definitions say what this client does **not** own. That is the most useful thing a
+frontend glossary can record: most of this application's domain lives behind the API, and the terms
+below mark the boundary. See [Strategic DDD](../understand/strategic-ddd.md) and
+[Domain Layer](../understand/domain-layer.md).
+
+---
+
+## Authorization — the words every module borrows
+
+Not a module's vocabulary but the API's, and the one place this client evaluates a policy rather
+than rendering an answer. See [Security](../understand/security.md#route-guards).
+
+| Term               | What it means here                                                                                                                                                                           |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Permission key** | The unit of access, e.g. `products.update`. Declared in the API's own key file; a deployment may never invent one. This client never spells a key — it asks about the RULE the key produces. |
+| **Rule**           | An `[action, subject]` pair as CASL evaluates it: `['update', 'Product']`. What `meta.can` declares and what `session.can()` answers.                                                        |
+| **Action**         | One of `read`, `create`, `update`, `delete`. `manage` exists on the API's keys and is never published as a rule, so no screen may ask for it.                                                |
+| **Subject**        | The type a rule is about — `Product`, `Order`, `User`, `ObservabilitySnapshot`. Singular, and NOT the key's plural first segment.                                                            |
+| **Role**           | A named bundle of keys — `customer`, `manager`, `warehouse`, `support`, `editor`, `moderator`, `admin`, `operator`. Data the deployment may edit, so nothing here branches on the name.      |
+| **Scope**          | `tenant` (this shop) or `platform` (the installation). Two abilities, never merged; neither can satisfy the other's keys.                                                                    |
+| **Ability**        | The compiled rule set this client asks. Fetched, never derived — a client that computed its own would keep a duplicate that drifts.                                                          |
+
+## `account`
+
+| Term                 | What it means here                                                                                                                           |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Profile**          | The visitor’s own editable record. The same row `users` administers, seen from the inside.                                                   |
+| **Session**          | Whether someone is signed in. Owned by `infrastructure/session`, not by this module — the router guards read it before any domain code runs. |
+| **Account deletion** | A two-step exit: a request, then a confirm. Never one click.                                                                                 |
+
+## `api-keys`
+
+| Term        | What it means here                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------------- |
+| **API key** | A machine credential a caller uses in place of a session. Its fields are fixed when it is minted.     |
+| **Mint**    | Creating a key. The plaintext secret comes back once, in the reveal dialog, and is never stored here. |
+| **Revoke**  | Ending a key. The list is where it happens; there is no edit page.                                    |
+
+## `cart`
+
+| Term          | What it means here                                                                                                      |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Cart**      | A VIEW of the server’s cart, not a second copy of it. Every mutation is a request; the store holds the answer.          |
+| **Cart line** | A product and a quantity, as the API returns them. Prices come down with the response — this client never computes one. |
+| **Checkout**  | The flow that turns the cart into an order: address, shipping, payment. The steps are this module’s; the rules are not. |
+| **Badge**     | The header’s item count. The reason siblings refresh this store after writing to it.                                    |
+
+## `delivery`
+
+| Term                | What it means here                                                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Shipping method** | A named way to ship, with a price the server quotes. Chosen in the cart, frozen on the order.                         |
+| **Shipment**        | The parcel panel on an order — read-only once shipped; staff records the handover and arrival through it before that. |
+
+## `example`
+
+| Term        | What it means here                                                                      |
+| ----------- | --------------------------------------------------------------------------------------- |
+| **Example** | A small note with an owner and a draft, published, archived life. Written to be copied. |
+| **Cover**   | The optional image an example carries, uploaded through its own route.                  |
+
+## `tasks`
+
+| Term                | What it means here                                                          |
+| ------------------- | --------------------------------------------------------------------------- |
+| **Contact request** | A message from anyone, account or not. Identified by the email on the form. |
+| **Inbox**           | The staff side of the same collection. Triage, nothing more.                |
+
+## `inventory`
+
+| Term                | What it means here                                                                                                                                             |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Stock movement**  | One row explaining a change in stock: how many, and why. Written by the server, listed here.                                                                   |
+| **Inventory level** | What is on the shelf for one product right now: on hand, reserved, and the difference a shopper can actually buy.                                              |
+| **Receipt**         | Stock arriving. Raises what is on hand and nothing else, so a delivery is sellable the moment it lands.                                                        |
+| **Adjustment**      | A stocktake correction, signed — shrinkage is the common case and it is negative. Refused when it would leave fewer units than are already promised to orders. |
+
+## `locales`
+
+| Term         | What it means here                                                                                                                                                         |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Language** | A tag registered in the dynamic tier. Its existence means entries can be translated into it — never that the API can answer in it, which needs a deployed file.            |
+| **Entry**    | One translated string, identified by (language, scope, key). Flat and dotted; the nested tree is built by the server.                                                      |
+| **Scope**    | Which of the two dictionaries a row overrides. `app` is this frontend’s words, `api` is the backend’s. Separate keyspaces — the same key in both is two unrelated strings. |
+| **Revision** | A language’s version counter, bumped by every write. What a client caches against.                                                                                         |
+
+## `orders`
+
+| Term        | What it means here                                                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Order**   | What a customer bought, frozen. This client renders it and never edits its substance — only a caller holding `orders.update` moves its status. |
+| **Status**  | Where an order is in its lifecycle. A closed set the server enforces; this module maps each value to a label and a colour.                     |
+| **Reorder** | Refilling the cart from a past order. The one write this module makes into another module’s state.                                             |
+
+## Money (every module)
+
+| Term       | What it means here                                                                                                                        |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Amount** | A decimal string at its currency's own places (`"19.90"`, JPY `"1000"`). The text carries its scale; this client holds no currency table. |
+
+## `payments`
+
+| Term         | What it means here                                                                               |
+| ------------ | ------------------------------------------------------------------------------------------------ |
+| **Payment**  | The money behind one order. A panel on the order page, never a page of its own.                  |
+| **Provider** | The outside system that actually charges. Faked here, behind the same seam a real one would use. |
+
+## `products`
+
+| Term          | What it means here                                                                                            |
+| ------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Product**   | A sellable item as the API returns it. Identified by id; the name is not unique.                              |
+| **Catalogue** | The list view, with its filters and paging. The filters are query parameters — the server does the filtering. |
+| **Stock**     | Units on the shelf, read from the response. This client displays availability and never decides it.           |
+
+## `returns`
+
+| Term             | What it means here                                                                                        |
+| ---------------- | --------------------------------------------------------------------------------------------------------- |
+| **Return**       | The customer's request to send goods back, its own record beside the order.                               |
+| **Withdrawal**   | A return whose reason is `withdrawal`: the EU "withdraw from contract here" button, the same create call. |
+| **Return queue** | The staff side: approve, receive, or cancel what has not shipped.                                         |
+
+## `stock-alerts`
+
+| Term             | What it means here                                                                     |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| **Notify me**    | The request a shopper makes where a product cannot be ordered, to be told when it can. |
+| **Open request** | A Notify me still waiting; the account page lists them.                                |
+
+## `observability`
+
+| Term          | What it means here                                                                                    |
+| ------------- | ----------------------------------------------------------------------------------------------------- |
+| **KPI**       | One headline number on the console. Read from the observability endpoints, never computed here.       |
+| **Audit log** | The server’s record of who did what. This module renders it and owns none of it.                      |
+| **Health**    | Whether the API can serve. A liveness answer, not a correctness one.                                  |
+| **Stream**    | The live SSE feed of observability metrics. Opened by this module, transported by `infrastructure`.   |
+| **Frame**     | One message off the stream, shown as a metric grid or as raw JSON, so the shape is visible on demand. |
+
+## `notifications`
+
+| Term             | What it means here                                                                                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Notification** | A message the server keeps for one person until they delete it. Stored as a `code` and its facts, never as text.                   |
+| **Toast**        | A message that lives in the page's memory and goes away on its own. Not the same thing: a notification is also shown as one, once. |
+| **Bell**         | The app bar's button and panel: the badge counts the unread, opening it marks them read, each row has its own delete button.       |
+| **Unread**       | A notification with no `readAt`. The badge counts these.                                                                           |
+
+## `stats`
+
+| Term          | What it means here                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Net sales** | Goods sold, net of VAT, minus reversals. Computed by the backend from invoices and credit notes, never here. |
+| **Reversal**  | The goods part of a credit note, dated when it was issued.                                                   |
+| **Bucket**    | One day, week (Monday) or month of a series, edged at the shop's local midnight.                             |
+| **Period**    | Two calendar days and a bucket size: the one question every stats page asks.                                 |
+
+## `users`
+
+| Term            | What it means here                                                                                                            |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **User**        | The person record, staff-facing. The same row `account` edits from the inside.                                                |
+| **Role**        | The named bundle of keys this person holds, e.g. `manager`. A name the API owns; what it ALLOWS is the rules, never the name. |
+| **Field rules** | The Zod schemas every user-shaped form validates against. This module’s one export, and the reason `account` depends on it.   |
+
+## `webhooks`
+
+| Term             | What it means here                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| **Subscription** | Who gets notified of what: an endpoint plus the events it wants.                           |
+| **Secret ring**  | The signing secrets of a subscription. Rotating one returns the plaintext once.            |
+| **Delivery**     | One attempt to send an event to a subscription's endpoint. The delivery log can replay it. |
+
+## `wishlist`
+
+| Term             | What it means here                                                                       |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| **Wishlist**     | The visitor’s saved products. Holds references and nothing else — no quantity, no price. |
+| **Move to cart** | The list’s only exit: a saved line becomes a cart line and leaves the list.              |
+
+---
+
+## Design system — the words the styling rules use
+
+Not a module's vocabulary but the styling rules'. What they enforce: [Design System](../understand/design-system.md).
+
+| Term                  | What it means here                                                                                                                       |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Design token**      | A named value the design is built from: a theme colour, a `@theme` variable. A custom value added to `@theme` is a token at once.        |
+| **Arbitrary value**   | A Tailwind class with a bracket, like `max-w-[1280px]`. Legal only as a reasoned one-off; a repeated one becomes a token.                |
+| **Canonical class**   | The one spelling Tailwind prefers for a meaning (`size-12` for `h-12 w-12`). The lint rewrites the long form.                            |
+| **Ambiguous utility** | A class name both Vuetify and Tailwind generate with different meaning (`w-100`, `h-screen`). Which one wins depends on the layer order. |
+| **Reasoned disable**  | An `eslint-disable` comment that says why (`-- reason`). An unused one, or one with no reason, is an error.                              |

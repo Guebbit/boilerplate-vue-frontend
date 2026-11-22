@@ -11,7 +11,7 @@ The backend owns the contract. This repo never edits it.
   `sync:frontend`, which also runs this repo's `regenerate`.
 - From a lane worktree, sync into the paired frontend worktree, never into this repo's main.
 
-See: `docs/api/openapi-workflow.md`, `docs/api/asyncapi-workflow.md`
+See: `docs/build/openapi-workflow.md`, `docs/build/asyncapi-workflow.md`
 
 ## Changing a shared rule
 
@@ -22,7 +22,7 @@ A rule that is only data lives in `shared/rules/*.yaml`, checked by a Zod schema
 2. `npm run regenerate` (rewrites the `*.generated.ts` beside its reader, and `shared/rules/schemas/`).
 3. A backend-owned rule arrives under `contracts/`. Never edit it here.
 
-See: `docs/tools/shared-rules.md`
+See: `docs/understand/shared-rules.md`
 
 ## TypeScript
 
@@ -60,7 +60,7 @@ Every rule in this section is machine-checked: `strictTypeChecked` plus the proj
 - Override Vuetify through a prop, `defaults` or the theme, never its classes;
   `tests/cross-cutting/css-invasiveness.spec.ts` refuses new invasive CSS (`npm run audit:css` lists it).
   The calls no check can make: `scripts/audit/css-invasive/SKILL.md`. Run it to find them.
-- See `docs/theory/design-system.md`. What no lint can see — rhythm, hierarchy, a screen that
+- See `docs/understand/design-system.md`. What no lint can see — rhythm, hierarchy, a screen that
   reads wrong — is judged from screenshots: `scripts/audit/design-manual/SKILL.md`. Run it to
   find them.
 
@@ -91,13 +91,13 @@ Open source first:
   `tests/cross-cutting/entry-chunk-budget.spec.ts` guards the entry chunk.
 - When a choice is close, present the options and the trade-off.
 - **Write it down in the same change:** its group and purpose in
-  `docs/tools/package-dependencies.md`. A library only one module imports goes in that module's
+  `docs/reference/package-dependencies.md`. A library only one module imports goes in that module's
   page under `docs/modules/`, in a `## Libraries` section. `example` has no page by design.
 
 ## Module barrels
 
 Every module publishes a barrel (`src/modules/<name>/index.ts`) that exports everything the module
-can offer a sibling. See `docs/theory/strategic-ddd.md` §5.
+can offer a sibling. See `docs/understand/strategic-ddd.md` §5.
 
 - MUST export the module's stores, composables, components and `domain/` rules, whether or not a
   sibling imports them today. Unused exports are allowed on purpose: they are harmless, and a missing
@@ -252,9 +252,9 @@ sharp(buffer).resize(
 - Pass rate is 100%, always. Fix it or delete it. Lint refuses a committed `.only` or `.skip`.
 - Assert through the public door (the rendered page, the store, the composable), not private internals.
 - **Mutation score is the one test-quality number; coverage is not measured.**
-  See `docs/tools/mutation-testing.md`.
+  See `docs/build/mutation-testing.md`.
 - Visual baselines (`**/__snapshots__/*.png`) are recorded only inside the pinned image
-  (`docs/tools/visual-regression.md`), never on a host.
+  (`docs/build/visual-regression.md`), never on a host.
 - **A run that finds failures: fix them all, then re-run only what the fixes can affect.** That is
   the failed tests plus the ones that touch the same areas — never the whole suite by default. A
   long suite (the live e2e takes hours) is run in full once; a second full run is a deliberate
@@ -271,7 +271,7 @@ sharp(buffer).resize(
 
 - MUST NOT put information only in a `title` attribute or a tooltip: a finger cannot hover. A tooltip
   repeats a visible label or the accessible name; truncated data gets a tap route (an expansion row,
-  a copy button). The touch scan gates it: `docs/tools/touch-testing.md`. What axe and the scan
+  a copy button). The touch scan gates it: `docs/build/touch-testing.md`. What axe and the scan
   structurally cannot reach: `scripts/audit/accessibility-manual/SKILL.md`. Run it to find them.
 
 ## Asking vs. deciding

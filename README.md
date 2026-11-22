@@ -28,7 +28,7 @@ it answered by the real API.
 
 Or start the full stack (`compose`) for real Redis/queue behaviour.
 
-→ Full setup, both modes, port map and the pre-commit gate: **[Getting Started](./docs/getting-started.md)**
+→ Full setup, both modes, port map and the pre-commit gate: **[Getting Started](./docs/build/run-locally.md)**
 → What to set up by hand before it is yours (domain, TLS, brand, legal): **[INSTALL.md](./INSTALL.md)**
 
 ---
@@ -70,26 +70,26 @@ Four ideas carry the whole repository:
 
 ## Where things live
 
-The tiers and the folder map live in [`docs/theory/layers.md`](docs/theory/layers.md#tiers) (`#tiers`, `#quick-map`).
+The tiers and the folder map live in [`docs/understand/layers.md`](docs/understand/layers.md#tiers) (`#tiers`, `#quick-map`).
 
 ---
 
 ## The map
 
-| You want to                      | Read                                                                                                                    |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Get it running                   | [Getting Started](./docs/getting-started.md)                                                                            |
-| **Read the code, first time**    | **[Reading Path](./docs/theory/reading-path.md)** — nine files, in order                                                |
-| Know what one file _is_          | [File Glossary](./docs/reference/) — every file in the repo, one hop to an answer                                       |
-| Understand the shape             | [Architecture](./docs/theory/architecture.md) · [Layers](./docs/theory/layers.md) · [Modules](./docs/theory/modules.md) |
-| Add or remove a domain           | [Adding & Removing a Module](./docs/theory/module-lifecycle.md)                                                         |
-| Change an endpoint               | [OpenAPI Workflow](./docs/api/openapi-workflow.md)                                                                      |
-| Configure something              | [Environment Variables](./docs/tools/environment.md)                                                                    |
-| Look up a script                 | [Package Scripts](./docs/tools/package-scripts.md)                                                                      |
-| Understand a dependency          | [Tools Explained](./docs/tools/tools-explained.md)                                                                      |
-| Test something                   | [Testing overview](./docs/tools/testing-and-docs.md)                                                                    |
-| Know what is planned but unbuilt | [Roadmap](./docs/theory/roadmap.md)                                                                                     |
-| Deploy it                        | `docker/Dockerfile.production` · `docker-compose.production.yml`                                                        |
+| You want to                      | Read                                                                                                                                |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Get it running                   | [Getting Started](./docs/build/run-locally.md)                                                                                      |
+| **Read the code, first time**    | **[Reading Path](./docs/understand/reading-path.md)** — nine files, in order                                                        |
+| Know what one file _is_          | [File Glossary](./docs/reference/) — every file in the repo, one hop to an answer                                                   |
+| Understand the shape             | [Architecture](./docs/understand/architecture.md) · [Layers](./docs/understand/layers.md) · [Modules](./docs/understand/modules.md) |
+| Add or remove a domain           | [Adding & Removing a Module](./docs/build/module-lifecycle.md)                                                                      |
+| Change an endpoint               | [OpenAPI Workflow](./docs/build/openapi-workflow.md)                                                                                |
+| Configure something              | [Environment Variables](./docs/operate/environment.md)                                                                              |
+| Look up a script                 | [Package Scripts](./docs/reference/package-scripts.md)                                                                              |
+| Understand a dependency          | [Tools Explained](./docs/understand/tools-explained.md)                                                                             |
+| Test something                   | [Testing overview](./docs/build/testing-and-docs.md)                                                                                |
+| Know what is planned but unbuilt | [Roadmap](./docs/understand/roadmap.md)                                                                                             |
+| Deploy it                        | `docker/Dockerfile.production` · `docker-compose.production.yml`                                                                    |
 
 ---
 
@@ -107,7 +107,7 @@ rather than reported.
 Two suites sit outside it: the live-backend e2e run (`npm run complete:manual`), which needs the
 paired API up, and pixel diffing, which answers to the machine that took the snapshots and so runs
 only in its pinned CI image (`visual.yml`).
-See [Test timings](./docs/tools/testing-and-docs.md#test-timings) for what each layer costs.
+See [Test timings](./docs/build/testing-and-docs.md#test-timings) for what each layer costs.
 
 ---
 

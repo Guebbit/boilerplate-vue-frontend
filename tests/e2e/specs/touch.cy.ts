@@ -5,7 +5,7 @@
  * `applyViewport` switches CDP touch emulation on for the phone and tablet sizes, which flips
  * `(hover: none)`, `(pointer: coarse)` and `ontouchstart` — and Vuetify's touch-only paths with
  * them. These cases perform real taps and swipes (`cypress-real-events`) and read what a person
- * would see. How it works and why: `docs/tools/touch-testing.md`.
+ * would see. How it works and why: `docs/build/touch-testing.md`.
  *
  * Touch describes sit AFTER the desktop one on purpose: in live Chromium, a test that follows a
  * touch test in the same spec loses its mouse (the reset falls back to "no pointer").

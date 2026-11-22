@@ -46,7 +46,7 @@ const mutationConfig = mergeConfig(
              * There is nothing for a pool to do here anyway: `coverageAnalysis: "perTest"` narrows
              * each mutant to the handful of tests that reach it, and a pool cannot parallelise
              * below a file. The paired backend pins the same thing in `jest.config.mutation.js` —
-             * see its docs/tools/mutation-testing.md#the-worker-pool-multiplication.
+             * see its docs/build/mutation-testing.md#the-worker-pool-multiplication.
              */
             maxWorkers: 1,
             fileParallelism: false,

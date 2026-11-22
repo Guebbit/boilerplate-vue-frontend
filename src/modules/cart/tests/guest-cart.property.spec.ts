@@ -14,7 +14,7 @@
  *   - merging adds up to adding one by one, which is what `POST /cart/items` would have done;
  *   - taking away what a merge sent leaves exactly what was added during the call.
  *
- * Seeded, like every property file here (`docs/tools/property-testing.md`): a failure is
+ * Seeded, like every property file here (`docs/build/property-testing.md`): a failure is
  * reproducible, never flake.
  */
 import { afterEach, describe, expect, it } from 'vitest';

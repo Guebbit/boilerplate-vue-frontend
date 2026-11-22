@@ -10,7 +10,7 @@
  * the side that pairs with EITHER backend (`.env`'s `BACKEND_PATH` says which), and the two twins
  * do not serialise YAML identically.
  *
- * See: docs/reference/contracts.md#keeping-the-pair-in-step
+ * @see docs/reference/contracts.md#keeping-the-pair-in-step
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';

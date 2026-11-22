@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # returns
 
 ::: tip At a glance
@@ -19,7 +24,7 @@ the staff queue that approves and receives them, cancelling what has not shipped
 `WithdrawalPanel`, so the order never calls a returns operation itself. A return links back to its
 order by route name, guarded by `linkIfRouted`, so no edge points the other way.
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 - `orders` → **published-language** — Mounts `WithdrawalPanel`; the withdrawal and the order's returns list are the component's own business.
 
@@ -153,7 +158,7 @@ detail-only part waits for `isWholeReturn` before it renders.
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/returns/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/returns/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 `ReturnsList` and `SalesReturns` are one view on two routes: the server decides whether the rows are
 the caller's own or everyone's.
@@ -193,5 +198,5 @@ Nothing in this domain needs a page of its own: the story above is the whole of 
 
 - [`orders`](./orders.md) — mounts `WithdrawalPanel` on the order page
 - [`delivery`](./delivery.md) — the return address this module does not show
-- [Domain Layer](../theory/domain-layer.md) — why `remedy.ts` and `statement.ts` are pure rules
-- [Sitemap & Access Control](../theory/sitemap.md) — the customer/staff split on these routes
+- [Domain Layer](../understand/domain-layer.md) — why `remedy.ts` and `statement.ts` are pure rules
+- [Sitemap & Access Control](../understand/sitemap.md) — the customer/staff split on these routes

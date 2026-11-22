@@ -1,6 +1,6 @@
 /**
  * The client half of the `sort` grammar: the CSV a URL holds, Vuetify's `{ key, order }[]`, and
- * the contract's token list. The server half is `docs/api/sorting.md`.
+ * the contract's token list. The server half is `boilerplate-node-backend/docs/reference/sorting.md`.
  */
 import { describe, it, expect } from 'vitest';
 import {

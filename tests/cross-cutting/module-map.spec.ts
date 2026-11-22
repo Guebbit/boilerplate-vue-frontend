@@ -1,11 +1,11 @@
 /**
- * The context map's one home: "The whole map" in `docs/modules/index.md`.
+ * The context map's one home: "The whole map" in `docs/modules/start.md`.
  *
  * This spec parses that Mermaid block, whose edge lines are structured, and refuses an edge that
  * `dependsOn` does not allow. A module page links to the map instead of redrawing it.
  *
  * It does not compare the map to real imports: `dependsOn` plus lint already gate those, and a
- * self-reported scan is what the strategic-DDD page rejects. Arrow legend, from `index.md`:
+ * self-reported scan is what the strategic-DDD page rejects. Arrow legend, from `start.md`:
  * `-->` conformist, `==>` customer-supplier, `-.->` published-language.
  */
 import { describe, expect, it } from 'vitest';
@@ -80,7 +80,7 @@ const key = ({ from, to, kind }: Edge): string => `${from} → ${to} (${kind})`;
 
 /** The overview's edges. */
 const overviewEdges = (): Edge[] =>
-    parseEdges(mermaidUnder(readFileSync(path.join(DOCS, 'index.md'), 'utf8'), 'The whole map'));
+    parseEdges(mermaidUnder(readFileSync(path.join(DOCS, 'start.md'), 'utf8'), 'The whole map'));
 
 describe('the context map in the overview', () => {
     it('reads some edges at all', () => {

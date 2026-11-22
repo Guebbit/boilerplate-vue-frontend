@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # api-keys
 
 ::: tip At a glance
@@ -59,7 +64,7 @@ function returns is listed — an internal ref is not part of the surface.
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/api-keys/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/api-keys/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 ## Wiring
 
@@ -96,6 +101,6 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 
 - [`webhooks`](./webhooks.md) — the module `SecretRevealModal.vue` was promoted out of, and the
   other module minting a one-time credential secret
-- [OpenAPI Workflow](../api/openapi-workflow.md) — where the generated request schemas come from
-- [Sitemap & Access Control](../theory/sitemap.md) — the `meta.can` gate on both routes here
-- [State & Routing](../tools/state-and-routing.md) — the store behind the two screens
+- [OpenAPI Workflow](../build/openapi-workflow.md) — where the generated request schemas come from
+- [Sitemap & Access Control](../understand/sitemap.md) — the `meta.can` gate on both routes here
+- [State & Routing](../understand/state-and-routing.md) — the store behind the two screens

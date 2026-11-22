@@ -6,14 +6,20 @@ hero:
     tagline: Single-package Vue 3 SPA boilerplate, paired with boilerplate-node-backend.
     actions:
         - theme: brand
-          text: Read Theory
-          link: /theory/
+          text: Understand it
+          link: /understand/start
         - theme: alt
-          text: Explore Tools
-          link: /tools/
+          text: Build with it
+          link: /build/start
         - theme: alt
-          text: Follow the API flow
-          link: /api/
+          text: Browse modules
+          link: /modules/start
+        - theme: alt
+          text: Operate it
+          link: /operate/start
+        - theme: alt
+          text: Look it up
+          link: /reference/start
 features:
     - title: This repo's specific shape
       details: Vue 3 + Pinia + Vue Router + Vue I18n + OpenAPI-generated axios client, shipped as one SPA package.
@@ -26,6 +32,17 @@ features:
     - title: Contract-first workflow
       details: openapi.yaml drives the generated axios client and Zod schemas. asyncapi.yaml drives the realtime types.
 ---
+
+## I want to…
+
+| I want to…                                  | Go to                                                                                                                                         |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Use the demo shop, or explain it to someone | [the shop manual](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/use-the-shop/start.md) (in the paired backend, optional) |
+| Understand how and why it is built          | [Understand](./understand/start.md)                                                                                                           |
+| Run it, change it, test it                  | [Build](./build/start.md)                                                                                                                     |
+| Read how one domain works                   | [Modules](./modules/start.md)                                                                                                                 |
+| Configure it and watch it                   | [Operate](./operate/start.md)                                                                                                                 |
+| Look up an endpoint, a script, a file       | [Reference](./reference/start.md)                                                                                                             |
 
 ## What this docs site is for
 
@@ -45,10 +62,10 @@ flowchart TD
     A --> E[vue-spa-quasar\nskeleton + Quasar]
     A --> F[nuxt-spa\nNuxt variant]
 
-    B --> T[Theory]
+    B --> T[Understand]
     B --> M[Modules]
-    B --> U[Tools]
-    B --> V[API]
+    B --> U[Build]
+    B --> V[Operate]
 
     classDef family fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef current fill:#ddd6fe,stroke:#7c3aed,color:#111827;
@@ -61,39 +78,21 @@ flowchart TD
 ## Read this repo as
 
 - **SPA**: Vue 3 + Pinia + Vue Router, compiled by Vite.
-- **API client**: [OpenAPI-generated axios client](./api/openapi-workflow.md) — types and functions come from `openapi.yaml`, never written by hand.
-- **Realtime**: [SSE clients](./tools/realtime.md) driven by [`asyncapi.yaml`](./api/asyncapi-workflow.md).
-- **State**: [Pinia stores](./tools/state-and-routing.md) own data; views stay thin.
-- **Observability**: [Grafana Faro + Umami](./tools/observability.md) wired into a single store.
-- **Dev backend**: [the demo profile](./tools/demo-profile.md) — the real API, in-memory and seeded, one command.
-- **Contracts**: [`openapi.yaml`](./api/openapi-workflow.md) + [`asyncapi.yaml`](./api/asyncapi-workflow.md).
-- **Shape**: layered code explained in [Theory](./theory/) and the dedicated [Layers](./theory/layers.md) page.
+- **API client**: [OpenAPI-generated axios client](./build/openapi-workflow.md) — types and functions come from `openapi.yaml`, never written by hand.
+- **Realtime**: [SSE clients](./understand/realtime.md) driven by [`asyncapi.yaml`](./build/asyncapi-workflow.md).
+- **State**: [Pinia stores](./understand/state-and-routing.md) own data; views stay thin.
+- **Observability**: [Grafana Faro + Umami](./operate/observability.md) wired into a single store.
+- **Dev backend**: [the demo profile](./build/demo-profile.md) — the real API, in-memory and seeded, one command.
+- **Contracts**: [`openapi.yaml`](./build/openapi-workflow.md) + [`asyncapi.yaml`](./build/asyncapi-workflow.md).
+- **Shape**: layered code explained in [Understand](./understand/start.md) and the dedicated [Layers](./understand/layers.md) page.
 
 ## Five sections, five jobs
 
-### [Theory](./theory/)
-
-Big picture: architecture, layers, request flow, and sitemap.
-
-### [Modules](./modules/)
-
-One page per domain, top to bottom: what it owns, who depends on it, its store surface, its screens,
-and every endpoint it calls.
-Start at [the whole map](./modules/) — every domain grouped by subdomain, every node clickable.
-
-### [Tools](./tools/)
-
-Dependency-focused pages: runtime, state, routing, security, observability, and testing.
-New to the stack? Start at [Tools Explained](./tools/tools-explained.md) for a plain-English "what is X and why is it here" summary of every tool.
-
-### [API](./api/)
-
-Contract-first workflow: OpenAPI + AsyncAPI, codegen, and generated client usage.
-
-### [Files](./reference/)
-
-The lookup surface: every file in the repository, what it is, and which page above explains it.
-Start here when you have landed on a filename rather than on a question.
+- [Understand](./understand/start.md) — architecture, layers, request flow, sitemap, and the tools in plain English.
+- [Build](./build/start.md) — run it, the API contract workflow, adding a module, every kind of test.
+- [Modules](./modules/start.md) — one page per domain: what it owns, who depends on it, its store, screens and endpoints.
+- [Operate](./operate/start.md) — environment variables, observability, analytics.
+- [Reference](./reference/start.md) — the lookup surface: every folder, script, package and endpoint.
 
 ## Quick visual of the current repo
 
@@ -126,9 +125,9 @@ flowchart LR
 
 ## Good starting points
 
-- Want the app shape? Start at [Theory Overview](./theory/) and [Layers](./theory/layers.md).
-- Want to know what one domain does, end to end? [Modules](./modules/) — one page each, same nine blocks every time.
-- Want a specific dependency? Start at [Tools](./tools/) and jump to the tool page you need.
-- Want the `package.json` map? Read [Package Dependencies](./tools/package-dependencies.md) and [Package Scripts](./tools/package-scripts.md).
-- Want to understand the sitemap and route guards? Read [Sitemap & Access Control](./theory/sitemap.md).
-- Want to change payloads or add endpoints? Start in [API Overview](./api/) and keep [`openapi.yaml`](./api/openapi-workflow.md) first.
+- Never run it? [Getting Started](./build/run-locally.md).
+- Want the app shape? [Understand](./understand/start.md) and [Layers](./understand/layers.md).
+- Want to know what one domain does? [Modules](./modules/start.md).
+- Want the `package.json` map? [Package Dependencies](./reference/package-dependencies.md) and [Package Scripts](./reference/package-scripts.md).
+- Want the sitemap and route guards? [Sitemap & Access Control](./understand/sitemap.md).
+- Want to change payloads or add endpoints? [API](./build/api-contracts.md).

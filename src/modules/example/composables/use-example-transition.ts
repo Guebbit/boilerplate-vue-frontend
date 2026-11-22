@@ -4,7 +4,7 @@
  * for an event, say how it went, and re-read when the answer is that someone got there first".
  * Here: the status door, used by the detail and the edit screen.
  * Delete it if: your record has no action door with a 409.
- * See: docs/theory/request-flow.md#conditional-writes
+ * @see docs/understand/request-flow.md#conditional-writes
  */
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';

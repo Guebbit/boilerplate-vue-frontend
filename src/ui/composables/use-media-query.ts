@@ -4,7 +4,7 @@
  *
  * Vuetify reads `matchMedia` only for its theme, and `@vueuse/core` is no dependency of ours, so
  * this is the one place a component asks the browser about its pointer. Input modality (hover,
- * pointer) is not width: see `docs/theory/design-system.md`.
+ * pointer) is not width: see `docs/understand/design-system.md`.
  */
 import { onScopeDispose, readonly, ref, type Ref } from 'vue';
 

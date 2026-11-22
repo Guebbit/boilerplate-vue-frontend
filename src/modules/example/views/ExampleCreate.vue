@@ -14,7 +14,7 @@ export default {
  * In any module: a create screen is a form on `useStructureFormValidation` inside the shared
  * `FormCard`; a refusal naming a field lands on it, any other blocks the form in place.
  * Here: title and body; a retried submit reuses its `Idempotency-Key` (the store owns it).
- * See: docs/theory/request-flow.md
+ * @see docs/understand/request-flow.md
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { ref } from 'vue';

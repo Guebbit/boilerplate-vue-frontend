@@ -8,4 +8,4 @@ allowed-tools: Read, Glob, Grep, Write, Agent, Bash(npm run audit:css:*), Bash(n
 Read `scripts/audit/css-invasive/SKILL.md` and follow it. The scope is: $ARGUMENTS
 
 The audit lives under `scripts/audit/` so any AI tool can run it; this file only registers it with
-Claude Code. See `docs/tools/ai-auditing.md` and `docs/tools/design-lint.md`.
+Claude Code. See `docs/build/ai-auditing.md` and `docs/build/design-lint.md`.

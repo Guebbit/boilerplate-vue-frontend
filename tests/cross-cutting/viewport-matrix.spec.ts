@@ -6,7 +6,7 @@
  * only exists at one of them is found by neither. This reads source and fails on the second
  * place a size is typed, the way `a11y-coverage.spec.ts` fails on a route nobody sweeps.
  *
- * Why those sizes, and what each band means: `docs/theory/design-system.md`.
+ * Why those sizes, and what each band means: `docs/understand/design-system.md`.
  */
 import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';

@@ -1,7 +1,7 @@
 /**
  * @module
  * The Lighthouse cases and exceptions that belong to no module: the shell's landing page, and what
- * every case accepts. See `docs/tools/lighthouse.md#cases-live-with-modules`.
+ * every case accepts. See `docs/build/lighthouse.md#cases-live-with-modules`.
  */
 import type { LighthouseCase } from '../support/lighthouse/case';
 

@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # payments
 
 ::: tip At a glance
@@ -13,7 +18,7 @@
 
 ## Its neighbourhood
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 - `orders` → **customer-supplier** — Calls `useOrderRefund` to refund an order from the staff edit screen, and mounts `PaymentPanel`, which on its own would be `published-language`: paying happens on the order page without this module knowing a provider exists.
 - `cart` → **published-language** — Mounts `PaymentMethodSelector`; the checkout learns which method ids exist, never what one costs to offer.
@@ -144,7 +149,7 @@ State, getters and actions are exactly what the setup function of each store ret
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/payments/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/payments/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 The rest of the module is components, schemas and a store contributed to the modules that depend on it.
 
@@ -180,5 +185,5 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 
 - [`orders`](./orders.md) — the page that mounts the panel
 - [`delivery`](./delivery.md) — the other component-only module
-- [Strategic DDD](../theory/strategic-ddd.md) — what `published-language` buys
-- [Layers](../theory/layers.md) — why the store is not inside the component
+- [Strategic DDD](../understand/strategic-ddd.md) — what `published-language` buys
+- [Layers](../understand/layers.md) — why the store is not inside the component

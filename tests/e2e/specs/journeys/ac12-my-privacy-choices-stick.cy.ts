@@ -8,7 +8,7 @@
  * where they left it, the switch on and the tag loaded again.
  *
  * While signed in, the account's own answer rules, over the guest cookie
- * (`docs/tools/umami.md#consent`). The rows are read from Umami on the live profile; on demo the
+ * (`docs/operate/umami.md#consent`). The rows are read from Umami on the live profile; on demo the
  * tag, the switch and the account's own record are the evidence. The consent build only: with no
  * Umami configured the story skips, like `consent.cy.ts`.
  *

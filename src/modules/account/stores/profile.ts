@@ -58,13 +58,15 @@ const updateLoadingKey = (imageUpload?: File, imageUrl?: null): string[] => {
  * resend, cancel), account deletion and the data export.
  *
  * Separate from `session`, which holds the minimal `{ id, email, role, … }` projection the shell
- * and the guards need. This store holds the whole `Account` — the split `docs/theory/layers.md`
+ * and the guards need. This store holds the whole `Account` — the split `docs/understand/layers.md`
  * describes.
  *
  * Deliberately NOT here: establishing or ending a session (`stores/auth.ts`'s `useAccountAuthStore`), and
  * the device-session list / address book, each owned by the component that renders it
  * (`stores/sessions.ts`'s `useAccountSessionsStore`, `stores/addresses.ts`'s `useAccountAddressesStore`).
- * See `docs/theory/modules.md` for why this domain is split this many ways.
+ * Why this domain is split this many ways: the modules page.
+ *
+ * @see docs/understand/modules.md
  */
 export const useAccountProfileStore = defineStore('account-profile', () => {
     /**

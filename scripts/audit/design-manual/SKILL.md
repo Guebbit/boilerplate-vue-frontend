@@ -12,7 +12,7 @@ You judge pictures. You cite code.
 GOAL: Find design defects in the residual tier: what the lint, layout, touch, visual and Lighthouse
 checks, the axe sweeps, `keyboard.cy.ts` and `accessibility-manual` cannot decide mechanically.
 Never re-report what they already gate. The model proposes; a deterministic oracle disposes
-(`docs/tools/ai-auditing.md`). A design verdict has no oracle, so every finding must name an
+(`docs/build/ai-auditing.md`). A design verdict has no oracle, so every finding must name an
 anchor, and a script checks every citation.
 
 SCOPE: the argument you were given: a module name (`orders`), `shell`, a path, `--diff` or `whole-repo` (`scripts/audit/RULES.md` rule 5).
@@ -28,16 +28,16 @@ constant in `scripts/audit/design-manual/scripts/manifest.ts`. `<SCOPE>` (module
 
 Read, in order, and build an **exclusion list** from them. Write it at the top of the report.
 
-1. `docs/tools/accessibility-testing.md`: what axe, the keyboard suite and the lint plugin gate.
-2. `docs/tools/design-lint.md`: off-scale spacing, raw colours, the refused classes, and the
+1. `docs/build/accessibility-testing.md`: what axe, the keyboard suite and the lint plugin gate.
+2. `docs/build/design-lint.md`: off-scale spacing, raw colours, the refused classes, and the
    invasive-CSS scan (`npm run audit:css`, `tests/cross-cutting/css-invasiveness.spec.ts`).
-3. `docs/tools/layout-sweep.md`: overflow, clipping, covered controls, 24 px tap targets
+3. `docs/build/layout-sweep.md`: overflow, clipping, covered controls, 24 px tap targets
    everywhere and 44 px at phone widths, text modes, 200 % text.
-4. `docs/tools/touch-testing.md`: a control only a hover reveals, data only a `title` holds, a
+4. `docs/build/touch-testing.md`: a control only a hover reveals, data only a `title` holds, a
    tooltip on a non-control, hover-only meaning.
-5. `docs/tools/visual-regression.md`: "did it change" baselines. A difference against a baseline
+5. `docs/build/visual-regression.md`: "did it change" baselines. A difference against a baseline
    is never a design defect by itself.
-6. `docs/tools/lighthouse.md`: scores, layout shift, image weight.
+6. `docs/build/lighthouse.md`: scores, layout shift, image weight.
 7. `scripts/audit/accessibility-manual/SKILL.md`: its residual table (focus order, error-text
    usefulness, motion, timing, reflow at 320 px, live regions, language of parts) is **its**
    findings, not yours.
@@ -75,13 +75,13 @@ empty plan is an error to report, not a clean review.
 
 Give each batch to a sub-agent, in parallel; where your tool has none, do the batches one after
 another, each in a fresh pass. A reviewer gets: its batch's shots (tiles and DOM facts from the
-manifest), `docs/theory/sitemap.md` (route → view file), the manifest's `chromeSources`, the
+manifest), `docs/understand/sitemap.md` (route → view file), the manifest's `chromeSources`, the
 exclusion list and leads, and the checklist below.
 
 It must:
 
 1. Read **every tile** of every shot of the batch (all tiles of a page, in order).
-2. Find the view in `docs/theory/sitemap.md`, read it, and follow imports into child components.
+2. Find the view in `docs/understand/sitemap.md`, read it, and follow imports into child components.
 3. Judge each checklist item, for each screen, in all four verdicts below.
 4. Write `reports/audit/design-manual/<SCOPE>.batch-<module>[-n].md` with
    (a) findings rows and (b) a **screen inventory**, one line per shot: page header style, primary

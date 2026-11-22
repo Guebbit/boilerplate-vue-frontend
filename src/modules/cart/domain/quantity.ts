@@ -2,7 +2,7 @@
  * @module
  * Cart line quantity rules. Pure: no Vue, no store.
  * A line cannot reach zero by stepping — zero is a removal, which is a different call.
- * See `docs/theory/domain-layer.md`.
+ * @see docs/understand/domain-layer.md
  */
 import type { CartWarningCode } from '@types';
 

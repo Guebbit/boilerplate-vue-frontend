@@ -9,7 +9,7 @@
  *
  * Each `it` RETURNS its chain rather than awaiting — vitest fails a test whose returned promise
  * rejects, so the assertions inside a `.then` are as binding as awaited ones. See
- * `docs/tools/unit-testing.md`.
+ * `docs/build/unit-testing.md`.
  */
 import { asStub } from '../../../../tests/support/stub';
 import type { ZodType } from 'zod';

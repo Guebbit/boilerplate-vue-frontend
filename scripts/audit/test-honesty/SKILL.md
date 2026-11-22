@@ -159,7 +159,7 @@ for every mutant which tests ran it (`coveredBy`) and which failed on it (`kille
 report; never edit `src/` to check.
 
 - The report is `reports/mutation/mutation.json` — see
-  `docs/tools/mutation-testing.md#which-file-is-what`. After `npm run test:mutation:pull` it holds
+  `docs/build/mutation-testing.md#which-file-is-what`. After `npm run test:mutation:pull` it holds
   the whole nightly; after `npm run test:mutation -- --mutate <file>`, that file's fresh result
   laid over it.
 - A file's entry is stale when that source changed after the report was written
@@ -230,7 +230,7 @@ The suggested fix is prose, never code, in this order of preference:
 3. **Delete it**, naming the test that already kills the same mutant.
 
 Its expected value comes from the spec — the root `openapi.yaml` and `asyncapi.yaml`,
-`docs/modules/<module>*.md`, `docs/theory/*.md`, cited by `file:line` — or, where the spec is
+`docs/modules/<module>*.md`, `docs/understand/*.md`, cited by `file:line` — or, where the spec is
 silent, is worked out by hand from the input and labelled so. Never from running the code: that is
 **Bent to fit**, done by the auditor.
 

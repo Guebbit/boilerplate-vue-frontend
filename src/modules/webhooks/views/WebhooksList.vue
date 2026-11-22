@@ -157,7 +157,7 @@ const { handleSearch, handleReset } = useListSearch({
  * dialog that has already closed by the time the request answers, so its own row button has
  * nowhere to host an alert; one lives above the table instead. A search failure is a different
  * kind of thing (ambient, the table just hasn't refreshed) and keeps toasting through
- * {@link notifyErrorMessages} above — see docs/theory/request-flow.md.
+ * {@link notifyErrorMessages} above — see docs/understand/request-flow.md.
  */
 const {
     message: rowActionError,

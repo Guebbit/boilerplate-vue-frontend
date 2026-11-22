@@ -203,7 +203,7 @@ const handleSave = (fields: {
  * The row actions' own blocked state (switch on, switch off, delete) — single writes, some behind
  * a confirm dialog, with nowhere per-row to host an alert; the board keeps working either way, so
  * one alert above it is where a failure belongs. The dialog's own save stays a toast — see
- * docs/theory/request-flow.md.
+ * docs/understand/request-flow.md.
  */
 const {
     message: deleteError,

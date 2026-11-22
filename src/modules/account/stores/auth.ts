@@ -55,7 +55,7 @@ export type LoginOutcome =
  *
  * Deliberately NOT here: the editable record itself, once a session exists — that is
  * `stores/profile.ts`'s `useAccountProfileStore`, which this store asks to load a profile after login
- * and to drop its cache on the way out. See `docs/theory/modules.md` for why this domain is split
+ * and to drop its cache on the way out. See `docs/understand/modules.md` for why this domain is split
  * this many ways.
  */
 export const useAccountAuthStore = defineStore('account-auth', () => {

@@ -7,7 +7,7 @@
  * error page a bad URL lands on.
  *
  * Deliberately outside `npm run complete` — see `tests/support/e2e/visual-sweep.ts` for why a
- * pixel diff is a report rather than a gate, and `docs/tools/visual-regression.md` for the five
+ * pixel diff is a report rather than a gate, and `docs/build/visual-regression.md` for the five
  * things that have to be frozen for it to mean anything.
  */
 import { sweepVisual } from '../../support/e2e/visual-sweep';

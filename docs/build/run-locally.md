@@ -1,0 +1,193 @@
+---
+type: task
+audience: [developer]
+---
+
+# Getting Started
+
+From a fresh clone to a running storefront: two repos, three commands, no Docker.
+
+Linux, macOS or WSL — several npm scripts run a POSIX shell script directly, so plain Windows
+(cmd.exe or PowerShell without WSL) is not a supported shell here.
+
+The app talks to the paired backend. The lightest way to have one is its **demo profile** — the
+real API booted against an in-memory, seeded database — so the catalogue, the cart and the order
+history all work with nothing installed beyond Node.
+
+## Which mode am I in?
+
+This is the first thing to understand, because almost every "it does not work" is really "the app
+is pointed at the wrong backend".
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 55}}}%%
+flowchart TD
+    Q{"What answers VITE_API_URL?"}
+    Q -->|npm run demo| M["Demo backend<br/>in-memory Mongo, seeded"]
+    Q -->|compose stack| R["Full backend<br/>real Mongo, Redis, broker"]
+
+    M --> M1["Boots in seconds, no Docker"]
+    M --> M2["Data resets when the process does"]
+    M --> M3["Cache/queue run 'disabled' — a supported shape"]
+
+    R --> R1["Full observability stack"]
+    R --> R2["Real cache and queue behaviour"]
+    R --> R3["Data persists in the container volume"]
+
+    classDef q fill:#fef3c7,stroke:#d97706,color:#111827;
+    classDef demo fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef live fill:#dbeafe,stroke:#2563eb,color:#111827;
+    class Q q;
+    class M,M1,M2,M3 demo;
+    class R,R1,R2,R3 live;
+```
+
+## First run — with the demo backend
+
+> Requires **[Node.js 24+](https://nodejs.org/)** (the repo and CI run 26, see `.nvmrc`) and `npm`, and the paired
+> `boilerplate-node-backend` checkout beside this one.
+
+```bash
+npm ci                                             # install the lockfile; postinstall generates contracts/
+cp .env-example .env                               # create the local env file
+npm --prefix ../boilerplate-node-backend run demo  # the real API, in-memory, seeded — :3000
+npm run dev                                        # Vite dev server on :8080
+```
+
+Open `http://localhost:8080`. You get a browsable storefront with demo products, a working cart
+and a working login (`customer@example.com` / `Demo-User1!`), served by the real API against a
+database that lives and dies with the demo process.
+
+::: tip `cp .env-example .env` is not optional
+It is required for the container path too. The compose file bind-mounts the repo at `/app`, so
+Vite reads that same `.env` from inside the container. Without it you get compose's built-in
+fallbacks and nothing else — no Faro, no Umami, no locale settings.
+:::
+
+## Running against the full stack
+
+```bash
+# start the backend stack instead — it owns the API, Alloy and Umami
+cd ../boilerplate-node-backend && npm run compose:restart
+npm run dev
+```
+
+Then check the backend's `NODE_CORS_ORIGIN` contains `http://localhost:8080`.
+
+The two stacks stay **independent** — separate compose projects, separate networks, no shared
+network needed. The only thing crossing the boundary is your browser, which runs on the host: it
+is the browser, not the container, that resolves `VITE_API_URL` and `VITE_API_SSE`, so those must
+always be **host** ports (`http://localhost:3000`), never compose service names.
+
+## Host port map
+
+This repo owns the **`8080–8099`** block; the paired backend owns **`3000–3099`**. Keeping the two
+disjoint is what lets both stacks be up at once.
+
+| Service                  | Host port | Where it is set                                     |
+| ------------------------ | --------- | --------------------------------------------------- |
+| Vite dev server          | `8080`    | `VITE_APP_PORT` — host and compose alike            |
+| e2e vite server          | `8085`    | `test:e2e*` scripts + `cypress.config.ts` `baseUrl` |
+| Docs (VitePress + Nginx) | `8090`    | `VITE_DOCS_PORT`                                    |
+
+New services belong inside `8080–8099`.
+
+`VITE_APP_PORT` is read in `vite.config.ts` via `loadEnv`, so the dev server and the compose
+publish always agree — moving the port is a one-line change. `strictPort` is on: a busy port fails
+instead of quietly hopping to the next free one, which in a container would leave the published
+port pointing at nothing.
+
+## Check it worked
+
+| What you should see             | Where                                     |
+| ------------------------------- | ----------------------------------------- |
+| A product grid with demo items  | `http://localhost:8080`                   |
+| The locale prefix in the URL    | `/en/products` — routing is locale-first  |
+| A language switch that persists | top bar; the choice survives a reload     |
+| Docs (this site)                | `npm run docs:dev`, or `:8090` in compose |
+
+## The one command before you commit
+
+```bash
+npm run complete    # lint + spec lint + contract identity + format check + build + unit + e2e
+```
+
+The pre-commit hook (also run on a conflict-free merge, by `pre-merge-commit`, which refuses when the gate staged fixes: `git commit --no-edit` concludes that merge with them) fixes lint and formatting on the staged files and commits the fixes, then runs a faster subset,
+`npm run complete:light:gates`: every static check, `vue-tsc` and the unit suite, but no build or Cypress.
+A lane merges on `npm run complete:light:fix`; the full `complete` runs on main at the checkpoints; CI on push is authoritative. Its mutating twin, `npm run complete:fix`, fixes lint and formatting instead of
+reporting them.
+
+::: warning It is slow — around ten minutes
+Most of that is the two Cypress runs. Start it and do something else; do not sit and watch it.
+:::
+
+The spec-identity check inside it compares the shared contract files against the paired backend. It
+**skips** when that checkout is not on disk, so a half-cloned pair can still commit — set
+`BACKEND_PATH` in `.env` to point at it, or clone it beside this repo. Under CI a missing sibling
+is fatal instead, because there it means the workflow is misconfigured.
+
+Deliberately outside that gate:
+
+```bash
+npm run complete:manual       # the live suite below
+npm run test:e2e:live         # the suite against a real backend
+npm run test:e2e:visual       # pixel diffing — meant for the pinned CI image; see visual-regression.md
+
+npm run test:unit             # fast — the jsdom suite alone
+npm run test:mutation         # Stryker; nightly in CI, by hand when you want it
+```
+
+[Test timings](./testing-and-docs.md#test-timings) has what each of these costs.
+
+## After you clone: the GitHub settings
+
+A clone or a template copy brings the files and **none of the repository settings**. These live in
+GitHub, outside git, so a fresh copy starts with all of them off. Switch them on once, in the new
+repository's Settings:
+
+```mermaid
+flowchart LR
+    Clone["clone or<br/>use as template"] --> Files["files arrive:<br/>workflows, dependabot.yml,<br/>SECURITY.md"]
+    Clone --> Settings["settings do NOT arrive:<br/>every toggle below is off"]
+    Settings --> Tick["tick the checklist<br/>once per repository"]
+    Files --> Tick
+
+    classDef ok fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef off fill:#fee2e2,stroke:#dc2626,color:#111827;
+    class Files,Tick ok;
+    class Settings off;
+```
+
+| Setting                                                  | What it gives you                                                                                               |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Secret scanning **and push protection**                  | A pushed key or token is flagged, and a push carrying one is refused before it lands                            |
+| Dependabot alerts and **security updates**               | A vulnerable dependency raises an alert and a fix PR. `.github/dependabot.yml` only schedules _version_ updates |
+| Private vulnerability reporting                          | The "Report a vulnerability" form that `SECURITY.md` tells finders to use                                       |
+| Require actions to be pinned to a full-length commit SHA | A workflow naming an action by tag fails. Every `uses:` here is already pinned to a SHA                         |
+| A branch rule on `main` requiring the `ci` check         | The single `ci` job in `.github/workflows/ci.yml` becomes a real merge gate                                     |
+
+### Settings the workflows lean on {#workflow-settings}
+
+- **Actions may open pull requests** (Settings, Actions, General): `release.yml` runs release-please,
+  which opens the release PR.
+- **Packages**: the release's `publish-image` job pushes the image to GHCR (`packages: write`), so
+  the registry must be open to the repository.
+- **The paired backend**: `ci.yml` and `visual.yml` check out `Guebbit/boilerplate-node-backend`
+  unless the repository variable `SPEC_SIBLING_REPO` names another. A private backend also needs a
+  `SPEC_SIBLING_TOKEN` secret that can read it.
+
+Nothing here calls GitHub for you. The backend repository has the same checklist, with the reasoning
+for each row, in its "Start a New Project" page.
+
+## Where to go next
+
+| You want to                              | Read                                                                   |
+| ---------------------------------------- | ---------------------------------------------------------------------- |
+| Understand the folder layout             | [Modules](../understand/modules.md), [Layers](../understand/layers.md) |
+| Add or remove a domain                   | [Adding & Removing a Module](./module-lifecycle.md)                    |
+| Change an endpoint or a payload          | [OpenAPI Workflow](./openapi-workflow.md)                              |
+| Know what dev and e2e run against        | [The demo profile](./demo-profile.md)                                  |
+| Understand routes, guards and access     | [Sitemap & Access Control](../understand/sitemap.md)                   |
+| Find out what a dependency is doing here | [Tools Explained](../understand/tools-explained.md)                    |
+| Look up a script                         | [Package Scripts](../reference/package-scripts.md)                     |
+| Know what is planned but unbuilt         | [Roadmap](../understand/roadmap.md)                                    |

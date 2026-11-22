@@ -136,7 +136,7 @@ const card = ref<InstanceType<typeof FormCard>>();
 /**
  * This form's own blocked state — a create that failed blocks the visitor from proceeding past
  * this one submit button, so it renders through {@link InlineErrorAlert} next to it rather than a
- * toast — see docs/theory/request-flow.md.
+ * toast — see docs/understand/request-flow.md.
  */
 const {
     message: submitError,

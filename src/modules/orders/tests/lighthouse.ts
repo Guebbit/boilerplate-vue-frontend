@@ -1,7 +1,7 @@
 /**
  * @module
  * The Lighthouse case of the orders module: the staff data table. See
- * `docs/tools/lighthouse.md#cases-live-with-modules`.
+ * `docs/build/lighthouse.md#cases-live-with-modules`.
  */
 import type { LighthouseCase } from '../../../../tests/support/lighthouse/case';
 

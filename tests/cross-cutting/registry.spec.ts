@@ -3,7 +3,7 @@
  *
  * This is the shape a cross-cutting spec is allowed to take: it **iterates** the registry and
  * never **names** a domain. Delete `products` and this file keeps passing, testing one module
- * fewer — which is exactly what `docs/theory/modules.md` asks of a spec that lives outside a
+ * fewer — which is exactly what `docs/understand/modules.md` asks of a spec that lives outside a
  * module.
  *
  * The property is "every menu entry any module contributes points at a route that module

@@ -25,7 +25,7 @@ export default {
  * disabled while the field is blank. That is why it keeps its own button and not `ListSearchActions`.
  *
  * A miss and a real failure both block this search from completing, so both render through
- * `InlineErrorAlert` rather than a toast — see docs/theory/request-flow.md.
+ * `InlineErrorAlert` rather than a toast — see docs/understand/request-flow.md.
  */
 
 import { ref } from 'vue';

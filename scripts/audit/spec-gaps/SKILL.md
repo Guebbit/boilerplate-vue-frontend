@@ -35,8 +35,7 @@ Report path and file names: RULES.md rules 4 and 5. A `whole-repo` run: see the 
   module in its nearest family. Matching rows across runs is by rule text and source, never by
   slice.
 - **SYS** owns every source in the read list that belongs to no module: the folders `src/app`,
-  `src/infrastructure`, `src/kernel`, `src/ui` and `src/i18n`, `shared/rules/*.yaml`, `contracts/*.yaml`, `docs/theory/*.md`, `docs/api/*.md`,
-  `docs/tools/*.md`. SYS reads them in full. A family slice searches them for its modules' names,
+  `src/infrastructure`, `src/kernel`, `src/ui` and `src/i18n`, `shared/rules/*.yaml`, `contracts/*.yaml`, `docs/{understand,build,operate,reference}/*.md`. SYS reads them in full. A family slice searches them for its modules' names,
   subjects, route segments and error codes, the same way a module run does.
 - **Lead pass** first: grep the suite for every error code, event name and storage key the docs
   name. The zero-hit list goes to the slices as leads, never findings. The lead pass signs off no
@@ -57,10 +56,10 @@ From the contract and the docs, NOT from the implementation:
       to one is a backend fix, so say so in the row);
     - `src/modules/<module>/module.yaml` and any other YAML in `src/modules/<module>/`;
     - `contracts/{cookies,frontend-links,authorization-keys.generated}.yaml`.
-- Docs: `docs/modules/<module>*.md`, `docs/theory/*.md`, `docs/api/*.md`, `docs/tools/*.md`.
-- Shared: `shared/rules/*.yaml`. Layout: `docs/tools/shared-rules.md`.
+- Docs: `docs/modules/<module>*.md`, `docs/understand/*.md`, `docs/build/*.md`, `docs/operate/*.md`, `docs/reference/*.md`.
+- Shared: `shared/rules/*.yaml`. Layout: `docs/understand/shared-rules.md`.
 
-A module or path run reads its own docs and YAML in full. For `shared/**`, `contracts/*.yaml` and `docs/tools/*.md` it
+A module or path run reads its own docs and YAML in full. For `shared/**`, `contracts/*.yaml` and `docs/{understand,build,operate,reference}/*.md` it
 searches for the module name, its subjects, route segments and error codes, and reads only what
 matches. A `whole-repo` run: see the section above.
 
@@ -77,7 +76,7 @@ List every rule as one testable sentence. Cover at least these families, and say
 - state machines: which transitions are legal, which are terminal
 - idempotency, retries, and duplicate or out-of-order delivery on the SSE channels
 - limits: pagination bounds, payload size, expiry and TTL
-- browser state: what may be stored where (`docs/tools/browser-storage.md`), cookies, tokens
+- browser state: what may be stored where (`docs/understand/browser-storage.md`), cookies, tokens
 - accessibility: an a11y block for a user that axe and the keyboard specs do not reach
 
 ### 2 — hunt for coverage

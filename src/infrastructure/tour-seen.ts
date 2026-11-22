@@ -5,7 +5,7 @@
  * `account:tour:version` strings; a new account, tour or tour version is a new key, which is how a
  * changed tour is shown once more. The record is dropped six months after its last change, so a
  * browser asks again rather than remembering forever. Per browser: a new device sees the tour
- * again. See `docs/tools/tours.md`.
+ * again. See `docs/understand/tours.md`.
  */
 import { BROWSER_STORAGE_NAME, SIX_MONTHS_DAYS } from '@/infrastructure/browser-storage.ts';
 import { readJson, writeJson } from '@/infrastructure/utils/safe-storage.ts';

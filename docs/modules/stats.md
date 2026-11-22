@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # stats
 
 ::: tip At a glance
@@ -85,10 +90,10 @@ State, getters and actions are exactly what the setup function of each store ret
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/stats/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/stats/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 The permission is `read:Stats`, which the backend grants to `manager` and `admin`. See
-[Security](../tools/security.md#route-guards).
+[Security](../understand/security.md#route-guards).
 
 ## Wiring
 
@@ -127,5 +132,5 @@ npm run regenerate
 
 - [`orders`](./orders.md) — the staff list a product's sales page links to
 - [`products`](./products.md) — the product pages the dashboard links into
-- [Domain Layer](../theory/domain-layer.md) — why the period and CSV rules are pure
-- [Sitemap & Access Control](../theory/sitemap.md) — the `read:Stats` gate on these routes
+- [Domain Layer](../understand/domain-layer.md) — why the period and CSV rules are pure
+- [Sitemap & Access Control](../understand/sitemap.md) — the `read:Stats` gate on these routes

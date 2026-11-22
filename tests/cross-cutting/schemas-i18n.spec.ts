@@ -19,7 +19,7 @@ import { i18n, loadLocale, registerLocaleContributors, translate } from '@/i18n'
  * ── Why the schema is invented ───────────────────────────────────────────────────────────────
  * Importing `usersSchema`, `productsSchema` and `ordersSchema` here would make a spec belonging
  * to no domain break when any one of those domains is deleted — the coupling
- * `docs/theory/modules.md` describes. The mechanism is domain-agnostic, so it is tested with a
+ * `docs/understand/modules.md` describes. The mechanism is domain-agnostic, so it is tested with a
  * domain-agnostic schema and a synthetic dictionary.
  *
  * Each module proves its OWN messages resolve in both languages, in

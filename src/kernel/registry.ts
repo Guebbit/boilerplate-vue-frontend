@@ -140,7 +140,7 @@ export interface AppNavigationEntry {
  *
  * Carries no visibility rule, same as {@link AppNavigationEntry}: a step whose `target` is not on
  * screen is skipped when the tour starts, so a staff-only step simply never shows to a customer.
- * See `docs/tools/tours.md`.
+ * @see docs/understand/tours.md
  */
 export interface AppTourStep {
     /**
@@ -250,7 +250,7 @@ export interface AppNotice {
  * comment with extra syntax: what a module depends on is its `import` statements, how it relates to
  * a sibling is prose in the docblock above the manifest, and which subdomain it sits in is context a
  * reader gets from that same prose rather than a classification nothing checks. See
- * `docs/theory/strategic-ddd.md` §2 and §4 for why those belong in prose rather than in fields.
+ * `docs/understand/strategic-ddd.md` §2 and §4 for why those belong in prose rather than in fields.
  */
 export interface AppModule {
     /**
@@ -397,7 +397,7 @@ export const assertUniqueRoutes = (routes: RouteRecordRaw[]): void => {
  * `npm run lint` without help from this function: `no-restricted-imports` in `eslint.config.ts`
  * enforces which sibling a module may reach at all. That is the enforceable half of a module's
  * couplings, and it is enforced there rather than declared here — see
- * `docs/theory/strategic-ddd.md` §2.
+ * `docs/understand/strategic-ddd.md` §2.
  *
  * What IS enforced here is {@link assertUniqueRoutes} across every module's own routes: two
  * modules picking the same name or path is not an import a lint rule can see.

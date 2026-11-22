@@ -14,7 +14,7 @@
  * `collectLayoutFindings` reads the live page synchronously and returns plain data. The rules
  * that need no page (what blocks, how a case accepts a finding, how a failure reads) are in
  * `scripts/e2e/layout-findings.ts`, where Vitest reaches them. The algorithms, thresholds and
- * the false-positive table: `docs/tools/layout-sweep.md`.
+ * the false-positive table: `docs/build/layout-sweep.md`.
  */
 import {
     TEXT_200_CSS,

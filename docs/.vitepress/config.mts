@@ -13,6 +13,7 @@ const mermaidAliases = {
 
 export default defineConfig({
     title: 'Boilerplate Vue Frontend',
+    lastUpdated: true,
     description: 'ADHD-friendly docs for the Vue 3 + Pinia + Vue Router SPA boilerplate',
     markdown: {
         // markdown-it fence rule: a ```mermaid block becomes our component, any other
@@ -48,44 +49,107 @@ export default defineConfig({
         },
         nav: [
             { text: 'Home', link: '/' },
-            { text: 'Getting Started', link: '/getting-started' },
-            { text: 'Theory', link: '/theory/' },
-            { text: 'Modules', link: '/modules/' },
-            { text: 'Tools', link: '/tools/' },
-            { text: 'API', link: '/api/' },
-            { text: 'Files', link: '/reference/' }
+            {
+                text: 'Use the Shop',
+                link: 'https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/use-the-shop/start.md'
+            },
+            { text: 'Understand', link: '/understand/start' },
+            { text: 'Build', link: '/build/start' },
+            { text: 'Modules', link: '/modules/start' },
+            { text: 'Operate', link: '/operate/start' },
+            { text: 'Reference', link: '/reference/start' }
         ],
         sidebar: {
-            '/theory/': [
+            '/understand/': [
                 {
-                    text: 'Theory',
+                    text: 'The shape',
                     items: [
-                        { text: 'Overview', link: '/theory/' },
-                        { text: 'Reading Path', link: '/theory/reading-path' },
-                        { text: 'Architecture', link: '/theory/architecture' },
-                        { text: 'Layers', link: '/theory/layers' },
-                        { text: 'Modules', link: '/theory/modules' },
-                        {
-                            text: 'Adding & Removing a Module',
-                            link: '/theory/module-lifecycle'
-                        },
-                        { text: 'Domain Layer', link: '/theory/domain-layer' },
-                        { text: 'Strategic DDD', link: '/theory/strategic-ddd' },
-                        { text: 'Glossary', link: '/theory/glossary' },
-                        { text: 'Request Flow', link: '/theory/request-flow' },
-                        { text: 'Loading State', link: '/theory/loading-state' },
-                        { text: 'Design System', link: '/theory/design-system' },
-                        { text: 'Sitemap & Access Control', link: '/theory/sitemap' },
-                        { text: 'Web Attack Defences', link: '/theory/web-attack-defences' },
-                        { text: 'Judging a Design', link: '/theory/design-judgement' },
-                        { text: 'Roadmap', link: '/theory/roadmap' }
+                        { text: 'Overview', link: '/understand/start' },
+                        { text: 'Reading Path', link: '/understand/reading-path' },
+                        { text: 'Architecture', link: '/understand/architecture' },
+                        { text: 'Layers', link: '/understand/layers' },
+                        { text: 'Modules', link: '/understand/modules' },
+                        { text: 'Domain layer & DDD', link: '/understand/domain-layer' },
+                        { text: 'Strategic DDD', link: '/understand/strategic-ddd' },
+                        { text: 'Request Flow', link: '/understand/request-flow' },
+                        { text: 'Loading State', link: '/understand/loading-state' },
+                        { text: 'Sitemap & Access Control', link: '/understand/sitemap' },
+                        { text: 'Roadmap', link: '/understand/roadmap' }
+                    ]
+                },
+                {
+                    text: 'Mechanisms',
+                    items: [
+                        { text: 'Tools', link: '/understand/tool-map' },
+                        { text: 'Tools Explained', link: '/understand/tools-explained' },
+                        { text: 'Runtime', link: '/understand/runtime' },
+                        { text: 'State & Routing', link: '/understand/state-and-routing' },
+                        { text: 'Realtime (SSE)', link: '/understand/realtime' },
+                        { text: 'Internationalisation', link: '/understand/i18n' },
+                        { text: 'Security', link: '/understand/security' },
+                        { text: 'Web Attack Defences', link: '/understand/web-attack-defences' },
+                        { text: 'Cookies and storage', link: '/understand/browser-storage' },
+                        { text: 'Shared rules', link: '/understand/shared-rules' },
+                        { text: 'Guided tours', link: '/understand/tours' }
+                    ]
+                },
+                {
+                    text: 'Design',
+                    items: [
+                        { text: 'Design System', link: '/understand/design-system' },
+                        { text: 'Judging a Design', link: '/understand/design-judgement' }
+                    ]
+                }
+            ],
+            '/build/': [
+                {
+                    text: 'Run it',
+                    items: [
+                        { text: 'Overview', link: '/build/start' },
+                        { text: 'Getting Started', link: '/build/run-locally' },
+                        { text: 'The demo profile', link: '/build/demo-profile' },
+                        { text: 'Docker & Podman', link: '/build/docker-and-podman' }
+                    ]
+                },
+                {
+                    text: 'Change it',
+                    items: [
+                        { text: 'Adding & removing a module', link: '/build/module-lifecycle' },
+                        { text: 'API', link: '/build/api-contracts' },
+                        { text: 'OpenAPI Workflow', link: '/build/openapi-workflow' },
+                        { text: 'AsyncAPI Workflow', link: '/build/asyncapi-workflow' }
+                    ]
+                },
+                {
+                    text: 'Test it',
+                    items: [
+                        { text: 'Testing & Docs', link: '/build/testing-and-docs' },
+                        { text: 'Testing — Quick Start', link: '/build/testing-quickstart' },
+                        { text: 'Unit Testing', link: '/build/unit-testing' },
+                        { text: 'Component Testing', link: '/build/component-testing' },
+                        { text: 'Property Testing', link: '/build/property-testing' },
+                        { text: 'Live E2E', link: '/build/live-e2e' },
+                        { text: 'Lighthouse', link: '/build/lighthouse' },
+                        { text: 'Mutation Testing', link: '/build/mutation-testing' }
+                    ]
+                },
+                {
+                    text: 'Check the interface',
+                    items: [
+                        { text: 'Accessibility Testing', link: '/build/accessibility-testing' },
+                        { text: 'Layout Sweep', link: '/build/layout-sweep' },
+                        { text: 'Touch Testing', link: '/build/touch-testing' },
+                        { text: 'Design Lint', link: '/build/design-lint' },
+                        { text: 'Visual Regression', link: '/build/visual-regression' },
+                        { text: 'AI Auditing', link: '/build/ai-auditing' },
+                        { text: 'Design Review', link: '/build/design-review' }
                     ]
                 }
             ],
             '/modules/': [
                 {
                     text: 'Overview',
-                    items: [{ text: 'The whole map', link: '/modules/' }]
+                    items: [{ text: 'The whole map', link: '/modules/start' }]
                 },
                 {
                     text: 'core',
@@ -125,7 +189,7 @@ export default defineConfig({
                         { text: 'api-keys', link: '/modules/api-keys' },
                         {
                             text: 'example',
-                            link: '/theory/modules#the-module-template'
+                            link: '/understand/modules#the-module-template'
                         },
                         { text: 'tasks', link: '/modules/tasks' },
                         {
@@ -152,101 +216,41 @@ export default defineConfig({
                     ]
                 }
             ],
-            '/tools/': [
+            '/operate/': [
                 {
-                    text: 'Overview',
+                    text: 'Operate',
                     items: [
-                        { text: 'Overview', link: '/tools/' },
-                        { text: 'Tools Explained', link: '/tools/tools-explained' }
-                    ]
-                },
-                {
-                    text: 'Setup',
-                    collapsed: false,
-                    items: [
-                        { text: 'Package Dependencies', link: '/tools/package-dependencies' },
-                        { text: 'Package Scripts', link: '/tools/package-scripts' },
-                        { text: 'Environment Variables', link: '/tools/environment' },
-                        { text: 'Runtime', link: '/tools/runtime' },
-                        { text: 'Internationalisation', link: '/tools/i18n' },
-                        { text: 'Docker & Podman', link: '/tools/docker-and-podman' },
-                        { text: 'Security', link: '/tools/security' }
-                    ]
-                },
-                {
-                    text: 'Framework',
-                    collapsed: false,
-                    items: [
-                        { text: 'State & Routing', link: '/tools/state-and-routing' },
-                        { text: 'Realtime', link: '/tools/realtime' }
-                    ]
-                },
-                {
-                    text: 'Observability',
-                    collapsed: false,
-                    items: [
-                        { text: 'Observability', link: '/tools/observability' },
-                        { text: 'Admin Dashboard', link: '/tools/admin-dashboard' },
-                        { text: 'Umami', link: '/tools/umami' }
-                    ]
-                },
-                {
-                    text: 'Interface',
-                    collapsed: false,
-                    items: [
-                        { text: 'Guided tours', link: '/tools/tours' },
-                        { text: 'Cookies and storage', link: '/tools/browser-storage' },
-                        { text: 'Shared rules', link: '/tools/shared-rules' }
-                    ]
-                },
-                {
-                    text: 'Testing & Mocking',
-                    collapsed: false,
-                    items: [
-                        { text: 'Testing (overview)', link: '/tools/testing-and-docs' },
-                        { text: 'Unit Testing', link: '/tools/unit-testing' },
-                        { text: 'Testing — Quick Start', link: '/tools/testing-quickstart' },
-                        { text: 'The demo profile', link: '/tools/demo-profile' },
-                        { text: 'Live E2E (FE ↔ real backend)', link: '/tools/live-e2e' },
-                        { text: 'Component Testing', link: '/tools/component-testing' },
-                        { text: 'Property Testing', link: '/tools/property-testing' },
-                        { text: 'Accessibility Testing', link: '/tools/accessibility-testing' },
-                        { text: 'Layout Sweep', link: '/tools/layout-sweep' },
-                        { text: 'Touch Testing', link: '/tools/touch-testing' },
-                        { text: 'Design Lint', link: '/tools/design-lint' },
-                        { text: 'Visual Regression', link: '/tools/visual-regression' },
-                        { text: 'Lighthouse', link: '/tools/lighthouse' },
-                        { text: 'Mutation Testing', link: '/tools/mutation-testing' },
-                        { text: 'AI Auditing', link: '/tools/ai-auditing' },
-                        { text: 'Design Review', link: '/tools/design-review' }
+                        { text: 'Overview', link: '/operate/start' },
+                        { text: 'Environment Variables', link: '/operate/environment' },
+                        { text: 'Observability', link: '/operate/observability' },
+                        { text: 'Admin Dashboard', link: '/operate/admin-dashboard' },
+                        { text: 'Umami', link: '/operate/umami' }
                     ]
                 }
             ],
             '/reference/': [
                 {
-                    text: 'File Glossary',
+                    text: 'Look it up',
                     items: [
-                        { text: 'Overview', link: '/reference/' },
+                        { text: 'Overview', link: '/reference/start' },
+                        { text: 'Endpoints', link: '/reference/endpoints' },
+                        { text: 'Contracts', link: '/reference/contracts' },
+                        { text: 'Package Scripts', link: '/reference/package-scripts' },
+                        { text: 'Package Dependencies', link: '/reference/package-dependencies' },
+                        { text: 'Glossary', link: '/reference/glossary' }
+                    ]
+                },
+                {
+                    text: 'Files',
+                    items: [
                         { text: 'Repository Root', link: '/reference/root' },
                         { text: 'App, Kernel & Types', link: '/reference/src-app' },
                         { text: 'Infrastructure', link: '/reference/src-infrastructure' },
                         { text: 'Modules', link: '/reference/src-modules' },
                         { text: 'UI Kit', link: '/reference/src-ui' },
-                        { text: 'Contracts', link: '/reference/contracts' },
                         { text: 'Scripts & Hooks', link: '/reference/scripts' },
                         { text: 'Tests', link: '/reference/tests' },
                         { text: 'Ops & Assets', link: '/reference/ops' }
-                    ]
-                }
-            ],
-            '/api/': [
-                {
-                    text: 'API',
-                    items: [
-                        { text: 'Overview', link: '/api/' },
-                        { text: 'Endpoints', link: '/api/endpoints' },
-                        { text: 'OpenAPI Workflow', link: '/api/openapi-workflow' },
-                        { text: 'AsyncAPI Workflow', link: '/api/asyncapi-workflow' }
                     ]
                 }
             ]

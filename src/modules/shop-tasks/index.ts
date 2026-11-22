@@ -8,7 +8,7 @@
  * Never published: views, routes, the manifest, `response-schemas.ts` and locales, plus
  * `schemas.ts` unless a sibling imports it (it pulls the generated Zod contract into the entry
  * chunk, which `tests/cross-cutting/entry-chunk-budget.spec.ts` budgets).
- * The rule: `docs/theory/strategic-ddd.md` §5.
+ * The rule: `docs/understand/strategic-ddd.md` §5.
  */
 
 export * from './describe';

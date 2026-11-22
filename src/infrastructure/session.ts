@@ -12,7 +12,7 @@
  * with them and live beside this file.
  *
  * Which of the two modes the deployment runs is read once from `GET /config` (`session`);
- * see `docs/tools/security.md`.
+ * see `docs/understand/security.md`.
  */
 
 import { ref, shallowRef, computed, onScopeDispose } from 'vue';
@@ -104,7 +104,7 @@ export type { ActionOn, PermissionAction, PermissionSubject } from '@api/permiss
  * The least the app shell and the guards need to know about the signed-in visitor.
  *
  * Deliberately a minimal projection — `{ id, email, role }` — rather than the domain `User`,
- * which lives in `src/modules/account`. See `docs/theory/layers.md` for the split and for which
+ * which lives in `src/modules/account`. See `docs/understand/layers.md` for the split and for which
  * `/account` calls belong here.
  */
 export interface SessionViewer {

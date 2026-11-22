@@ -5,7 +5,7 @@
  * A check that has never failed has never been shown to work. Each case plants one thing wrong
  * and expects the check to name it; each negative plants one thing that only looks wrong (a
  * screen-reader-only span, a table that scrolls on purpose) and expects silence.
- * What the checks are and why: `docs/tools/layout-sweep.md`.
+ * What the checks are and why: `docs/build/layout-sweep.md`.
  */
 import type { LayoutCheckId, LayoutFinding } from '../../../scripts/e2e/layout-findings';
 import { applyViewport } from '../../support/e2e/apply-viewport';

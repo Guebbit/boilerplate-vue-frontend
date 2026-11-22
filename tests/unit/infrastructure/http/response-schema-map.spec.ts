@@ -267,7 +267,7 @@ describe('operations this app actually imports', () => {
  *
  * `resolveResponseSchema` is a matcher: method equality, anchored patterns, first match wins. None
  * of that is about which domains exist, and pinning it to `/products` would break a core spec on
- * the day the products module is deleted — the coupling `docs/theory/modules.md` describes.
+ * the day the products module is deleted — the coupling `docs/understand/modules.md` describes.
  *
  * `/widgets` belongs to nobody and expresses every property, including the two traps the anchors
  * exist for: a literal sub-route (`/widgets/:id/detail`) that a `[^/]+` pattern would swallow, and

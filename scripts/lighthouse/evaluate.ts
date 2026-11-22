@@ -2,7 +2,7 @@
  * @module
  * Turns the Lighthouse reports of every case into failures, warnings and medians. Pure: no I/O.
  *
- * What gates and what only reports is decision D3 (`docs/tools/lighthouse.md#what-gates-and-what-reports`):
+ * What gates and what only reports is decision D3 (`docs/build/lighthouse.md#what-gates-and-what-reports`):
  * structure and CLS fail the run, timing is a warning row.
  */
 import type { CaseRules } from '../../tests/support/lighthouse/case';

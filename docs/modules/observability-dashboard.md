@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # The dashboard
 
 One screen assembled from five reads across two backend modules — and the shapes it builds that no
@@ -55,7 +60,7 @@ feeds the realtime playground, the other screen this same module owns.
 | `GET /observability/events`           | registered here, consumed by the realtime playground's screen | `use-realtime-observability`                  |
 | `GET /observability/audit`            | the Audit tab's table                                         | `use-audit-trail`                             |
 
-All five are registered through this module's manifest, so their contract validation follows the module: [why](../theory/modules.md#the-one-arrow-that-cannot-point-down). One of the five has no caller.
+All five are registered through this module's manifest, so their contract validation follows the module: [why](../understand/modules.md#the-one-arrow-that-cannot-point-down). One of the five has no caller.
 
 ## Why `types.ts` exists here
 
@@ -94,6 +99,6 @@ sidebar and this page are yours to remove.
 ## Related pages
 
 - [`observability`](./observability.md) — the module this belongs to, including the realtime playground
-- [Admin Dashboard](../tools/admin-dashboard.md) — the panels and how they refresh
-- [Observability](../tools/observability.md) — what is measured, and by whom
+- [Admin Dashboard](../operate/admin-dashboard.md) — the panels and how they refresh
+- [Observability](../operate/observability.md) — what is measured, and by whom
 - [Observability endpoints](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/observability.md) — the backend's page for all five reads

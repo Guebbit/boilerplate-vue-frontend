@@ -5,7 +5,7 @@
  *
  * The thresholds mirror Tailwind's (`src/styles/main.css`), so `useDisplay()`, `VRow`/`VCol` and
  * `sm:`/`md:`/`lg:` agree. The layout matrix (`scripts/e2e/viewports.ts`) puts one viewport in
- * each band. Why those sizes: `docs/theory/design-system.md`.
+ * each band. Why those sizes: `docs/understand/design-system.md`.
  */
 
 /**

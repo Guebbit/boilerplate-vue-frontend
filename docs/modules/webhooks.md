@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # webhooks
 
 ::: tip At a glance
@@ -55,7 +60,7 @@ stateDiagram-v2
   (`update`, `delete`, `enable`, `disable`, `createSecret`, `removeSecret`); a delivery's
   Replay follows `actions.replay`, which is false while its subscription is off.
 - A save that lost a race (`412`) shows a warning and offers "reload latest" (`useStaleRecord`, see
-  [Request Flow](../theory/request-flow.md#conditional-writes)); the subscription forms also disable
+  [Request Flow](../understand/request-flow.md#conditional-writes)); the subscription forms also disable
   the event types the caller may not read.
 - A superseded secret shows when it stops signing (`retiringSecrets`); the page never restates
   the server's overlap window.
@@ -91,7 +96,7 @@ State, getters and actions are exactly what the setup function of each store ret
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/webhooks/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/webhooks/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 ## Wiring
 
@@ -129,6 +134,6 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 ## Related pages
 
 - [`tasks`](./tasks.md) — the other module with two navigation entries from one manifest
-- [OpenAPI Workflow](../api/openapi-workflow.md) — where the generated request schemas come from
-- [Sitemap & Access Control](../theory/sitemap.md) — the `admin` gate on every route here
-- [State & Routing](../tools/state-and-routing.md) — the store behind the five screens
+- [OpenAPI Workflow](../build/openapi-workflow.md) — where the generated request schemas come from
+- [Sitemap & Access Control](../understand/sitemap.md) — the `admin` gate on every route here
+- [State & Routing](../understand/state-and-routing.md) — the store behind the five screens

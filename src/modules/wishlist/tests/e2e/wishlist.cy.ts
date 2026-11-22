@@ -8,7 +8,7 @@
  * functional coverage goes to be forgotten.
  *
  * Runs against the demo profile and, unchanged, against the live one — see
- * `docs/tools/live-e2e.md`.
+ * `docs/build/live-e2e.md`.
  */
 describe('Wishlist', () => {
     beforeEach(() => {

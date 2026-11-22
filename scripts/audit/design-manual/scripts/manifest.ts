@@ -74,7 +74,7 @@ export interface DesignTile {
 export interface DesignShot {
     /** Stable slug: `<module>--<case>--<viewport>--<theme>[--<locale>]`. */
     id: string;
-    /** `shell` or the module name: the batch key, and the row to look up in `docs/theory/sitemap.md`. */
+    /** `shell` or the module name: the batch key, and the row to look up in `docs/understand/sitemap.md`. */
     module: string;
     /** Repo-relative spec that declared the case. */
     spec: string;

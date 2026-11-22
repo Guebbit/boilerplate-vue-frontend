@@ -15,7 +15,7 @@ export default {
  * screen on `useStructureFormValidation` inside `FormCard`. The buyer is "No account (walk-in)"
  * unless the viewer may read users and picks one; the lines come from the shared product picker.
  * Payment is not taken here: the order opens as any other, and the cash is recorded on it.
- * See: docs/modules/orders.md
+ * @see docs/modules/orders.md
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';

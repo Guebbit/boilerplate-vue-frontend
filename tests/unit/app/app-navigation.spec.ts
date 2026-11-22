@@ -10,7 +10,7 @@
  * `AppNavigation` builds its list from `collectModuleNavigation(enabledModules)`. Asserting
  * against the REAL registry would mean naming `products`, `cart`, `admin`… in a platform spec —
  * the exact coupling the manifest removed from `src/`, moved into `tests/`. Deleting a domain
- * would then break a test that is not about that domain at all (see `docs/theory/modules.md`,
+ * would then break a test that is not about that domain at all (see `docs/understand/modules.md`,
  * "Deleting a domain").
  *
  * So `@/modules` is mocked with three throwaway domains covering the three visibility classes.

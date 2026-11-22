@@ -39,7 +39,7 @@
  * With `E2E_DESIGN_CAPTURE=true` (`expose.designCapture`) the same cases are photographed instead
  * of audited: no axe, no layout matrix, no touch scan. Which sizes and themes a case becomes is
  * `capture-matrix.ts`; the photographing is `design-capture.ts`; the review that reads the result
- * is `docs/tools/design-review.md`. The flag is read when the spec is collected, because the
+ * is `docs/build/design-review.md`. The flag is read when the spec is collected, because the
  * matrix decides how many `it()`s exist; with it unset, nothing here changes.
  */
 
@@ -90,7 +90,7 @@ export interface A11ySweepCase {
     viewport?: ViewportName;
     /**
      * Narrows the layout matrix for this case, or accepts single elements for single checks.
-     * Every reason is checked when the spec is collected (`docs/tools/layout-sweep.md#opting-out`).
+     * Every reason is checked when the spec is collected (`docs/build/layout-sweep.md#opting-out`).
      */
     layout?: LayoutCaseOptions;
 }
@@ -300,7 +300,7 @@ export const sweepA11y = (
                 reachState(sweepCase);
                 cy.checkPageA11y(sweepCase.name);
                 // The layout matrix is markup, not backend: the demo profile's jwt leg is enough
-                // (`docs/tools/layout-sweep.md`), and the other legs keep today's length.
+                // (`docs/build/layout-sweep.md`), and the other legs keep today's length.
                 cy.env(['sessionMode', 'liveProfile']).then(({ sessionMode, liveProfile }) => {
                     if (sessionMode === 'jwt' && liveProfile !== true)
                         sweepLayout(sweepCase, sweepCase.viewport ?? 'desktop');

@@ -19,7 +19,7 @@ export default {
  * empty-book affordance, so there is one form and one save path, not two. Promoting a default and
  * removing an entry have no dedicated control of their own, so they share one blocked state
  * (`rowActionError`) above the list instead — same split as `products`' `ProductsList.vue`. See
- * docs/theory/request-flow.md.
+ * docs/understand/request-flow.md.
  */
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

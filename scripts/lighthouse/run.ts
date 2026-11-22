@@ -8,7 +8,7 @@
  *   LIGHTHOUSE_MODE  `compare` (default) or `measure` (every failure is a warning; writes the baseline)
  *
  * Exit 0 fine, 1 a hard finding, 2 no backend / no reports / the sink port taken.
- * See: docs/tools/lighthouse.md
+ * @see docs/build/lighthouse.md
  */
 import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';

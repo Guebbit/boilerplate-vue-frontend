@@ -4,7 +4,7 @@
  * backend module of the same name; {@link ResponseSchemaRoute}'s docblock states the two rules every
  * row obeys.
  * Here: every `example` operation, picked up by the table without a line per route.
- * See: docs/theory/modules.md#the-module-template
+ * @see docs/understand/modules.md#the-module-template
  */
 import * as schemas from '@api/schemas';
 import { routesForModules } from '@/infrastructure/http/response-schema-map';

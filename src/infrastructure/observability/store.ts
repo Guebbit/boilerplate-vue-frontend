@@ -14,7 +14,7 @@
  * no session id); withdrawal pauses its transport, and a later grant unpauses it. Reaching the
  * operator's own collector from the visitor's browser is in scope of ePrivacy Art. 5(3) (EDPB
  * Guidelines 2/2023), and fault finding is no "strictly necessary" exemption (WP29 04/2012 §4.3,
- * Criterion B), so Faro follows consent. See `docs/tools/observability.md`.
+ * Criterion B), so Faro follows consent. See `docs/operate/observability.md`.
  *
  * Neither SDK is told who the visitor is: Faro's `setUser` and Umami's `identify` are never called, so
  * nothing either one keeps is keyed to an account (data minimisation, GDPR Art. 5(1)(c) and 25(2)).
@@ -22,7 +22,7 @@
  * Umami writes the PAGEVIEWS itself, including SPA route changes. The only custom events this app
  * sends are browsing ones (`trackBrowsing` in `analytics-consent.ts`), through the backend's relay
  * and only after consent; every business fact is reported by the backend, from the handler that
- * decided it. See `docs/tools/umami.md` for who sends which event.
+ * decided it. See `docs/operate/umami.md` for who sends which event.
  */
 
 import { defineStore } from 'pinia';

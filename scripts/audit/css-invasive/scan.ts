@@ -14,7 +14,7 @@
  *
  * A `css-allow <check> -- <why>` comment right before a node covers that node for that one check.
  * An allowance that covers nothing, or has no reason, is a finding of its own.
- * Theory: `docs/theory/design-system.md`; usage: `docs/tools/design-lint.md`.
+ * Theory: `docs/understand/design-system.md`; usage: `docs/build/design-lint.md`.
  */
 import { globSync, readFileSync } from 'node:fs';
 import path from 'node:path';

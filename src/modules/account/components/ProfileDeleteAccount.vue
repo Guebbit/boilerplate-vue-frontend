@@ -18,7 +18,7 @@ export default {
  * control on the page, kept apart from the panels above it rather than sharing their card.
  *
  * The one action here blocks the visitor in place on failure (`useBlockingError`), next to the
- * button that started it, rather than a toast — see docs/theory/request-flow.md.
+ * button that started it, rather than a toast — see docs/understand/request-flow.md.
  */
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';

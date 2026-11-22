@@ -6,7 +6,7 @@
  * as on a first visit, while nothing leaves the machine. Every POST is answered `204`, and
  * `GET /script.js` is an empty script. Every answer carries CORS headers, as the dev Alloy does:
  * Faro posts JSON cross-origin, which makes the browser preflight it. Reasoning:
- * `docs/tools/lighthouse.md`.
+ * `docs/build/lighthouse.md`.
  */
 import { createServer, type Server } from 'node:http';
 

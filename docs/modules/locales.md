@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # locales
 
 ::: tip At a glance
@@ -67,7 +72,7 @@ so _may I request this language_ and _may I download a dictionary for it_ stay t
 **A stale save says so.** A language's record, its entries and a translation set
 are versioned writes: when someone saved first, the server answers `412`, the screen shows a warning
 (not an error) and offers "reload latest" instead of resending (`useStaleRecord`, see
-[Request Flow](../theory/request-flow.md#conditional-writes)).
+[Request Flow](../understand/request-flow.md#conditional-writes)).
 
 **An import warns instead of fencing.** A whole-dictionary tag cannot say which key a colleague
 changed, so the entries import (merge or replace) sends no `If-Match`. The dialog asks one
@@ -81,7 +86,7 @@ State, getters and actions are exactly what the setup function of each store ret
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/locales/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/locales/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 `EntityTranslations` is the generic translation door: any domain with translatable content links to
 it by route name (`ProductEdit.vue`'s own "Translations" button does, guarded by
@@ -127,6 +132,6 @@ npm run regenerate
 ## Related pages
 
 - [Runtime overrides](./locales-overrides.md) — the two tiers and how they merge
-- [Internationalisation](../tools/i18n.md) — the mechanism both halves run on
-- [Modules overview](./index.md) — the whole context map
-- [Sitemap & Access Control](../theory/sitemap.md) — the `auth` gate and per-route permission on all four screens
+- [Internationalisation](../understand/i18n.md) — the mechanism both halves run on
+- [Modules overview](./start.md) — the whole context map
+- [Sitemap & Access Control](../understand/sitemap.md) — the `auth` gate and per-route permission on all four screens

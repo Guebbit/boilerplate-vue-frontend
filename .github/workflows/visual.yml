@@ -1,7 +1,7 @@
 name: Visual regression (nightly)
 
 # Pixel comparison of one screen per module against the committed baselines — see
-# docs/tools/visual-regression.md.
+# docs/build/visual-regression.md.
 #
 # Inside ONE pinned image, because screenshots are machine-sensitive: font rasterisation and the
 # browser build differ between hosts by more than the 0.2% budget. The committed baselines were

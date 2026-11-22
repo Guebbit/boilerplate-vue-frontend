@@ -10,7 +10,7 @@
 # the API host; sitemaps.org allows a `Sitemap:` line to point at another host.
 # https://developers.google.com/search/docs/crawling-indexing/block-indexing
 #
-# Design: docs/tools/environment.md#robots-and-indexing
+# Design: docs/operate/environment.md#robots-and-indexing
 set -eu
 
 HTML_ROOT="${NGINX_HTML_ROOT:-/usr/share/nginx/html}"

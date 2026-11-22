@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # users
 
 ::: tip At a glance
@@ -14,7 +19,7 @@
 
 ## Its neighbourhood
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 - `account` → **published-language** — Validates every form against `usersSchema`/`usersPasswordSchema` — shared field rules, not a shared store.
 
@@ -76,7 +81,7 @@ record.
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/users/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/users/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 ## Wiring
 
@@ -112,6 +117,6 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 ## Related pages
 
 - [`account`](./account.md) — the module that imports the field rules
-- [OpenAPI Workflow](../api/openapi-workflow.md) — where the generated request schemas come from
-- [Sitemap & Access Control](../theory/sitemap.md) — the `admin` gate on every route here
-- [State & Routing](../tools/state-and-routing.md) — the store behind the four screens
+- [OpenAPI Workflow](../build/openapi-workflow.md) — where the generated request schemas come from
+- [Sitemap & Access Control](../understand/sitemap.md) — the `admin` gate on every route here
+- [State & Routing](../understand/state-and-routing.md) — the store behind the four screens

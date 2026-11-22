@@ -4,7 +4,7 @@
  *
  * Cases live with their module (`src/modules/<name>/tests/lighthouse.ts`) so `npm run demo:remove`
  * takes them with the module; `tests/lighthouse/site.ts` holds the ones that belong to none.
- * How to add one: `docs/tools/lighthouse.md#cases-live-with-modules`.
+ * How to add one: `docs/build/lighthouse.md#cases-live-with-modules`.
  */
 import type { Page } from 'puppeteer-core';
 import type { E2ERole } from '../scenario-description';

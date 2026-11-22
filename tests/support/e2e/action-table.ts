@@ -28,7 +28,7 @@ import {
  * asserted: the loading state with the request held open, then the error or empty state it ends
  * in. Which shots a row becomes is `expandActionRows`; the photographing is `cy.captureDesign()`.
  *
- * Steps are in `docs/tools/live-e2e.md#the-action-table`.
+ * Steps are in `docs/build/live-e2e.md#the-action-table`.
  */
 
 /** Which part of the screen the row exercises; decides what "still there" means after a failure. */

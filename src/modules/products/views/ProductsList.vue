@@ -325,7 +325,7 @@ onMounted(fetchFacets);
  * are write actions behind a confirm dialog rather than a form with its own field to block: the
  * table keeps working either way, so one alert above it is where a failure belongs. A search
  * failure is a different kind of thing (ambient, the table just hasn't refreshed) and keeps
- * toasting through {@link notifyErrorMessages} above — see docs/theory/request-flow.md.
+ * toasting through {@link notifyErrorMessages} above — see docs/understand/request-flow.md.
  */
 const {
     message: rowActionError,

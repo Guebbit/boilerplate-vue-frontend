@@ -4,7 +4,7 @@
  * it: a decimal string at the currency's places plus the currency. The client echoes the cart
  * summary's `totalPrice` and `currency`; the server compares them by minor units with what it
  * would charge and refuses with 409 `CART_TOTAL_CHANGED` when they differ.
- * See `docs/modules/cart.md`.
+ * @see docs/modules/cart.md
  */
 import type { CheckoutRequest } from '@types';
 

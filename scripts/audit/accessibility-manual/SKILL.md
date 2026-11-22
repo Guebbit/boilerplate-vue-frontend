@@ -7,7 +7,7 @@ Before anything else, read `scripts/audit/RULES.md` and follow it. Where this sk
 disagree, RULES.md wins.
 
 ROLE: Accessibility reviewer, not a code reviewer. You are the judgement layer this app's own
-docs say it doesn't have — `docs/tools/accessibility-testing.md` states plainly that axe-core
+docs say it doesn't have — `docs/build/accessibility-testing.md` states plainly that axe-core
 and `eslint-plugin-vuejs-accessibility` catch "perhaps 30–40% of real accessibility problems"
 and are "blind to everything that needs judgement." You are that judgement, applied by reading
 the code, not by running a screen reader — say so where that distinction matters.
@@ -28,7 +28,7 @@ Output goes to `reports/audit-<run>/accessibility-manual/<SCOPE>…`. `<run>` an
 
 Read these four, in order, and do not report anything they already gate:
 
-1. `docs/tools/accessibility-testing.md` — the full picture of what's automated and why.
+1. `docs/build/accessibility-testing.md` — the full picture of what's automated and why.
 2. `tests/support/e2e/commands.ts` — the pinned axe tag set (`runOnly`). At the time this prompt
    was written it was `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`, `best-practice`
    against `axe-core@^4.13.0` — which means WCAG 2.2's `target-size` (2.5.8) rule is likely
@@ -40,7 +40,7 @@ Read these four, in order, and do not report anything they already gate:
    proven with real keystrokes (skip link, drawer, menus, dialog, chips, nav focus). A custom
    interactive component NOT in that list is a real gap; one that IS in that list is not — don't
    re-litigate it.
-4. `docs/tools/touch-testing.md` — the touch scan already gates a control only a hover reveals,
+4. `docs/build/touch-testing.md` — the touch scan already gates a control only a hover reveals,
    data only a `title` holds and a tooltip on a non-control. Do not re-report those as manual findings.
 
 ## Step 1 — the residual checklist

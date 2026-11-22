@@ -21,7 +21,7 @@
  * cannot be seen from inside Cypress is a route whose sweep was never written, because a spec
  * that does not exist runs no assertions and reports nothing. That absence is what this catches.
  *
- * The layout checks (`docs/tools/layout-sweep.md`) run inside the same sweep, so this guarantee is
+ * The layout checks (`docs/build/layout-sweep.md`) run inside the same sweep, so this guarantee is
  * theirs too: a route no sweep visits is laid out at no size.
  *
  * Modules with no `routes.ts` are exempt, and that is the point of the rule rather than a hole in

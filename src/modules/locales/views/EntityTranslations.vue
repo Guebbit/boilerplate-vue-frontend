@@ -246,7 +246,7 @@ const handleRemoveLocale = (tag: string) => {
 /**
  * The save button's own blocked state — one dedicated control the visitor cannot proceed past
  * until it succeeds, so a failure blocks it in place rather than joining the toast queue. The
- * page's own load stays a toast (ambient) — see docs/theory/request-flow.md.
+ * page's own load stays a toast (ambient) — see docs/understand/request-flow.md.
  */
 const {
     message: saveError,

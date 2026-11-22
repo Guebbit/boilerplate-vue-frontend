@@ -2,7 +2,7 @@
  * Reads what a `webhook-tester` session has captured — the live profile's webhook receiver.
  *
  * The demo profile hosts its own sink (`./webhook-sink.ts`); the live one runs the real
- * `tarampampam/webhook-tester` container (`docs/tools/live-e2e.md`, step 1) behind a TLS proxy, and
+ * `tarampampam/webhook-tester` container (`docs/build/live-e2e.md`, step 1) behind a TLS proxy, and
  * the backend's seeded subscription points at one of its sessions. This turns the tester's HTTP API into the
  * same shape the sink answers in, so a journey reads both the same way.
  *

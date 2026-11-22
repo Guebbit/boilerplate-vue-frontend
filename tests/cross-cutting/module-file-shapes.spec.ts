@@ -5,7 +5,7 @@
  * `schemas.ts` is a second copy that drifts silently from the backend. The sweep walks every
  * module folder to find those files.
  *
- * See: docs/theory/modules.md
+ * @see docs/understand/modules.md
  */
 
 import { describe, expect, it } from 'vitest';

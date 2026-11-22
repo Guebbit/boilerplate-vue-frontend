@@ -19,7 +19,7 @@ export default {
  *
  * A wrong code, or any other failure, blocks that shared dialog in place (`useBlockingError`)
  * rather than toasting — the dialog itself never closes on failure, so the message stays where
- * the visitor is looking. See docs/theory/request-flow.md.
+ * the visitor is looking. See docs/understand/request-flow.md.
  */
 import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, onMounted, ref } from 'vue';

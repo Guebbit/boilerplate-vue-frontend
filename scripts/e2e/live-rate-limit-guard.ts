@@ -8,7 +8,7 @@
  * of the seeded customer answers 429 and the journey times out on a missing `payment-status`.
  * Refusing to start turns that hours-long mystery into one line at the top of the run.
  *
- * See: docs/tools/live-e2e.md (the recipe, step 3)
+ * @see docs/build/live-e2e.md
  */
 
 /**
@@ -22,6 +22,6 @@ export const assertLiveRateLimitStore = (liveProfile: boolean, redisUrl?: string
     if (!liveProfile) return;
     if (redisUrl !== undefined && redisUrl.trim() !== '') return;
     throw new Error(
-        'Live profile: NODE_RATE_LIMIT_REDIS_URL is not set in this shell. Without it the limiter counts in the backend process, the reseed between specs cannot clear them, and card-pay journeys fail with a 429. Export the same value as the backend (docs/tools/live-e2e.md, step 3).'
+        'Live profile: NODE_RATE_LIMIT_REDIS_URL is not set in this shell. Without it the limiter counts in the backend process, the reseed between specs cannot clear them, and card-pay journeys fail with a 429. Export the same value as the backend (docs/build/live-e2e.md, step 3).'
     );
 };

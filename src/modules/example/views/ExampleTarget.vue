@@ -14,7 +14,7 @@ export default {
  * In any module: a detail screen reads one record from the cache by route id and lays it out with the
  * shared detail skeleton; every control follows the record's own `actions`.
  * Here: provides the example and a status mutation to `ExampleStatusActions`, and owns the delete.
- * See: docs/theory/request-flow.md
+ * @see docs/understand/request-flow.md
  */
 import { computed } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';

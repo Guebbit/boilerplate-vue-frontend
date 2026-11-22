@@ -5,7 +5,7 @@
  * value crosses a boundary and the mechanism is visible.
  * Here: renders one button per lifecycle event the server flagged open in `example.actions`; it decides nothing.
  * Delete it if: no control hangs off a server-listed set.
- * See: docs/theory/strategic-ddd.md#_4-subdomain-distillation-—-where-to-spend-effort
+ * @see docs/understand/strategic-ddd.md#_4-subdomain-distillation-—-where-to-spend-effort
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

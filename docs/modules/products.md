@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # products
 
 ::: tip At a glance
@@ -13,7 +18,7 @@
 
 ## Its neighbourhood
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 - `inventory` → **customer-supplier** — Asks the products store to drop its cached catalogue after a recorded movement (`invalidateProductsCache`), and reads the ledger's titles through `useProductLines`.
 - `cart` → **customer-supplier** — Reads its lines' products through `useProductLines` and asks the cache to drop after a checkout (`invalidateProductsCache`).
@@ -187,7 +192,7 @@ State, getters and actions are exactly what the setup function of each store ret
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/products/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/products/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 ### Saving a later or cleared release date
 
@@ -247,8 +252,8 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 
 ## Related pages
 
-- [Modules overview](./index.md) — the whole context map
+- [Modules overview](./start.md) — the whole context map
 - [`cart`](./cart.md) · [`wishlist`](./wishlist.md) — the modules that contribute the product page's buttons
-- [State & Routing](../tools/state-and-routing.md) — what a store is and how a view reads one
-- [Sitemap & Access Control](../theory/sitemap.md) — every screen in the app, and who may reach it
-- [OpenAPI Workflow](../api/openapi-workflow.md) — where the generated client and Zod schemas come from
+- [State & Routing](../understand/state-and-routing.md) — what a store is and how a view reads one
+- [Sitemap & Access Control](../understand/sitemap.md) — every screen in the app, and who may reach it
+- [OpenAPI Workflow](../build/openapi-workflow.md) — where the generated client and Zod schemas come from

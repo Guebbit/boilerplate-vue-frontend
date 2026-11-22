@@ -4,7 +4,7 @@
  * The one place a blocked workflow's error becomes markup. `role="alert"` so assistive tech
  * announces it the moment it appears — the whole reason it renders here instead of joining the
  * toast queue, which a screen reader has already moved past by the time someone looks back at
- * the form. Pairs with `useBlockingError`; see docs/theory/request-flow.md for which failures
+ * the form. Pairs with `useBlockingError`; see docs/understand/request-flow.md for which failures
  * belong here versus in a toast.
  *
  * No `testId` prop: `data-test` falls through to `<v-alert>` like any other attribute, since

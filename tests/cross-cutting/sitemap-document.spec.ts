@@ -1,5 +1,5 @@
 /**
- * The route table on `docs/theory/sitemap.md` is generated from the enabled modules' route
+ * The route table on `docs/understand/sitemap.md` is generated from the enabled modules' route
  * records, and this is the generator AND its guard: the page says its rows "cannot disagree" with
  * the routes, which is only true while something refuses a page that has drifted.
  *
@@ -8,7 +8,7 @@
  *
  *   - Run as a test, it fails with the block the page should hold.
  *   - `UPDATE_SITEMAP=1 npx vitest run tests/cross-cutting/sitemap-document.spec.ts` rewrites the block
- *     between the two markers; `npx prettier --write docs/theory/sitemap.md` then aligns it.
+ *     between the two markers; `npx prettier --write docs/understand/sitemap.md` then aligns it.
  *
  * Rows are compared as cell lists, not as text, so Prettier's column padding never matters.
  */
@@ -22,7 +22,7 @@ import { enabledModules } from '@/modules';
 /** The generated sitemap page. */
 const PAGE = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
-    '../../docs/theory/sitemap.md'
+    '../../docs/understand/sitemap.md'
 );
 
 /** Marks where the generated table starts in the page. */
@@ -121,7 +121,7 @@ const normalised = (block: string): { rows: string[][]; count: string } => {
     };
 };
 
-describe('docs/theory/sitemap.md', () => {
+describe('docs/understand/sitemap.md', () => {
     it('lists exactly the routes the enabled modules contribute', () => {
         const text = readFileSync(PAGE, 'utf8');
 

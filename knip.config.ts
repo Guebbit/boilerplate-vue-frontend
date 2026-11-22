@@ -11,7 +11,7 @@ import type { KnipConfig } from 'knip';
 const config: KnipConfig = {
     // Entry points on top of the ones knip's plugins find from package.json, vite and eslint.
     entry: [
-        // The module barrels are public surface, unused on purpose (`docs/theory/strategic-ddd.md` §5).
+        // The module barrels are public surface, unused on purpose (`docs/understand/strategic-ddd.md` §5).
         'src/modules/*/index.ts',
         // Each module's manifest is loaded by the registry's glob, never imported by name.
         'src/modules/*/module.ts',

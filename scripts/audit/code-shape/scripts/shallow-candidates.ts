@@ -31,7 +31,7 @@ const FEW_USERS = 2;
 /** A file with at most this many exports can be a lazy file. */
 const FEW_EXPORTS = 2;
 
-/** A module barrel — published surface, `docs/theory/strategic-ddd.md` §5 (the barrel is the published language). */
+/** A module barrel — published surface, `docs/understand/strategic-ddd.md` §5 (the barrel is the published language). */
 const BARREL = /^src\/modules\/[^/]+\/index\.ts$/;
 
 /** Never a candidate: module tests and generated code. Still counted as users. */
@@ -41,7 +41,7 @@ const NEVER_A_CANDIDATE =
 /**
  * Files the module layout itself asks for (one per role) and every SFC — never a lazy file; a
  * component with one importer is how a page is built.
- * The layout: `docs/theory/modules.md#the-module-template`.
+ * The layout: `docs/understand/modules.md#the-module-template`.
  */
 const LAID_OUT_FILE = /^src\/modules(?:\/[^/]+){2}\.ts$|\.vue$/;
 

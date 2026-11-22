@@ -5,7 +5,7 @@
  *
  * A route that quietly loses `meta.access` is indistinguishable from a public one, which is why
  * each expected value is written out rather than derived. Lives with the module as a fact about
- * THIS domain (see `docs/theory/modules.md`); the router spec proves enforcement is *attached*,
+ * THIS domain (see `docs/understand/modules.md`); the router spec proves enforcement is *attached*,
  * this proves the declarations are *there*.
  */
 import { describe, expect, it } from 'vitest';

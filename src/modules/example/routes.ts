@@ -4,7 +4,7 @@
  * checks. Each screen names the action it performs; the coarse `meta.can` lets a caller in, and the
  * record's own `actions` decide per row.
  * Here: one public route. Every view loads its own record, so no route guard fetches data.
- * See: docs/theory/modules.md#the-module-template
+ * @see docs/understand/modules.md#the-module-template
  */
 import type { RouteRecordRaw } from 'vue-router';
 

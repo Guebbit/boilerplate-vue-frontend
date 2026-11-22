@@ -15,7 +15,7 @@
  * What the report still lists is a grep for an import this script did not recognise — the residue
  * a human has to judge.
  *
- * See: boilerplate-node-backend/docs/build/new-project.md
+ * @see boilerplate-node-backend/docs/build/new-project.md
  */
 
 import { execFileSync } from 'node:child_process';

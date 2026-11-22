@@ -4,7 +4,7 @@
  * run on `main`. Shared by the mutation report and the Lighthouse baseline.
  *
  * Pure: `pull-artifact.ts` does the GitHub calls and the file writes.
- * See: docs/tools/mutation-testing.md#the-nightly-holds-no-write-access
+ * @see docs/build/mutation-testing.md#the-nightly-holds-no-write-access
  */
 
 /** The branch whose runs measure the code this checkout compares against. */

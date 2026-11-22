@@ -1,7 +1,7 @@
 /**
  * @module
  * The Lighthouse case of the example module: the one public page, a published example read by a
- * guest. See `docs/tools/lighthouse.md#cases-live-with-modules`.
+ * guest. See `docs/build/lighthouse.md#cases-live-with-modules`.
  */
 import type { LighthouseCase } from '../../../../tests/support/lighthouse/case';
 

@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # Runtime overrides
 
 Two tiers of translation, and the rule that keeps them from merging into one.
@@ -90,6 +95,6 @@ Both routes are `admin`. Editing what an application says to everyone is not a s
 ## Related pages
 
 - [`locales`](./locales.md) — the module this belongs to
-- [Internationalisation](../tools/i18n.md) — the mechanism both tiers run on
-- [Layers](../theory/layers.md) — why the consumer half sits below modules
-- [Demo profile](../tools/demo-profile.md) — the seeded languages and what each demonstrates
+- [Internationalisation](../understand/i18n.md) — the mechanism both tiers run on
+- [Layers](../understand/layers.md) — why the consumer half sits below modules
+- [Demo profile](../build/demo-profile.md) — the seeded languages and what each demonstrates

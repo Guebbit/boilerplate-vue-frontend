@@ -2,7 +2,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Global stylesheet: Tailwind v4 (utilities only) beside Vuetify.
  *
- * Who owns which token — the table and the reasons are in `docs/theory/design-system.md`:
+ * Who owns which token — the table and the reasons are in `docs/understand/design-system.md`:
  * - Vuetify owns colour, font family, radius names and elevation. Tailwind's own palette, fonts,
  *   radius scale and shadow scales are wiped below, so the names that remain mean what Vuetify's
  *   mean. `src/ui/vuetify/theme.ts` holds the colours; `src/ui/vuetify/index.ts` the component
@@ -197,7 +197,7 @@
  *
  * In `@layer components`, declared after Vuetify's component layer, so it beats the flat card's
  * background; no Tailwind `bg-*` sits on a glow element. See
- * `docs/theory/design-system.md#scoped-styles`.
+ * `docs/understand/design-system.md#scoped-styles`.
  */
 @layer components {
     .surface-glow {

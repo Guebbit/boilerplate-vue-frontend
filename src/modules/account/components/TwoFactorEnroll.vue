@@ -20,7 +20,7 @@ export default {
  * both act on the same code field) instead of toasting, since neither closes the dialog on
  * failure. The initial `setup` on mount stays a toast: a failure there closes the dialog before
  * the card can show anything, so there is nowhere for an inline alert to stay put. See
- * docs/theory/request-flow.md.
+ * docs/understand/request-flow.md.
  */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

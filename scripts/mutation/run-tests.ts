@@ -33,13 +33,13 @@
  * This repo has not hit that loop — vitest transforms with esbuild, which type-checks nothing and
  * so caches nothing per mutant. The guard is here anyway because the property that keeps it true is
  * a configuration choice rather than a law: see
- * `docs/tools/mutation-testing.md#why-this-repo-does-not-hit-the-backend-s-oom-loop`.
+ * `docs/build/mutation-testing.md#why-this-repo-does-not-hit-the-backend-s-oom-loop`.
  *
  * ── 4. A PARTIAL RUN KEEPS THE REPORT WHOLE ──────────────────────────────────────────────────────
  * Stryker writes `reports/mutation/mutation.json` from scratch, so `--mutate <file>` would leave a
  * report of one file. Instead the run is laid over the report that was there (`overlay.ts`): that
  * file takes the new result, the rest keep theirs — a pulled nightly stays whole.
- * See `docs/tools/mutation-testing.md#which-file-is-what`.
+ * @see docs/build/mutation-testing.md#which-file-is-what
  */
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -61,7 +61,7 @@ const SANDBOX_ROOT = path.join(REPO_ROOT, '.stryker-tmp');
 
 /**
  * ESTIMATE, not a measurement — unlike the backend, no case study exists for this repo's own
- * worker RSS (docs/tools/mutation-testing.md#why-this-repo-does-not-hit-the-backend-s-oom-loop
+ * worker RSS (docs/build/mutation-testing.md#why-this-repo-does-not-hit-the-backend-s-oom-loop
  * documents why it hasn't needed one). Picked above `STRYKER_WORKER_HEAP_MB`'s own default
  * (2048 MB): that number bounds only V8's old-space, while a worker's actual RSS also carries
  * jsdom and Vitest's own overhead on top of it. Re-measure with
@@ -225,7 +225,7 @@ const main = async () => {
                 `  This is the OOM/strand loop, not a slow run. Every restart discards that\n` +
                 `  worker's in-progress mutants, so the run cannot converge — the remaining-time\n` +
                 `  estimate will climb rather than fall if it is left alone.\n\n` +
-                `  What to read: docs/tools/mutation-testing.md.\n` +
+                `  What to read: docs/build/mutation-testing.md.\n` +
                 `  What it usually is: a transform that caches per-file state across mutants.\n` +
                 `  What to check first: that nothing has enabled vitest's \`typecheck\` option,\n` +
                 `  which is the one setting that would give this repo the backend's problem.\n`

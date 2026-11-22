@@ -3,7 +3,7 @@
  * The one place that touches driver.js. `startTour(id)` assembles the tour's steps (drops anchors
  * that are not on screen), translates them, shows them, and records the tour as seen when it
  * closes — finished, skipped or dismissed with Esc all count. driver.js and its stylesheet load
- * on first use, so they never join the boot bundle. See `docs/tools/tours.md`.
+ * on first use, so they never join the boot bundle. See `docs/understand/tours.md`.
  */
 import { useI18n } from 'vue-i18n';
 import type { DriveStep } from 'driver.js';

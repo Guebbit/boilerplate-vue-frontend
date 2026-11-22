@@ -5,7 +5,7 @@
  * committing it.
  *
  * Needs the GitHub CLI, logged in (`gh auth login`).
- * See: docs/tools/mutation-testing.md#the-nightly-holds-no-write-access
+ * @see docs/build/mutation-testing.md#the-nightly-holds-no-write-access
  */
 import { execFile } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises';

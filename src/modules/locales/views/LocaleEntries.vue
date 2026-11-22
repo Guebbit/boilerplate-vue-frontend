@@ -281,7 +281,7 @@ const tableHeaders = computed<CoreDataTableHeader<LocaleEntry>[]>(() => [
  * The row writes' own blocked state — an inline value edit and a confirmed delete alike, since
  * both are writes with no per-row slot of their own to host an alert; the table keeps working
  * either way, so one alert above it is where a failure belongs. The list's own search stays a
- * toast (ambient) — see docs/theory/request-flow.md.
+ * toast (ambient) — see docs/understand/request-flow.md.
  */
 const {
     message: rowActionError,

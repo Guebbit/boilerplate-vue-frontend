@@ -9,7 +9,7 @@
  *           stitch and tile it. Nothing here asserts on the design: capture is evidence, not a test.
  * Flow:     freeze the page, measure it, scroll and shoot it in viewport pieces, check each piece
  *           is the viewport's size, read what a picture cannot show, then hand the pieces to Node.
- * Reading:  `docs/tools/design-review.md`.
+ * Reading:  `docs/build/design-review.md`.
  */
 import { shotSizeProblem } from '../../../scripts/e2e/shot-size';
 import { VIEWPORTS, type ViewportName } from '../../../scripts/e2e/viewports';

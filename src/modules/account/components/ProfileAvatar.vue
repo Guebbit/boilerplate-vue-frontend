@@ -17,7 +17,7 @@ export default {
  *
  * Upload and remove both act on the same single picture, so a failure from either one blocks the
  * same spot: one shared `useBlockingError()`, rendered next to the picker. See
- * docs/theory/request-flow.md.
+ * docs/understand/request-flow.md.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref, watch } from 'vue';

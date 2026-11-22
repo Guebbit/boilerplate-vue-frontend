@@ -14,7 +14,7 @@
  * `dependsOn` holds BACKEND module names. One with no FE folder (`addresses`, `audit-logs`) is
  * fine: `account` folds address-book screens into itself. A module calling ITS OWN backend
  * counterpart needs no entry. The reason for each edge lives on the module's docs page
- * (`docs/modules/<module>.md`, "Its neighbourhood"); see `docs/theory/strategic-ddd.md` §2.
+ * (`docs/modules/<module>.md`, "Its neighbourhood"); see `docs/understand/strategic-ddd.md` §2.
  *
  * Read by `eslint.config.ts` (coupling and foundation-may-not-import-shop), the demo scripts,
  * and the cross-cutting specs. A module with no `module.yaml`, or an invalid `group`, is

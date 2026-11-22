@@ -5,7 +5,7 @@
  * Same rule as `scripts/mutation/baseline.ts`: a number is recorded when it gets better, a new case
  * is recorded at what it first measures, and raising one is a person's commit with a reason.
  * Nothing in it gates (D3): timing is a report, so a fork inherits numbers, not a verdict.
- * See: docs/tools/lighthouse.md#baseline-and-ratchet
+ * @see docs/build/lighthouse.md#baseline-and-ratchet
  */
 import { existsSync, readFileSync } from 'node:fs';
 

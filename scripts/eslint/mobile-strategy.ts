@@ -59,7 +59,7 @@ const directiveNamed = (element: TemplateElement, name: string): TemplateAttribu
 
 /** Reports a dialog, a data table or a plain table that lacks its phone strategy. */
 export const mobileStrategy = ESLintUtils.RuleCreator(
-    (name) => `docs/tools/design-lint.md#${name}`
+    (name) => `docs/build/design-lint.md#${name}`
 )<Options, MessageIds>({
     name: 'mobile-strategy',
     meta: {

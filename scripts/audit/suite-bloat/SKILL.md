@@ -81,5 +81,5 @@ Rules:
 - A rule the contract states is never bloat while this test is its only owner. When a cross-cutting
   sweep (axe `a11y-coverage`, the layout sweep) pins the same rule on the same view with an equal or
   stronger assertion, the per-view copy is redundant unless it checks more than the sweep does
-  (`docs/tools/accessibility-testing.md`).
+  (`docs/build/accessibility-testing.md`).
 - `reports/` is gitignored. These files are working evidence, not deliverables.

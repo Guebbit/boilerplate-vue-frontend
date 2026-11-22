@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # orders
 
 ::: tip At a glance
@@ -12,7 +17,7 @@
 
 ## Its neighbourhood
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 - → `cart` **customer-supplier** — The reorder button asks the cart store to refill itself from a past order.
 - → `delivery` **published-language** — Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.
@@ -47,7 +52,7 @@ order-page → cart store.
 
 Reads are scoped: a customer sees only their own orders, an admin reaches all of them through the
 write screens. That scoping is enforced server-side — this client renders whatever the endpoint
-answers, which is what [Domain layer](../theory/domain-layer.md) means by the domain living behind
+answers, which is what [Domain layer](../understand/domain-layer.md) means by the domain living behind
 the API.
 
 ## Two lists, one component
@@ -207,7 +212,7 @@ detail-only part waits for `isWholeOrder` before it renders.
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/orders/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/orders/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 ## Wiring
 
@@ -244,6 +249,6 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 
 - [`payments`](./payments.md) · [`delivery`](./delivery.md) — the two panels this page mounts
 - [`cart`](./cart.md) — where the reorder button writes
-- [Domain Layer](../theory/domain-layer.md) — why the rules are not in this repository
-- [Strategic DDD](../theory/strategic-ddd.md) — what `published-language` buys
-- [Sitemap & Access Control](../theory/sitemap.md) — the admin/customer split on these routes
+- [Domain Layer](../understand/domain-layer.md) — why the rules are not in this repository
+- [Strategic DDD](../understand/strategic-ddd.md) — what `published-language` buys
+- [Sitemap & Access Control](../understand/sitemap.md) — the admin/customer split on these routes

@@ -7,7 +7,7 @@
  * Why:    the report is the one source. The baseline is derived from it, here as in CI, so the
  *         two can never disagree. Review the baseline's diff, then commit it.
  * Needs:  the GitHub CLI, logged in (`gh auth login`).
- * See:    docs/tools/mutation-testing.md#the-nightly-holds-no-write-access
+ * @see docs/build/mutation-testing.md#the-nightly-holds-no-write-access
  */
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';

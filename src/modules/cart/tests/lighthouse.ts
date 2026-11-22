@@ -1,7 +1,7 @@
 /**
  * @module
  * The Lighthouse cases of the cart: the guest cart and the signed-in checkout, each after one add.
- * Neither is crawled, so neither is SEO-audited. See `docs/tools/lighthouse.md#cases-live-with-modules`.
+ * Neither is crawled, so neither is SEO-audited. See `docs/build/lighthouse.md#cases-live-with-modules`.
  */
 import { TimeoutError, type Page } from 'puppeteer-core';
 import type { LighthouseCase, PrepareContext } from '../../../../tests/support/lighthouse/case';

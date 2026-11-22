@@ -5,7 +5,7 @@
  * keys its stores report loading under.
  * Here: a small domain to copy, with no backend rules of its own to guard.
  * Instead see: `cart` for a barrel, `wishlist` for a slot contribution.
- * See: docs/theory/modules.md#the-module-template
+ * @see docs/understand/modules.md#the-module-template
  */
 import { NotebookPen } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
@@ -36,7 +36,7 @@ declare module '@/infrastructure/utils/logger.ts' {
  *
  * Subdomain: none. It is the template a domain is copied from, not a subdomain.
  *
- * It sits on no context-map edge: `docs/modules/index.md` § "The whole map".
+ * It sits on no context-map edge: `docs/modules/start.md` § "The whole map".
  */
 export default {
     name: 'example',

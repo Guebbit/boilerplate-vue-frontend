@@ -5,7 +5,7 @@
  * `generate-shared-rules.ts` also exports each schema as JSON Schema, so another frontend can
  * validate the same files without Zod.
  *
- * See: docs/tools/shared-rules.md
+ * @see docs/understand/shared-rules.md
  */
 import { z } from 'zod';
 import { buildBrowserStorage } from './browser-storage';

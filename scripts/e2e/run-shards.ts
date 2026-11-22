@@ -40,7 +40,7 @@
  * A CI runner has 4 vCPUs, so the whole suite on one runner starves its own shards and overruns
  * the job limit. `E2E_SLICE=<i>/<N>` (or `antibot`) makes this process run only slice `i` of the
  * same balanced split the nightly live matrix uses, as one local shard; the workflow's matrix
- * supplies the other slices on other runners. See docs/tools/live-e2e.md#ci-slices.
+ * supplies the other slices on other runners. See docs/build/live-e2e.md#ci-slices.
  */
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';

@@ -1,6 +1,6 @@
 name: Lighthouse (nightly)
 
-# A phone-profile Lighthouse run over six representative routes — see docs/tools/lighthouse.md.
+# A phone-profile Lighthouse run over six representative routes — see docs/build/lighthouse.md.
 #
 # Inside the SAME pinned image as visual.yml, so a timing jump is never a silent Chrome upgrade.
 # Nothing leaves the machine: the Chrome is launched with an egress lock and the run fails when any

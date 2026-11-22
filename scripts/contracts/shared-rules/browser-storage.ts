@@ -5,7 +5,7 @@
  * order lives, so a cookie the backend adds fails the build here until it is given a place.
  * Pure: no filesystem, so a test can walk every refusal.
  *
- * See: docs/tools/shared-rules.md
+ * @see docs/understand/shared-rules.md
  */
 import type { BrowserStorageRules, SyncedCookies } from './rules';
 

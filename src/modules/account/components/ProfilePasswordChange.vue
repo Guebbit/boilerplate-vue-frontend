@@ -16,7 +16,7 @@ export default {
  * with three forms visible at once.
  *
  * A rejected submit (e.g. a wrong current password) blocks the form in place
- * (`useBlockingError`) instead of toasting — see docs/theory/request-flow.md. The breach check
+ * (`useBlockingError`) instead of toasting — see docs/understand/request-flow.md. The breach check
  * (`usePasswordBreachCheck`) is advisory only — it never blocks this submit.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';

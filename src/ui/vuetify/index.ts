@@ -9,7 +9,7 @@
  * - Tailwind owns spacing, type size, z-index and layout, and ALIASES the Vuetify colours
  *   (see src/styles/main.css) — it defines no palette of its own.
  *
- * Who owns which token, and why: docs/theory/design-system.md.
+ * Who owns which token, and why: docs/understand/design-system.md.
  * Downstream projects restyle the app by editing `./theme.ts` and `defaults` below.
  * ─────────────────────────────────────────────────────────────────────────────
  */

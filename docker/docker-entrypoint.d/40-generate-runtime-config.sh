@@ -6,7 +6,7 @@
 # https://github.com/nginxinc/docker-nginx/blob/master/entrypoint/docker-entrypoint.sh
 #
 # `src/infrastructure/runtime-config.ts` is the one reader; `index.html` loads this file before
-# the app bundle. Design and whitelist: `docs/tools/environment.md`, "Runtime configuration".
+# the app bundle. Design and whitelist: `docs/operate/environment.md`, "Runtime configuration".
 # Every value here already ships to the browser via the compiled bundle today — never a secret.
 set -eu
 

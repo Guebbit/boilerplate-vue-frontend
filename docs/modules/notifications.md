@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # notifications
 
 ::: tip At a glance
@@ -17,7 +22,7 @@
 modules reach it through the registry instead: they declare `AppModule.notices` entries, and the
 bell asks the registry for a code's sentence and target.
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 ## The story
 
@@ -200,5 +205,5 @@ npm run regenerate
 
 - [`shop-tasks`](./shop-tasks.md) — the shop's notice codes, worded and linked through the registry
 - [`tasks`](./tasks.md) — the to-do inbox the task notices open
-- [Modules](../theory/modules.md) — slots, and why the shell never imports its contributors
+- [Modules](../understand/modules.md) — slots, and why the shell never imports its contributors
 - [Observability](./observability.md) — the other SSE stream, and the shared `createSseClient`

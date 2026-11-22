@@ -47,7 +47,7 @@ const templateComments = (program: object): TemplateComment[] => {
  * Script comments are left to `require-description`.
  */
 export const templateDirectiveDescription = ESLintUtils.RuleCreator(
-    (name) => `docs/tools/design-lint.md#${name}`
+    (name) => `docs/build/design-lint.md#${name}`
 )<Options, MessageIds>({
     name: 'template-directive-description',
     meta: {

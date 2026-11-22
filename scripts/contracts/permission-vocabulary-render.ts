@@ -5,7 +5,7 @@
  *
  * SHARED SCRIPT — kept identical in both repos of the pair by hand; it is not in
  * `SHARED_FILES` on purpose (boilerplate-node-backend/docs/build/pairing-and-ports.md, "Convenience is not necessity").
- * See: boilerplate-node-backend/docs/reference/permission-vocabulary.md
+ * @see boilerplate-node-backend/docs/reference/permission-vocabulary.md
  */
 import { parse } from 'yaml';
 

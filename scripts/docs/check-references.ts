@@ -62,6 +62,7 @@ import {
 } from './repo-references';
 import {
     exportedNames,
+    missingFrontMatter,
     missingScripts,
     staleListings,
     unknownContractImports,
@@ -252,7 +253,7 @@ const scanPage = (
 };
 
 /** The page whose dependency listings must name only installed packages. */
-const DEPENDENCIES_PAGE = 'docs/tools/package-dependencies.md';
+const DEPENDENCIES_PAGE = 'docs/reference/package-dependencies.md';
 
 /**
  * Scripts the docs tell a reader to run in the PAIRED BACKEND, so they are not in this repo's
@@ -305,6 +306,7 @@ const factFindings = (pages: DocumentPage[]): FactFinding[] => {
     const dependenciesPage = byPath.get(DEPENDENCIES_PAGE);
 
     return [
+        ...missingFrontMatter(pages),
         ...missingScripts(pages, new Set([...own.scripts, ...BACKEND_SCRIPTS])),
         ...(dependenciesPage
             ? staleListings(

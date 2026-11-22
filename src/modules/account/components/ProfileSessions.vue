@@ -18,7 +18,7 @@ export default {
  * Revoking one row and logging out everywhere are both write actions on this list with no
  * dedicated control of their own to host an alert, so they share one `useBlockingError()`
  * rendered above the list — same split as `products`' `ProductsList.vue`. The list's own load
- * (`fetchSessions`) stays ambient. See docs/theory/request-flow.md.
+ * (`fetchSessions`) stays ambient. See docs/understand/request-flow.md.
  */
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

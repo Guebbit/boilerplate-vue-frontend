@@ -6,7 +6,7 @@
  * is exported for the other pairing, `useBlockingError` (`src/infrastructure/utils/use-blocking-error.ts`), which a BLOCKED
  * workflow (a save, delete, refund or lookup) calls instead: same wording, same Faro report, kept
  * local and rendered through `InlineErrorAlert` rather than toasted. See
- * docs/theory/request-flow.md for which one a given call site should use.
+ * docs/understand/request-flow.md for which one a given call site should use.
  */
 
 import { extractErrorMessage } from '@guebbit/js-toolkit';

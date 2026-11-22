@@ -6,7 +6,9 @@
  * Why the real generators: Lighthouse then audits the exact `config.js`, `security.txt` and
  * `robots.txt` production serves, and no second copy of the key whitelist
  * exists. Why a dedicated build: `build:e2e` turns response validation on, which would be measured
- * as app cost. See: docs/tools/lighthouse.md
+ * as app cost.
+ *
+ * @see docs/build/lighthouse.md
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';

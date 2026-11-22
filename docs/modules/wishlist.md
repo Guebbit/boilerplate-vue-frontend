@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # wishlist
 
 ::: tip At a glance
@@ -13,7 +18,7 @@
 
 ## Its neighbourhood
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 - → `products` **conformist** — Joins its saved lines to their product records (`useProductLines`), read as they are.
 - → `cart` **customer-supplier** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
@@ -57,7 +62,7 @@ State, getters and actions are exactly what the setup function of each store ret
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/wishlist/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/wishlist/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 ## Wiring
 
@@ -94,5 +99,5 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 
 - [`cart`](./cart.md) — the same shape, with the hard part attached
 - [`products`](./products.md) — where the heart lives
-- [Modules](../theory/modules.md) — the DAG rule and what enforces it
-- [State & Routing](../tools/state-and-routing.md) — the store behind the screen
+- [Modules](../understand/modules.md) — the DAG rule and what enforces it
+- [State & Routing](../understand/state-and-routing.md) — the store behind the screen

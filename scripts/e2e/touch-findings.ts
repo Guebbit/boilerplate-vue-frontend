@@ -4,7 +4,7 @@
  *
  * `collectTouchProbes` (in `tests/support/e2e/touch.ts`) turns the live page into plain
  * `TouchProbe` records; this turns records into findings. Splitting them keeps the rules unit
- * testable with no DOM. Why a finger cannot hover: `docs/theory/design-system.md`.
+ * testable with no DOM. Why a finger cannot hover: `docs/understand/design-system.md`.
  */
 
 /** What the collector read off one element. Plain data: no DOM node survives into a record. */

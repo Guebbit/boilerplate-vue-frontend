@@ -5,7 +5,7 @@
  * Here: what an example's publication reads as. `publishedAt` is stamped on the first publish
  * and never moved or cleared, so the date alone never means "live" — the status does.
  * Delete it if: your record has no field whose meaning depends on another.
- * See: docs/theory/domain-layer.md#the-floor-testable-without-mounting-a-component-is-necessary-not-sufficient
+ * @see docs/understand/domain-layer.md#the-floor-testable-without-mounting-a-component-is-necessary-not-sufficient
  */
 import type { Example } from '@types';
 

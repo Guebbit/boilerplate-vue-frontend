@@ -1,0 +1,361 @@
+---
+type: concept
+audience: [architect]
+---
+
+# Modules
+
+This page is the **contract**: what a module is, what it may know, and what it costs to add or
+delete one. [Layers](./layers.md) is the folder map; this is the reasoning behind it.
+
+## The goal, stated as a test
+
+> Deleting a domain is `rm -rf` of one folder plus removing one line from a registry, and
+> `complete` stays green.
+
+The driving scenario is a boilerplate that gets carved up: today an ecommerce demo; tomorrow an
+event portal that keeps users, replaces products with events and drops the cart; later a marketing
+site that keeps almost none of it. **"Which slices are in this build" has to be a configuration
+question, not a surgery question.**
+
+## The tiers
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 55}}}%%
+flowchart TD
+    A["<b>src/app</b><br/>this application<br/><i>router · layouts · guards · views · AppNavigation</i>"]
+    M["<b>src/modules/*</b><br/>one domain each<br/><i>routes · store · schemas · views · locales</i>"]
+    P["<b>src/kernel</b><br/>the module system itself<br/><i>registry</i>"]
+    U["<b>src/ui</b><br/>the design system, no domain<br/><i>tokens · icons · shared components</i>"]
+    C["<b>src/infrastructure</b><br/>substrate — never knows modules exist<br/><i>http · observability · utils · session</i>"]
+
+    A ==> M ==> P ==> U ==> C
+    A -.-> P
+    A -.-> U
+    A -.-> C
+    M -.-> U
+    M -.-> C
+    P -.-> C
+
+    classDef app fill:#fef3c7,stroke:#d97706,color:#111827;
+    classDef domain fill:#dbeafe,stroke:#2563eb,color:#111827;
+    classDef plat fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef ui fill:#fae8ff,stroke:#a21caf,color:#111827;
+    classDef core fill:#ddd6fe,stroke:#7c3aed,color:#111827;
+    class A app;
+    class M domain;
+    class P plat;
+    class U ui;
+    class C core;
+```
+
+**Every arrow points down and none points back.** `eslint.config.ts`'s `eslint-plugin-boundaries`
+config enforces each edge in both directions — deny by default, an explicit policy per allowed
+edge, an unclassified file refused outright. `src/i18n` sits below the diagram's
+`infrastructure`, its own tier again: nothing above it, not even infrastructure, may skip it — see
+the "extractable i18n runtime" note under [Layers](./layers.md).
+
+Each tier, its folder, what it knows and what it holds: the [Tiers table in Layers](./layers.md#tiers).
+
+### Why `app` exists
+
+The module-system tier, `kernel`, must not hold the router, the layouts, the route guards, the app
+views or `AppNavigation`, because they would need an exemption to import `@/modules`, the registry.
+That exemption is the whole problem: **the
+registry names every enabled domain**, so anything reading it knows this application rather than
+this kind of application.
+
+Making the tier explicit moved five things and deleted the exemption:
+
+| Was                                     | Is now            | Why                                              |
+| --------------------------------------- | ----------------- | ------------------------------------------------ |
+| `platform/router/`                      | `app/router/`     | splices every enabled module's routes            | <!-- doc-paths:ignore --> |
+| `platform/components/AppNavigation.vue` | `app/components/` | renders every enabled module's nav entries       | <!-- doc-paths:ignore --> |
+| `platform/middlewares/`                 | `app/guards/`     | route guards for this app's route tree           | <!-- doc-paths:ignore --> |
+| `platform/layouts/`                     | `app/layouts/`    | the app shell, which composes the navigation     | <!-- doc-paths:ignore --> |
+| `platform/views/`                       | `app/views/`      | Home, Error, the prose pages — pages of this app | <!-- doc-paths:ignore --> |
+
+**This mirrors the backend**, which made the same split at the same time — the tiers there are
+`app → modules → kernel → infrastructure`, and `ui` is the one tier a backend has no use for — this repo's fifth.
+
+### The `infrastructure` / `kernel` line
+
+Both repos use one question, and it is the only test that matters:
+
+> **If this project had no modules at all — if it were one undivided app — would this file still
+> make sense?**
+
+- **Yes, it still works** → `infrastructure` (or `ui`, if it is a component).
+- **No, it becomes meaningless** → `kernel`.
+
+`infrastructure` is not "framework-free" — it is the opposite. It imports axios, vue-i18n and Pinia,
+and that is correct: `infrastructure/http/index.ts` is axios-coupled substrate and belongs exactly
+where it is. The one thing it may never contain is the knowledge that a module system exists.
+
+Being domain-free is **not enough** to earn a place in `kernel` — most of `infrastructure` and all
+of `ui` are domain-free too. A `kernel` file's _purpose_ has to dissolve if modules do. By that test
+`kernel` holds exactly two things:
+
+| File            | Why it cannot be infrastructure                                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `registry.ts`   | it _is_ the module system — `AppModule`, the nav entries, the route splice                                                                              |
+| `route-link.ts` | its whole reason to exist is a route that may not resolve because the module owning it may not be in this build — meaningless in an app with no modules |
+
+Three near misses show where the line falls, because each survives perfectly well in an app with no
+modules and none is imported by the registry: `src/ui/molecules/PageSizeSelect.vue` imports
+nothing at all, `src/app/components/AppLanguageSwitcher.vue` reads this app's locale list and
+drives its locale-prefixed routes, and `src/modules/example/store.ts` is one domain's own state
+rather than shared state. None of the three belongs to the module system; each
+belongs to the tier its dependencies name.
+
+Two files is the honest size of a module system in a frontend, and it is deliberate: the tier earns
+its place by being unambiguous, not by being large. Everything domain-free that is _not_ the module
+system has two better homes already — `ui` for anything with a template, `infrastructure` for the
+rest.
+
+#### A note on the names
+
+These two tiers were called `core` and `platform` until the rename, and both moved for reasons
+worth keeping.
+
+`core` is not an unusual name — it is an **overloaded** one, which is worse. Nest and Angular use
+`@nestjs/core` and `@angular/core` for the DI container and call their substrate `common`; Spring
+and Backstage use "core" for the substrate, as an earlier name here did. A name
+that needs a standing disclaimer for readers arriving from Vue tooling is doing negative work. A novel name makes someone look it up; an
+overloaded one makes them think they already know, and that failure is silent.
+
+`platform` was borrowed from VS Code, where `vs/base` is utility code, `vs/platform` is the service
+layer and `vs/workbench` is the application. Two things outweighed the precedent: `vs/platform` is a
+_service and DI layer_, a third meaning again, and in current industry usage "the platform" is the
+base layer everything runs on — which is this repo's `infrastructure`. Read cold, the two old names
+pointed at each other's contents. `kernel` names what the folder is: a microkernel that loads and
+connects plugins it has never heard of.
+
+The backend repo carries the full comparison table, in its own `docs/understand/modules.md`.
+
+### The one arrow that cannot point down
+
+`infrastructure` owns the http client, and `src/i18n` the i18n runtime. The response-schema rows and the translation
+dictionaries are domain knowledge. `infrastructure` may not import `@/modules`, so the composition root hands
+the data **down** instead of letting the bottom tier reach up:
+
+```ts
+// src/main.ts, at module scope
+registerResponseSchemas(collectModuleResponseSchemas(enabledModules));
+registerLocaleContributors(collectModuleLocales(enabledModules));
+```
+
+Each module registers its own response-schema rows, and that registration is what switches contract
+validation on for its endpoints: enable the module and its answers are checked, delete the folder and
+they are not.
+
+This is the single most surprising thing in the codebase, and the thing most likely to bite: a test
+that exercises either subsystem without doing the same wiring silently measures an app with no
+domain vocabulary and no contract validation. `tests/support/unit/wire-modules.ts` exists for that.
+
+::: tip The live version of this map
+The diagrams on this page explain the **rules**. The context map as it stands — every edge, labelled
+with its relationship and its reason, kept in sync by hand against the real imports — is
+[the map on the Modules overview](../modules/start.md#the-whole-map), and every node there links to
+the domain's own page.
+:::
+
+## The manifest
+
+A module is a value, not a convention. Everything the application does _for_ a domain is declared
+in one typed object:
+
+```ts
+export interface AppModule {
+    name: string;
+    routes: RouteRecordRaw[];
+    navigation?: AppNavigationEntry[];
+    responseSchemas?: ResponseSchemaRoute[];
+    locales?: Record<string, () => Promise<TranslationDictionaries>>;
+    setup?: () => void;
+}
+```
+
+A navigation entry is `{ name, label, order, icon, section?, badge?, pinned?, detail? }`: the route
+it points at, the label key, its rank, its lucide glyph, and the part of the chrome it sits in —
+`main` in the bar, `account` or `admin` in a menu. A `pinned` menu entry is lifted onto the bar as
+its own button beside the account menu, wearing its `badge` count and the text its `detail`
+accessor returns (the cart's total). `section` and `pinned` are placement only; who sees the entry
+is still the route's `meta.access`. See [Sitemap](./sitemap.md#navigation-sections).
+
+What subdomain a module sits in, and what kind of relationship each arrow to a sibling is, are the
+module's **strategic** declarations too — but they are not fields here. They are prose: the subdomain in the
+docblock at the top of each `module.ts`, and each arrow's kind on the module's docs page under "The
+map". See [Strategic DDD](./strategic-ddd.md) for why that reads better than a typed `subdomain`
+and `dependsOn`.
+
+Each optional field replaces a shared file that would otherwise enumerate domains — the navigation list,
+the response-schema table, the locale bundle. That is most of the point: `src/modules.ts` is the
+only place that HAS to. The corner loading indicator follows the same rule: a module opts its
+stores in with `loadingKeys` (their `resourceKey` prefixes), and `LayoutDefault.vue` collects them.
+A module that omits the field is invisible to the indicator, which is the right default for one
+whose requests are background noise. `slots` lets a module contribute components to a place another
+module owns (`src/kernel/slots.ts`) — the product page's cart and wishlist buttons, and the app
+bar's notifications bell — so the owner never imports its contributors. `setup` is boot work a
+module owns (the `shop` module loads its settings there), run once after mount: the core never
+loads, or reads, what a removable module owns. Who runs the site (`operator`, the Terms version)
+is `GET /config`, so the footer, Terms, Legal and Privacy pages keep working with the shop removed.
+
+Which siblings a module may reach at all is enforced separately, by a generated ESLint rule rather
+than a manifest field: each module's `module.yaml` `dependsOn` names which siblings it
+may import (`eslint.config.ts` reads it) and the backend modules whose API it calls
+(`tests/cross-cutting/module-coupling.spec.ts` checks the second), and a reach outside that list fails `npm run lint` at the offending line. A module's own spec may also
+reach a listed sibling's `tests/**` (the doubles its siblings seed with); it never reaches a sibling's specs or `tests/e2e/**`.
+
+### Why three fields are lazy
+
+- `locales` — one chunk per locale per domain; a visitor downloads one language for the domains
+  this build enables.
+- `responseSchemas` is eager: the http client needs the table before the first request.
+
+## The module template
+
+`src/modules/example` is this template in code: the module to copy when you start a new domain, and
+to delete once you have your own. Every non-test file opens with the same header —
+`In any module:` (the pattern the file is), `Here:` (what it does in `example`), an optional
+`Delete it if:`, an optional `Instead see:` and a closing `See:` — and a spec holds them to it.
+Its backend twin, `../boilerplate-node-backend/src/modules/example`, shows the same patterns.
+
+| Pattern                                 | Show / point | Where                                                      |
+| --------------------------------------- | ------------ | ---------------------------------------------------------- |
+| Manifest, routes, loading keys, locales | show         | `module.ts`, `routes.ts`, `locales/`                       |
+| Store over the generated client         | show         | `store.ts`                                                 |
+| Server-decided controls (`actions`)     | show         | list rows, detail, `components/ExampleStatusActions.vue`   |
+| An action door and its 409              | show         | `composables/use-example-transition.ts`                    |
+| A stale edit (412, "reload latest")     | show         | `views/ExampleEdit.vue`                                    |
+| An idempotent create                    | show         | `store.ts` (`useIdempotencyKey`)                           |
+| A reading rule in `domain/`             | show         | `domain/publication.ts`                                    |
+| Upload with progress                    | show         | `views/ExampleEdit.vue`                                    |
+| Typed provide/inject                    | show         | `provided.ts`                                              |
+| A barrel                                | point        | `example/index.ts`                                         |
+| A slot contribution                     | point        | `wishlist/module.ts`                                       |
+| Step-up, antibot, realtime              | point        | `infrastructure/http/step-up.ts`, `tasks`, `observability` |
+
+```mermaid
+flowchart LR
+    List["list / detail / edit<br/>render example.actions"] -->|"press a move"| Door["POST /examples/{id}/publish, archive, unarchive"]
+    Door -->|"200 + new actions"| Cache["store replaces the record"]
+    Door -->|"409: a peer moved it"| Reread["re-read past the cache<br/>buttons show the server's new answer"]
+    Cache --> List
+    Reread --> List
+```
+
+### Standards the template follows
+
+The backend owns each of these and writes it once; the frontend follows it and never restates the
+rule. The backend's "Standards the template carries" table
+lists where each one lives.
+
+| Standard                                 | What the frontend does                                            |
+| ---------------------------------------- | ----------------------------------------------------------------- |
+| `actions` on every read and write        | renders a control only from the flag; no status table of its own  |
+| A status change is a door per event      | one button per open flag, each calling its own generated function |
+| A refused lifecycle move is 409 + a code | shows the message in place, re-reads the record past the cache    |
+
+Copy the folder, rename it, delete the screens and the patterns you do not need (each header says
+when), and delete `example` once you have your own domain. The transition table lives on the
+backend; a client never holds one (`actions.publish`, `archive` and `unarchive` are the server's answer).
+
+## Adding and deleting a domain
+
+One folder and one line, in both directions. The procedure — the manifest fields and the commands —
+is [Adding & removing a module](../build/module-lifecycle.md). What belongs here is
+what the exercise taught.
+
+The template to copy is `src/modules/example` ([The module template](#the-module-template)): a small note domain with a list, a detail, a create
+form, an edit form (with a cover upload) and one public screen, a store over the generated client,
+the Zod schemas, the response-schema rows, a provide/inject pair and both
+languages. It has no page of its own and a barrel exporting all of it (unused on purpose); `demo:remove` deletes it with the shop, so copy it first. Copy
+the folder, rename it, and delete the screens you do not need; delete the folder, and its line in
+`src/modules.ts`, once you have your own domain.
+
+Both halves are measured rather than asserted. A scaffold `events` module cost 5 files and 2 lines
+in `src/modules.ts`, with **zero** edits to any existing file. Deleting `products`, `cart`, `orders`
+**and `account`** together — four folders, five lines, and `account` is the hard one because the app
+shell shows who is signed in — left the app shell intact (no menu entry, no sign-in button, no dead
+link) but neither `src/` type-checking nor the production build clean: 12 type errors, 4 of them in
+the shell (`AppVerificationBanner.vue` and `ReauthDialog.vue` importing `account`'s stores
+directly), the rest in `inventory` (which reaches `products`) and `wishlist` (which reaches `cart`);
+`vite build` then fails outright on `InventoryLedger.vue`'s static import of the now-missing
+`@/modules/products` — real coupling the deletion makes visible, not a flaw in the procedure.
+
+**None of this is fixable inside this repo alone.** The type errors and the failed build name
+`inventory`'s and `wishlist`'s direct imports of `products`/`cart` — the coupling the procedure
+exists to surface — and `response-schema-map.spec.ts` reports `expected [ 'GET /products', …(25) ]
+to deeply equal []` — operations that `openapi.yaml` documents and no enabled module covers.
+
+That is the parity gate working exactly as intended. Deleting a domain from the frontend does not
+delete it from a contract shared byte-identically with the backend, so trimming it is a two-repo
+change driven from the backend, not a frontend chore. **A green suite here would mean the gate had
+stopped checking.**
+
+Getting there took fixing four genuinely different things, and the first is the one worth
+remembering:
+
+1. **A route name is a string.** Three places in the app shell addressed a module's route by name,
+   and neither the compiler, the type-checker nor lint could see any of them: `Home.vue`'s
+   call-to-action pointed at `ProductsList`, and `loginContinueTo` plus the sign-in/sign-up buttons
+   pointed at `Login` / `Signup`. Each rendered a control that navigated nowhere, and a 401 with no
+   sign-in route aborted the navigation and stranded the visitor with nothing on screen. All now
+   ask `router.hasRoute()` first. **This class of bug is invisible to every gate except actually
+   deleting the module**, which is the whole argument for running this exercise rather than
+   trusting the architecture.
+
+2. **Specs that named a domain.** A platform spec asserting `navigation.label-products-list`, or a
+   central parity file importing two modules' handlers, is the same coupling the manifest removed
+   from `src/` — just moved into `tests/`. The rule that fixed it:
+
+    > A spec outside a module may **iterate** the registry. It may never **name** a domain.
+
+    So the mechanism tests use invented domains (`public-domain`, `staff-domain`, `/widgets`) and
+    invented schemas; the per-domain facts moved into `src/modules/<name>/tests/`; and
+    `tests/cross-cutting/registry.spec.ts` sweeps every enabled module for invariants — every
+    navigation entry points at a route that module declares, every route is named, every module
+    ships the same set of locales — without naming one.
+
+3. **The contract, which is not ours alone.** See above.
+
+4. **One store split into four, along two different seams.** A single `infrastructure` store holding
+   the access token _and_ the `User` record puts a domain entity in a delivery tier and makes the app
+   shell reach into a domain to render a name. The first seam is `infrastructure/session.ts` — token, plus
+   a `{ id, email, role, imageUrl, thumbnailUrl, verified }` projection and the calls a session needs
+   to restore or end itself — and the account module's own store. The second seam runs by the same
+   logic one level down: `modules/account/stores/auth.ts` establishes or ends a session (login,
+   signup, password reset, logout), `stores/profile.ts` owns the editable record itself
+   (fetch/update, role view, email verification, account deletion), and `stores/sessions.ts` /
+   `stores/addresses.ts` / `stores/oauth-providers.ts` / `stores/two-factor.ts` each hold state scoped to the
+   one component that renders it. The shell knows only _someone is signed in, here is their name and
+   picture, here is their role_ — the second seam divides responsibilities within the account
+   domain, without moving anything across the session/account boundary. The shell's other calls
+   that need a session but not the credential lifecycle — the step-up re-proof, the verification
+   resend and the language preference — sit in their own files beside `session.ts`
+   (`reauth.ts`, `email-verification.ts`, `locale-preference.ts`).
+
+### The honest scorecard
+
+The goal test passes for `src/` and for the suite. It fails only where the answer is not this
+repo's to give: the shared contract still documents the deleted endpoints.
+
+That is worth stating precisely, because "green" would have been the wrong outcome.
+
+::: tip Run a deletability test after any significant change
+Delete two or three domains on a throwaway copy and see what breaks. Nothing in the suite checks
+this, and every finding above was invisible to lint, to `vue-tsc` and to a fully green run — the
+dead links most of all. The procedure is
+[Re-running the deletability check](../build/module-lifecycle.md#re-running-the-deletability-check).
+:::
+
+## Related pages
+
+- [Modules overview](../modules/start.md) — every domain, one page each
+
+- [Adding & removing a module](../build/module-lifecycle.md) — the procedure, with the commands
+- [Layers](./layers.md) — the folder map
+- [Architecture](./architecture.md)
+- [Unit testing](../build/unit-testing.md) — where a spec lives, and why
+- [The demo profile](../build/demo-profile.md) — why the handlers live under `src/`

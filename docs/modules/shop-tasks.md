@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # shop-tasks
 
 ::: tip At a glance
@@ -135,5 +140,5 @@ npm run regenerate
 
 - [`notifications`](./notifications.md) — the bell and the registry that read these entries
 - [`tasks`](./tasks.md) — the to-do inbox and the foundation's half of the labels
-- [Sitemap](../theory/sitemap.md#navigation-sections) — where a nav entry, and its badge, sit
-- [Shared rules](../tools/shared-rules.md) — how the YAML becomes the generated map
+- [Sitemap](../understand/sitemap.md#navigation-sections) — where a nav entry, and its badge, sit
+- [Shared rules](../understand/shared-rules.md) — how the YAML becomes the generated map

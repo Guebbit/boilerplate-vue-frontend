@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # inventory
 
 ::: tip At a glance
@@ -12,7 +17,7 @@
 
 ## Its neighbourhood
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 - → `products` **customer-supplier** — Asks the products store to drop its cached catalogue after a recorded movement (`invalidateProductsCache`), and reads the ledger's titles through `useProductLines`.
 - → `products` **open-host** — Contributes `AvailabilityWatcher` to the `availability-watch` slot the product list, page and edit form render, and writes what it reads into `@/kernel/availability`; see [products](./products.md#availability).
@@ -111,7 +116,7 @@ State, getters and actions are exactly what the setup function of each store ret
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/inventory/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/inventory/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 ## Wiring
 
@@ -147,6 +152,6 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 ## Related pages
 
 - [`products`](./products.md) — the store this module reads
-- [Sitemap & Access Control](../theory/sitemap.md) — the `admin` gate
-- [State & Routing](../tools/state-and-routing.md) — paging through a store
-- [Modules overview](./index.md) — the whole context map
+- [Sitemap & Access Control](../understand/sitemap.md) — the `admin` gate
+- [State & Routing](../understand/state-and-routing.md) — paging through a store
+- [Modules overview](./start.md) — the whole context map

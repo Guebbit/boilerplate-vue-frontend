@@ -8,7 +8,7 @@
  * type and nothing else, so `scripts/design-policy.ts`, `local/theme-token` and
  * `tests/cross-cutting/design-tokens.spec.ts` read the same colours the app runs on.
  *
- * Who owns what, and why Tailwind only aliases these colours: `docs/theory/design-system.md`.
+ * Who owns what, and why Tailwind only aliases these colours: `docs/understand/design-system.md`.
  * Breakpoint thresholds are not here: they live with the display config.
  * ─────────────────────────────────────────────────────────────────────────────
  */

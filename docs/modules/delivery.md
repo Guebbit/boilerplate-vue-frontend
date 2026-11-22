@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # delivery
 
 ::: tip At a glance
@@ -13,7 +18,7 @@
 
 ## Its neighbourhood
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 - `cart` → **published-language** — Mounts `ShippingSelector`, a self-contained component that renders shipping without this module learning what a rate is.
 - `orders` → **published-language** — Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.
@@ -38,7 +43,7 @@ and fetch their own data.
 The selector and the panels go. **Checkouts simply stop carrying shipping** — the state the shop
 was in before this module existed.
 
-That is the test [Adding & Removing a Module](../theory/module-lifecycle.md) describes, and this is
+That is the test [Adding & Removing a Module](../build/module-lifecycle.md) describes, and this is
 one of the two modules where it is cleanest, because nothing here is anyone else's state.
 :::
 
@@ -155,5 +160,5 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 
 - [`cart`](./cart.md) · [`orders`](./orders.md) · [`inventory`](./inventory.md) — the three modules that mount these components
 - [`payments`](./payments.md) — the other component-only module
-- [Strategic DDD](../theory/strategic-ddd.md) — reading a `published-language` edge
-- [Adding & Removing a Module](../theory/module-lifecycle.md) — the deletability procedure
+- [Strategic DDD](../understand/strategic-ddd.md) — reading a `published-language` edge
+- [Adding & Removing a Module](../build/module-lifecycle.md) — the deletability procedure

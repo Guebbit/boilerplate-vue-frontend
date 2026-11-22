@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # account
 
 ::: tip At a glance
@@ -19,7 +24,7 @@ management — is answered through that one prompt.
 
 ## Its neighbourhood
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 - `cart` → **published-language** — Mounts `AddressPicker`, twice (shipping and billing), and `PurchaseHoldNotice`; the checkout never reads an account store.
 - → `users` **published-language** — Validates every form against `usersSchema`/`usersPasswordSchema` — shared field rules, not a shared store.
@@ -80,7 +85,7 @@ State, getters and actions are exactly what the setup function of each store ret
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/account/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/account/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 `VerifyEmailConfirm`, `EmailChangeConfirm`, `EmailChangeUndo` and `AccountRestore` render `components/LinkTokenConfirmCard.vue`; `PasswordResetConfirm` is its own form (three fields, a cross-field rule, field-level server errors). It also serves `account-setup`, the link in the mail staff trigger when they create an account, in `setup` mode: there it always shows the unticked Terms box (`components/TermsAcceptanceCheckbox.vue`, shared with `Signup`). On `password-reset/confirm` the box appears only once the API answers 422 naming `termsAccepted`, an account that never accepted. The tick is the holder's own and is sent only while the box is shown.
 
@@ -98,7 +103,7 @@ Entries are declared in `src/modules/account/module.ts`.
 
 None. Both logout routes are real requests the API answers, so `user_logged_out` is emitted there —
 counting the logout that succeeded rather than the one that was attempted. See
-[Observability](../tools/observability.md#event-taxonomy).
+[Observability](../operate/observability.md#event-taxonomy).
 
 ## Files
 
@@ -196,7 +201,7 @@ The backend gates its most dangerous routes behind **freshness**, not just authe
 token that was issued too long ago answers `401 REAUTH_REQUIRED`. That is a 401 the refresh flow
 must not touch — the refresh cookie is perfectly valid, so refreshing succeeds, the request
 replays, and answers `REAUTH_REQUIRED` again with nothing left to try. (In `cookie` mode there is no
-refresh at all: a plain 401 ends the session. See [Security](../tools/security.md#two-session-modes).)
+refresh at all: a plain 401 ends the session. See [Security](../understand/security.md#two-session-modes).)
 
 So the step-up interceptor is layered _outside_ the refresh one and reads the error **code** before
 the refresh branch can ever run.
@@ -247,7 +252,7 @@ so the shell never imports this module — nor does the "resend verification" ba
 session viewer's `verified` flag and calls `resendEmailVerification()` from `infrastructure/email-verification.ts`. The
 store holding the dialog's open/closed state lives in
 `infrastructure/http/` rather than `ui/` — the interceptor reads it directly, and the
-infrastructure tier may not import `ui`. See [Layers](../theory/layers.md) for the rule.
+infrastructure tier may not import `ui`. See [Layers](../understand/layers.md) for the rule.
 
 ## Libraries
 
@@ -260,7 +265,7 @@ the server's own breach check. See `composables/use-password-strength.ts`.
 ## Related pages
 
 - [`users`](./users.md) — where the field rules come from
-- [Security](../tools/security.md) — the token, the guards, and what the client never stores
-- [Sitemap & Access Control](../theory/sitemap.md) — the guest-only and auth-only routes
-- [Domain Layer](../theory/domain-layer.md) — why `shared-kernel` does not appear on this map
-- [State & Routing](../tools/state-and-routing.md) — how a guard reads the session
+- [Security](../understand/security.md) — the token, the guards, and what the client never stores
+- [Sitemap & Access Control](../understand/sitemap.md) — the guest-only and auth-only routes
+- [Domain Layer](../understand/domain-layer.md) — why `shared-kernel` does not appear on this map
+- [State & Routing](../understand/state-and-routing.md) — how a guard reads the session

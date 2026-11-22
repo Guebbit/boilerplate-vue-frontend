@@ -3,7 +3,7 @@
  * In any module: Zod schemas validate a form, with i18n-thunked messages resolved at parse time.
  * Bounds come from the generated contract schemas, never restated.
  * Here: one schema for create and edit, because the status is not a form field.
- * See: docs/theory/request-flow.md
+ * @see docs/understand/request-flow.md
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';

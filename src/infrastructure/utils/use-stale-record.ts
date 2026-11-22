@@ -4,7 +4,7 @@
  * in place (a warning, not a failure — nothing is wrong with the request, the record moved),
  * offers "reload latest", and never resends the stale edit on its own. Pairs with
  * `useBlockingError` (the message) and the transport's `etag.ts` (what sent the `If-Match`).
- * See docs/theory/request-flow.md#conditional-writes.
+ * @see docs/understand/request-flow.md#conditional-writes
  */
 import { ref, type Ref } from 'vue';
 import { translate } from '@/i18n';

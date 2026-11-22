@@ -5,7 +5,7 @@
  * indistinguishable from a public one, and nothing else in the suite would say so.
  *
  * Lives with the module because these are facts about THIS domain — held in one table in a
- * platform spec, deleting a domain would break that spec, see `docs/theory/modules.md`. The
+ * platform spec, deleting a domain would break that spec, see `docs/understand/modules.md`. The
  * router spec proves enforcement is *attached*; this proves the declarations are *there*.
  *
  * Asserted against the module's own route records rather than a resolved router, so it needs

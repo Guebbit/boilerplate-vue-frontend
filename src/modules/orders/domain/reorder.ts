@@ -3,7 +3,7 @@
  * Reorder, read back. Pure: no Vue, no store.
  * The server answers one result per order line (the merge's own shape), so what did not land is
  * read off those results and never guessed from which products the cart now holds.
- * See `docs/theory/domain-layer.md`.
+ * @see docs/understand/domain-layer.md
  */
 import type { MergeLineResult } from '@types';
 

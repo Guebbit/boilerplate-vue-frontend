@@ -8,7 +8,7 @@
  * module's schemas and THIS module's dictionaries actually agree: every key the schemas reach for
  * exists in both languages, and the Italian copy is not the English copy — a fact about this
  * domain, so it lives with it: deleting the folder deletes the coverage rather than breaking a
- * spec that belongs to nobody. See `docs/theory/modules.md`.
+ * spec that belongs to nobody. See `docs/understand/modules.md`.
  *
  * Against the real vue-i18n instance, with the modules wired in as `src/main.ts` does: a mocked
  * `t` would assert only that a key was looked up, which stays true when the message is frozen in

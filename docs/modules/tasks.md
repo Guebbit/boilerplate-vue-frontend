@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # tasks
 
 ::: tip At a glance
@@ -37,7 +42,7 @@ declarations, not of anything in this folder, which is why the menu entry can be
 without restating a permission.
 
 ::: tip A leaf in both directions
-Together with `example` (see [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a-domain)) and [`observability`](./observability.md), this is a module to read when you
+Together with `example` (see [Adding & deleting a domain](../understand/modules.md#adding-and-deleting-a-domain)) and [`observability`](./observability.md), this is a module to read when you
 want the module system with none of the interesting coupling in the way. Zero edges, one store, three
 screens.
 :::
@@ -87,7 +92,7 @@ flowchart LR
 ## The helpdesk link
 
 A deployment that runs the backend's helpdesk (Zammad) sets its public URL as `VITE_ZAMMAD_URL`, a
-[runtime-config](../tools/environment.md#runtime-configuration-config-js) value a container can change
+[runtime-config](../operate/environment.md#runtime-configuration-config-js) value a container can change
 at start. With it set, the module adds a `Helpdesk` route and an `admin` menu entry, for staff who
 hold `read:Task`, like the inbox beside it. Entering the route leaves the app for that URL. With it
 unset or blank, neither the route nor the entry exists: there is no link to a page that is not there.
@@ -102,7 +107,7 @@ State, getters and actions are exactly what the setup function of each store ret
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/tasks/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/tasks/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 ## Wiring
 
@@ -133,7 +138,7 @@ npm run regenerate
 
 ## Related pages
 
-- [Modules overview](./index.md) — the whole context map
-- [Sitemap & Access Control](../theory/sitemap.md) — the public/admin split on these three routes
-- [Adding & Removing a Module](../theory/module-lifecycle.md) — what adding a domain costs
-- [State & Routing](../tools/state-and-routing.md) — the store behind all three screens
+- [Modules overview](./start.md) — the whole context map
+- [Sitemap & Access Control](../understand/sitemap.md) — the public/admin split on these three routes
+- [Adding & Removing a Module](../build/module-lifecycle.md) — what adding a domain costs
+- [State & Routing](../understand/state-and-routing.md) — the store behind all three screens

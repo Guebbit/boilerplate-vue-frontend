@@ -6,7 +6,7 @@
  * Test and mutant ids are renumbered: Stryker numbers them per report, so two reports collide.
  * The backend's `<paired-backend>/scripts/mutation/ci/merge.ts` holds the same overlay beside its sweep merge.
  *
- * See: docs/tools/mutation-testing.md#which-file-is-what
+ * @see docs/build/mutation-testing.md#which-file-is-what
  */
 
 /** A mutant as Stryker's JSON report records it; fields this does not read pass through. */

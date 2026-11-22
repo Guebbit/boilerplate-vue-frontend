@@ -1,3 +1,8 @@
+---
+type: concept
+audience: [developer]
+---
+
 # cart
 
 ::: tip At a glance
@@ -14,7 +19,7 @@
 
 ## Its neighbourhood
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 
 - `orders` → **customer-supplier** — The reorder button asks the cart store to refill itself from a past order.
 - `wishlist` → **customer-supplier** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
@@ -249,7 +254,7 @@ re-reads `GET /cart` on a plain interval (not long polling: nothing is held open
 | a positive whole number `N`                | A read every `N` seconds while the conditions below hold |
 
 The knob is read like every deployment value: a container's `config.js` first, the build's `.env`
-second. See [Environment](../tools/environment.md).
+second. See [Environment](../operate/environment.md).
 
 ```mermaid
 stateDiagram-v2
@@ -405,7 +410,7 @@ State, getters and actions are exactly what the setup function of each store ret
 
 ## Screens
 
-Paths, route names, access and permission per screen: `src/modules/cart/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+Paths, route names, access and permission per screen: `src/modules/cart/routes.ts`; every module's together are in the generated [sitemap](../understand/sitemap.md).
 
 ## Wiring
 
@@ -421,7 +426,7 @@ Entries are declared in `src/modules/cart/module.ts`. Badges: `Cart` — unit co
 
 None. Every checkout outcome — the order created, the checkout refused — is emitted by the backend
 from the handler that decided it, and a request that never reached the API is already a failed span
-in Faro. See [Observability](../tools/observability.md#event-taxonomy).
+in Faro. See [Observability](../operate/observability.md#event-taxonomy).
 
 ## Files
 
@@ -448,6 +453,6 @@ npm run regenerate
 
 - [The checkout flow](./cart-checkout.md) — the screen, the errors, and what the server decides
 - [`wishlist`](./wishlist.md) · [`orders`](./orders.md) — the modules that write here; [`products`](./products.md) — where the product page's button is hosted
-- [State & Routing](../tools/state-and-routing.md) — stores, and where the header reads this one
-- [Layers](../theory/layers.md) — why a view holds no fetching logic
-- [Product Analytics](../tools/umami.md) — why every cart and checkout event is the backend's to report, not this module's
+- [State & Routing](../understand/state-and-routing.md) — stores, and where the header reads this one
+- [Layers](../understand/layers.md) — why a view holds no fetching logic
+- [Product Analytics](../operate/umami.md) — why every cart and checkout event is the backend's to report, not this module's

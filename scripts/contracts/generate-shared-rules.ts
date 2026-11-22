@@ -10,7 +10,7 @@
  * `--check` writes nothing and exits 1 on a stale file; only the committed JSON Schemas can go stale, since the `.generated.ts` files are rebuilt on install. The backend runs the same renderer over
  * its own `shared/rules/`; the two never read each other's files except the synced ones.
  *
- * See: docs/tools/shared-rules.md
+ * @see docs/understand/shared-rules.md
  */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';

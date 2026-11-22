@@ -1,0 +1,393 @@
+---
+type: reference
+audience: [developer]
+---
+
+# Mutation Testing
+
+Every other layer on this site answers "does the code do the right thing?" This one answers a different question: **do the _tests_ actually notice when it doesn't?** Line coverage can be satisfied by executing a line without asserting anything about its result; mutation testing can't — it edits the source thousands of times (`>` to `>=`, `&&` to `||`, a function body emptied out) and reports every edit the suite failed to catch. A **surviving mutant** is a bug the tests are structurally blind to.
+
+## Which file is what {#which-file-is-what}
+
+Three files matter. One is the source; the other two are made from it.
+
+| File                               | What it is                                                                                      | Tracked | Made by                                |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------- | ------- | -------------------------------------- |
+| `stryker.config.json`              | The settings: what to mutate, which tests run, where the results go                             | yes     | a person                               |
+| `reports/mutation/mutation.json`   | **The source.** Every mutant, its status, and per test which mutants it ran and which it caught | no      | a run, or `npm run test:mutation:pull` |
+| `mutation-baseline.json`           | One score per file, nothing else: the bar a file must not drop below                            | yes     | recorded from `mutation.json`          |
+| `reports/mutation/index.html`      | A viewer: `mutation.json` drawn as a page. Disposable                                           | no      | drawn from `mutation.json`             |
+| `reports/stryker-incremental.json` | A cache, so the next local run skips unchanged mutants. Speed only — never read as a result     | no      | Stryker                                |
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 50}}}%%
+flowchart LR
+    GH["nightly run<br/><i>mutation-report artifact</i>"] -->|npm run test:mutation:pull| J
+    Full["npm run test:mutation<br/><i>every file</i>"] -->|replaces it| J
+    Part["npm run test:mutation<br/>-- --mutate &lt;file&gt;"] -->|laid over it| J
+    J["mutation.json<br/><b>the source</b>"] --> H["index.html<br/><i>viewer</i>"]
+    J -->|recorded| B["mutation-baseline.json<br/><i>committed scores</i>"]
+
+    classDef src fill:#fef3c7,stroke:#d97706,color:#111827;
+    classDef run fill:#dbeafe,stroke:#2563eb,color:#111827;
+    classDef out fill:#dcfce7,stroke:#16a34a,color:#111827;
+    class J src;
+    class GH,Full,Part run;
+    class H,B out;
+```
+
+A partial run, `--mutate <file>`, is laid over the report already on disk (`scripts/mutation/overlay.ts`):
+that file takes the new result, every other file keeps the one that was there. A full run replaces
+the report.
+
+::: warning When GitHub runs your mutations
+After a partial run, the report on disk is no longer the nightly's. It is a mix:
+
+- **the files you mutated** — this run, on your machine, against your uncommitted or unpushed code
+- **every other file** — the nightly, as pulled, against the code `main` had that night
+
+`mutation-baseline.json` is not touched by a run. So:
+
+- **Pull first, then run.** `npm run test:mutation:pull` before a partial run, or the mix is laid
+  over an older report, or over nothing.
+- **Never record a baseline from the mix.** `npm run test:mutation:baseline` after a partial run
+  records your machine's numbers for those files. The baseline comes from the nightly, through the
+  pull.
+- **To get the nightly back**, pull again. It replaces the mix.
+  :::
+
+## Glossary
+
+Read this first. The rest of the page uses these words precisely, and several of them mean something narrower than they sound.
+
+| Term                   | What it means here                                                                                                                                                                                                                                                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mutant**             | One deliberate edit to one place in the source. `a > b` becomes `a >= b`. Stryker makes thousands, one at a time. See [What a mutant actually is](#what-a-mutant-actually-is).                                                                                                                                                |
+| **Killed**             | At least one test failed when the mutant was active. Good — the suite noticed.                                                                                                                                                                                                                                                |
+| **Survived**           | Every test still passed with broken code. **This is the finding.** It means no assertion anywhere depends on that behaviour.                                                                                                                                                                                                  |
+| **No coverage**        | No test executes that code at all, so Stryker doesn't even run anything — it reports the mutant immediately. Different from "survived": survived means tested-but-not-asserted, no-coverage means not-tested. **Costs nothing**, which is why untested files are cheap to keep in scope.                                      |
+| **Timeout**            | The mutant made the suite hang (a mutated loop condition, typically). Counted as **killed** — the suite did notice, just expensively.                                                                                                                                                                                         |
+| **Mutation score**     | Killed ÷ (all viable mutants). Reported twice: over _everything_, and over _covered code only_. The gap between the two is the size of the untested surface.                                                                                                                                                                  |
+| **`break` threshold**  | The score below which the run fails. A backstop for "has this collapsed", not a target.                                                                                                                                                                                                                                       |
+| **Baseline / ratchet** | `mutation-baseline.json` records what **each file** scored. Improvements are written back, regressions fail. See [The per-file ratchet](#the-per-file-ratchet).                                                                                                                                                               |
+| **Nightly**            | A GitHub Actions workflow on a `cron` schedule (03:30 UTC) rather than on push. Nothing waits for it; it reports the next morning. Mutation lives here because a run takes minutes-to-hours.                                                                                                                                  |
+| **Concurrency**        | How many mutants Stryker tests **in parallel**. Each one is a separate OS process running a full test runner _and its own jsdom environment_, so the limit is memory as much as CPU cores.                                                                                                                                    |
+| **`coverageAnalysis`** | Set to `perTest`: Stryker first records which tests touch which code, then runs **only the covering tests** for each mutant instead of the whole suite. This is the main reason a run is minutes and not days — except for static mutants, below.                                                                             |
+| **Static mutant**      | A mutant in code that runs when the file is **imported**, not when a test calls it — a `new Schema({...})`, a repository built at module scope, a config object. See [Why a run is slow](#why-a-run-is-slow-—-static-mutants); it is the single biggest cost in this repo.                                                    |
+| **Incremental**        | Stryker remembers per-mutant results in a local file (`reports/stryker-incremental.json`, gitignored — a cache nothing automated reads), so the next local run only re-mutates what changed. **Enabled**, with the nightly passing `--force` to rebuild from scratch. See [Incremental mode](#incremental-mode-—-what-it-is). |
+
+## What a mutant actually is
+
+Owned by the backend: [What a mutant actually is](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/mutation-testing.md#what-a-mutant-actually-is).
+
+## Tools
+
+| Tool                                   | Role                                                                       |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| [Stryker](https://stryker-mutator.io/) | Generates mutants, re-runs the suite once per mutant, scores what survived |
+| `@stryker-mutator/vitest-runner`       | Drives Vitest as the test runner, via `vitest.config.mutation.ts`          |
+
+## Architecture
+
+Owned by the backend: [Architecture](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/mutation-testing.md#architecture).
+
+## Why the e2e suite is not mutated
+
+Stryker drives **Vitest only** (`vitest.config.mutation.ts`). The Cypress e2e suite is not part of a mutation run and cannot be: it needs a dev server and a browser, so a single mutant would cost minutes rather than milliseconds.
+
+That is why `.vue` files are not in `mutate` yet either — see [Scope](#scope-—-what-is-mutated).
+
+## What to be wary of — per-file setup costs
+
+Mutation testing multiplies whatever the suite does on setup by the mutant count. A cost that is
+invisible at `npm run test:unit` becomes the whole run here.
+
+The paired backend measured this the hard way: a `beforeAll` that started an in-memory MongoDB ran
+once per test FILE, which is 33 servers per pass — fine for one run, and 33 × 6042 mutants under
+Stryker. The buffers accumulated until the worker was killed and restarted every 15–25 seconds, and
+the run stopped converging entirely.
+
+Nothing here starts a server, so this repo's exposure is smaller — but the rule is the same:
+**anything in a `beforeAll` is paid once per file per mutant.** Before adding a fixture build, a
+seeded database, or anything else there, ask what it costs multiplied by the mutant count, and
+prefer one shared instance with per-file isolation over one instance per file.
+
+**How to spot it:** run the suite outside Stryker first (`npm run test:unit`). If it is fast and
+light there but heavy under mutation, the difference is setup being repeated, not your tests being
+slow.
+
+## Why this repo does not hit the backend's OOM loop
+
+The paired backend has a failure mode where a mutation run never finishes — workers grow until Node
+kills them, restart having completed nothing, and the ETA climbs instead of falling. It is written
+up in full at
+[its `docs/build/mutation-testing.md`](https://github.com/Guebbit/boilerplate-node-backend), and it
+is worth knowing here for one reason: **this repo is immune by construction, not by luck, and the
+property that makes it immune is easy to give away.**
+
+The backend transforms TypeScript with **ts-jest**, which does two jobs — translate, and type-check.
+Type-checking needs a TypeScript `LanguageService`, which caches a program in memory. Stryker calls
+the runner repeatedly inside one process, every mutant gives a file new contents, and the cache
+grows with each one.
+
+Vitest transforms with **esbuild**, which only translates. It type-checks nothing, so it caches
+nothing, and a mutant is just another file to strip types from. `vitest.config.ts` sets no
+`typecheck` option, so there is nothing to switch off. Types are checked once, by `vue-tsc` inside
+`npm run build`, which is where a type error is a build failure rather than a mutant.
+
+**What would give it away:** enabling vitest's `typecheck` option, or introducing a transform plugin
+that holds a cross-file program. If either ever lands, this page's claim stops being true, and the
+symptom to look for is the one the backend documents — read `ELAPSED` on the worker processes, and
+if the parent has been up for hours while its children are minutes old, they are being restarted.
+
+The other half of that story is disk: the backend's runner starts an in-memory MongoDB per suite, so
+a killed worker strands a data directory. Nothing here starts a server, so a killed run costs a
+sandbox and nothing else — which is why `.stryker-tmp/` is absent between runs here and was 88 GB
+there.
+
+## Why it never gates a PR
+
+A run re-executes the unit suite once per mutant. `.github/workflows/mutation.yml` is a separate workflow from `ci.yml` — **nightly** (`cron: '30 3 * * *'`) plus manual dispatch. Kept structurally separate rather than folded into `ci.yml` behind a conditional: a separate file can't become a PR gate by accident.
+
+## The nightly holds no write access {#the-nightly-holds-no-write-access}
+
+The nightly runs `npm ci`, and an install script of any package in the tree runs with whatever
+token the job holds. A token that can push to `main`, next to hundreds of packages' install
+scripts, is the supply-chain shape GitHub's own hardening guide warns against
+([GitHub Security Lab](https://securitylab.github.com/resources/github-actions-preventing-pwn-requests/)).
+
+So the job is `contents: read`, its checkout sets `persist-credentials: false`, and the run
+leaves as the `mutation-report` artifact (kept 90 days): `mutation.json` and `index.html`.
+Bringing it home is one command and a commit. The pull puts both in `reports/mutation/` and
+records `mutation-baseline.json` from the report — the same `--update` the job would run:
+
+```bash
+npm run test:mutation:pull   # newest unexpired report from a run on main; needs `gh auth login`
+git diff mutation-baseline.json
+```
+
+## Concurrency
+
+`stryker.config.json`'s `concurrency` is only the **fallback** for a bare `npx stryker run`. `npm run test:mutation` goes through `scripts/mutation/run-tests.ts`, which reads `STRYKER_CONCURRENCY` from `.env` and passes it as `--concurrency` — and an explicit CLI flag always wins over the value in the file. The number is a property of the machine, not the project, which is why it lives in `.env` rather than the committed config.
+
+## Why a run is slow — static mutants
+
+This is the thing worth understanding, because it explains an otherwise baffling number.
+
+`coverageAnalysis: perTest` means Stryker normally runs only the handful of tests that touch the mutated line. But some mutants are **static** — they live in code that executes when the module is _imported_ rather than when a test calls it:
+
+```ts
+export const userSchema = new Schema({ ... });        // runs at import
+export const userRepository = createBaseRepository(); // runs at import
+```
+
+Stryker cannot swap those in and out per test. It has to reload the whole environment — and so, from its planner:
+
+```js
+else {  // static, and ignoreStatic is off
+    return this.createMutantRunPlan(mutant, {
+        netTime: this.timeSpentAllTests,
+        testFilter: this.globalTestFilter,   // ← every test in the suite
+    });
+}
+```
+
+Visually, the difference:
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 55}}}%%
+flowchart TB
+    subgraph Normal["NORMAL mutant — inside a function"]
+        direction LR
+        N1["mutate\nmodules/cart/store.ts"] --> N2["run 3 covering tests"] --> N3["~0.2s"]
+    end
+    subgraph Static["STATIC mutant — runs at import"]
+        direction LR
+        S1["mutate\nmodules/*/response-schemas.ts"] --> S2["reload everything,\nrun the WHOLE suite"] --> S3["seconds each"]
+    end
+    Normal --> Cost["~5% of mutants are static\nbut cause ~90% of the work"]
+    Static --> Cost
+
+    classDef good fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef bad fill:#fee2e2,stroke:#dc2626,color:#111827;
+    classDef out fill:#fef3c7,stroke:#d97706,color:#111827;
+    class N1,N2,N3 good;
+    class S1,S2,S3 bad;
+    class Cost out;
+```
+
+**One static mutant runs the entire suite.** The static share is worth measuring rather than guessing, and the JSON reporter is what measures it: it labels each mutant `static`, so counting them per file names the handful that dominate a run's wall clock. Expect the concentration to sit in module-scope declarations — the response-schema lookup tables, the router's route array, each module's zod schemas.
+
+No run has measured the current `mutate` scope yet, so there are no per-file numbers here to read. The first full run is what fills this in.
+
+It also inflates timeouts, because the timeout is derived from how long the tests are expected to take:
+
+```
+timeout = timeoutFactor × netTime + timeoutMS + overhead
+        = 1.5 × 33,406 + 30,000 + 22,963  ≈ 103 seconds
+```
+
+for a static mutant, because its `netTime` is the whole suite. Declarative module-scope code — lookup tables, zod schemas, route arrays — is idiomatic here, so the static surface is large by design.
+
+### What can be done about it — an open question
+
+| Option                                   | Effect                                                            | Status                                                            |
+| ---------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Raise `concurrency`                      | Near-linear speed-up, **changes no measurement**                  | **Done** — 8 locally, 3 in CI                                     |
+| `incremental: true`                      | A local re-run re-mutates only changed files                      | **Enabled** — a PR run that would consume it does not exist       |
+| Split the nightly into one job per layer | Wall-clock becomes the slowest group, not the sum                 | Not done; probably unnecessary if the cost is fixed at the source |
+| `ignoreStatic: true`                     | Removes the whole-suite reruns — but stops measuring some mutants | **Not enabled. Deliberately undecided — see below.**              |
+| Move logic out of module scope           | The only fix that costs nothing in measurement                    | Invasive; module-scope schemas are idiomatic Mongoose             |
+
+`ignoreStatic` is a real, documented Stryker option, and Stryker's own description of it says "it might make sense to ignore static mutants". But **its default is `false`**, and that default is a judgement by the people who wrote the tool: measuring those mutants is the safer behaviour.
+
+Two things argue for caution before switching it on here:
+
+1. **It is a trade-off, not a fix.** It buys speed by not measuring some code. Most static mutants also have per-test coverage and would still be scored, so the number actually dropped is usually small — but it is never zero, and those mutants should be enumerated from a real report before they are silenced.
+2. **Soundness.** With `ignoreStatic` on, a static-but-covered mutant is activated at _runtime_ rather than at module load (`mutantActivation: 'runtime'` in the planner). A mutant whose only effect happens during import may then never actually trigger, and be reported as survived when it was never really tested. That is a quieter failure than a slow run.
+
+The honest position: it is standard and supported, it is probably the right call eventually, and it should be decided from a measurement of _this_ repo — one run with the JSON reporter enumerating exactly which mutants would stop being measured, recorded in the config — rather than from someone else's numbers.
+
+## Incremental mode — what it is
+
+**Enabled**, for local runs. A pull-request run that would consume the cache does not exist; the nightly ignores it.
+
+**The problem.** Every run starts from scratch. Change one line in one store, and Stryker still re-mutates every mutant across the whole codebase — including all the ones in files you did not touch, whose results will be identical to last time.
+
+**The mechanism.** With `incremental: true`, Stryker writes every mutant's result to `reports/stryker-incremental.json` and **does not commit it**: `reports/*` is gitignored, because the file is a cache and nothing automated reads it. On the next run it is reused from your own disk, and it compares the new source against what the file remembers:
+
+- file unchanged → reuse the stored result, run nothing
+- file changed → re-mutate it properly
+- a _test_ changed → re-run the mutants that test covers, because the answer may now be different
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 50}}}%%
+flowchart TB
+    Run["stryker run --incremental"] --> Read["read the local\nstryker-incremental.json"]
+    Read --> Compare{"for each file:\nchanged since\nlast run?"}
+    Compare -->|"no (≈98% of files)"| Reuse["reuse stored result\nzero tests run"]
+    Compare -->|yes| Remutate["re-mutate this file\nrun its covering tests"]
+    Reuse --> Merge["merged report"]
+    Remutate --> Merge
+    Merge --> Write["rewrite the\nincremental file"]
+
+    classDef proc fill:#ddd6fe,stroke:#7c3aed,color:#111827;
+    classDef good fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef bad fill:#fee2e2,stroke:#dc2626,color:#111827;
+    classDef out fill:#fef3c7,stroke:#d97706,color:#111827;
+    class Run,Read,Compare,Merge,Write proc;
+    class Reuse good;
+    class Remutate bad;
+    class Merge out;
+```
+
+**What it changes in practice.** A pull request touching one store goes from every mutant in the repo to a few dozen — seconds instead of the full run. That is what turns mutation testing from "a nightly you read the next morning" into "a check on your PR".
+
+**The catch, and why the nightly still runs in full.** The incremental file is a cache, and caches go stale — a refactor that moves code between files, a dependency upgrade, or a merge conflict resolved badly can leave it describing a codebase that no longer exists. So the intended shape is two runs with different jobs:
+
+| Run     | Trigger | Setting             | Purpose                                    |
+| ------- | ------- | ------------------- | ------------------------------------------ |
+| Local   | by hand | `incremental: true` | Fast feedback on what you actually changed |
+| Nightly | cron    | `force: true`       | Full run; refreshes the file from scratch  |
+
+`force: true` tells Stryker to ignore the stored results entirely, which is what stops staleness accumulating.
+
+## Scope — what is mutated
+
+Owned by the backend, except the file list: this repo's own is `mutate` in `stryker.config.json`. The backend's scope: [Scope — what is mutated](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/mutation-testing.md#scope--what-is-mutated).
+
+### Its relationship to the test scopes
+
+`tests/cross-cutting/mutate-scope.spec.ts` fails if a `mutate` pattern matches no file, so a moved or renamed directory cannot silently stop being measured. Coverage is not measured anywhere: a line no test ran is a `NoCoverage` mutant in this report, per line.
+
+**`.vue` files are deliberately still out**, and for a reason about the _tool_ rather than about the tests. Stryker _can_ mutate a single-file component — it maps the file to the HTML parser and mutates the `<script>` block — but it does **not** mutate template expressions. An SFC in scope would therefore report a score implying template coverage nobody has, and a misleading number is worse than an absent one. It is sequenced after component tests exist.
+
+### Reading a 0%, and why it is kept
+
+Everything else stays in scope, including code no test currently reaches. That is what made the telemetry surface a single legible finding rather than diffuse neglect: it once carried **187 of the 233 no-coverage mutants** — `infrastructure/observability/store.ts` alone accounting for 123, with `useRealtimeObservability` (37) and `useAdminObservability` (27) behind it — and the gap between the run's total and covered scores was the finding, not a rounding error.
+
+All three now have suites (`tests/unit/infrastructure/observability.spec.ts`, and one beside each composable), so those numbers are historical; read the next full run's instead. `initFaro` stays uncovered on purpose — it dynamically imports two Grafana SDKs and hands them a real browser, so a test would either load both into jsdom or mock them until it asserted only the shape of the mock.
+
+**Read the two scores together.** Far apart means "write tests that reach the code"; close together means "sharpen the tests that already run it".
+
+The three outcomes are different findings, and the columns keep them apart:
+
+| Outcome         | What happened                                 | What to do                                 |
+| --------------- | --------------------------------------------- | ------------------------------------------ |
+| **Killed**      | a test ran it and an assertion depended on it | nothing                                    |
+| **Survived**    | a test ran it and nothing noticed             | sharpen the assertion                      |
+| **No coverage** | nothing ran it                                | write a test, or accept the runner's reach |
+
+## The per-file ratchet
+
+Stryker's own thresholds are **global** — `high`, `low`, `break`, and nothing else. That is a pooling failure: a strong file carries a weak one, and the number that passes is an average nobody can act on. It gets worse as `mutate` widens, not better.
+
+So `mutation-baseline.json` records a score **per file**, and `scripts/mutation/check-baseline.ts` compares each run against it. It holds one entry per mutated file:
+
+- a file that drops below its recorded score **fails**;
+- a file that improves has its baseline **rewritten upward**, locking the gain in;
+- with no baseline file at all, a plain check records nothing and exits 0; only `--update` writes the first one, so a one-file run never becomes the ratchet;
+- a new file is recorded at whatever it first measures, **including `0`** — an honest zero in a diff beats a zero dissolved into a mean.
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 50}}}%%
+flowchart LR
+    New["this run:\ncart.ts 91%"] --> Cmp{"vs baseline\ncart.ts 85%"}
+    Cmp -->|"higher"| Up["baseline := 91%\ngain locked in"]
+    Cmp -->|"same (±1)"| Hold["held"]
+    Cmp -->|"lower"| Fail["FAIL, naming the file\nbaseline stays at 85%"]
+
+    classDef proc fill:#ddd6fe,stroke:#7c3aed,color:#111827;
+    classDef good fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef bad fill:#fee2e2,stroke:#dc2626,color:#111827;
+    class New,Cmp proc;
+    class Up,Hold good;
+    class Fail bad;
+```
+
+A regression **cannot be laundered**: running with `--update` on a regressed file keeps the higher value _and_ still exits non-zero.
+
+**Do not re-record a lower floor.** The only honest reasons for a floor to fall are that the code was deleted or the scope changed, and then the commit should say which. Re-recording anything else is how the ratchet becomes decoration — and the ratchet is the only instrument here that catches a single file getting worse, because `break` pools everything into an average.
+
+A worked example of it doing its job: four files regressed while the mutation run was broken and nobody was measuring (`cart/store.ts`, `products/store.ts`, `account/stores/profile.ts`, `app/router/index.ts`). The ratchet kept the old floors, recorded the newly-seen files, and exited 1 rather than absorbing the drop. Tests were then written against the specific survivors, and all four now sit **above** their original floors.
+
+A one-point tolerance absorbs the timeout/survivor race (whether a hanging mutant is recorded as a timeout or a survivor depends on machine load), not genuine weakening.
+
+## Thresholds — measured, not invented
+
+`high` and `low` only colour the report. `break` is the one that fails a run, and it comes from a real measurement or it is not set at all. It is **60**, set below the last full run's **69.25% total / 78.39% covered**, so it answers "has something collapsed" rather than "did the number move" — the per-file ratchet is the gate that does the real work.
+
+After that the rule is: raise `break` when a score **sustains** a higher band; never lower it to make a run pass. The single sanctioned exception is a change to `mutate` — which changes the population, so old and new numbers are not measurements of the same thing — re-recorded in the same commit with both numbers and the reason.
+
+## File map
+
+| Path                                  | Contents                                                                                  |
+| ------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `stryker.config.json`                 | Scope (`mutate`), the Vitest runner config, thresholds, concurrency fallback, reporters   |
+| `scripts/mutation/run-tests.ts`       | Entry point for `npm run test:mutation`; reads `STRYKER_CONCURRENCY` from `.env`          |
+| `mutation-baseline.json`              | Per-file scores. Committed. The ratchet's memory. Absent until recorded with `--update`.  |
+| `scripts/mutation/baseline.ts`        | Ratchet logic — scoring, comparison, the "never lower" rule                               |
+| `scripts/mutation/check-baseline.ts`  | CLI for the two commands below                                                            |
+| `scripts/mutation/pull-report.ts`     | `npm run test:mutation:pull` — the newest nightly's report, the baseline recorded from it |
+| `scripts/mutation/overlay.ts`         | A partial run laid over the report on disk, and its page redrawn                          |
+| `scripts/testing/github-artifacts.ts` | Which uploaded artifact that is: the newest unexpired one from a run on `main`            |
+| `scripts/testing/pull-artifact.ts`    | The `gh` calls behind it, shared with the Lighthouse baseline pull                        |
+| `.github/workflows/mutation.yml`      | Nightly schedule + dispatch, read-only; uploads the report                                |
+| `reports/mutation/index.html`         | Human-readable report, drawn from `mutation.json`                                         |
+| `reports/mutation/mutation.json`      | The source: every mutant, per-test results — [which file is what](#which-file-is-what)    |
+
+## Commands
+
+| Command                                    | Effect                                                                                                                       |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `npm run test:mutation`                    | Full run — slow, meant for a nightly or before a refactor, never mid-PR                                                      |
+| `npm run test:mutation -- --mutate <file>` | One file, laid over the report on disk — see the warning in [which file is what](#which-file-is-what)                        |
+| `npm run test:mutation:check`              | Compare the last run against the per-file baseline. Fails naming what regressed.                                             |
+| `npm run test:mutation:baseline`           | Record the last run (improvements only). Use when `mutate` changed, and say why.                                             |
+| `npm run test:mutation:pull`               | Download the newest nightly's report into `reports/mutation/` and record the baseline from it. Review the diff, then commit. |
+
+## Related pages
+
+- [Testing](./testing-and-docs.md) — suite overview
+- [Unit Testing](./unit-testing.md) — the layer being mutated
+- [Testing and Docs](./testing-and-docs.md) — where mutation sits among the other suites
