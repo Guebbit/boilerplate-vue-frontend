@@ -78,6 +78,16 @@ const reasonOptions = computed(() => [
 ]);
 
 /**
+ * The proof-of-sending filter's choices: any, with a proof on file, or none yet. The value is a
+ * boolean, or `null` for "any" (see {@link statusOptions} for why not `undefined`).
+ */
+const proofOptions = computed(() => [
+    { value: null, title: t('returns-list-page.filter-proof-any') },
+    { value: true, title: t('returns-list-page.filter-proof-with') },
+    { value: false, title: t('returns-list-page.filter-proof-without') }
+]);
+
+/**
  * The status select's model: `null` on screen, no `status` filter in the store.
  */
 const statusChoice = useAnyFilterChoice(
@@ -98,9 +108,22 @@ const reasonChoice = useAnyFilterChoice(
 );
 
 /**
- * Whether any filter is narrowing the list — picks the empty state's wording.
+ * The proof select's model, same shape.
  */
-const isFiltered = computed(() => Object.values(filters.value).some(Boolean));
+const proofChoice = useAnyFilterChoice(
+    () => filters.value.proofOfSending,
+    (value) => {
+        filters.value.proofOfSending = value;
+    }
+);
+
+/**
+ * Whether any filter is narrowing the list — picks the empty state's wording. A `false` proof
+ * filter ("no proof yet") narrows it as much as a `true` one.
+ */
+const isFiltered = computed(
+    () => Object.values(filters.value).some(Boolean) || filters.value.proofOfSending === false
+);
 
 /**
  * Keeps the filters and page in the URL: a deep link renders filtered, and a reload keeps the view.
@@ -109,7 +132,11 @@ const { sync: syncUrl } = useListUrlState({
     filters,
     page: pageCurrent,
     pageSize: pageSize,
-    params: { status: Object.values(ReturnStatus), reason: Object.values(ReturnReason) }
+    params: {
+        status: Object.values(ReturnStatus),
+        reason: Object.values(ReturnReason),
+        proofOfSending: 'boolean'
+    }
 });
 
 /**
@@ -152,6 +179,15 @@ const { handleSearch, handleReset } = useListSearch({
                         data-test="filter-reason"
                         :label="t('returns-list-page.filter-reason')"
                         :items="reasonOptions"
+                        item-title="title"
+                        item-value="value"
+                        hide-details
+                    />
+                    <v-select
+                        v-model="proofChoice"
+                        data-test="filter-proof"
+                        :label="t('returns-list-page.filter-proof')"
+                        :items="proofOptions"
                         item-title="title"
                         item-value="value"
                         hide-details

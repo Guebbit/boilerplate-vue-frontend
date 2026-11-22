@@ -240,6 +240,47 @@ describe('ReturnStaffActions', () => {
             expect(store.receive).toHaveBeenCalledWith('r1', { remedy: 'replace' });
         });
 
+        it('locks the remedy to a refund once the proof of sending opened the refund', async () => {
+            const { wrapper, store } = mountActions(
+                aReturn({
+                    reason: 'defective',
+                    preferredRemedy: 'repair',
+                    proofOfSendingAt: '2026-03-02T00:00:00.000Z',
+                    refundOnProof: true,
+                    actions: receivable
+                })
+            );
+
+            const refund = wrapper.get<HTMLInputElement>(
+                '[data-test=return-receive-remedy-refund] input'
+            );
+            expect(refund.element.checked).toBe(true);
+            expect(
+                wrapper.get<HTMLInputElement>('[data-test=return-receive-remedy-repair] input')
+                    .element.disabled
+            ).toBe(true);
+
+            await wrapper.get('[data-test=return-receive-form]').trigger('submit');
+            await flushPromises();
+
+            expect(store.receive).toHaveBeenCalledWith('r1', { remedy: 'refund' });
+        });
+
+        it('leaves the remedy open when the proof opened nothing', () => {
+            const { wrapper } = mountActions(
+                aReturn({
+                    reason: 'defective',
+                    proofOfSendingAt: '2026-03-02T00:00:00.000Z',
+                    actions: receivable
+                })
+            );
+
+            expect(
+                wrapper.get<HTMLInputElement>('[data-test=return-receive-remedy-repair] input')
+                    .element.disabled
+            ).toBe(false);
+        });
+
         it('defaults to a refund when the buyer stated no wish', async () => {
             const { wrapper, store } = mountActions(
                 aReturn({ reason: 'wrong_item', actions: receivable })
@@ -797,6 +838,57 @@ describe('the proof of sending', () => {
             reference: 'RR1IT'
         });
         expect(wrapper.emitted('changed')).toHaveLength(1);
+    });
+
+    it('offers "refund on proof" on a faulty or wrong item only', () => {
+        for (const reason of ['defective', 'wrong_item'] as const)
+            expect(
+                mountActions(aReturn({ reason, actions: proofActions }))
+                    .wrapper.find('[data-test=return-proof-refund-on-proof]')
+                    .exists()
+            ).toBe(true);
+        for (const reason of ['withdrawal', 'other'] as const)
+            expect(
+                mountActions(aReturn({ reason, actions: proofActions }))
+                    .wrapper.find('[data-test=return-proof-refund-on-proof]')
+                    .exists()
+            ).toBe(false);
+    });
+
+    it('sends refundOnProof when ticked, and the button then says it refunds', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({ reason: 'defective', actions: proofActions })
+        );
+        expect(wrapper.get('[data-test=return-proof]').text()).toBe('Record proof');
+
+        await wrapper.get('[data-test=return-proof-refund-on-proof] input').setValue(true);
+        await fillProof(wrapper, {
+            sentAt: '2026-03-02',
+            carrier: 'Poste Italiane',
+            reference: 'RR1IT'
+        });
+
+        expect(wrapper.get('[data-test=return-proof]').text()).toBe('Record proof and refund');
+        expect(store.recordProof).toHaveBeenCalledWith('r1', {
+            sentAt: new Date('2026-03-02T00:00:00').toISOString(),
+            carrier: 'Poste Italiane',
+            reference: 'RR1IT',
+            refundOnProof: true
+        });
+    });
+
+    it('sends no refundOnProof on a faulty item when it is left unticked', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({ reason: 'defective', actions: proofActions })
+        );
+
+        await fillProof(wrapper, { sentAt: '2026-03-02', carrier: 'Poste', reference: 'R1' });
+
+        expect(store.recordProof).toHaveBeenCalledWith('r1', {
+            sentAt: new Date('2026-03-02T00:00:00').toISOString(),
+            carrier: 'Poste',
+            reference: 'R1'
+        });
     });
 
     it('refuses a date in the future, and a missing carrier, without calling the server', async () => {
