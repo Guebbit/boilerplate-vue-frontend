@@ -22253,6 +22253,32 @@ components:
         createdAt:
           type: string
           format: date-time
+    ExportZammadPendingContact:
+      type: object
+      description: A contact message not yet handed to Zammad.
+      required:
+        - id
+        - email
+        - subject
+        - message
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        subject:
+          type: string
+        message:
+          type: string
+        category:
+          type: string
+        orderNumber:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
     AccountExportResponse:
       type: object
       additionalProperties: false
@@ -22281,6 +22307,7 @@ components:
         - notifications
         - staffNotifications
         - stockAlerts
+        - zammad
       properties:
         exportedAt:
           type: string
@@ -22398,6 +22425,20 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StockAlert"
+        zammad:
+          type: object
+          description: |
+            What the help-desk hand-over holds about this person: the contact messages still waiting to be sent to Zammad, and the Zammad customer their account is linked to. Always present; the list is empty and `customerId` absent when there is nothing.
+          required:
+            - pendingContacts
+          properties:
+            pendingContacts:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExportZammadPendingContact"
+            customerId:
+              type: integer
+              description: The Zammad customer id the account is linked to. Absent when no ticket ever linked it.
     AddressesResponse:
       type: object
       additionalProperties: false
