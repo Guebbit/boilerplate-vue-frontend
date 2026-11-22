@@ -174,7 +174,9 @@
         "empty": "This entity has no language open. Add one to start translating it.",
         "button-save": "Save translations",
         "success-save": "Translations saved",
-        "hint-field-blank-skipped": "Left blank — this field will be skipped and its current value kept."
+        "hint-field-blank-skipped": "Left blank — this field will be skipped and its current value kept.",
+        "outdated": "The original text changed after this translation was written. Review it.",
+        "source-label": "Original {field}:"
     },
     "navigation": {
         "label-locales": "Language | Languages"

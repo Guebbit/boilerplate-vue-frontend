@@ -25,6 +25,12 @@ interface TranslationIssue {
 export type TranslationTabErrorCounts = Record<string, number>;
 
 /**
+ * The write body's top-level fields that hold the default language's words: a failure on either
+ * belongs to the default language's tab.
+ */
+const DEFAULT_LANGUAGE_FIELDS: ReadonlySet<string> = new Set(['title', 'description']);
+
+/**
  * Narrows a value to a plain keyed object — the one predicate
  * {@link translationTabErrorCountsFromServerError} needs to pick apart an unknown rejection.
  *
@@ -74,7 +80,8 @@ export const translationTabErrorCountsFromZodError = (error: ZodError): Translat
  * A rejected write's `translations.<locale>.<field>` field pointers, turned into the same
  * per-locale counts — the API names the language in the error pointer itself (`details.field`,
  * e.g. `translations.it.title`), so the locale is not lost the way it is once the same rejection
- * passes through `formErrors`'s flat top-level bucket.
+ * passes through `formErrors`'s flat top-level bucket. The default language has no such pointer:
+ * it is the body's top-level `title`/`description`, counted against its own tab.
  *
  * Narrows `unknown` by hand rather than importing the envelope type: this reads the rejection
  * exactly as `useStructureFormValidation.applyServerErrors` does (`error.errors`, or
@@ -82,9 +89,12 @@ export const translationTabErrorCountsFromZodError = (error: ZodError): Translat
  * `formErrors.translations` bucket loses.
  *
  * @param error - The rejected value, exactly as caught from a store write.
+ * @param fallbackLocale - The default language's tag, whose tab owns a top-level `title`/
+ *  `description` failure.
  */
 export const translationTabErrorCountsFromServerError = (
-    error: unknown
+    error: unknown,
+    fallbackLocale: string
 ): TranslationTabErrorCounts => {
     // Every candidate envelope is a record (an object rejection always is), so picking the
     // first RECORD would just answer `error` itself every time — the point is picking the first
@@ -103,10 +113,12 @@ export const translationTabErrorCountsFromServerError = (
     const issues: TranslationIssue[] = items.flatMap((item) => {
         if (!isRecord(item) || !isRecord(item.details)) return [];
         const { field } = item.details;
-        if (typeof field !== 'string' || !field.startsWith('translations.')) return [];
+        if (typeof field !== 'string') return [];
+        const isDefaultField = DEFAULT_LANGUAGE_FIELDS.has(field);
+        if (!isDefaultField && !field.startsWith('translations.')) return [];
         return [
             {
-                path: field.split('.'),
+                path: isDefaultField ? ['translations', fallbackLocale, field] : field.split('.'),
                 message: typeof item.message === 'string' ? item.message : ''
             }
         ];

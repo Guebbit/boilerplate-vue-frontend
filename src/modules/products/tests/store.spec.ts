@@ -86,9 +86,10 @@ const PRODUCT: Product = {
 };
 
 /**
- * A minimal, valid `translations` map — the fallback locale's entry, title only.
+ * The minimal, valid words of a create: the default language's own `title`, and a `translations` map
+ * for one OTHER language.
  */
-const TRANSLATIONS = { en: { title: 'Gadget' } };
+const WORDS = { title: 'Gadget', translations: { it: { title: 'Gadgetto' } } };
 
 /**
  * Makes the transport answer with a paginated envelope for this test. `meta` matches the real
@@ -154,20 +155,20 @@ describe('useProductsStore', () => {
     describe('createProduct', () => {
         it('posts JSON when no image is attached', () =>
             useProductsStore()
-                .createProduct({ price: '49.99', translations: TRANSLATIONS })
+                .createProduct({ price: '49.99', ...WORDS })
                 .then(() => {
                     const request = lastRequest();
                     expect(request).toMatchObject({ url: '/products', method: 'POST' });
                     expect(request.data).not.toBeInstanceOf(FormData);
                     expect(contractRequest(schemas.CreateProductBody, request.data)).toMatchObject({
                         price: '49.99',
-                        translations: TRANSLATIONS
+                        ...WORDS
                     });
                 }));
 
         it('resolves with the created product, not with the envelope', () =>
             useProductsStore()
-                .createProduct({ price: '49.99', translations: TRANSLATIONS })
+                .createProduct({ price: '49.99', ...WORDS })
                 .then((created) => {
                     // `ProductCreate.vue` routes to `/products/${created.id}` on success, so a
                     // wrapper that forgot to unwrap `response.data` would navigate to
@@ -184,7 +185,7 @@ describe('useProductsStore', () => {
             useProductsStore()
                 .createProduct({
                     price: '49.99',
-                    translations: TRANSLATIONS,
+                    ...WORDS,
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
@@ -196,13 +197,13 @@ describe('useProductsStore', () => {
             useProductsStore()
                 .createProduct({
                     price: '49.99',
-                    translations: TRANSLATIONS,
+                    ...WORDS,
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
                     const raw = lastFormData().get('translations');
                     expect(typeof raw).toBe('string');
-                    expect(JSON.parse(raw as string)).toEqual(TRANSLATIONS);
+                    expect(JSON.parse(raw as string)).toEqual(WORDS.translations);
                 }));
 
         it('sends a Blob image, not only a File', () =>
@@ -211,7 +212,7 @@ describe('useProductsStore', () => {
             useProductsStore()
                 .createProduct({
                     price: '49.99',
-                    translations: TRANSLATIONS,
+                    ...WORDS,
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
@@ -222,7 +223,7 @@ describe('useProductsStore', () => {
             useProductsStore()
                 .createProduct({
                     price: '49.99',
-                    translations: TRANSLATIONS,
+                    ...WORDS,
                     categories: ['tools', 'home'],
                     tags: ['new'],
                     imageUpload: new Blob(['x'])
@@ -238,7 +239,7 @@ describe('useProductsStore', () => {
             useProductsStore()
                 .createProduct({
                     price: '49.99',
-                    translations: TRANSLATIONS,
+                    ...WORDS,
                     active: undefined,
                     imageUpload: new Blob(['x'])
                 })
@@ -257,7 +258,7 @@ describe('useProductsStore', () => {
 
             return useProductsStore()
                 .createProduct(
-                    { price: '49.99', translations: TRANSLATIONS, imageUpload: new Blob(['x']) },
+                    { price: '49.99', ...WORDS, imageUpload: new Blob(['x']) },
                     { requestOptions: { onUploadProgress } }
                 )
                 .then(() => {
@@ -272,7 +273,7 @@ describe('useProductsStore', () => {
     describe('updateProduct', () => {
         it('PATCHes JSON when no new image is attached', () =>
             useProductsStore()
-                .updateProduct('p1', { price: '9.99', translations: TRANSLATIONS })
+                .updateProduct('p1', { price: '9.99', ...WORDS })
                 .then(() => {
                     const request = lastRequest();
                     // PATCH, not PUT: the edit endpoint MERGES rather than replaces.
@@ -282,7 +283,7 @@ describe('useProductsStore', () => {
                         contractRequest(schemas.UpdateProductByIdBody, request.data)
                     ).toMatchObject({
                         price: '9.99',
-                        translations: TRANSLATIONS
+                        ...WORDS
                     });
                 }));
 
@@ -290,7 +291,7 @@ describe('useProductsStore', () => {
             useProductsStore()
                 .updateProduct('p1', {
                     price: '9.99',
-                    translations: TRANSLATIONS,
+                    ...WORDS,
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
@@ -377,7 +378,7 @@ describe('useProductsStore', () => {
 
             const pending = store.updateProduct('p1', {
                 price: '12.50',
-                translations: TRANSLATIONS,
+                ...WORDS,
                 imageUpload: new Blob(['x'])
             });
 
@@ -408,7 +409,7 @@ describe('useProductsStore', () => {
             return store
                 .updateProduct('p1', {
                     price: '9.99',
-                    translations: TRANSLATIONS,
+                    ...WORDS,
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
@@ -426,7 +427,7 @@ describe('useProductsStore', () => {
             return useProductsStore()
                 .updateProduct(
                     'p1',
-                    { price: '9.99', translations: TRANSLATIONS, imageUpload: new Blob(['x']) },
+                    { price: '9.99', ...WORDS, imageUpload: new Blob(['x']) },
                     { requestOptions: { onUploadProgress } }
                 )
                 .then(() => {

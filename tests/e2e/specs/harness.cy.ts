@@ -262,7 +262,7 @@ describe('The journey harness', () => {
                 cy.apiAs('admin', 'POST', '/products', {
                     price: '1.00',
                     categories: [category],
-                    translations: { en: { title: category } }
+                    title: category
                 });
                 facetNames().should('include', category);
 

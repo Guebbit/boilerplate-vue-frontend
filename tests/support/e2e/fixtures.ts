@@ -289,34 +289,17 @@ const apiAs = <T>(role: E2ERole, path: string, method: string, body?: Record<str
 const adminApi = <T>(path: string, method: string, body?: Record<string, unknown>) =>
     apiAs<T>('admin', path, method, body);
 
-/**
- * The deployment's source language for product content — `NODE_FALLBACK_LOCALE` on the paired
- * backend, `en` by default and never overridden in this demo stack (the frontend's own
- * `VITE_APP_FALLBACK_LOCALE` defaults the same way). The write contract requires this locale's
- * entry on every `POST /products` — there is no discoverable-at-runtime source for it here, so
- * this fixture assumes the default the way `PUBLIC_PAGE_SIZE` above assumes the contract's
- * page-size maximum.
- */
-const FALLBACK_LOCALE = 'en';
-
 Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) => {
-    // Callers may override `translations` wholesale (a multi-language fixture) or just pass a
-    // flat `title`, which is folded into the fallback locale's entry below — the shape most
-    // specs actually want to write.
+    // `title` and `description` are the product's own words, in the default language; `translations`
+    // (optional) holds the OTHER languages. A spec that passes no title gets a unique one.
     // `onHand` is not a product field: the create body carries no stock, so an opening count is
     // received right after, through the inventory door, as a real shop does it.
-    const { title, translations, onHand, ...rest } = overrides;
+    const { title, onHand, ...rest } = overrides;
     return adminApi<ProductLike>('/products', 'POST', {
         price: '10.00',
         ...rest,
-        translations: translations ?? {
-            [FALLBACK_LOCALE]: {
-                // Unique per test, so a title assertion cannot pass on a row some other case
-                // created.
-                title:
-                    title ?? `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`
-            }
-        }
+        // Unique per test, so a title assertion cannot pass on a row some other case created.
+        title: title ?? `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`
     }).then((product) =>
         typeof onHand === 'number' && onHand > 0
             ? adminApi(`/inventory/levels/${product.id}/receive`, 'POST', {

@@ -512,13 +512,9 @@ export const preorderOnSale = (options: {
         .apiAs<{ id: string }>('editor', 'POST', '/products', {
             price: '19.90',
             releaseDate: releaseDateIn(options.releaseInDays),
-            translations: {
-                en: {
-                    title:
-                        options.title ??
-                        `preorder ${String(Date.now())}-${String(Math.floor(Math.random() * 1000))}`
-                }
-            }
+            title:
+                options.title ??
+                `preorder ${String(Date.now())}-${String(Math.floor(Math.random() * 1000))}`
         })
         .then((product) => {
             const id = String(product?.id);
