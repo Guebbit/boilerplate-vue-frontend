@@ -55,6 +55,8 @@ const SHELL_SWEEP = path.resolve(ROOT, 'tests/e2e/specs/a11y.cy.ts');
 const EXEMPT = new Set<string>([
     // account: logs out in `beforeRouteEnter` and returns Home — renders nothing of its own.
     'logout',
+    // tasks: leaves for the helpdesk URL in `beforeRouteEnter` — renders nothing of its own.
+    'helpdesk',
     // shell: the bare origin, redirected to the default locale's Home.
     '/',
     // shell: the locale container — a RouterView with no view; its children are the pages.

@@ -84,6 +84,18 @@ flowchart LR
     end
 ```
 
+## The helpdesk link
+
+A deployment that runs the backend's helpdesk (Zammad) sets its public URL as `VITE_ZAMMAD_URL`, a
+[runtime-config](../tools/environment.md#runtime-configuration-config-js) value a container can change
+at start. With it set, the module adds a `Helpdesk` route and an `admin` menu entry, for staff who
+hold `read:Task`, like the inbox beside it. Entering the route leaves the app for that URL. With it
+unset or blank, neither the route nor the entry exists: there is no link to a page that is not there.
+
+The URL is read once, when the module loads, so changing it is a container restart. The backend
+sends nothing for this (no `GET /config` field); the backend's Zammad module page, in its own
+repository, covers the staff entry from the other side.
+
 ## State
 
 State, getters and actions are exactly what the setup function of each store returns: `src/modules/tasks/store.ts`.
@@ -100,7 +112,7 @@ Method, path pattern, response schema and owning module of every operation: `con
 
 #### Navigation entries
 
-Entries are declared in `src/modules/tasks/module.ts`. Badges: `TaskInbox` — unassigned plus mine, from `GET /tasks/summary`.
+Entries are declared in `src/modules/tasks/module.ts`. Badges: `TaskInbox` — unassigned plus mine, from `GET /tasks/summary`. `Helpdesk` exists only when `VITE_ZAMMAD_URL` is set.
 
 ## Files
 

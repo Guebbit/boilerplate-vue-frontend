@@ -48,6 +48,8 @@ services:
             VITE_UMAMI_WEBSITE_ID: '${VITE_UMAMI_WEBSITE_ID:-}'
             VITE_UMAMI_REQUIRE_CONSENT: '${VITE_UMAMI_REQUIRE_CONSENT:-}'
             VITE_TOURS_ENABLED: '${VITE_TOURS_ENABLED:-}'
+            # The helpdesk's public URL: staff get a "Helpdesk" link only when it is set.
+            VITE_ZAMMAD_URL: '${VITE_ZAMMAD_URL:-}'
             # /.well-known/security.txt — published only when both CONTACT and EXPIRES are set.
             VITE_SECURITY_CONTACT: '${VITE_SECURITY_CONTACT:-}'
             VITE_SECURITY_EXPIRES: '${VITE_SECURITY_EXPIRES:-}'

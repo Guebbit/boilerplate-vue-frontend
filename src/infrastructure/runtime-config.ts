@@ -33,6 +33,7 @@ export interface RuntimeConfig {
     UMAMI_WEBSITE_ID?: string;
     UMAMI_REQUIRE_CONSENT?: string;
     TOURS_ENABLED?: string;
+    ZAMMAD_URL?: string;
 }
 
 /**
@@ -71,4 +72,14 @@ export function readToursEnabled(): boolean {
     return (
         (runtimeValue('TOURS_ENABLED') || import.meta.env.VITE_TOURS_ENABLED?.trim()) !== 'false'
     );
+}
+
+/**
+ * The public URL of the helpdesk (Zammad) staff sign in to, the target of the staff "Helpdesk"
+ * entry. Unset means this deployment has no helpdesk, and the entry does not exist.
+ *
+ * @returns The trimmed runtime or build-time `ZAMMAD_URL`, or `undefined` when neither is set.
+ */
+export function readZammadUrl(): string | undefined {
+    return runtimeValue('ZAMMAD_URL') || import.meta.env.VITE_ZAMMAD_URL?.trim() || undefined;
 }
