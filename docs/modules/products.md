@@ -146,6 +146,7 @@ button never disagree: **off sale outranks the availability**.
 | `true`        | `preorder`     | `preorder`     | "Preorder · ships {date}" | enabled, "Preorder"                                                  |
 | `true`        | `backorder`    | `backorder`    | "Backorder · ships by …"  | enabled, "Backorder"                                                 |
 | `true`        | `out_of_stock` | `out-of-stock` | "Out of stock"            | disabled, "Out of stock"                                             |
+| `true`        | `in_stock`     | `low-stock`    | "Only {n} left"           | enabled (`quantityAvailable` below the frontend's threshold, 5)      |
 | `true`        | `in_stock`     | `in-stock`     | "In stock"                | enabled                                                              |
 | any           | not loaded yet | none           | no badge                  | disabled (an off-sale product still reads "Not available right now") |
 
@@ -155,10 +156,11 @@ flowchart TD
     B -- yes --> C[off-sale]
     B -- no --> D{availability loaded?}
     D -- no --> N[no state yet]
-    D -- yes --> E[in-stock · preorder · backorder · out-of-stock]
+    D -- yes --> E[in-stock · low-stock · preorder · backorder · out-of-stock]
 ```
 
-A preorder's shelf may be empty: its units are claimed against the preorder allowance
+"Low stock" is a frontend constant (`LOW_STOCK_THRESHOLD`): the server serves the number
+(`quantityAvailable`, see [inventory](./inventory.md)) and no field says what is low. A preorder's shelf may be empty: its units are claimed against the preorder allowance
 (`backorderLimit`, set on the [stock board](./inventory.md)), not the shelf, which the server folds
 into `availability`: a full allowance reads `out_of_stock`. The shopper never sees the allowance. A
 backorder names its day from `availabilityDate`, except when the product sets no `restockDate`:

@@ -21,6 +21,7 @@ export * from './composables/use-checkout-draft';
 export * from './composables/use-checkout-refusals';
 export * from './composables/use-guest-cart';
 export * from './composables/use-line-quantity';
+export * from './composables/use-line-warning-text';
 export * from './domain';
 export { default as AddToCartButton } from './components/AddToCartButton.vue';
 export { default as CartEmptyState } from './components/CartEmptyState.vue';

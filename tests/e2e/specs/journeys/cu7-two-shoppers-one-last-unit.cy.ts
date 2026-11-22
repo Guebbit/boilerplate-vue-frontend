@@ -44,7 +44,7 @@ describe('CU7 · Two shoppers, one last unit', () => {
                 expectAvailable(productId, 1);
                 cy.loginAs('user');
                 addToCartFromStorefront('product.lowStock');
-                // Adding never looks at stock, so the second shopper's cart can hold it too.
+                // One unit is for sale, so each cart may hold it: a cart reserves nothing.
                 cy.apiAs('secondShopper', 'POST', '/cart/items', { productId, quantity: 1 });
 
                 cy.step('the customer checks out the last unit: it is held');
@@ -70,7 +70,7 @@ describe('CU7 · Two shoppers, one last unit', () => {
                     cy.contains('[data-test=cart-item]', title)
                         .find('[data-test=cart-line-availability]')
                         .should('contain.text', 'Sold out')
-                        .and('have.attr', 'data-availability', 'out_of_stock');
+                        .and('have.attr', 'data-availability', 'sold-out');
                     cy.get('[data-test=cart-checkout]').should('be.disabled');
 
                     cy.step('the customer cancels: the hold is released');

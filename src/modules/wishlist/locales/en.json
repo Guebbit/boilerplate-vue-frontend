@@ -10,6 +10,7 @@
         "button-move-to-cart": "Move to cart",
         "button-remove": "Remove",
         "success-moved": "Product moved to cart.",
+        "warning-not-moved": "It cannot be bought right now, so it was not added to your cart. It stays saved.",
         "success-removed": "Product removed from wishlist.",
         "button-move-to-cart-named": "Move to cart: {id}",
         "button-remove-named": "Remove product {id}"

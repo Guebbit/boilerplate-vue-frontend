@@ -6,8 +6,9 @@
  * product off sale (or deactivates it) behind an open page, checkout names the line instead of
  * guessing, and the rest of the basket still goes through once that line is removed.
  *
- * The story is about the shop never selling what it cannot. A signed-in cart takes an off-sale
- * line like a sold-out one and holds "Place order" back; only checkout refuses outright.
+ * The story is about the shop never selling what it cannot. An off-sale product cannot be added
+ * to a cart (the write succeeds with nothing added and a warning); one already in a cart reads off
+ * sale and holds "Place order" back, and checkout refuses it outright.
  */
 
 /** The slice of a cart this story reads. */
@@ -59,23 +60,19 @@ describe('CU33 · Taken off sale at the till', () => {
                 cy.visit('/en/wishlist');
                 cy.contains('[data-test=wishlist-item]', title)
                     .find('[data-test=wishlist-line-availability]')
-                    .should('have.attr', 'data-availability', 'unavailable');
+                    .should('have.attr', 'data-availability', 'off-sale');
 
-                cy.step('moved into the cart it holds "Place order" back, until it is removed');
+                cy.step(
+                    'moving it to the cart adds nothing: it stays saved and the cart stays empty'
+                );
                 cy.apiAs('user', 'DELETE', '/cart/items');
                 cy.contains('[data-test=wishlist-item]', title)
                     .find('[data-test=wishlist-move-to-cart]')
                     .click();
-                cy.goToCart();
-                cy.get('[data-test=shipping-method-pickup]').click();
-                cy.contains('[data-test=cart-item]', title)
-                    .find('[data-test=cart-line-availability]')
-                    .should('have.attr', 'data-availability', 'unavailable')
-                    .and('contain.text', NOT_AVAILABLE);
-                cy.get('[data-test=cart-lines-need-attention]').should('exist');
-                cy.get('[data-test=cart-checkout]').should('be.disabled');
-                cy.contains('[data-test=cart-item]', title).find('[data-test=cart-remove]').click();
-                cy.get('[data-test=cart-item]').should('not.exist');
+                cy.contains('[data-test=wishlist-item]', title).should('exist');
+                cy.apiAs<CartLike>('user', 'GET', '/cart').should((cart) => {
+                    expect(cart?.items, 'nothing was added').to.have.length(0);
+                });
             });
         });
     });
@@ -121,7 +118,7 @@ describe('CU33 · Taken off sale at the till', () => {
                     cy.reload();
                     cy.contains('[data-test=cart-item]', richTitle)
                         .find('[data-test=cart-line-availability]')
-                        .should('have.attr', 'data-availability', 'unavailable');
+                        .should('have.attr', 'data-availability', 'off-sale');
                     cy.get('[data-test=cart-checkout]').should('be.disabled');
                     cy.contains('[data-test=cart-item]', richTitle)
                         .find('[data-test=cart-remove]')
@@ -136,9 +133,9 @@ describe('CU33 · Taken off sale at the till', () => {
                     cy.apiAs('user', 'POST', '/cart/items', { productId: richId, quantity: 1 });
                     cy.goToCart();
                     cy.contains('[data-test=cart-item]', richTitle).should('exist');
-                    cy.get(
-                        '[data-test=cart-line-availability][data-availability=unavailable]'
-                    ).should('not.exist');
+                    cy.get('[data-test=cart-line-availability][data-availability=off-sale]').should(
+                        'not.exist'
+                    );
                 });
             });
         });

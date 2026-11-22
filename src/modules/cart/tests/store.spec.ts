@@ -127,7 +127,7 @@ const RESPONSES = {
     checkedOut: contractResponse(schemas.CheckoutResponse, ORDER),
     reordered: contractResponse(schemas.ReorderResponse, {
         cart: CART,
-        lines: [{ productId: 'p1', requested: 2, resulting: 2, availability: 'in_stock' }]
+        lines: [{ productId: 'p1', requested: 2, resulting: 2 }]
     }),
     shippingSet: contractResponse(schemas.SetCartShippingMethodResponse, {
         ...CART,
@@ -263,6 +263,57 @@ describe('useCartStore', () => {
                 });
                 expect(store.cartItems).toEqual(CART.items);
             });
+        });
+    });
+
+    describe('what stock did to a write', () => {
+        const WARNING = {
+            code: 'MERCHANDISE_NOT_ENOUGH_STOCK',
+            productId: 'p1',
+            requested: 5,
+            resulting: 3
+        } as const;
+
+        it('keeps the warning beside its line until that line is written again', () => {
+            const store = useCartStore();
+            vi.mocked(addCartItem).mockResolvedValueOnce(
+                contractBody<Answer<typeof addCartItem>>(schemas.AddCartItemResponse, {
+                    ...CART,
+                    warnings: [WARNING]
+                })
+            );
+
+            return store
+                .addCartItem('p1', 5)
+                .then(() => {
+                    expect(store.lineWarnings.p1).toEqual(WARNING);
+                    // A background read replaces the cart and must not wipe the message.
+                    return store.fetchCart();
+                })
+                .then(() => {
+                    expect(store.lineWarnings.p1).toEqual(WARNING);
+                    return store.updateCartItem('p1', 2);
+                })
+                .then(() => {
+                    expect(store.lineWarnings.p1).toBeUndefined();
+                });
+        });
+
+        it('forgets the message when the line is removed, and all of them when the cart is cleared', () => {
+            const store = useCartStore();
+            vi.mocked(updateCartItemByProductId).mockResolvedValueOnce(
+                contractBody<Answer<typeof updateCartItemByProductId>>(
+                    schemas.UpdateCartItemByProductIdResponse,
+                    { ...CART, warnings: [WARNING] }
+                )
+            );
+
+            return store
+                .updateCartItem('p1', 5)
+                .then(() => store.removeCartItem('p1'))
+                .then(() => {
+                    expect(store.lineWarnings).toEqual({});
+                });
         });
     });
 
@@ -634,9 +685,7 @@ describe('useCartStore', () => {
                 expect(vi.mocked(apiReorder).mock.calls[0]?.[0]).toEqual({ orderId: 'o1' });
                 expect(store.cart).toEqual(CART);
                 expect(store.cartSummary?.itemsCount).toBe(1);
-                expect(result?.lines).toEqual([
-                    { productId: 'p1', requested: 2, resulting: 2, availability: 'in_stock' }
-                ]);
+                expect(result?.lines).toEqual([{ productId: 'p1', requested: 2, resulting: 2 }]);
             });
         });
     });

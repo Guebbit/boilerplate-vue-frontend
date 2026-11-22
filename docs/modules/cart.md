@@ -116,7 +116,7 @@ When a signed-in session appears, the shell's badge accessor calls `seedAfterSig
 guest cart it sends every line in one `POST /cart/merge`, which adds each by the rule of
 `POST /cart/items`: a product already in the cart **grows** by the line's quantity. The answer is the
 merged cart and **one result per submitted line**:
-`{ productId, requested, resulting, reason?, availability }`. `reason` is absent when the line
+`{ productId, requested, resulting, reason? }`, and the answer's `warnings[]` names each line stock held back. `reason` is absent when the line
 landed as chosen, and otherwise one of `summed`, `capped`, `removed` or `cart_full` (the product is new and the cart has no line
 left for it). The same limit refuses a plain
 `POST /cart/items` with 409 `CART_LINE_LIMIT_REACHED`. A line the cart cannot
@@ -124,11 +124,11 @@ take is not a failure: the call still answers 200, and for the lines that were `
 server also writes one `shop-tasks.cart-merge-refused` notification, which the
 [bell](./notifications.md) shows. Without a guest cart it reads the summary for the badge, as before.
 
-**Stock is checked, never enforced, and never revealed.** A line the shelf does not cover is still
-added, at the summed quantity, and carries an `availability` that says why (`insufficient_stock`,
-`out_of_stock`, or `unavailable` for a product taken off sale). The merge does not lower it,
-and no answer says how many are for sale: the client never needs that number and never has it.
-Checkout is where a short line is refused (`CART_INSUFFICIENT_STOCK`).
+**Stock clamps, loudly.** A line the shelf does not cover is added up to what can be bought, and the
+answer's `warnings[]` carries one entry per such line (`MERCHANDISE_NOT_ENOUGH_STOCK`, or
+`MERCHANDISE_OUT_OF_STOCK` when nothing could be added: sold out, or off sale), as Shopify's cart
+warnings. The merge alert shows each. Checkout is still where a basket is refused
+(`CART_INSUFFICIENT_STOCK`).
 
 - Exactly the lines that were **sent** leave the guest list once the server has answered. A product
   added while the call was out stays, and a line grown meanwhile keeps only its extra units, so
@@ -168,12 +168,12 @@ a bell notification (it is tied to this screen and goes with it).
 
 It lists four kinds of line (`mergeReportKind`):
 
-| Kind       | When                                                     | What it says                                                                         |
-| ---------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `changed`  | a `reason` of `summed` or `capped`                       | the quantities, and the reason in plain words                                        |
-| `short`    | `availability` is `insufficient_stock` or `out_of_stock` | the quantities, a "Not enough in stock" marker, "Lower the quantity before checkout" |
-| `off-sale` | `availability` is `unavailable`                          | the quantities, a "Not available right now" marker, "Remove it, or wait"             |
-| `gone`     | a `reason` of `removed` or `cart_full`                   | the quantities, and "no longer available, so it was not added"                       |
+| Kind       | When                                          | What it says                                                                         |
+| ---------- | --------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `changed`  | a `reason` of `summed` or `capped`            | the quantities, and the reason in plain words                                        |
+| `short`    | the warning is `MERCHANDISE_NOT_ENOUGH_STOCK` | the quantities, a "Not enough in stock" marker, "Only that many could be added"      |
+| `sold-out` | the warning is `MERCHANDISE_OUT_OF_STOCK`     | the quantities, a "Sold out" or "Not available right now" marker, "it was not added" |
+| `gone`     | a `reason` of `removed` or `cart_full`        | the quantities, and "no longer available, so it was not added"                       |
 
 Each line names the product in the reader's language, the quantity the guest chose and the quantity
 the cart holds now. The title comes from the same product lookup the lines use; a product that
@@ -197,28 +197,44 @@ stateDiagram-v2
 - A later `GET /cart` never sets or touches it: only an answer to a merge does.
 - It is one live region (`role="status"`, polite) for the whole alert, not one per line; the
   page's quantities and total are live regions already, and the alert adds exactly one more.
-- A short line is marked in words, never by colour alone, and never prints a stock number.
+- A short line is marked in words, never by colour alone.
 
 ### A line's availability on the cart page
 
-Every cart answer (`GET /cart` and every write) carries an `availability` on each line, and the
-page prints one marker beside the quantity of any line that is not `in_stock`:
+Every cart answer (`GET /cart` and every write) carries the product's own stock answer on each line
+(`availability`, `availabilityDate`, `quantityAvailable`, `quantityBackordered`, the same words and
+numbers as `GET /products/{id}/availability`), and the page prints one marker beside the quantity
+of any line that needs one. Which marker comes from `lineStatusOf` in the products domain, ranked
+top to bottom; the server reads removed, off sale and sold out all as `out_of_stock`, so the
+product details the page already holds tell them apart:
 
-| `availability`       | Marker                                          |
-| -------------------- | ----------------------------------------------- |
-| `preorder`           | "Preorder · ships {date}" (blue, not a warning) |
-| `insufficient_stock` | "Not enough in stock"                           |
-| `out_of_stock`       | "Sold out"                                      |
-| `unavailable`        | "Not available right now"                       |
-| `removed`            | "No longer available"                           |
+| The line is                                                | Marker                                          |
+| ---------------------------------------------------------- | ----------------------------------------------- |
+| removed (the product left the read, or is `active: false`) | "No longer available"                           |
+| off sale (`purchasable: false`)                            | "Not available right now"                       |
+| `out_of_stock`                                             | "Sold out"                                      |
+| `quantity` above `quantityAvailable`                       | "Only {n} available"                            |
+| `preorder`                                                 | "Preorder · ships {date}" (blue, not a warning) |
+| units past the shelf (`quantityBackordered`)               | "Backorder · ships by {date}" (blue)            |
 
 The marker is text, and it sits inside the quantity's own live region, so a line turning short is
 announced without a live region per row. The quantity on screen is never changed for it: lowering
 the line, or removing it, is the shopper's call. "Place order" stays disabled while any line is not
-buyable by the server's word (`checkoutable` on the cart; a line's `canIncrease` likewise
-gates its "+"), matching checkout, which refuses the short, sold-out, off-sale and removed lines: a
-preorder is bought now and ships from its release date. The date comes from the product record; until it
-loads the marker just says "Preorder". It is a name, never the number left.
+buyable by the server's word (`checkoutable` on the cart), matching checkout, which refuses the
+short, sold-out, off-sale and removed lines: a preorder is bought now and ships from its release
+date. A line's "+" stops at the shop's ceiling and at `quantityAvailable` (the stepper never goes
+above the number; a line already above it can only be lowered).
+
+**The cap is loud.** A write that asks for more than can be bought succeeds at the most that can
+be, and the answer's `warnings[]` is shown beside the line ("Only 20 available, so the line was
+set to 20 instead of 25") until that line is written again, never only as a toast. The store keeps
+it in `lineWarnings`, apart from `cart`, so a background read does not wipe it.
+
+**The guest cart clamps from the same numbers.** It lives in this browser, so it reads
+`quantityAvailable` from the availability store (`@/kernel/availability`, filled by the
+`availability-watch` slot the page renders) and applies the same rule: a raise stops at the number,
+a line above it is never raised, and the same warning shows. Nothing is clamped for a product whose
+availability has not loaded.
 
 ### The stock poll
 

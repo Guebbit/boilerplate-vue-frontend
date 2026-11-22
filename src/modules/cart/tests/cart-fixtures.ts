@@ -31,7 +31,7 @@ const SHIPPING_OPTIONS: CartResponse['shipping']['options'] = [
  *
  * @param lines - `[productId, quantity]` pairs, in the order the cart lists them
  * @param selected - The shipping method the cart plans to ship by, or none; the request's own `null` (a clear) reads as none, as the server answers it
- * @param short - Ids of the lines the server names `insufficient_stock`
+ * @param short - Ids of the lines that hold one more than can be bought, as after a sale
  * @returns A `CartResponse` that parses against the generated schema
  */
 export const aCart = (
@@ -46,8 +46,9 @@ export const aCart = (
         items: lines.map(([productId, quantity]) => ({
             productId,
             quantity,
-            availability: short.includes(productId) ? 'insufficient_stock' : 'in_stock',
-            canIncrease: quantity < LINE_MAX
+            availability: 'in_stock',
+            ...(short.includes(productId) ? { quantityAvailable: quantity - 1 } : {}),
+            canIncrease: quantity < LINE_MAX && !short.includes(productId)
         })),
         summary: {
             itemsCount: lines.length,

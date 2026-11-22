@@ -48,6 +48,7 @@ const productActions = useSlot('product-actions');
  */
 const SHELF_LABELS: Record<ShelfState, string> = {
     'in-stock': 'product-card.in-stock',
+    'low-stock': 'product-card.low-stock',
     preorder: 'product-card.preorder',
     backorder: 'product-card.backorder',
     'out-of-stock': 'product-card.out-of-stock',
@@ -59,6 +60,7 @@ const SHELF_LABELS: Record<ShelfState, string> = {
  */
 const SHELF_COLORS = {
     'in-stock': 'success',
+    'low-stock': 'warning',
     preorder: 'info',
     backorder: 'warning',
     'out-of-stock': 'error',
@@ -82,7 +84,8 @@ const shelfText = computed(() =>
         : shelf.value === 'backorder' && !product.restockDate
           ? t('product-card.backorder-undated', { days: backorderPromiseDays.value })
           : t(SHELF_LABELS[shelf.value], {
-                date: formatDay(availabilityOf(product.id)?.availabilityDate)
+                date: formatDay(availabilityOf(product.id)?.availabilityDate),
+                count: availabilityOf(product.id)?.quantityAvailable ?? 0
             })
 );
 </script>

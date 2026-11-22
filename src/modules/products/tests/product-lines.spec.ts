@@ -49,6 +49,8 @@ const answerWithVisibleIds = () =>
                         title: `Title of ${id}`,
                         price: '1.00',
                         currency: 'EUR',
+                        // The ones named `off-sale…` are listed but not for sale.
+                        ...(id.startsWith('off-sale') ? { purchasable: false } : {}),
                         actions: NO_PRODUCT_ACTIONS
                     })),
                     meta: { totalItems: ids.length, page: 1, pageSize: 100, totalPages: 1 }
@@ -153,31 +155,72 @@ describe('useProductLines', () => {
     });
 
     it.each([
-        ['in_stock', undefined],
-        ['insufficient_stock', 'Not enough in stock'],
-        ['out_of_stock', 'Sold out'],
-        ['unavailable', 'Not available right now'],
-        ['removed', 'No longer available']
-    ] as const)('words availability %s as %s', (availability, label) => {
-        expect(mountLines().availabilityLabel(availability)).toBe(label);
+        [
+            'a line that fits',
+            { availability: 'in_stock', quantity: 2, quantityAvailable: 5 },
+            undefined
+        ],
+        [
+            'a line above the number',
+            { availability: 'in_stock', quantity: 6, quantityAvailable: 4 },
+            'Only 4 available'
+        ],
+        ['a sold-out product', { availability: 'out_of_stock', quantityAvailable: 0 }, 'Sold out']
+    ] as const)('words %s by the product answer: %s', (_name, stock, label) => {
+        const lines = mountLines();
+
+        return lines.loadProducts(['p1']).then(() => {
+            expect(lines.lineLabel('p1', stock)).toBe(label);
+        });
+    });
+
+    it('tells an off-sale product from a sold-out one by its details, not by the server word', () => {
+        const lines = mountLines();
+
+        return lines.loadProducts(['off-sale-1']).then(() => {
+            expect(lines.lineLabel('off-sale-1', { availability: 'out_of_stock' })).toBe(
+                'Not available right now'
+            );
+        });
     });
 
     it('words a preorder line with the date it ships from, and without one when the date is unknown', () => {
         const lines = mountLines();
 
-        expect(lines.availabilityLabel('preorder', { releaseDate: '2027-03-15' })).toMatch(
-            /^Preorder · ships .*2027/
-        );
-        expect(lines.availabilityLabel('preorder')).toBe('Preorder');
+        return lines.loadProducts(['p1']).then(() => {
+            expect(
+                lines.lineLabel('p1', { availability: 'preorder', availabilityDate: '2027-03-15' })
+            ).toMatch(/^Preorder · ships .*2027/);
+            expect(lines.lineLabel('p1', { availability: 'preorder' })).toBe('Preorder');
+        });
     });
 
-    it('words a backorder line with the date it ships by, and always with a promise even without one', () => {
+    it('words a line with units past the shelf with the date they ship by, and always with a promise', () => {
         const lines = mountLines();
 
-        expect(lines.availabilityLabel('backorder', { restockDate: '2027-03-15' })).toMatch(
-            /^Backorder · ships by .*2027/
-        );
-        expect(lines.availabilityLabel('backorder')).toBe('Backorder · ships within 30 days');
+        return lines.loadProducts(['p1']).then(() => {
+            expect(
+                lines.lineLabel('p1', {
+                    availability: 'in_stock',
+                    quantity: 3,
+                    quantityBackordered: 1,
+                    availabilityDate: '2027-03-15'
+                })
+            ).toMatch(/^Backorder · ships by .*2027/);
+            expect(
+                lines.lineLabel('p1', { availability: 'backorder', quantityBackordered: 2 })
+            ).toBe('Backorder · ships within 30 days');
+        });
+    });
+
+    it('words a product the shopper cannot see as no longer available, hidden ones included', () => {
+        const lines = mountLines();
+
+        return lines.loadProducts(['gone-1']).then(() => {
+            expect(lines.lineLabel('gone-1', { availability: 'out_of_stock' })).toBe(
+                'No longer available'
+            );
+        });
     });
 
     it('tells a product the shopper cannot see from one that is loaded, once the read has settled', () => {
@@ -187,6 +230,67 @@ describe('useProductLines', () => {
             expect(lines.isRemoved('gone-1')).toBe(true);
             expect(lines.isRemoved('p1')).toBe(false);
         });
+    });
+
+    it('drops a record the read no longer answers, so a product hidden since reads as removed', () => {
+        const lines = mountLines();
+
+        return lines
+            .loadProducts(['p1'])
+            .then(() => {
+                expect(lines.isRemoved('p1')).toBe(false);
+                // The same product, hidden behind the open page: the next read does not return it.
+                vi.mocked(searchProducts).mockImplementation(() =>
+                    Promise.resolve(
+                        asStub<Awaited<ReturnType<typeof searchProducts>>>(
+                            contractResponse(schemas.SearchProductsResponse, {
+                                items: [],
+                                meta: { totalItems: 0, page: 1, pageSize: 1, totalPages: 0 }
+                            })
+                        )
+                    )
+                );
+                return lines.loadProducts(['p1']);
+            })
+            .then(() => {
+                expect(lines.productOf('p1')).toBeUndefined();
+                expect(lines.isRemoved('p1')).toBe(true);
+                expect(lines.lineLabel('p1', { availability: 'out_of_stock' })).toBe(
+                    'No longer available'
+                );
+            });
+    });
+
+    it('keeps every record when the read is aborted, as a language switch aborts it', () => {
+        const lines = mountLines();
+
+        return lines
+            .loadProducts(['p1', 'p2'])
+            .then(() => {
+                vi.mocked(searchProducts).mockRejectedValueOnce(
+                    new DOMException('The operation was aborted.', 'AbortError')
+                );
+                return lines.loadProducts(['p1', 'p2']).catch(() => undefined);
+            })
+            .then(() => {
+                expect(lines.productOf('p1')).toBeDefined();
+                expect(lines.productOf('p2')).toBeDefined();
+                expect(lines.isRemoved('p1')).toBe(false);
+            });
+    });
+
+    it('keeps a record the read answered, and one that failed to load', () => {
+        const lines = mountLines();
+
+        return lines
+            .loadProducts(['p1'])
+            .then(() => {
+                vi.mocked(searchProducts).mockRejectedValueOnce(new Error('offline'));
+                return lines.loadProducts(['p1']).catch(() => undefined);
+            })
+            .then(() => {
+                expect(lines.productOf('p1')).toBeDefined();
+            });
     });
 
     it('sends no request for a list with no lines', () =>

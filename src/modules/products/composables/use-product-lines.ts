@@ -7,9 +7,25 @@
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { formatDay } from '@/infrastructure/utils/formatters.ts';
-import type { LineAvailability, Product } from '@types';
+import type { Product } from '@types';
 import { useProductsStore } from '../store';
+import { lineStatusOf, type LineFacts, type LineStatus } from '../domain';
 import { backorderPromiseDays } from '@/modules/shop';
+
+/**
+ * What a screen knows about one line's stock: the product's own answer, and for a cart line the
+ * quantity it holds and the units that ship later. The wishlist passes the answer alone.
+ */
+export interface LineStock extends Pick<
+    LineFacts,
+    'availability' | 'quantity' | 'quantityAvailable' | 'quantityBackordered'
+> {
+    /**
+     * The product's `availabilityDate` (a calendar day): the release date of a preorder, the
+     * restock date of a backorder.
+     */
+    availabilityDate?: string | undefined;
+}
 
 /**
  * What {@link useProductLines} hands a view.
@@ -41,41 +57,35 @@ export interface ProductLines {
     titleOf: (productId: string) => string;
 
     /**
-     * The short label a line wears for its availability: "Sold out", "Not available right now",
-     * "No longer available", "Not enough in stock", "Preorder · ships {date}". Nothing for
-     * `in_stock`, which needs none.
+     * The status a line wears: removed, off sale, sold out, too many, preorder, ships later, or
+     * ok. Off sale, removed and sold out are told apart from the product details, which the server
+     * does not repeat on the line.
      *
-     * @param availability - The line's `availability` from the server.
-     * @param dates - The line's product's dates, read once its record has loaded: the release date
-     *  for a `preorder` label, the restock date for a `backorder` label.
-     * @returns The label, or `undefined` for a line that can be bought as it stands.
+     * @param productId - The line's product id.
+     * @param stock - The line's stock answer.
      */
-    availabilityLabel: (
-        availability: LineAvailability,
-        dates?: Pick<Product, 'releaseDate' | 'restockDate'>
-    ) => string | undefined;
+    statusOf: (productId: string, stock: LineStock) => LineStatus;
+
+    /**
+     * The short label a line wears: "Sold out", "Not available right now", "No longer available",
+     * "Only {n} available", "Preorder · ships {date}", "Backorder · ships by {date}". Nothing for a
+     * line that can be bought as it stands.
+     *
+     * @param productId - The line's product id.
+     * @param stock - The line's stock answer.
+     * @returns The label, or `undefined` when none is needed.
+     */
+    lineLabel: (productId: string, stock: LineStock) => string | undefined;
 
     /**
      * Whether a line's product is gone for this shopper: its read has settled without it, which
-     * is how a hidden or deleted product looks from the outside. `false` while a read is out.
+     * is how a hidden or deleted product looks from the outside, or it is hidden (`active ===
+     * false`, which a staff member's read still returns). `false` while a read is out.
      *
      * @param productId - The line's product id.
      */
     isRemoved: (productId: string) => boolean;
 }
-
-/**
- * The label key of every availability that has one, as literals so a translation check can see
- * each of them.
- */
-const LABEL_KEYS: Record<Exclude<LineAvailability, 'in_stock'>, string> = {
-    preorder: 'product-lines.preorder',
-    backorder: 'product-lines.backorder',
-    insufficient_stock: 'product-lines.insufficient-stock',
-    out_of_stock: 'product-lines.out-of-stock',
-    unavailable: 'product-lines.unavailable',
-    removed: 'product-lines.removed'
-};
 
 /**
  * The line-to-product join, bound to the products store and the active language.
@@ -91,26 +101,59 @@ export const useProductLines = (): ProductLines => {
 
     const productOf = (productId: string): Product | undefined => products.value[productId];
 
+    const isRemoved = (productId: string): boolean => {
+        const product = productOf(productId);
+        return !loading.value && (product === undefined || product.active === false);
+    };
+
+    const statusOf = (productId: string, stock: LineStock): LineStatus =>
+        lineStatusOf({
+            removed: isRemoved(productId),
+            purchasable: productOf(productId)?.purchasable,
+            ...stock
+        });
+
     return {
         loadProducts: (productIds) =>
             productIds.length > 0 ? store.fetchProductsByIds(productIds) : Promise.resolve([]),
         productOf,
         titleOf: (productId) =>
             productOf(productId)?.title ?? (loading.value ? '' : t('product-lines.removed')),
-        availabilityLabel: (availability, dates) => {
-            if (availability === 'in_stock') return undefined;
-            // The date is the product's, read once its record has loaded; until then say what is known.
-            if (availability === 'preorder' && !dates?.releaseDate)
-                return t('product-lines.preorder-undated');
-            // A backorder always carries its promise: a date, or 30 days when the shop named none.
-            if (availability === 'backorder' && !dates?.restockDate)
-                return t('product-lines.backorder-undated', { days: backorderPromiseDays.value });
-            return t(LABEL_KEYS[availability], {
-                date: formatDay(
-                    availability === 'backorder' ? dates?.restockDate : dates?.releaseDate
-                )
-            });
+        statusOf,
+        lineLabel: (productId, stock) => {
+            switch (statusOf(productId, stock)) {
+                case 'removed': {
+                    return t('product-lines.removed');
+                }
+                case 'off-sale': {
+                    return t('product-lines.unavailable');
+                }
+                case 'sold-out': {
+                    return t('product-lines.out-of-stock');
+                }
+                case 'too-many': {
+                    return t('product-lines.insufficient-stock', {
+                        count: stock.quantityAvailable ?? 0
+                    });
+                }
+                case 'preorder': {
+                    return stock.availabilityDate
+                        ? t('product-lines.preorder', { date: formatDay(stock.availabilityDate) })
+                        : t('product-lines.preorder-undated');
+                }
+                case 'ships-later': {
+                    // A backorder always carries its promise: the server names a day, 30 from now when the shop named none.
+                    return stock.availabilityDate
+                        ? t('product-lines.backorder', { date: formatDay(stock.availabilityDate) })
+                        : t('product-lines.backorder-undated', {
+                              days: backorderPromiseDays.value
+                          });
+                }
+                default: {
+                    return undefined;
+                }
+            }
         },
-        isRemoved: (productId) => !loading.value && productOf(productId) === undefined
+        isRemoved
     };
 };

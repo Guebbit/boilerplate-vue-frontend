@@ -29,7 +29,7 @@ import { AddressPickerStub, router } from './mount-cart-page.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { CartResponse, Order, Product } from '@types';
-import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
+import { NO_PRODUCT_ACTIONS, aProduct } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -77,24 +77,49 @@ const A_CART: CartResponse = {
 };
 
 /**
+ * What the server answers for a line in each situation a test names: the product's own stock
+ * answer. `removed` and `off-sale` read as `out_of_stock` with nothing to buy, as the server
+ * reads them; the product details (seeded by the case) tell them apart.
+ */
+const LINE_STOCK = {
+    'in-stock': { availability: 'in_stock', quantityAvailable: 10 },
+    short: { availability: 'in_stock', quantityAvailable: 1 },
+    'sold-out': { availability: 'out_of_stock', quantityAvailable: 0 },
+    preorder: {
+        availability: 'preorder',
+        availabilityDate: '2027-03-15',
+        quantityAvailable: 5,
+        quantityBackordered: 2
+    },
+    'ships-later': {
+        availability: 'in_stock',
+        quantityAvailable: 10,
+        quantityBackordered: 1,
+        availabilityDate: '2027-03-15'
+    }
+} as const;
+
+/**
  * `A_CART` holding these lines, with `canIncrease` and `checkoutable` as the server would set them
- * (buyable means `in_stock`, `preorder` or `backorder`).
+ * (buyable means the line holds no more than can be bought and the product is not sold out).
  *
- * @param items - the lines, as `[productId, quantity, availability]`
+ * @param items - the lines, as `[productId, quantity, situation]`
  * @returns the cart
  */
 const heldWith = (
-    items: readonly (readonly [string, number, CartResponse['items'][number]['availability']])[]
+    items: readonly (readonly [string, number, keyof typeof LINE_STOCK])[]
 ): CartResponse => ({
     ...A_CART,
-    items: items.map(([productId, quantity, availability]) => ({
+    items: items.map(([productId, quantity, situation]) => ({
         productId,
         quantity,
-        availability,
-        canIncrease: true
+        ...LINE_STOCK[situation],
+        canIncrease:
+            situation !== 'sold-out' && quantity < (LINE_STOCK[situation].quantityAvailable ?? 999)
     })),
     checkoutable: items.every(
-        (line) => line[2] === 'in_stock' || line[2] === 'preorder' || line[2] === 'backorder'
+        ([, quantity, situation]) =>
+            situation !== 'sold-out' && quantity <= (LINE_STOCK[situation].quantityAvailable ?? 999)
     )
 });
 
@@ -130,7 +155,7 @@ const mountCart = ({
     report = [],
     held = A_CART,
     attach = false,
-    products = []
+    products = held.items.map(({ productId }) => aProduct({ id: productId }))
 }: {
     /** What the last guest-cart merge changed, as the store holds it. */
     report?: MergeReportLine[];
@@ -138,7 +163,7 @@ const mountCart = ({
     held?: CartResponse;
     /** Whether to attach to the document, for the checks that need real layout (axe). */
     attach?: boolean;
-    /** The products the lines join to, put in the products store before the page mounts. */
+    /** The products the lines join to, put in the products store before the page mounts; every line's by default. */
     products?: Product[];
 } = {}) => {
     const cart = useCartStore();
@@ -298,34 +323,72 @@ describe('the checkout refusals', () => {
         }));
 
     it('names each short line, with the quantity asked for, on CART_INSUFFICIENT_STOCK', () =>
-        mountCart().then(({ wrapper, checkoutSpy }) => {
+        mountCart({ products: [aProduct({ id: 'p4', purchasable: false })] }).then(
+            ({ wrapper, checkoutSpy }) => {
+                checkoutSpy.mockRejectedValueOnce(
+                    checkoutRejection(409, 'CART_INSUFFICIENT_STOCK', {
+                        lines: [
+                            {
+                                productId: 'p1',
+                                title: 'Widget',
+                                requested: 5,
+                                quantityAvailable: 2
+                            },
+                            {
+                                productId: 'p2',
+                                title: 'Gadget',
+                                requested: 3,
+                                quantityAvailable: 1
+                            },
+                            { productId: 'p3', title: 'Lamp', requested: 1, quantityAvailable: 0 },
+                            { productId: 'p4', title: 'Heater', requested: 1, quantityAvailable: 0 }
+                        ]
+                    })
+                );
+
+                return wrapper
+                    .get('[data-test=cart-checkout]')
+                    .trigger('click')
+                    .then(flushPromises)
+                    .then(() => {
+                        // Rendered through the real message, so a wrong title or quantity — the
+                        // mistake a bare "contains 5" cannot see — fails here.
+                        const lines = wrapper.findAll('[data-test=checkout-shortfall-line]');
+                        expect(lines.map((line) => line.text())).toEqual([
+                            i18n.global.t('cart-page.shortfall-line', {
+                                title: 'Widget',
+                                requested: 5,
+                                available: 2
+                            }),
+                            i18n.global.t('cart-page.shortfall-line', {
+                                title: 'Gadget',
+                                requested: 3,
+                                available: 1
+                            }),
+                            // Sold out and off sale each get their own sentence, told apart by the product details.
+                            i18n.global.t('cart-page.shortfall-line-out-of-stock', {
+                                title: 'Lamp'
+                            }),
+                            i18n.global.t('cart-page.shortfall-line-unavailable', {
+                                title: 'Heater'
+                            })
+                        ]);
+                    });
+            }
+        ));
+
+    it('words an off-sale line as such even when its details were loaded before the editor took it off sale', () => {
+        // The page holds the product as on sale; the refusal makes it read the details again.
+        const stale = aProduct({ id: 'p4', purchasable: true });
+        return mountCart({ products: [stale] }).then(({ wrapper, checkoutSpy }) => {
+            spyOnProductReads().mockImplementation(() => {
+                seedProducts(aProduct({ id: 'p4', purchasable: false }));
+                return Promise.resolve([]);
+            });
             checkoutSpy.mockRejectedValueOnce(
                 checkoutRejection(409, 'CART_INSUFFICIENT_STOCK', {
                     lines: [
-                        {
-                            productId: 'p1',
-                            title: 'Widget',
-                            requested: 5,
-                            availability: 'insufficient_stock'
-                        },
-                        {
-                            productId: 'p2',
-                            title: 'Gadget',
-                            requested: 3,
-                            availability: 'insufficient_stock'
-                        },
-                        {
-                            productId: 'p3',
-                            title: 'Lamp',
-                            requested: 1,
-                            availability: 'out_of_stock'
-                        },
-                        {
-                            productId: 'p4',
-                            title: 'Heater',
-                            requested: 1,
-                            availability: 'unavailable'
-                        }
+                        { productId: 'p4', title: 'Heater', requested: 1, quantityAvailable: 0 }
                     ]
                 })
             );
@@ -335,36 +398,23 @@ describe('the checkout refusals', () => {
                 .trigger('click')
                 .then(flushPromises)
                 .then(() => {
-                    // Rendered through the real message, so a wrong title or quantity — the
-                    // mistake a bare "contains 5" cannot see — fails here.
-                    const lines = wrapper.findAll('[data-test=checkout-shortfall-line]');
-                    expect(lines.map((line) => line.text())).toEqual([
-                        i18n.global.t('cart-page.shortfall-line', {
-                            title: 'Widget',
-                            requested: 5
-                        }),
-                        i18n.global.t('cart-page.shortfall-line', {
-                            title: 'Gadget',
-                            requested: 3
-                        }),
-                        // Sold out and off sale each get their own sentence, with no quantity.
-                        i18n.global.t('cart-page.shortfall-line-out-of-stock', { title: 'Lamp' }),
+                    expect(
+                        wrapper
+                            .findAll('[data-test=checkout-shortfall-line]')
+                            .map((line) => line.text())
+                    ).toEqual([
                         i18n.global.t('cart-page.shortfall-line-unavailable', { title: 'Heater' })
                     ]);
                 });
-        }));
+        });
+    });
 
     it('does not carry a stale shortfall banner into the next, unrelated refusal', () =>
         mountCart().then(({ wrapper, checkoutSpy }) => {
             checkoutSpy.mockRejectedValueOnce(
                 checkoutRejection(409, 'CART_INSUFFICIENT_STOCK', {
                     lines: [
-                        {
-                            productId: 'p1',
-                            title: 'Widget',
-                            requested: 5,
-                            availability: 'insufficient_stock'
-                        }
+                        { productId: 'p1', title: 'Widget', requested: 5, quantityAvailable: 2 }
                     ]
                 })
             );
@@ -906,7 +956,7 @@ describe('the ship-later shipping notice', () => {
     it('is shown once when some lines ship now and others later', () =>
         mountCart({
             held: heldWith([
-                ['p1', 1, 'in_stock'],
+                ['p1', 1, 'in-stock'],
                 ['p2', 1, 'preorder']
             ])
         }).then(({ wrapper }) => {
@@ -919,8 +969,8 @@ describe('the ship-later shipping notice', () => {
     it('is shown for a backorder line beside an in-stock one', () =>
         mountCart({
             held: heldWith([
-                ['p1', 1, 'in_stock'],
-                ['p2', 1, 'backorder']
+                ['p1', 1, 'in-stock'],
+                ['p2', 1, 'ships-later']
             ])
         }).then(({ wrapper }) => {
             expect(wrapper.find('[data-test=cart-ship-later-notice]').exists()).toBe(true);
@@ -929,8 +979,8 @@ describe('the ship-later shipping notice', () => {
     it('is hidden when every line is in stock', () =>
         mountCart({
             held: heldWith([
-                ['p1', 1, 'in_stock'],
-                ['p2', 1, 'in_stock']
+                ['p1', 1, 'in-stock'],
+                ['p2', 1, 'in-stock']
             ])
         }).then(({ wrapper }) => {
             expect(wrapper.find('[data-test=cart-ship-later-notice]').exists()).toBe(false);
@@ -940,7 +990,7 @@ describe('the ship-later shipping notice', () => {
         mountCart({
             held: heldWith([
                 ['p1', 1, 'preorder'],
-                ['p2', 1, 'backorder']
+                ['p2', 1, 'ships-later']
             ])
         }).then(({ wrapper }) => {
             expect(wrapper.find('[data-test=cart-ship-later-notice]').exists()).toBe(true);
@@ -1019,20 +1069,14 @@ describe('a reload in the middle of checkout', () => {
  * What a merge that changed two lines leaves in the store.
  */
 const A_REPORT: MergeReportLine[] = [
-    { productId: 'p1', requested: 2, resulting: 5, reason: 'summed', availability: 'in_stock' },
-    {
-        productId: 'p2',
-        requested: 1,
-        resulting: 0,
-        reason: 'removed',
-        availability: 'in_stock'
-    }
+    { productId: 'p1', requested: 2, resulting: 5, reason: 'summed' },
+    { productId: 'p2', requested: 1, resulting: 0, reason: 'removed' }
 ];
 
 /**
  * `A_CART` with its one line flagged short by the server.
  */
-const A_SHORT_CART: CartResponse = heldWith([['p1', 2, 'insufficient_stock']]);
+const A_SHORT_CART: CartResponse = heldWith([['p1', 2, 'short']]);
 
 describe('the merge alert', () => {
     it('stands above the lines, and a page opened with no report has none', () =>
@@ -1051,15 +1095,7 @@ describe('the merge alert', () => {
 
     it('is shown over an empty cart too: a merge that added nothing is when it matters', () =>
         mountCart({
-            report: [
-                {
-                    productId: 'p2',
-                    requested: 1,
-                    resulting: 0,
-                    reason: 'removed',
-                    availability: 'in_stock'
-                }
-            ],
+            report: [{ productId: 'p2', requested: 1, resulting: 0, reason: 'removed' }],
             held: { ...A_CART, items: [] }
         }).then(({ wrapper }) => {
             expect(wrapper.find('[data-test=cart-merge-report]').exists()).toBe(true);
@@ -1103,7 +1139,7 @@ describe('the merge alert', () => {
                     productId: 'p1',
                     requested: 2,
                     resulting: 2,
-                    availability: 'insufficient_stock'
+                    warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
                 }
             ],
             held: A_SHORT_CART,
@@ -1120,14 +1156,14 @@ describe('the short marker on a line', () => {
     it('shows on a line the server flags short, in words, and on no other', () =>
         mountCart({
             held: heldWith([
-                ['p1', 2, 'insufficient_stock'],
-                ['p2', 1, 'in_stock']
+                ['p1', 2, 'short'],
+                ['p2', 1, 'in-stock']
             ])
         }).then(({ wrapper }) => {
             const [first, second] = wrapper.findAll('[data-test=cart-item]');
 
             expect(first?.get('[data-test=cart-line-availability]').text()).toBe(
-                'Not enough in stock'
+                'Only 1 available'
             );
             expect(second?.find('[data-test=cart-line-availability]').exists()).toBe(false);
         }));
@@ -1161,37 +1197,52 @@ describe('the short marker on a line', () => {
             expect(marker.element.closest('[role=status]')).not.toBeNull();
         }));
 
-    it('keeps the quantity the shopper sees, and shows no number of what is for sale', () =>
+    it('keeps the quantity the shopper sees: the number that can be bought is only in the marker', () =>
         mountCart({ held: A_SHORT_CART }).then(({ wrapper }) => {
             const line = wrapper.get('[data-test=cart-item]').text();
 
             expect(line).toContain('Quantity: 2');
-            expect(line.match(/\d+/g)).toEqual(['2']);
+            expect(line).toContain('Only 1 available');
         }));
 });
 
-describe('every availability on a line', () => {
+describe('every state on a line', () => {
     it.each([
-        ['out_of_stock', 'Sold out'],
-        ['unavailable', 'Not available right now'],
-        ['removed', 'No longer available'],
-        ['preorder', 'Preorder']
-    ] as const)('words a %s line as "%s"', (availability, words) =>
+        ['a sold-out product', 'sold-out', {}, 'Sold out', 'sold-out'],
+        [
+            'an off-sale product',
+            'sold-out',
+            { purchasable: false },
+            'Not available right now',
+            'off-sale'
+        ],
+        ['a hidden product', 'sold-out', { active: false }, 'No longer available', 'removed'],
+        ['a preorder', 'preorder', {}, 'Preorder · ships', 'preorder'],
+        ['units past the shelf', 'ships-later', {}, 'Backorder · ships by', 'ships-later']
+    ] as const)('words %s', (_name, situation, details, words, status) =>
         mountCart({
-            held: heldWith([['p1', 2, availability]])
+            held: heldWith([['p1', 2, situation]]),
+            products: [aProduct({ id: 'p1', ...details })]
         }).then(({ wrapper }) => {
             const marker = wrapper.get('[data-test=cart-line-availability]');
 
-            expect(marker.text()).toBe(words);
-            expect(marker.attributes('data-availability')).toBe(availability);
+            expect(marker.text()).toContain(words);
+            expect(marker.attributes('data-availability')).toBe(status);
         })
     );
 
-    it.each(['insufficient_stock', 'out_of_stock', 'unavailable', 'removed'] as const)(
+    it('words a product that came back from no read as no longer available', () =>
+        mountCart({ held: heldWith([['p1', 2, 'sold-out']]), products: [] }).then(({ wrapper }) => {
+            expect(wrapper.get('[data-test=cart-line-availability]').text()).toBe(
+                'No longer available'
+            );
+        }));
+
+    it.each(['short', 'sold-out'] as const)(
         'holds "Place order" back for a %s line, and says why',
-        (availability) =>
+        (situation) =>
             mountCart({
-                held: heldWith([['p1', 2, availability]])
+                held: heldWith([['p1', 2, situation]])
             }).then(({ wrapper }) => {
                 expect(
                     wrapper.get('[data-test=cart-checkout]').attributes('disabled')
@@ -1298,8 +1349,8 @@ describe('the no-withdrawal marker on a line', () => {
     it('tells the shopper, before buying, which line has no right of withdrawal', () =>
         mountCart({
             held: heldWith([
-                ['p1', 1, 'in_stock'],
-                ['p2', 1, 'in_stock']
+                ['p1', 1, 'in-stock'],
+                ['p2', 1, 'in-stock']
             ]),
             products: [product('p1', true), product('p2', false)]
         }).then(({ wrapper }) => {

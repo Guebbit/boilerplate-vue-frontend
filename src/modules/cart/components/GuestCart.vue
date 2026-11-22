@@ -21,10 +21,13 @@ import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useProductLines } from '@/modules/products';
+import { useSlot } from '@/kernel/slots.ts';
+import { availabilityOf } from '@/kernel/availability.ts';
 import { sumDecimals, multiplyDecimal } from '@/infrastructure/utils/money.ts';
 import { MAX_GUEST_LINE_QUANTITY } from '../domain';
 import type { GuestCartLine } from '../domain';
 import { useCartStore } from '../store';
+import { useLineWarningText } from '../composables/use-line-warning-text';
 import CartEmptyState from './CartEmptyState.vue';
 import CartLineCard from './CartLineCard.vue';
 
@@ -55,9 +58,34 @@ const cartStore = useCartStore();
 const { guestLines, guestQuantity } = storeToRefs(cartStore);
 
 /**
+ * The availability watcher `inventory` contributes, read for the guest lines: the guest cart clamps
+ * from this answer, so it must be loaded. A slot because `inventory` owns the read and this module
+ * cannot depend on it (`@/kernel/availability`).
+ */
+const availabilityWatchers = useSlot('availability-watch');
+
+/**
+ * The guest lines' product ids, for the watcher.
+ */
+const guestProductIds = computed(() => guestLines.value.map(({ productId }) => productId));
+
+/**
+ * How many of a product can be bought now, from the availability store; absent is no limit or not yet loaded.
+ *
+ * @param productId - The line's product.
+ */
+const quantityAvailableOf = (productId: string): number | undefined =>
+    availabilityOf(productId)?.quantityAvailable;
+
+/**
  * The lines' product join: one batched read, then title and price off the products dictionary.
  */
-const { loadProducts, productOf, titleOf, availabilityLabel, isRemoved } = useProductLines();
+const { loadProducts, productOf, titleOf, lineLabel, isRemoved } = useProductLines();
+
+/**
+ * The sentence for what stock did to a line's last write, beside the line until it is written again.
+ */
+const warningText = useLineWarningText(titleOf);
 
 /**
  * Whether the last product read answered in full, in the language still on screen. Only then does
@@ -187,44 +215,69 @@ onMounted(refreshLines);
             />
 
             <div class="flex flex-col gap-4">
-                <CartLineCard
+                <component
+                    :is="watcher"
+                    v-for="(watcher, index) in availabilityWatchers"
+                    :key="'watcher-' + index"
+                    :product-ids="guestProductIds"
+                    :stale-time="30 * 1000"
+                />
+                <div
                     v-for="line in guestLines"
                     :key="'guest-cart-item-' + line.productId"
-                    test-prefix="guest-cart"
-                    :title="titleOf(line.productId)"
-                    :quantity="line.quantity"
-                    :unit-price="productOf(line.productId)?.price"
-                    :currency="productOf(line.productId)?.currency ?? ''"
-                    :can-decrease="line.quantity > 1"
-                    :can-increase="line.quantity < MAX_GUEST_LINE_QUANTITY"
-                    @step="(delta) => stepLine(line, delta)"
-                    @remove="removeLine(line.productId)"
+                    class="flex flex-col gap-2"
                 >
-                    <template #badges>
-                        <v-chip
-                            v-if="isGone(line.productId)"
-                            size="small"
-                            color="warning"
-                            variant="tonal"
-                            label
-                            class="ml-2"
-                            data-test="guest-cart-line-removed"
-                        >
-                            {{ availabilityLabel('removed') }}
-                        </v-chip>
-                        <v-chip
-                            v-else-if="isOffSale(line.productId)"
-                            size="small"
-                            color="warning"
-                            variant="tonal"
-                            label
-                            class="ml-2"
-                            data-test="guest-cart-line-unavailable"
-                        >
-                            {{ availabilityLabel('unavailable') }}
-                        </v-chip>
-                    </template>
-                </CartLineCard>
+                    <CartLineCard
+                        test-prefix="guest-cart"
+                        :title="titleOf(line.productId)"
+                        :quantity="line.quantity"
+                        :unit-price="productOf(line.productId)?.price"
+                        :currency="productOf(line.productId)?.currency ?? ''"
+                        :can-decrease="line.quantity > 1"
+                        :can-increase="
+                            line.quantity < MAX_GUEST_LINE_QUANTITY &&
+                            (quantityAvailableOf(line.productId) === undefined ||
+                                line.quantity < (quantityAvailableOf(line.productId) ?? 0))
+                        "
+                        @step="(delta) => stepLine(line, delta)"
+                        @remove="removeLine(line.productId)"
+                    >
+                        <template #badges>
+                            <v-chip
+                                v-if="isGone(line.productId)"
+                                size="small"
+                                color="warning"
+                                variant="tonal"
+                                label
+                                class="ml-2"
+                                data-test="guest-cart-line-removed"
+                            >
+                                {{ lineLabel(line.productId, {}) }}
+                            </v-chip>
+                            <v-chip
+                                v-else-if="isOffSale(line.productId)"
+                                size="small"
+                                color="warning"
+                                variant="tonal"
+                                label
+                                class="ml-2"
+                                data-test="guest-cart-line-unavailable"
+                            >
+                                {{ lineLabel(line.productId, {}) }}
+                            </v-chip>
+                        </template>
+                    </CartLineCard>
+                    <v-alert
+                        v-if="warningText(line.productId)"
+                        type="warning"
+                        variant="tonal"
+                        density="compact"
+                        role="status"
+                        data-test="guest-cart-line-warning"
+                    >
+                        {{ warningText(line.productId) }}
+                    </v-alert>
+                </div>
             </div>
 
             <div class="flex flex-col gap-4">

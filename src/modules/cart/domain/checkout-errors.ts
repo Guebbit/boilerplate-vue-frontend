@@ -7,28 +7,18 @@
  */
 
 import { ERROR_CODES } from '@api/error-codes';
-import type { LineAvailability } from '@types';
 import type { ExpectedTotal } from './expected-total';
 
 /**
- * Why a line was refused under `CART_INSUFFICIENT_STOCK`: fewer left, none left, or off sale.
- * Never `removed`, which is `CART_PRODUCT_UNAVAILABLE`'s.
- */
-export type ShortfallAvailability = Extract<
-    LineAvailability,
-    'insufficient_stock' | 'out_of_stock' | 'unavailable'
->;
-
-/**
  * One line of a checkout shortfall, as `CART_INSUFFICIENT_STOCK`'s `details.lines` carries it:
- * which product, how much was asked for, and why it was refused. The number left is not sent —
- * exact stock is for stock readers, and a shopper is not one.
+ * which product, how much was asked for and how many can be bought now (`0` for a sold-out or
+ * off-sale product). Never `removed`, which is `CART_PRODUCT_UNAVAILABLE`'s.
  */
 export interface CheckoutShortfallLine {
     productId: string;
     title: string;
     requested: number;
-    availability: ShortfallAvailability;
+    quantityAvailable: number;
 }
 
 /**
@@ -72,24 +62,6 @@ export type CheckoutErrorVerdict =
     | { kind: 'other' };
 
 /**
- * The `availability` values a shortfall line may carry.
- */
-const SHORTFALL_AVAILABILITIES: ReadonlySet<unknown> = new Set([
-    'insufficient_stock',
-    'out_of_stock',
-    'unavailable'
-]);
-
-/**
- * Narrows an unknown value to a shortfall line's `availability`.
- *
- * @param value - The field, still unknown.
- * @returns Whether it is one of the three refusals a shortfall can name.
- */
-const isShortfallAvailability = (value: unknown): value is ShortfallAvailability =>
-    SHORTFALL_AVAILABILITIES.has(value);
-
-/**
  * Narrows an unknown value to a `CheckoutShortfallLine` — the details payload crosses a wire
  * boundary, so nothing about its shape is trusted beyond what is checked here.
  *
@@ -98,11 +70,15 @@ const isShortfallAvailability = (value: unknown): value is ShortfallAvailability
  */
 const asShortfallLine = (value: unknown): CheckoutShortfallLine | undefined => {
     if (typeof value !== 'object' || value === null) return undefined;
-    const { productId, title, requested, availability } = value as Record<string, unknown>;
-    if (typeof productId !== 'string' || typeof title !== 'string' || typeof requested !== 'number')
+    const { productId, title, requested, quantityAvailable } = value as Record<string, unknown>;
+    if (
+        typeof productId !== 'string' ||
+        typeof title !== 'string' ||
+        typeof requested !== 'number' ||
+        typeof quantityAvailable !== 'number'
+    )
         return undefined;
-    if (!isShortfallAvailability(availability)) return undefined;
-    return { productId, title, requested, availability };
+    return { productId, title, requested, quantityAvailable };
 };
 
 /**

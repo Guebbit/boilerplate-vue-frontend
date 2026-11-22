@@ -1,10 +1,11 @@
 // requires-module: account, cart, inventory, orders, products, wishlist
 /**
  * @module
- * CU6 · Out of stock between wishlist and checkout. A customer saves a product, the shop's last
- * units of it go (a stocktake correction), and the customer moves it to the cart anyway. Adding
- * to a cart never looks at stock, so the move works; the cart then marks the line "Sold out" and
- * holds "Place order" back. Removing that line lets the rest of the basket through.
+ * CU6 · Out of stock between wishlist and checkout. A customer holds a product in the cart and saves
+ * it to the wishlist too, then the shop's last units of it go (a stocktake correction). The
+ * wishlist marks it "Sold out" and moving it adds nothing (it stays saved, with a warning); the cart
+ * marks the line "Sold out" and holds "Place order" back. Removing that line lets the rest of the
+ * basket through.
  *
  * The server's own refusal (a shortfall the page had not yet seen) is covered by the cart view's
  * stale-refusal spec: the page never offers the click this journey could use to reach it.
@@ -29,13 +30,14 @@ describe('CU6 · Out of stock between wishlist and checkout', () => {
 
     it('moves a sold-out product to the cart, finds the line sold out with checkout held back, and buys the rest', () => {
         cy.step(
-            'the customer keeps an ordinary product in the cart and saves another to the wishlist'
+            'the customer keeps two products in the cart and saves the second to the wishlist too'
         );
         cy.loginAs('user');
         addToCartFromStorefront('product.rich');
         // A fresh list, so the category filter is gone and the search box finds the second one.
         cy.visit('/en/products');
         searchAndOpenProduct('product.barebones');
+        cy.get('[data-test=add-to-cart]').click();
         cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Save to wishlist').click();
         cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Saved');
 
@@ -58,16 +60,16 @@ describe('CU6 · Out of stock between wishlist and checkout', () => {
             );
         });
 
-        cy.step('moving it to the cart still works: adding never looks at stock');
+        cy.step('the wishlist says sold out, and moving it adds nothing: it stays saved');
         cy.subjectProduct('product.barebones').then(({ title }) => {
             cy.visit('/en/wishlist');
             cy.contains('[data-test=wishlist-item]', title)
                 .find('[data-test=wishlist-line-availability]')
-                .should('have.attr', 'data-availability', 'out_of_stock');
+                .should('have.attr', 'data-availability', 'sold-out');
             cy.contains('[data-test=wishlist-item]', title)
                 .find('[data-test=wishlist-move-to-cart]')
                 .click();
-            cy.contains('[data-test=wishlist-item]', title).should('not.exist');
+            cy.contains('[data-test=wishlist-item]', title).should('exist');
             cy.goToCart();
             cy.get('[data-test=cart-item]').should('have.length', 2);
 
@@ -77,7 +79,7 @@ describe('CU6 · Out of stock between wishlist and checkout', () => {
             cy.contains('[data-test=cart-item]', title)
                 .find('[data-test=cart-line-availability]')
                 .should('contain.text', 'Sold out')
-                .and('have.attr', 'data-availability', 'out_of_stock');
+                .and('have.attr', 'data-availability', 'sold-out');
             cy.get('[data-test=cart-lines-need-attention]').should('exist');
             cy.get('[data-test=cart-checkout]').should('be.disabled');
             cy.get('[data-test=checkout-shortfall-line]').should('not.exist');

@@ -3,9 +3,9 @@
  * @module
  * The cart page's merge alert: after a guest cart is merged into the account's, one inline,
  * closable alert lists the lines that need a look: quantities that are not what the guest chose,
- * lines the stock does not cover, products taken off sale, and products that could not be added. Each names the product,
- * the quantity asked for and the quantity the cart holds now; a short line is marked and told to
- * be lowered before checkout, and never says how many are for sale (the server does not tell).
+ * lines stock held back, products that cannot be bought, and products that could not be added. Each names the product,
+ * the quantity asked for and the quantity the cart holds now; a short line is marked and says it
+ * was added only up to what could be bought.
  * Reads the cart store's `mergeReport` and renders nothing while it is empty. Not a toast and not
  * a bell notification: it belongs to this screen and goes when the shopper closes it. See
  * `docs/modules/cart.md`.
@@ -37,7 +37,7 @@ const { mergeReport } = storeToRefs(cartStore);
  * The existing product join. A product the merge could not take at all is not in the cart, so
  * the cart page's own read does not cover it; this component reads what its lines need.
  */
-const { loadProducts, productOf, availabilityLabel } = useProductLines();
+const { loadProducts, productOf } = useProductLines();
 
 /**
  * Each reason's sentence, as a literal key so a translation check can see every one.
@@ -123,17 +123,21 @@ watch(
                     </v-chip>
                     {{ t('cart-page.merge-short-advice') }}
                 </template>
-                <template v-else-if="mergeReportKind(line) === 'off-sale'">
+                <template v-else-if="mergeReportKind(line) === 'sold-out'">
                     <v-chip
                         size="small"
                         color="warning"
                         variant="tonal"
                         label
-                        data-test="cart-merge-report-off-sale"
+                        data-test="cart-merge-report-sold-out"
                     >
-                        {{ availabilityLabel('unavailable') }}
+                        {{
+                            productOf(line.productId)?.purchasable === false
+                                ? t('product-lines.unavailable')
+                                : t('product-lines.out-of-stock')
+                        }}
                     </v-chip>
-                    {{ t('cart-page.merge-off-sale-advice') }}
+                    {{ t('cart-page.merge-sold-out-advice') }}
                 </template>
             </li>
         </ul>

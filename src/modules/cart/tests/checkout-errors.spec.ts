@@ -109,13 +109,13 @@ describe('classifyCheckoutError', () => {
                                 productId: 'p1',
                                 title: 'Widget',
                                 requested: 5,
-                                availability: 'insufficient_stock'
+                                quantityAvailable: 2
                             },
                             {
                                 productId: 'p2',
                                 title: 'Gadget',
                                 requested: 1,
-                                availability: 'unavailable'
+                                quantityAvailable: 0
                             }
                         ]
                     }
@@ -130,13 +130,13 @@ describe('classifyCheckoutError', () => {
                     productId: 'p1',
                     title: 'Widget',
                     requested: 5,
-                    availability: 'insufficient_stock'
+                    quantityAvailable: 2
                 },
                 {
                     productId: 'p2',
                     title: 'Gadget',
                     requested: 1,
-                    availability: 'unavailable'
+                    quantityAvailable: 0
                 }
             ]
         });

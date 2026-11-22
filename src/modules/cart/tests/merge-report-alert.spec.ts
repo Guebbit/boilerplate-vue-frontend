@@ -66,7 +66,7 @@ const mountAlert = async (report: MergeReportLine[]) => {
  */
 const aLine = (
     line: Partial<MergeReportLine> & Pick<MergeReportLine, 'productId'>
-): MergeReportLine => ({ requested: 2, resulting: 2, availability: 'in_stock', ...line });
+): MergeReportLine => ({ requested: 2, resulting: 2, ...line });
 
 /**
  * The text of every listed line.
@@ -106,7 +106,7 @@ describe('what it shows', () => {
                 productId: 'p2',
                 requested: 4,
                 resulting: 4,
-                availability: 'insufficient_stock'
+                warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
             })
         ]);
 
@@ -135,14 +135,14 @@ describe('what it shows', () => {
                 productId: 'p2',
                 requested: 4,
                 resulting: 4,
-                availability: 'insufficient_stock'
+                warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
             })
         ]);
 
         const line = wrapper?.get('[data-test=cart-merge-report-line]');
         expect(line?.attributes('data-kind')).toBe('short');
         expect(line?.get('[data-test=cart-merge-report-short]').text()).toBe('Not enough in stock');
-        expect(line?.text()).toContain('Lower the quantity before checkout.');
+        expect(line?.text()).toContain('Only that many could be added.');
         // The only digits on the line are the two quantities the shopper chose and holds.
         expect(line?.text().match(/\d+/g)).toEqual(['4', '4']);
     });
@@ -154,7 +154,7 @@ describe('what it shows', () => {
                 requested: 2,
                 resulting: 5,
                 reason: 'summed',
-                availability: 'insufficient_stock'
+                warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
             })
         ]);
 
@@ -170,7 +170,7 @@ describe('what it shows', () => {
                 requested: 1,
                 resulting: 0,
                 reason: 'removed',
-                availability: 'insufficient_stock'
+                warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
             })
         ]);
 
@@ -226,14 +226,14 @@ describe('what it shows', () => {
                 productId: 'p2',
                 requested: 4,
                 resulting: 4,
-                availability: 'insufficient_stock'
+                warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
             })
         ]);
 
         expect(wrapper?.get('[data-test=cart-merge-report-short]').text()).toBe(
             'Disponibilità insufficiente'
         );
-        expect(lineTexts()[0]).toContain('Riduci la quantità prima del pagamento.');
+        expect(lineTexts()[0]).toContain('Se ne sono potuti aggiungere solo tanti.');
         i18n.global.locale.value = 'en';
     });
 
@@ -271,7 +271,7 @@ describe('what it shows', () => {
                 productId: 'p2',
                 requested: 9,
                 resulting: 9,
-                availability: 'insufficient_stock'
+                warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
             })
         ];
         await flushPromises();
@@ -304,7 +304,7 @@ describe('for assistive technology', () => {
                 productId: 'p2',
                 requested: 4,
                 resulting: 4,
-                availability: 'insufficient_stock'
+                warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
             }),
             aLine({ productId: 'gone', requested: 1, resulting: 0, reason: 'removed' })
         ]);
@@ -333,7 +333,7 @@ describe('for assistive technology', () => {
                 productId: 'p2',
                 requested: 4,
                 resulting: 4,
-                availability: 'insufficient_stock'
+                warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
             }),
             aLine({ productId: 'gone', requested: 1, resulting: 0, reason: 'removed' })
         ]);

@@ -192,6 +192,9 @@ const stockLabel = computed(() => {
               })
             : t('product-target-page.backorder-undated', { days: backorderPromiseDays.value });
     if (shelf === 'out-of-stock') return t('product-target-page.out-of-stock');
+    // "Only N left" below the frontend's threshold: the number any shopper may read.
+    if (shelf === 'low-stock')
+        return t('product-target-page.low-stock', { count: availability?.quantityAvailable ?? 0 });
     return count === undefined ? t('product-target-page.in-stock') : formatText(count.toString());
 });
 

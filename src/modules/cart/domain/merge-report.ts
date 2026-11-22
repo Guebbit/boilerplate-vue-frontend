@@ -2,14 +2,14 @@
  * @module
  * The merge report's rules: which of the lines `POST /cart/merge` answered with are worth telling
  * the shopper about, and what kind of news each is. Pure: no store, no markup. The server answers
- * one result per submitted line; a line that landed exactly as asked and can be bought is not
- * news. A stock number is never here: the server answers a name, never what is for sale.
+ * one result per submitted line plus a warning for each line stock held back; a line that landed
+ * exactly as asked is not news.
  */
-import type { LineAvailability, MergeLineReason, MergeLineResult } from '@types';
+import type { CartWarning, CartWarningCode, MergeLineReason, MergeLineResult } from '@types';
 
 /**
  * One line of the merge report: a guest line whose quantity is not what the guest asked for, that
- * cannot be bought as it stands (short, sold out, off sale), or that could not be added at all.
+ * stock held back (short, sold out, off sale), or that could not be added at all.
  */
 export interface MergeReportLine {
     /**
@@ -29,59 +29,54 @@ export interface MergeReportLine {
      */
     reason?: MergeLineReason | undefined;
     /**
-     * What the line can do now: short, sold out, off sale, removed, or fine. A name, never how
-     * many are for sale.
+     * What stock did to the line: fewer could be bought, or none; absent when stock held nothing back.
      */
-    availability: LineAvailability;
+    warning?: CartWarningCode | undefined;
 }
 
 /**
  * What kind of news a report line is. `gone` outranks the rest: a product that cannot be added at
  * all (removed from the catalogue, or no line left for it in a full cart) has no stock question
- * left to ask. `off-sale` is listed but not buyable, `short` is a stock
- * matter (fewer left, or none).
+ * left to ask. `sold-out` is stock that cannot be bought (sold out or off sale), `short` is fewer
+ * than asked, `changed` is a quantity that only differs from what was asked.
  */
-export type MergeReportKind = 'gone' | 'off-sale' | 'short' | 'changed';
-
-/**
- * Whether a merge answer's line belongs in the report.
- *
- * @param line - One result of the answer.
- * @returns `true` when the quantity is not what was asked, or the line is short, or it is gone.
- */
-const isNews = ({ reason, availability }: MergeLineResult): boolean =>
-    reason !== undefined || (availability !== 'in_stock' && availability !== 'preorder');
+export type MergeReportKind = 'gone' | 'sold-out' | 'short' | 'changed';
 
 /**
  * Keeps the lines of a merge answer worth telling about, in the order the server gave them.
  *
  * @param lines - The answer's `lines`: one result per submitted line.
- * @returns The lines that carry a `reason` or whose `availability` is neither `in_stock` nor
- *  `preorder` (a preorder is buyable, so a clean merge of one needs no news).
+ * @param warnings - The answer's `warnings`: one per line stock held back; absent when none was.
+ * @returns The lines that carry a `reason` or a warning, each with the warning stock gave it.
  */
-export const changedMergeLines = (lines: readonly MergeLineResult[]): MergeReportLine[] =>
-    lines
-        .filter((line) => isNews(line))
-        .map(({ productId, requested, resulting, reason, availability }) => ({
-            productId,
-            requested,
-            resulting,
-            reason,
-            availability
-        }));
+export const changedMergeLines = (
+    lines: readonly MergeLineResult[],
+    warnings: readonly CartWarning[] = []
+): MergeReportLine[] => {
+    // A product listed twice has two results and may have two warnings; each warning goes to the
+    // result that ended at its `resulting`, the order the server wrote them in.
+    const pending = [...warnings];
+    return lines.flatMap(({ productId, requested, resulting, reason }) => {
+        const at = pending.findIndex(
+            (warning) => warning.productId === productId && warning.resulting === resulting
+        );
+        const warning = at === -1 ? undefined : pending.splice(at, 1)[0];
+        return reason === undefined && warning === undefined
+            ? []
+            : [{ productId, requested, resulting, reason, warning: warning?.code }];
+    });
+};
 
 /**
  * Sorts a report line into the kind of sentence it needs.
  *
  * @param line - A line of the report.
- * @returns `gone` for a product that could not be added (`removed` or `cart_full`), `off-sale` for one taken off sale,
- *  `short` for one the stock does not cover, `changed` for one whose quantity only differs from
- *  what was asked.
+ * @returns `gone` for a product that could not be added (`removed` or `cart_full`), `sold-out` for
+ *  one that cannot be bought, `short` for one stock only partly covers, `changed` for one whose
+ *  quantity only differs from what was asked.
  */
-export const mergeReportKind = ({ reason, availability }: MergeReportLine): MergeReportKind => {
+export const mergeReportKind = ({ reason, warning }: MergeReportLine): MergeReportKind => {
     if (reason === 'removed' || reason === 'cart_full') return 'gone';
-    if (availability === 'unavailable') return 'off-sale';
-    return availability === 'insufficient_stock' || availability === 'out_of_stock'
-        ? 'short'
-        : 'changed';
+    if (warning === 'MERCHANDISE_OUT_OF_STOCK') return 'sold-out';
+    return warning === 'MERCHANDISE_NOT_ENOUGH_STOCK' ? 'short' : 'changed';
 };

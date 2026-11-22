@@ -4,5 +4,8 @@
  * See `docs/theory/domain-layer.md`.
  */
 
-export { shelfStateOf } from './shelf-state';
+export { LOW_STOCK_THRESHOLD, shelfStateOf } from './shelf-state';
 export type { ShelfState } from './shelf-state';
+
+export { lineStatusOf } from './line-status';
+export type { LineFacts, LineStatus } from './line-status';

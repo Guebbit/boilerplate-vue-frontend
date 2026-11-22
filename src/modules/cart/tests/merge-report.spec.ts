@@ -1,80 +1,99 @@
 /**
  * @module
  * Which lines of a merge answer reach the shopper, and what kind of news each is: a line is
- * listed when its quantity is not what was asked (`reason`), when it is short of stock, or when it
- * could not be added. The numbers are passed through untouched, and none of them is a stock count.
+ * listed when its quantity is not what was asked (`reason`), when stock held it back (a warning),
+ * or when it could not be added. The numbers are passed through untouched.
  */
 import { describe, expect, it } from 'vitest';
 import { changedMergeLines, mergeReportKind } from '../domain';
-import type { MergeLineResult } from '@types';
+import type { CartWarning, MergeLineResult } from '@types';
 
 /**
- * A merge answer's line: as asked and in stock unless the case says otherwise.
+ * A merge answer's line: as asked unless the case says otherwise.
  *
- * @param line - What differs from "landed as asked, fits the stock".
+ * @param line - What differs from "landed as asked".
  * @returns The line as the server answers it.
  */
 const aLine = (line: Partial<MergeLineResult> & Pick<MergeLineResult, 'productId'>) =>
-    ({ requested: 1, resulting: 1, availability: 'in_stock', ...line }) satisfies MergeLineResult;
+    ({ requested: 1, resulting: 1, ...line }) satisfies MergeLineResult;
+
+/**
+ * An answer's warning for a product.
+ *
+ * @param warning - The code and numbers; the product defaults to `p1`.
+ * @returns The warning as the server answers it.
+ */
+const aWarning = (warning: Partial<CartWarning> & Pick<CartWarning, 'code'>) =>
+    ({ productId: 'p1', requested: 1, resulting: 0, ...warning }) satisfies CartWarning;
 
 describe('changedMergeLines', () => {
-    it('keeps a line with a reason, a short line and a gone line, in the answer order', () => {
+    it('keeps a line with a reason, a warned line and a gone line, in the answer order', () => {
         expect(
-            changedMergeLines([
-                aLine({ productId: 'p1', requested: 2, resulting: 5, reason: 'summed' }),
-                aLine({ productId: 'p2' }),
-                aLine({ productId: 'p3', requested: 1000, resulting: 999, reason: 'capped' }),
-                aLine({
-                    productId: 'p4',
-                    requested: 4,
-                    resulting: 4,
-                    availability: 'insufficient_stock'
-                }),
-                aLine({ productId: 'p5', resulting: 0, reason: 'removed' }),
-                aLine({ productId: 'p6', availability: 'unavailable' }),
-                aLine({ productId: 'p7', availability: 'out_of_stock' }),
-                aLine({ productId: 'p8', availability: 'preorder' })
-            ]).map(({ productId }) => productId)
-        ).toEqual(['p1', 'p3', 'p4', 'p5', 'p6', 'p7']);
+            changedMergeLines(
+                [
+                    aLine({ productId: 'p1', requested: 2, resulting: 5, reason: 'summed' }),
+                    aLine({ productId: 'p2' }),
+                    aLine({ productId: 'p3', requested: 1000, resulting: 999, reason: 'capped' }),
+                    aLine({ productId: 'p4', requested: 4, resulting: 3 }),
+                    aLine({ productId: 'p5', resulting: 0, reason: 'removed' }),
+                    aLine({ productId: 'p6', resulting: 0 })
+                ],
+                [
+                    aWarning({
+                        code: 'MERCHANDISE_NOT_ENOUGH_STOCK',
+                        productId: 'p4',
+                        requested: 4,
+                        resulting: 3
+                    }),
+                    aWarning({ code: 'MERCHANDISE_OUT_OF_STOCK', productId: 'p6', resulting: 0 })
+                ]
+            ).map(({ productId }) => productId)
+        ).toEqual(['p1', 'p3', 'p4', 'p5', 'p6']);
     });
 
-    it('carries the numbers and the flag of each kept line untouched', () => {
+    it('carries the numbers and the warning of each kept line untouched', () => {
         expect(
-            changedMergeLines([
-                aLine({
-                    productId: 'p1',
-                    requested: 2,
-                    resulting: 5,
-                    reason: 'summed',
-                    availability: 'insufficient_stock'
-                })
-            ])
+            changedMergeLines(
+                [aLine({ productId: 'p1', requested: 2, resulting: 5, reason: 'summed' })],
+                [
+                    aWarning({
+                        code: 'MERCHANDISE_NOT_ENOUGH_STOCK',
+                        productId: 'p1',
+                        requested: 7,
+                        resulting: 5
+                    })
+                ]
+            )
         ).toEqual([
             {
                 productId: 'p1',
                 requested: 2,
                 resulting: 5,
                 reason: 'summed',
-                availability: 'insufficient_stock'
+                warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
             }
         ]);
     });
 
-    it('does not turn a short line that landed as asked into a changed one', () => {
-        const [line] = changedMergeLines([
-            aLine({
-                productId: 'p1',
-                requested: 3,
-                resulting: 3,
-                availability: 'insufficient_stock'
-            })
-        ]);
+    it('gives each of a product’s two lines its own warning', () => {
+        const lines = changedMergeLines(
+            [
+                aLine({ productId: 'p1', requested: 3, resulting: 2 }),
+                aLine({ productId: 'p1', requested: 3, resulting: 2, reason: 'summed' })
+            ],
+            [
+                aWarning({ code: 'MERCHANDISE_NOT_ENOUGH_STOCK', requested: 3, resulting: 2 }),
+                aWarning({ code: 'MERCHANDISE_NOT_ENOUGH_STOCK', requested: 5, resulting: 2 })
+            ]
+        );
 
-        expect(line?.reason).toBeUndefined();
-        expect(line?.availability).toBe('insufficient_stock');
+        expect(lines.map(({ warning }) => warning)).toEqual([
+            'MERCHANDISE_NOT_ENOUGH_STOCK',
+            'MERCHANDISE_NOT_ENOUGH_STOCK'
+        ]);
     });
 
-    it('is empty when every line landed as asked and fits the stock', () => {
+    it('is empty when every line landed as asked', () => {
         expect(changedMergeLines([aLine({ productId: 'p1', requested: 2, resulting: 2 })])).toEqual(
             []
         );
@@ -87,28 +106,27 @@ describe('changedMergeLines', () => {
 
 describe('mergeReportKind', () => {
     it.each([
-        ['a removed product', 'gone', { reason: 'removed', availability: 'in_stock' }],
+        ['a removed product', 'gone', { reason: 'removed' }],
+        ['a product the full cart refused', 'gone', { reason: 'cart_full' }],
         [
-            'a product the full cart refused',
+            'a gone product also warned',
             'gone',
-            { reason: 'cart_full', availability: 'in_stock' }
+            { reason: 'removed', warning: 'MERCHANDISE_NOT_ENOUGH_STOCK' }
         ],
+        ['a sold-out line', 'sold-out', { warning: 'MERCHANDISE_OUT_OF_STOCK' }],
         [
-            'a gone product also flagged short',
-            'gone',
-            { reason: 'removed', availability: 'insufficient_stock' }
+            'a summed sold-out line',
+            'sold-out',
+            { reason: 'summed', warning: 'MERCHANDISE_OUT_OF_STOCK' }
         ],
-        ['a sold-out line that landed as asked', 'short', { availability: 'out_of_stock' }],
-        ['an off-sale line that landed as asked', 'off-sale', { availability: 'unavailable' }],
-        ['a summed off-sale line', 'off-sale', { reason: 'summed', availability: 'unavailable' }],
-        ['a short line that landed as asked', 'short', { availability: 'insufficient_stock' }],
+        ['a short line', 'short', { warning: 'MERCHANDISE_NOT_ENOUGH_STOCK' }],
         [
             'a summed line that is short',
             'short',
-            { reason: 'summed', availability: 'insufficient_stock' }
+            { reason: 'summed', warning: 'MERCHANDISE_NOT_ENOUGH_STOCK' }
         ],
-        ['a summed line in stock', 'changed', { reason: 'summed', availability: 'in_stock' }],
-        ['a capped line in stock', 'changed', { reason: 'capped', availability: 'in_stock' }]
+        ['a summed line', 'changed', { reason: 'summed' }],
+        ['a capped line', 'changed', { reason: 'capped' }]
     ] as const)('sorts %s as %s', (_name, kind, flags) => {
         expect(mergeReportKind({ productId: 'p1', requested: 2, resulting: 2, ...flags })).toBe(
             kind

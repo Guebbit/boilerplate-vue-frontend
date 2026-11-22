@@ -122,9 +122,15 @@ export const useLineQuantity = (
      * @param productId - The line.
      * @param stored - The quantity the store currently holds for it.
      * @param step - `1` or `-1`.
+     * @param quantityAvailable - How many can be bought now, the ceiling a raise stops at; absent is no limit.
      */
-    const stepQuantity = (productId: string, stored: number, step: number) => {
-        const next = steppedQuantity(quantityOf(productId, stored), step);
+    const stepQuantity = (
+        productId: string,
+        stored: number,
+        step: number,
+        quantityAvailable?: number
+    ) => {
+        const next = steppedQuantity(quantityOf(productId, stored), step, quantityAvailable);
         pending.value = { ...pending.value, [productId]: next };
         senderFor(productId)();
     };
