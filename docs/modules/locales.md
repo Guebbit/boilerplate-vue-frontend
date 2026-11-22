@@ -89,6 +89,10 @@ it by route name (`ProductEdit.vue`'s own "Translations" button does, guarded by
 route to resolve). Gated on `translations.read` rather than that other domain's own permission, on
 purpose — see the route table's own comment in `routes.ts`.
 
+It shows one tab per language but the default one: the entity's own text IS the default language, so the
+screen offers no tab for it. That text appears read-only above each field, and a tab whose row was
+written from an older text carries an "outdated" warning (`source` and `outdated` on the read).
+
 ## Wiring
 
 #### Endpoints called

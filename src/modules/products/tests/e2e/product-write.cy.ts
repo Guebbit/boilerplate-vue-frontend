@@ -69,14 +69,14 @@ describe('Product write surface', () => {
 
     describe('edit — remove a language and edit another in one save', () => {
         it('the removed language is gone and the edited one is kept', () => {
-            // Three languages, not two: English is this deployment's fallback locale and never
+            // Three languages, not two: English is this deployment's default language and never
             // offers the remove action, so the language actually removed here is Italian, and
-            // the one edited alongside it is Spanish — leaving the fallback untouched by either.
+            // the one edited alongside it is Spanish — leaving the default untouched by either.
             const editedEsTitle = `ES edited ${unique()}`;
 
             cy.createProduct({
+                title: `EN original ${unique()}`,
                 translations: {
-                    en: { title: `EN original ${unique()}` },
                     it: { title: `IT original ${unique()}` },
                     es: { title: `ES original ${unique()}` }
                 }
@@ -127,10 +127,8 @@ describe('Product write surface', () => {
     describe('validation — an error on an unselected tab', () => {
         it('is visible on the tab itself, as a badge', () => {
             cy.createProduct({
-                translations: {
-                    en: { title: `EN original ${unique()}` },
-                    it: { title: `IT original ${unique()}` }
-                }
+                title: `EN original ${unique()}`,
+                translations: { it: { title: `IT original ${unique()}` } }
             }).then((product) => {
                 cy.visit(`/en/products/${product.id}/edit`);
 
@@ -158,7 +156,8 @@ describe('Product write surface', () => {
             const title = `EN swipe ${unique()}`;
 
             cy.createProduct({
-                translations: { en: { title }, it: { title: `IT swipe ${unique()}` } }
+                title,
+                translations: { it: { title: `IT swipe ${unique()}` } }
             }).then((product) => {
                 applyViewport('phone');
                 cy.visit(`/en/products/${product.id}/edit`);

@@ -55,7 +55,8 @@ const ADMIN_PRODUCT = {
     title: 'Widget',
     price: '9.99',
     currency: 'EUR',
-    translations: { en: { title: 'Widget', description: 'A widget' } }
+    source: { title: 'Widget', description: 'A widget' },
+    translations: {}
 };
 
 /** A signed-in session that CAN read translations — isolates the route check from the ability one. */

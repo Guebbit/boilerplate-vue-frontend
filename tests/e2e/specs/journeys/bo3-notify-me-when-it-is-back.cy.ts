@@ -32,7 +32,7 @@ describe('BO3 · Notify me when it is back', () => {
         cy.step('a product with no stock');
         cy.apiAs<{ id: string }>('editor', 'POST', '/products', {
             price: '19.90',
-            translations: { en: { title: `BO3 sold out ${unique()}` } }
+            title: `BO3 sold out ${unique()}`
         }).then((product) => {
             const id = String(product?.id);
 

@@ -288,9 +288,10 @@ export const useProductsStore = defineStore('products', () => {
 
             // Neither the uploaded Blob nor `translations` belongs in the optimistic patch: the
             // new `imageUrl` comes back from the API, and a product's rendered `title`/
-            // `description` are resolved server-side in the request's language — this store has
-            // no way to guess them ahead of the response, so they stay whatever they were until
-            // the real one arrives.
+            // `description` are resolved server-side in the request's language — the body's own
+            // pair is the DEFAULT language, which is not necessarily the one on screen — so this
+            // store has no way to guess them ahead of the response, and they stay whatever they
+            // were until the real one arrives.
             //
             // `weight`/`imageUrl`/`taxClass`/`rateType`/`sku`/`releaseDate`/`restockDate` accept `null` on the wire (clears the
             // field) but the LOCAL `Product` never does; `null` reads as "leave the optimistic
@@ -299,6 +300,8 @@ export const useProductsStore = defineStore('products', () => {
             optimisticPatch: ({
                 imageUpload: _uploaded,
                 translations: _translations,
+                title: _title,
+                description: _description,
                 weight,
                 imageUrl,
                 taxClass,

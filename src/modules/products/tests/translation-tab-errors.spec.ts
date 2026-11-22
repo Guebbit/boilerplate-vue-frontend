@@ -64,7 +64,7 @@ describe('translationTabErrorCountsFromServerError', () => {
             errors: [{ details: { field: 'translations.it.title' }, message: 'required' }]
         };
 
-        expect(translationTabErrorCountsFromServerError(error)).toEqual({ it: 1 });
+        expect(translationTabErrorCountsFromServerError(error, 'en')).toEqual({ it: 1 });
     });
 
     it('reads errors from error.data when the top level has none', () => {
@@ -74,7 +74,7 @@ describe('translationTabErrorCountsFromServerError', () => {
             }
         };
 
-        expect(translationTabErrorCountsFromServerError(error)).toEqual({ es: 1 });
+        expect(translationTabErrorCountsFromServerError(error, 'en')).toEqual({ es: 1 });
     });
 
     it('reads errors from error.response.data — an axios-shaped rejection', () => {
@@ -86,13 +86,13 @@ describe('translationTabErrorCountsFromServerError', () => {
             }
         };
 
-        expect(translationTabErrorCountsFromServerError(error)).toEqual({ it: 1 });
+        expect(translationTabErrorCountsFromServerError(error, 'en')).toEqual({ it: 1 });
     });
 
     it('ignores a field pointer outside translations.*', () => {
         const error = { errors: [{ details: { field: 'price' }, message: 'must be positive' }] };
 
-        expect(translationTabErrorCountsFromServerError(error)).toEqual({});
+        expect(translationTabErrorCountsFromServerError(error, 'en')).toEqual({});
     });
 
     it('ignores an item with no details, or a details.field that is not a string', () => {
@@ -100,12 +100,26 @@ describe('translationTabErrorCountsFromServerError', () => {
             errors: [{ message: 'required' }, { details: { field: 42 }, message: 'required' }]
         };
 
-        expect(translationTabErrorCountsFromServerError(error)).toEqual({});
+        expect(translationTabErrorCountsFromServerError(error, 'en')).toEqual({});
+    });
+
+    it('counts a top-level title or description failure against the default language’s tab', () => {
+        const error = {
+            errors: [
+                { details: { field: 'title' }, message: 'too short' },
+                { details: { field: 'description' }, message: 'too long' },
+                { details: { field: 'translations.it.title' }, message: 'required' }
+            ]
+        };
+
+        expect(translationTabErrorCountsFromServerError(error, 'en')).toEqual({ en: 2, it: 1 });
     });
 
     it('answers an empty object for a rejection with no errors array anywhere', () => {
-        expect(translationTabErrorCountsFromServerError(new Error('network down'))).toEqual({});
-        expect(translationTabErrorCountsFromServerError('not even an object')).toEqual({});
-        expect(translationTabErrorCountsFromServerError(null)).toEqual({});
+        expect(translationTabErrorCountsFromServerError(new Error('network down'), 'en')).toEqual(
+            {}
+        );
+        expect(translationTabErrorCountsFromServerError('not even an object', 'en')).toEqual({});
+        expect(translationTabErrorCountsFromServerError(null, 'en')).toEqual({});
     });
 });

@@ -495,12 +495,12 @@ export const useLocalesStore = defineStore('locales', () => {
      *
      * @param entityType - Which `translatables` registry entry, e.g. `product`.
      * @param entityId - The entity's own id.
-     * @returns A promise resolving with every locale's row and the entity's field set.
+     * @returns A promise resolving with the entity's own text, every other language's row and the entity's field set.
      */
     const fetchEntityTranslations = (
         entityType: string,
         entityId: string
-    ): Promise<Pick<EntityTranslations, 'translations' | 'fields'> | undefined> =>
+    ): Promise<Pick<EntityTranslations, 'source' | 'translations' | 'fields'> | undefined> =>
         fetchAny(() => getEntityTranslations(entityType, entityId));
 
     /**
@@ -511,13 +511,13 @@ export const useLocalesStore = defineStore('locales', () => {
      * @param entityType - Which `translatables` registry entry, e.g. `product`.
      * @param entityId - The entity's own id.
      * @param body - The locales to change.
-     * @returns A promise resolving with every locale's row and the entity's field set, post-write.
+     * @returns A promise resolving with the entity's own text, every other language's row and the entity's field set, post-write.
      */
     const saveEntityTranslations = (
         entityType: string,
         entityId: string,
         body: UpdateEntityTranslationsRequest
-    ): Promise<Pick<EntityTranslations, 'translations' | 'fields'> | undefined> =>
+    ): Promise<Pick<EntityTranslations, 'source' | 'translations' | 'fields'> | undefined> =>
         fetchAny(
             () => apiUpdateEntityTranslations(entityType, entityId, body),
             // Own bucket so the save button spins apart from every read; `forced` because a keyed

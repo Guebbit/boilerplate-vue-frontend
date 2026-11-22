@@ -29,19 +29,24 @@ vi.mock('vue-router', async (importOriginal) => ({
     useRoute: () => ({ params: { entityType: 'product', id: 'p1' } })
 }));
 
-vi.mock('../store.ts', () => ({
-    useLocalesStore: () => ({
-        capabilities: [],
-        fallbackLocale: 'en',
-        fetchLanguages: () => Promise.resolve([]),
-        fetchEntityTranslations: () =>
-            Promise.resolve({
-                fields: ['name'],
-                translations: [{ locale: 'en', fields: { name: 'Shoe' } }]
-            }),
-        saveEntityTranslations: () => Promise.resolve()
-    })
-}));
+vi.mock('../store.ts', async () => {
+    // Refs, as the real store's `capabilities` and `fallbackLocale` are: the screen reads them via `storeToRefs`.
+    const { ref } = await import('vue');
+    return {
+        useLocalesStore: () => ({
+            capabilities: ref([]),
+            fallbackLocale: ref('en'),
+            fetchLanguages: () => Promise.resolve([]),
+            fetchEntityTranslations: () =>
+                Promise.resolve({
+                    fields: ['name'],
+                    source: { fields: { name: 'Shoe' }, digest: 'd1' },
+                    translations: [{ locale: 'it', fields: { name: 'Scarpa' }, outdated: false }]
+                }),
+            saveEntityTranslations: () => Promise.resolve()
+        })
+    };
+});
 
 /** Mounts the screen with the tab bar stubbed down to its events. */
 const mountScreen = () =>
@@ -63,7 +68,7 @@ const TabsStub = defineComponent({
             h('div', [
                 h('button', { 'data-test': 'add-es', onClick: () => emit('add', 'es') }),
                 h('button', { 'data-test': 'remove-es', onClick: () => emit('remove', 'es') }),
-                h('button', { 'data-test': 'remove-en', onClick: () => emit('remove', 'en') })
+                h('button', { 'data-test': 'remove-it', onClick: () => emit('remove', 'it') })
             ])
 });
 
@@ -86,10 +91,10 @@ describe('EntityTranslations leave guard', () => {
         await flushPromises();
         const field = () => wrapper.get('[data-field=name] textarea');
 
-        await field().setValue('Boot');
+        await field().setValue('Stivale');
         expect(guard.isDirty?.value).toBe(true);
 
-        await field().setValue('Shoe');
+        await field().setValue('Scarpa');
         expect(guard.isDirty?.value).toBe(false);
     });
 
@@ -107,7 +112,7 @@ describe('EntityTranslations leave guard', () => {
         const wrapper = mountScreen();
         await flushPromises();
 
-        await wrapper.get('[data-test=remove-en]').trigger('click');
+        await wrapper.get('[data-test=remove-it]').trigger('click');
 
         expect(guard.isDirty?.value).toBe(true);
     });

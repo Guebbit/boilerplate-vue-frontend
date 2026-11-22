@@ -1745,9 +1745,11 @@ paths:
         - Locales
       summary: Read every translation an entity has
       description: |
-        Every locale this entity has a row for, in one response — the admin shape a
-        translation screen reads as a whole. A public read resolves to one language
-        server-side; this is the only door that shows every language at once.
+        The entity's own text (`source`, in the default language) and every other language it
+        has a row for, in one response — the admin shape a translation screen reads as a
+        whole. A public read resolves to one language server-side; this is the only door
+        that shows every language at once. Each row says whether it is `outdated`: written
+        from a source text that has since changed.
       operationId: getEntityTranslations
       x-error-codes:
         "403":
@@ -1767,7 +1769,7 @@ paths:
         - $ref: "#/components/parameters/TranslationEntityIdPathParam"
       responses:
         "200":
-          description: Every locale this entity has a row for
+          description: The entity's source text and every other language it has a row for
           content:
             application/json:
               schema:
@@ -1814,13 +1816,13 @@ paths:
         is `null`. A key that is neither in the body nor already stored never existed
         either way.
 
-        The fallback locale (`NODE_FALLBACK_LOCALE`) must be present and non-null, same
-        invariant `POST /products` already enforces on create: a caller cannot replace the
-        whole set and leave the entity with nothing to fall back to.
+        The default language (`NODE_FALLBACK_LOCALE`) is not a translation: the entity's own
+        text IS that language, and it is edited through the entity's own write. Naming it
+        here, as an object or `null`, is a 422, and a `PUT` never deletes it.
 
         422 for the same reasons `PATCH` refuses — an unknown locale, an empty
-        `fields` object, a `fields` key the `translatables` registry does not declare, or a
-        missing/`null` fallback locale.
+        `fields` object, a `fields` key the `translatables` registry does not declare, or
+        the default language.
       operationId: replaceEntityTranslations
       x-error-codes:
         "403":
@@ -1847,7 +1849,7 @@ paths:
               $ref: "#/components/schemas/ReplaceEntityTranslationsRequest"
       responses:
         "200":
-          description: Every locale this entity has a row for, after the write
+          description: The entity's source text and every other language it has a row for, after the write
           content:
             application/json:
               schema:
@@ -1909,9 +1911,9 @@ paths:
         never a value — clear with `null`.
 
         An empty `fields` object is a 422, never a delete — deletion is the locale's own
-        `null`, spent deliberately so a mis-click can never delete translated work. `null`
-        on the fallback locale is a 422: deleting it would leave the entity with nothing to
-        fall back to.
+        `null`, spent deliberately so a mis-click can never delete translated work. The
+        default language (`NODE_FALLBACK_LOCALE`) is the entity's own text, edited through
+        the entity's own write: naming it here is a 422.
 
         422 equally when a named locale does not exist in the `locales` collection (an
         inactive one is accepted: that is where a draft is written), and when `fields` names a key the `translatables` registry does not
@@ -1947,7 +1949,7 @@ paths:
               $ref: "#/components/schemas/UpdateEntityTranslationsRequest"
       responses:
         "200":
-          description: Every locale this entity has a row for, after the write
+          description: The entity's source text and every other language it has a row for, after the write
           content:
             application/json:
               schema:
@@ -7128,7 +7130,7 @@ paths:
       tags:
         - Products
       summary: Create product
-      description: "Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it."
+      description: "Creates a new product with optional image upload. `title` and `description` are the product's own words, in the default language (`NODE_FALLBACK_LOCALE`); `translations` holds the OTHER languages, one entry per locale, and may be left out. A default-language key in `translations` is a 422: the top-level text already is that language. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it."
       operationId: createProduct
       x-error-codes:
         "403":
@@ -7264,7 +7266,7 @@ paths:
       tags:
         - Products
       summary: Product details
-      description: "Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`. `title` and `description` are always resolved to one language. A caller holding `read:Translation` also gets `translations`, every language the product has a row for (drafts included), for the editor's tabs: what the caller may see shapes the body, there is no separate staff URL. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph). A body that differs by caller is never served from, or stored in, the shared cache."
+      description: "Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`. `title` and `description` are always resolved to one language. A caller holding `read:Translation` also gets `translations`, every other language the product has a row for (drafts included), and `source`, the stored default-language text, for the editor's form: what the caller may see shapes the body, there is no separate staff URL. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph). A body that differs by caller is never served from, or stored in, the shared cache."
       operationId: getProductById
       security:
         - {}
@@ -7320,8 +7322,10 @@ paths:
         `sku`/`weight`/`releaseDate`/`restockDate` has a legal "cleared" state, and an omitted one of
         those six is cleared, not left alone. The image is outside the representation: it is set by an
         upload, cleared by an explicit `imageUrl: null`, and kept when a PUT never mentions
-        it — a client cannot send the current path back. `translations` is the whole set as well: it must
-        name the fallback locale, and every stored locale it leaves out is deleted. To
+        it — a client cannot send the current path back. `title` is required and `description`
+        is one of the cleared-by-omission fields: both are the default language's own words.
+        `translations` is the whole set of OTHER languages as well: every stored locale it
+        leaves out is deleted (`{}` deletes them all), and a default-language key is a 422. To
         change one locale without restating the others, use `PATCH`.
       operationId: replaceProductById
       security:
@@ -7402,8 +7406,10 @@ paths:
       summary: Edit product
       description: |
         Updates the product identified by `{id}` in the path, merging. Every field but
-        `translations` replaces the stored value when sent; `translations` merges (RFC
-        7396) — three signals for a locale, and one level down for its fields:
+        `translations` replaces the stored value when sent (`title` and `description` are the
+        default language's words; `description: null` clears it); `translations` merges (RFC
+        7396), and holds the other languages only — three signals for a locale, and one level
+        down for its fields:
 
         | the body says                   | the server does                                |
         | ------------------------------- | ----------------------------------------------- |
@@ -7414,9 +7420,9 @@ paths:
 
         An empty translation object is a 422, never a delete — deletion is `null`, spent
         deliberately, so a mis-click can never delete translated work. `""` is never a
-        value: clear a description with `null`. A title cannot be cleared. `null` on the
-        fallback locale is a 422: deleting it would leave the product with nothing to fall
-        back to. A validation failure names the locale in its pointer, e.g.
+        value: clear a description with `null`. A title cannot be cleared. Any entry for the
+        default language, `null` included, is a 422: that language is the top-level `title` and
+        `description`. A validation failure names the locale in its pointer, e.g.
         `translations.it.title`.
       operationId: updateProductById
       security:
@@ -18267,6 +18273,25 @@ components:
       minLength: 1
       description: "A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value answers 404, like any path that names nothing; the length bounds here stay 422."
       example: product
+    TranslationSource:
+      type: object
+      additionalProperties: false
+      required:
+        - fields
+        - digest
+      description: "The entity's own text, in the default language (`NODE_FALLBACK_LOCALE`): what every translation is a copy of. Shopify's `translatableContent`."
+      properties:
+        fields:
+          type: object
+          additionalProperties:
+            type: string
+          description: Field name to text. A field the entity holds no text for has no key.
+          example:
+            title: Orthopedic Memory Foam Dog Bed
+        digest:
+          type: string
+          description: Hash of `fields`; a row whose `sourceDigest` differs is `outdated`.
+          example: 3f1a9c2b7e4d5f60
     TranslationOrigin:
       type: string
       enum:
@@ -18286,7 +18311,7 @@ components:
         - origin
         - createdAt
         - updatedAt
-      description: One entity's words in one language. Unique on (entityType, entityId, locale) — the fallback-locale row is not a special case, it is simply the row whose `locale` equals this deployment's `NODE_FALLBACK_LOCALE`.
+      description: "One entity's words in one language other than the default. Unique on (entityType, entityId, locale). The default language has no row: the entity's own text is that language, and a stray row in it is ignored by every read."
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -18306,8 +18331,11 @@ components:
             description: Un supporto extra per le articolazioni durante il riposo.
         sourceDigest:
           type: string
-          description: Hash of the fallback-locale row's `fields` at the moment this row was translated. A mismatch means the source has changed since — stale, not wrong. Absent on the fallback-locale row itself, which is never stale relative to its own content.
+          description: Hash of the entity's own text (`source.fields`) at the moment this row was written. A mismatch means the source has changed since — outdated, not wrong.
           example: 3f1a9c2b7e4d5f60
+        outdated:
+          type: boolean
+          description: "Only on the admin read: `true` when `sourceDigest` differs from the entity's current `source.digest`, or the row has none. Never stored."
         origin:
           $ref: "#/components/schemas/TranslationOrigin"
         translatedBy:
@@ -18326,18 +18354,22 @@ components:
       required:
         - entityType
         - entityId
+        - source
         - translations
         - fields
-      description: Every locale one entity has a row for, in one response — the shape the admin translation screen for that entity reads and writes as a whole.
+      description: The entity's own text and every other language it has a row for, in one response — the shape the admin translation screen for that entity reads and writes as a whole.
       properties:
         entityType:
           $ref: "#/components/schemas/TranslatableEntityType"
         entityId:
           $ref: "#/components/schemas/Id"
+        source:
+          $ref: "#/components/schemas/TranslationSource"
         translations:
           type: array
           items:
             $ref: "#/components/schemas/Translation"
+          description: Every language but the default one the entity has a row for, each with `outdated`.
         fields:
           type: array
           items:
@@ -23258,7 +23290,10 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/ProductTranslationFields"
-          description: "Every language the product has a row for, drafts included, keyed by locale: the editor's form fills one tab per entry. Present only on `GET /products/{id}` and only for a caller holding `read:Translation`; every other read, and every other caller, gets the resolved `title`/`description` alone."
+          description: "Every language but the default one the product has a row for, drafts included, keyed by locale: the editor's form fills one tab per entry. Present only on `GET /products/{id}` and only for a caller holding `read:Translation`; every other read, and every other caller, gets the resolved `title`/`description` alone."
+        source:
+          $ref: "#/components/schemas/ProductTranslationFields"
+          description: The stored default-language text (`NODE_FALLBACK_LOCALE`), whatever language the request resolves `title` to. Present on the same reads as `translations`.
     ProductsResponse:
       type: object
       additionalProperties: false
@@ -23272,6 +23307,14 @@ components:
             $ref: "#/components/schemas/Product"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
+    ProductTitleWrite:
+      type: string
+      minLength: 5
+      maxLength: 200
+    ProductDescriptionWrite:
+      type: string
+      minLength: 1
+      maxLength: 10000
     ProductTranslationFieldsWrite:
       type: object
       additionalProperties: false
@@ -23279,18 +23322,14 @@ components:
         - title
       properties:
         title:
-          type: string
-          minLength: 5
-          maxLength: 200
+          $ref: "#/components/schemas/ProductTitleWrite"
         description:
-          type: string
-          maxLength: 10000
-          minLength: 1
+          $ref: "#/components/schemas/ProductDescriptionWrite"
     ProductTranslationsCreate:
       type: object
       additionalProperties:
         $ref: "#/components/schemas/ProductTranslationFieldsWrite"
-      description: "One or more locales, keyed by BCP 47 tag, each stated whole. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on."
+      description: "The OTHER languages, keyed by BCP 47 tag, each stated whole. The default language (`NODE_FALLBACK_LOCALE`) is not a key here: it is the top-level `title` and `description`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on."
       example:
         en:
           title: Orthopedic Memory Foam Dog Bed
@@ -23303,8 +23342,12 @@ components:
       additionalProperties: false
       required:
         - price
-        - translations
+        - title
       properties:
+        title:
+          $ref: "#/components/schemas/ProductTitleWrite"
+        description:
+          $ref: "#/components/schemas/ProductDescriptionWrite"
         translations:
           $ref: "#/components/schemas/ProductTranslationsCreate"
         price:
@@ -23356,8 +23399,12 @@ components:
       additionalProperties: false
       required:
         - price
-        - translations
+        - title
       properties:
+        title:
+          $ref: "#/components/schemas/ProductTitleWrite"
+        description:
+          $ref: "#/components/schemas/ProductDescriptionWrite"
         translations:
           type: string
           maxLength: 100000
@@ -23447,7 +23494,7 @@ components:
         oneOf:
           - $ref: "#/components/schemas/ProductTranslationFieldsWrite"
           - type: "null"
-      description: "One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared, drafts included. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on `PUT`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on."
+      description: "The OTHER languages, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared, drafts included. The default language (`NODE_FALLBACK_LOCALE`) is not a key here: it is the top-level `title` and `description`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on."
       example:
         en:
           title: Orthopedic Memory Foam Dog Bed
@@ -23460,6 +23507,7 @@ components:
       additionalProperties: false
       required:
         - price
+        - title
         - translations
         - active
         - purchasable
@@ -23469,6 +23517,12 @@ components:
         - categories
         - tags
       properties:
+        title:
+          $ref: "#/components/schemas/ProductTitleWrite"
+        description:
+          oneOf:
+            - $ref: "#/components/schemas/ProductDescriptionWrite"
+            - type: "null"
         translations:
           $ref: "#/components/schemas/ProductTranslationsWrite"
         price:
@@ -23529,6 +23583,7 @@ components:
       additionalProperties: false
       required:
         - price
+        - title
         - translations
         - active
         - purchasable
@@ -23538,6 +23593,10 @@ components:
         - categories
         - tags
       properties:
+        title:
+          $ref: "#/components/schemas/ProductTitleWrite"
+        description:
+          $ref: "#/components/schemas/ProductDescriptionWrite"
         translations:
           type: string
           maxLength: 100000
@@ -23600,9 +23659,7 @@ components:
       additionalProperties: false
       properties:
         title:
-          type: string
-          minLength: 5
-          maxLength: 200
+          $ref: "#/components/schemas/ProductTitleWrite"
           description: A title is never cleared — an empty locale is deleted with the locale's own `null`.
         description:
           type:
@@ -23617,7 +23674,7 @@ components:
         oneOf:
           - $ref: "#/components/schemas/ProductTranslationFieldsPatch"
           - type: "null"
-      description: "One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object merges into it field by field (the fields it names change, the others keep what they have); a key mapped to null deletes it. An empty object is an error. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST NOT be null. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on."
+      description: "The OTHER languages, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object merges into it field by field (the fields it names change, the others keep what they have); a key mapped to null deletes it. An empty object is an error. The default language (`NODE_FALLBACK_LOCALE`) is not a key here, whatever it maps to: it is the top-level `title` and `description`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on."
       example:
         it:
           description: null
@@ -23625,6 +23682,12 @@ components:
       type: object
       additionalProperties: false
       properties:
+        title:
+          $ref: "#/components/schemas/ProductTitleWrite"
+        description:
+          oneOf:
+            - $ref: "#/components/schemas/ProductDescriptionWrite"
+            - type: "null"
         translations:
           $ref: "#/components/schemas/ProductTranslationsPatch"
         price:
@@ -23684,6 +23747,10 @@ components:
       type: object
       additionalProperties: false
       properties:
+        title:
+          $ref: "#/components/schemas/ProductTitleWrite"
+        description:
+          $ref: "#/components/schemas/ProductDescriptionWrite"
         translations:
           type: string
           maxLength: 100000
@@ -28073,7 +28140,7 @@ components:
           $ref: "#/components/schemas/Id"
         title:
           type: string
-          description: The title in the request's language, falling back field by field. Written through `/locales/translations/example/{id}`.
+          description: The title in the request's language, falling back to the stored default-language one. Other languages are written through `/locales/translations/example/{id}`; the default language is this title itself.
         body:
           type: string
         status:
@@ -29367,7 +29434,7 @@ x-error-codes:
     description: A language is already registered under that tag.
   LOCALE_LANGUAGE_IS_FALLBACK:
     status: 409
-    description: "The deployment's fallback language cannot be deactivated or deleted: every translatable row's source lives there."
+    description: "The deployment's fallback language cannot be deactivated or deleted: every translatable entity's own text is written in it."
   LOCALE_LANGUAGE_NOT_FOUND:
     status: 404
     description: No language is registered under that tag.

@@ -174,7 +174,9 @@
         "empty": "Questa entità non ha nessuna lingua aperta. Aggiungine una per iniziare a tradurla.",
         "button-save": "Salva traduzioni",
         "success-save": "Traduzioni salvate",
-        "hint-field-blank-skipped": "Lasciato vuoto — questo campo verrà ignorato e manterrà il valore attuale."
+        "hint-field-blank-skipped": "Lasciato vuoto — questo campo verrà ignorato e manterrà il valore attuale.",
+        "outdated": "Il testo originale è cambiato dopo questa traduzione. Controllala.",
+        "source-label": "{field} originale:"
     },
     "navigation": {
         "label-locales": "Lingua | Lingue"

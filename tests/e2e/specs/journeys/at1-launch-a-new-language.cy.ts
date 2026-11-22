@@ -179,21 +179,24 @@ describe('AT1 · Launch a new language', () => {
         cy.url().should('include', `/${TAG}`);
         cy.get('h2').should('contain.text', IMPORTED['home-page']['hero-title']);
 
-        cy.step('with German on, the fallback title of a product cannot be cleared');
+        cy.step('with German on, the default language is the product itself, never a translation');
         cy.loginAs('editor');
-        cy.createProduct({ title: `AT1 product ${String(Date.now())}` }).then((product) => {
+        const originalTitle = `AT1 product ${String(Date.now())}`;
+        cy.createProduct({ title: originalTitle }).then((product) => {
             cy.visit(`/en/locales/translations/product/${product.id}`);
-            cy.get(
-                '#translation-panel-en [data-test=entity-translation-field][data-field=title] textarea'
-            ).should('not.have.value', '');
-            cy.get(
-                '#translation-panel-en [data-test=entity-translation-field][data-field=title] textarea'
-            ).clear();
-            cy.get('[data-test=entity-translations-save]').click();
-            cy.get('[data-test=entity-translations-save-error]').should('not.be.empty');
+            // The translations screen offers no tab for the default language.
+            cy.get('#entity-translations-page').should('exist');
+            cy.get('[data-test=translation-tab-en]').should('not.exist');
+            loginDevice('editor').then((device) => {
+                requestAsDevice(device, 'PATCH', `/locales/translations/product/${product.id}`, {
+                    en: { fields: { title: 'Replaced' }, origin: 'human' }
+                })
+                    .its('status')
+                    .should('equal', 422);
+            });
             cy.apiAs<{ title: string }>('editor', 'GET', `/products/${product.id}`)
                 .its('title')
-                .should('not.equal', '');
+                .should('equal', originalTitle);
 
             cy.step('with German switched off, an editor can still draft German text');
             cy.visit('/en/locales');
