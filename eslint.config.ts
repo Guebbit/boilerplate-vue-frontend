@@ -32,7 +32,7 @@ import { designLintConfig } from './scripts/eslint/design-config';
  * The bodies that own most of a file, where "top-level" means their outermost level, not the
  * file's: a composable (`const useX = () => {…}` or `function useX() {…}`) and a setup-style
  * store (`defineStore('id', () => {…})`). Their members are the module's declarations in all but
- * name, and `CLAUDE.md` § Code layout asks the same blank line of them.
+ * name, and `docs/build/code-comments.md#code-layout` asks the same blank line of them.
  */
 const OWNING_BODY =
     'VariableDeclarator[id.name=/^use[A-Z]/] > ArrowFunctionExpression > BlockStatement, FunctionDeclaration[id.name=/^use[A-Z]/] > BlockStatement, CallExpression[callee.name="defineStore"] > ArrowFunctionExpression > BlockStatement';
@@ -1345,7 +1345,7 @@ export default defineConfigWithVueTs(
 
     /**
      * One blank line between declarations, and between class members, so the JSDoc above each one
-     * visibly belongs to the thing below it (`CLAUDE.md` § Code layout). The fix puts the blank
+     * visibly belongs to the thing below it (`docs/build/code-comments.md#code-layout`). The fix puts the blank
      * line BEFORE the JSDoc. Later entries win, so the overload entries lift the requirement for a
      * signature and its implementation.
      *

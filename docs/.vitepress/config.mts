@@ -205,6 +205,7 @@ export default defineConfig({
                         { text: 'Layout Sweep', link: '/build/layout-sweep' },
                         { text: 'Touch Testing', link: '/build/touch-testing' },
                         { text: 'Design Lint', link: '/build/design-lint' },
+                        { text: 'Code Comments', link: '/build/code-comments' },
                         {
                             text: 'Visual Regression',
                             link: '/build/visual-regression',
