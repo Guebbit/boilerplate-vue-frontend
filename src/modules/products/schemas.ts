@@ -100,7 +100,6 @@ export const productsSchema = z.object({
     requiresShipping: z.boolean().nullish(),
     noWithdrawal: z.boolean().nullish(),
     weight: z.number().nullish(),
-    onHand: z.number().nullish(),
     categories: z.array(z.string()).nullish(),
     tags: z.array(z.string()).nullish(),
     // `null` clears the image; `''` is not a valid value the contract accepts (`minLength: 1`).

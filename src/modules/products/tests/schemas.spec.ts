@@ -61,20 +61,15 @@ describe('productsSchema', () => {
      * `nullish` rather than `optional`: the API answers `null` for an unset field, so a schema
      * accepting only `undefined` would reject its own GET response.
      */
-    it.each([
-        'id',
-        'active',
-        'requiresShipping',
-        'onHand',
-        'imageUrl',
-        'createdAt',
-        'updatedAt'
-    ] as const)('accepts null and undefined for %s', (field) => {
-        expect(productsSchema.safeParse({ ...validProduct, [field]: null }).success).toBe(true);
-        expect(productsSchema.safeParse({ ...validProduct, [field]: undefined }).success).toBe(
-            true
-        );
-    });
+    it.each(['id', 'active', 'requiresShipping', 'imageUrl', 'createdAt', 'updatedAt'] as const)(
+        'accepts null and undefined for %s',
+        (field) => {
+            expect(productsSchema.safeParse({ ...validProduct, [field]: null }).success).toBe(true);
+            expect(productsSchema.safeParse({ ...validProduct, [field]: undefined }).success).toBe(
+                true
+            );
+        }
+    );
 
     it('rejects an empty imageUrl — null is the only valid way to clear it', () => {
         expect(productsSchema.safeParse({ ...validProduct, imageUrl: '' }).success).toBe(false);

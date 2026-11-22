@@ -2,8 +2,9 @@
 /**
  * @module
  * BO3 · Notify me when it is back. A signed-in shopper asks to be told about a sold-out product:
- * the button reads "You'll be told". The shelf is restocked and the shopper gets one mail with a
- * link to the product, and one inbox row. The request is gone afterwards.
+ * the button reads "You'll be told". The shelf is restocked, the sweep runs (it is pulled with the
+ * job lever; in production it runs every five minutes) and the shopper gets one mail with a link to
+ * the product, and one inbox row. The request is gone afterwards.
  *
  * Written against the live pages and not yet run in a browser: the first run may need its
  * selectors nudged.
@@ -26,6 +27,8 @@ describe('BO3 · Notify me when it is back', () => {
     });
 
     it('is told once, by mail and in the inbox, when the product is restocked', () => {
+        // The sweep is pulled with the demo's job lever, which the live profile does not offer.
+        cy.skipUnlessDemo();
         cy.step('a product with no stock');
         cy.apiAs<{ id: string }>('editor', 'POST', '/products', {
             price: '19.90',
@@ -41,6 +44,9 @@ describe('BO3 · Notify me when it is back', () => {
 
             cy.step('the shelf is restocked');
             cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 3 });
+
+            cy.step('the sweep notices it');
+            cy.runJob('sweep-stock-alerts');
 
             cy.step('one mail arrives, linking to the product');
             cy.accountOf('user').then(({ email }) => {
