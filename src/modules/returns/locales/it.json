@@ -73,7 +73,7 @@
         "button-proof-refund": "Registra la prova e rimborsa",
         "label-proof-title": "Prova di spedizione",
         "hint-proof": "Il documento del corriere che il cliente ha mostrato per il pacco rispedito. Si registra una sola volta. Su un recesso apre subito il rimborso, prima che il pacco arrivi; su un articolo difettoso o sbagliato registra soltanto, e il rimedio si sceglie quando la merce arriva, a meno che tu non spunti la casella qui sotto.",
-        "label-refund-on-proof": "Rimborso alla prova",
+        "label-refund-on-proof": "Rimborso alla prova di spedizione",
         "hint-refund-on-proof": "Spunta solo se accetti che l'acquirente risolva il contratto. Il rimborso si apre subito, come su un recesso, e alla ricezione non sarà più possibile una riparazione o una sostituzione.",
         "label-proof-sent-at": "Data sul documento",
         "label-proof-carrier": "Corriere",
