@@ -54,7 +54,7 @@ row it shows was written server-side by a module that had no idea a dashboard ex
 playground below, not a JSON read. `GET /observability/metrics` is different in kind: its
 own contract description says to use `.../metrics/overview` for a JSON summary, and it answers in
 Prometheus text format — it is Prometheus's own scrape target
-(`boilerplate-node-backend/docker/observability/prometheus.config.yaml`), not an endpoint any
+(Prometheus's own scrape config, on the server side), not an endpoint any
 browser client should ever call. Both stay registered in `response-schemas.ts` regardless: the row
 costs nothing sitting unused.
 
@@ -157,6 +157,6 @@ npm run regenerate
 - [Admin Dashboard](../operate/admin-dashboard.md) — the mechanism behind the panels
 - [Realtime](../understand/realtime.md) — the SSE client and its reconnection behaviour
 - [Observability](../operate/observability.md) — what is measured, and by whom
-- [Observability endpoints](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/observability.md) — the backend's page for the reads
+- [Endpoints](../reference/endpoints.md) — the contract's rows for the reads
 - [AsyncAPI Workflow](../build/asyncapi-workflow.md) — where the event types come from
 - [Sitemap & Access Control](../understand/sitemap.md) — the `admin` gate on these screens

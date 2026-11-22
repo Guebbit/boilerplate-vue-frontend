@@ -73,8 +73,8 @@ contract, the root `openapi.yaml` and its per-module fragments. This page does n
 module's page says which rows it owns.
 
 The live stream is described in [Realtime](../understand/realtime.md) and the observability contract
-(`asyncapi.yaml`); the reads behind the Admin Dashboard are in
-[the backend's observability page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/observability.md).
+(`asyncapi.yaml`); the reads behind the Admin Dashboard are
+rows of the contract (`openapi.yaml`), listed above.
 
 ## Related pages
 

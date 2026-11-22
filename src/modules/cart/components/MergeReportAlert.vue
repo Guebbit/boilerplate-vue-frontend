@@ -8,7 +8,7 @@
  * was added only up to what could be bought.
  * Reads the cart store's `mergeReport` and renders nothing while it is empty. Not a toast and not
  * a bell notification: it belongs to this screen and goes when the shopper closes it. See
- * `docs/modules/cart.md`.
+ * `docs/modules/cart-guest.md`.
  */
 import { watch } from 'vue';
 import { useI18n } from 'vue-i18n';

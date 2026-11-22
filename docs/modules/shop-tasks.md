@@ -53,8 +53,8 @@ Three shapes of notice:
 | Staff record    | `staff.purchase-hold-placed`, `staff.return-requested`                                               | `UserTarget`, `ReturnTarget`           |
 | Staff summary   | the `staff.*` summary codes (`transfers-due`, `preorders-late`, `low-stock`, ...) carrying a `count` | the list they count                    |
 
-The shop's codes, and who is told of each, are on the backend's
-[shop-tasks page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/shop-tasks.md#the-notices).
+The shop's codes, and their `params`, are in the contract (`contracts/rest.generated/schemas.zod.ts`);
+which staff are told of each is the server's rule, not this client's.
 
 A summary row carries a count and no id, so it points at a list. Which filtered list is the
 backend's choice, written once in `staffPages:` of `contracts/frontend-links.yaml` and sent in the

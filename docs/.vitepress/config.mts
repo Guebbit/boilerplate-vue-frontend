@@ -232,7 +232,10 @@ export default defineConfig({
                         {
                             text: 'cart',
                             link: '/modules/cart',
-                            items: [{ text: 'The checkout flow', link: '/modules/cart-checkout' }]
+                            items: [
+                                { text: 'The guest cart', link: '/modules/cart-guest' },
+                                { text: 'The checkout flow', link: '/modules/cart-checkout' }
+                            ]
                         },
                         { text: 'orders', link: '/modules/orders' },
                         { text: 'products', link: '/modules/products' }
@@ -324,6 +327,7 @@ export default defineConfig({
                         { text: 'UI Kit', link: '/reference/src-ui' },
                         { text: 'Scripts & Hooks', link: '/reference/scripts' },
                         { text: 'Tests', link: '/reference/tests' },
+                        { text: 'E2E & Journeys', link: '/reference/tests-e2e' },
                         { text: 'Ops & Assets', link: '/reference/ops' }
                     ]
                 }
