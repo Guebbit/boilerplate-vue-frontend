@@ -67,11 +67,42 @@ export default defineConfig({
                         { text: 'Overview', link: '/understand/start' },
                         { text: 'Reading Path', link: '/understand/reading-path' },
                         { text: 'Architecture', link: '/understand/architecture' },
-                        { text: 'Layers', link: '/understand/layers' },
-                        { text: 'Modules', link: '/understand/modules' },
-                        { text: 'Domain layer & DDD', link: '/understand/domain-layer' },
+                        {
+                            text: 'Layers',
+                            link: '/understand/layers',
+                            items: [
+                                {
+                                    text: 'Layers: decisions',
+                                    link: '/understand/layers-decisions'
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Modules',
+                            link: '/understand/modules',
+                            items: [
+                                {
+                                    text: 'Adding and deleting a domain',
+                                    link: '/understand/modules-adding-and-deleting'
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Domain layer & DDD',
+                            link: '/understand/domain-layer',
+                            items: [{ text: 'What DDD is', link: '/understand/domain-layer-ddd' }]
+                        },
                         { text: 'Strategic DDD', link: '/understand/strategic-ddd' },
-                        { text: 'Request Flow', link: '/understand/request-flow' },
+                        {
+                            text: 'Request Flow',
+                            link: '/understand/request-flow',
+                            items: [
+                                {
+                                    text: 'Cross-cutting strategies',
+                                    link: '/understand/request-flow-strategies'
+                                }
+                            ]
+                        },
                         { text: 'Loading State', link: '/understand/loading-state' },
                         { text: 'Sitemap & Access Control', link: '/understand/sitemap' },
                         { text: 'Roadmap', link: '/understand/roadmap' }
@@ -96,7 +127,16 @@ export default defineConfig({
                 {
                     text: 'Design',
                     items: [
-                        { text: 'Design System', link: '/understand/design-system' },
+                        {
+                            text: 'Design System',
+                            link: '/understand/design-system',
+                            items: [
+                                {
+                                    text: 'Touch and layout',
+                                    link: '/understand/design-system-touch-and-layout'
+                                }
+                            ]
+                        },
                         { text: 'Judging a Design', link: '/understand/design-judgement' }
                     ]
                 }
@@ -114,7 +154,16 @@ export default defineConfig({
                 {
                     text: 'Change it',
                     items: [
-                        { text: 'Adding & removing a module', link: '/build/module-lifecycle' },
+                        {
+                            text: 'Adding & removing a module',
+                            link: '/build/module-lifecycle',
+                            items: [
+                                {
+                                    text: 'Removing a module',
+                                    link: '/build/module-lifecycle-removing'
+                                }
+                            ]
+                        },
                         { text: 'API', link: '/build/api-contracts' },
                         { text: 'OpenAPI Workflow', link: '/build/openapi-workflow' },
                         { text: 'AsyncAPI Workflow', link: '/build/asyncapi-workflow' }
@@ -123,14 +172,30 @@ export default defineConfig({
                 {
                     text: 'Test it',
                     items: [
-                        { text: 'Testing & Docs', link: '/build/testing-and-docs' },
+                        {
+                            text: 'Testing & Docs',
+                            link: '/build/testing-and-docs',
+                            items: [
+                                { text: 'Timings and gates', link: '/build/testing-and-docs-gates' }
+                            ]
+                        },
                         { text: 'Testing — Quick Start', link: '/build/testing-quickstart' },
                         { text: 'Unit Testing', link: '/build/unit-testing' },
                         { text: 'Component Testing', link: '/build/component-testing' },
                         { text: 'Property Testing', link: '/build/property-testing' },
-                        { text: 'Live E2E', link: '/build/live-e2e' },
+                        {
+                            text: 'Live E2E',
+                            link: '/build/live-e2e',
+                            items: [{ text: 'Live E2E recipe', link: '/build/live-e2e-recipe' }]
+                        },
                         { text: 'Lighthouse', link: '/build/lighthouse' },
-                        { text: 'Mutation Testing', link: '/build/mutation-testing' }
+                        {
+                            text: 'Mutation Testing',
+                            link: '/build/mutation-testing',
+                            items: [
+                                { text: 'Why a run is slow', link: '/build/mutation-testing-speed' }
+                            ]
+                        }
                     ]
                 },
                 {
@@ -140,7 +205,16 @@ export default defineConfig({
                         { text: 'Layout Sweep', link: '/build/layout-sweep' },
                         { text: 'Touch Testing', link: '/build/touch-testing' },
                         { text: 'Design Lint', link: '/build/design-lint' },
-                        { text: 'Visual Regression', link: '/build/visual-regression' },
+                        {
+                            text: 'Visual Regression',
+                            link: '/build/visual-regression',
+                            items: [
+                                {
+                                    text: 'Determinism and baselines',
+                                    link: '/build/visual-regression-determinism'
+                                }
+                            ]
+                        },
                         { text: 'AI Auditing', link: '/build/ai-auditing' },
                         { text: 'Design Review', link: '/build/design-review' }
                     ]

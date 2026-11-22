@@ -143,35 +143,35 @@ has one, the staff page; paying itself is a component too.
 **Group** is a second, independent axis from Subdomain: `foundation` ships with every deployment,
 `shop` is the removable pet-supply demo domain (`npm run demo:remove`), and `example` is the one
 module that exists only to be copied when a new domain starts: it has no page of its own, its
-story is [Adding & deleting a domain](../understand/modules.md#adding-and-deleting-a-domain), and
+story is [Adding & deleting a domain](../understand/modules-adding-and-deleting.md#adding-and-deleting-a-domain), and
 `demo:remove` deletes it with the shop (copy it first). Every module declares its `group` (and `dependsOn`) in its own `module.yaml`, the same field names the paired backend uses; `scripts/module-manifest.ts` reads them, and
 `eslint.config.ts` refuses a `foundation` module importing a `shop` one.
 
 `example` is unclassified: it is the template a new domain is copied from, not a subdomain.
 
-| Module                                                             | Subdomain    | Group        |
-| ------------------------------------------------------------------ | ------------ | ------------ |
-| [`account`](./account.md)                                          | `generic`    | `foundation` |
-| [`api-keys`](./api-keys.md)                                        | `generic`    | `foundation` |
-| [`cart`](./cart.md)                                                | `core`       | `shop`       |
-| [`delivery`](./delivery.md)                                        | `supporting` | `shop`       |
-| [`example`](../understand/modules.md#adding-and-deleting-a-domain) | —            | `example`    |
-| [`tasks`](./tasks.md)                                              | `generic`    | `foundation` |
-| [`inventory`](./inventory.md)                                      | `supporting` | `shop`       |
-| [`locales`](./locales.md)                                          | `generic`    | `foundation` |
-| [`notifications`](./notifications.md)                              | `supporting` | `foundation` |
-| [`observability`](./observability.md)                              | `generic`    | `foundation` |
-| [`orders`](./orders.md)                                            | `core`       | `shop`       |
-| [`payments`](./payments.md)                                        | `supporting` | `shop`       |
-| [`products`](./products.md)                                        | `core`       | `shop`       |
-| [`returns`](./returns.md)                                          | `supporting` | `shop`       |
-| [`shop`](./shop.md)                                                | `supporting` | `shop`       |
-| [`shop-tasks`](./shop-tasks.md)                                    | `supporting` | `shop`       |
-| [`stats`](./stats.md)                                              | `supporting` | `shop`       |
-| [`stock-alerts`](./stock-alerts.md)                                | `supporting` | `shop`       |
-| [`users`](./users.md)                                              | `generic`    | `foundation` |
-| [`webhooks`](./webhooks.md)                                        | `generic`    | `foundation` |
-| [`wishlist`](./wishlist.md)                                        | `supporting` | `shop`       |
+| Module                                                                                 | Subdomain    | Group        |
+| -------------------------------------------------------------------------------------- | ------------ | ------------ |
+| [`account`](./account.md)                                                              | `generic`    | `foundation` |
+| [`api-keys`](./api-keys.md)                                                            | `generic`    | `foundation` |
+| [`cart`](./cart.md)                                                                    | `core`       | `shop`       |
+| [`delivery`](./delivery.md)                                                            | `supporting` | `shop`       |
+| [`example`](../understand/modules-adding-and-deleting.md#adding-and-deleting-a-domain) | —            | `example`    |
+| [`tasks`](./tasks.md)                                                                  | `generic`    | `foundation` |
+| [`inventory`](./inventory.md)                                                          | `supporting` | `shop`       |
+| [`locales`](./locales.md)                                                              | `generic`    | `foundation` |
+| [`notifications`](./notifications.md)                                                  | `supporting` | `foundation` |
+| [`observability`](./observability.md)                                                  | `generic`    | `foundation` |
+| [`orders`](./orders.md)                                                                | `core`       | `shop`       |
+| [`payments`](./payments.md)                                                            | `supporting` | `shop`       |
+| [`products`](./products.md)                                                            | `core`       | `shop`       |
+| [`returns`](./returns.md)                                                              | `supporting` | `shop`       |
+| [`shop`](./shop.md)                                                                    | `supporting` | `shop`       |
+| [`shop-tasks`](./shop-tasks.md)                                                        | `supporting` | `shop`       |
+| [`stats`](./stats.md)                                                                  | `supporting` | `shop`       |
+| [`stock-alerts`](./stock-alerts.md)                                                    | `supporting` | `shop`       |
+| [`users`](./users.md)                                                                  | `generic`    | `foundation` |
+| [`webhooks`](./webhooks.md)                                                            | `generic`    | `foundation` |
+| [`wishlist`](./wishlist.md)                                                            | `supporting` | `shop`       |
 
 Screens, stores and calls are not counted here: they are the generated [sitemap](../understand/sitemap.md) and each module's `module.ts`. Who depends on whom is [the whole map](#the-whole-map), checked against every `module.yaml`.
 

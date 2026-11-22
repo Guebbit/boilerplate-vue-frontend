@@ -9,7 +9,19 @@ An ordinary test says _"for this input, expect that output."_ A property says _"
 
 ## The idea
 
-Owned by the backend: [The idea](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/property-testing.md#the-idea).
+```mermaid
+flowchart LR
+    subgraph Example["EXAMPLE-based"]
+        direction TB
+        E1["you pick the inputs"] --> E2["3 cases you thought of"] --> E3["proves 3 things"]
+    end
+    subgraph Property["PROPERTY-based"]
+        direction TB
+        P1["you state the RULE"] --> P2["library generates 200 inputs"] --> P3["shrinks any failure to a minimal example"]
+    end
+```
+
+Example tests encode the cases someone thought of. That documents intent and pins a historical bug, but it is bounded by imagination. **Sampling a space you could have generated is the failure mode to watch for.** A 52-row lookup table tested by a handful of sampled rows scored 55% on mutation; exhaustive generation took that file to ~96%.
 
 ## What makes a good target
 
@@ -41,10 +53,6 @@ Both kinds live side by side, and each owns what the other cannot say. The heade
 | Named near-misses like the non-canonical `image/jpg`, where the diagnostic is the point | Algebraic laws: idempotence, non-mutation, biconditionals |
 
 A fact asserted twice is a fact maintained twice — and it costs more than it looks in this repo, because a static mutant replays the entire suite (see [Mutation Testing](./mutation-testing.md)).
-
-## What it has actually caught
-
-Owned by the backend: [What it has actually caught](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/property-testing.md#what-it-has-actually-caught).
 
 ## Running budget
 

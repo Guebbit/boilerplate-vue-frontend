@@ -25,17 +25,19 @@ question, not a surgery question.**
 flowchart TD
     A["<b>src/app</b><br/>this application<br/><i>router · layouts · guards · views · AppNavigation</i>"]
     M["<b>src/modules/*</b><br/>one domain each<br/><i>routes · store · schemas · views · locales</i>"]
-    P["<b>src/kernel</b><br/>the module system itself<br/><i>registry</i>"]
+    P["<b>src/kernel</b><br/>the module system itself<br/><i>registry · slots · sibling-reach seams</i>"]
     U["<b>src/ui</b><br/>the design system, no domain<br/><i>tokens · icons · shared components</i>"]
     C["<b>src/infrastructure</b><br/>substrate — never knows modules exist<br/><i>http · observability · utils · session</i>"]
 
-    A ==> M ==> P ==> U ==> C
+    A ==> M
+    M ==> P
+    M ==> U
+    P ==> C
+    U ==> C
     A -.-> P
     A -.-> U
     A -.-> C
-    M -.-> U
     M -.-> C
-    P -.-> C
 
     classDef app fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef domain fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -65,15 +67,17 @@ That exemption is the whole problem: **the
 registry names every enabled domain**, so anything reading it knows this application rather than
 this kind of application.
 
-Making the tier explicit moved five things and deleted the exemption:
+`app` holds what needs to read the registry:
 
-| Was                                     | Is now            | Why                                              |
-| --------------------------------------- | ----------------- | ------------------------------------------------ |
-| `platform/router/`                      | `app/router/`     | splices every enabled module's routes            | <!-- doc-paths:ignore --> |
-| `platform/components/AppNavigation.vue` | `app/components/` | renders every enabled module's nav entries       | <!-- doc-paths:ignore --> |
-| `platform/middlewares/`                 | `app/guards/`     | route guards for this app's route tree           | <!-- doc-paths:ignore --> |
-| `platform/layouts/`                     | `app/layouts/`    | the app shell, which composes the navigation     | <!-- doc-paths:ignore --> |
-| `platform/views/`                       | `app/views/`      | Home, Error, the prose pages — pages of this app | <!-- doc-paths:ignore --> |
+| Folder            | Holds                                                   |
+| ----------------- | ------------------------------------------------------- |
+| `app/router/`     | splices every enabled module's routes                   |
+| `app/components/` | `AppNavigation.vue`, renders every module's nav entries |
+| `app/guards/`     | route guards for this app's route tree                  |
+| `app/layouts/`    | the app shell, which composes the navigation            |
+| `app/views/`      | Home, Error, the prose pages — pages of this app        |
+
+Because they live in `app`, none of them needs an exemption to import `@/modules`.
 
 **This mirrors the backend**, which made the same split at the same time — the tiers there are
 `app → modules → kernel → infrastructure`, and `ui` is the one tier a backend has no use for — this repo's fifth.
@@ -94,12 +98,18 @@ where it is. The one thing it may never contain is the knowledge that a module s
 
 Being domain-free is **not enough** to earn a place in `kernel` — most of `infrastructure` and all
 of `ui` are domain-free too. A `kernel` file's _purpose_ has to dissolve if modules do. By that test
-`kernel` holds exactly two things:
+`kernel` holds the module system and the seams that let one module reach another without importing it:
 
-| File            | Why it cannot be infrastructure                                                                                                                         |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `registry.ts`   | it _is_ the module system — `AppModule`, the nav entries, the route splice                                                                              |
-| `route-link.ts` | its whole reason to exist is a route that may not resolve because the module owning it may not be in this build — meaningless in an app with no modules |
+| File                                       | Why it cannot be infrastructure                                                                           |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `registry.ts`                              | it _is_ the module system: `AppModule`, the nav entries, the route splice                                 |
+| `slots.ts`                                 | extension points: a module owns a slot, others contribute components, nobody imports a contributor        |
+| `route-link.ts`                            | reaches a sibling's route by name, only when this build ships it                                          |
+| `order-link.ts`, `history-link.ts`         | the same reach, for the order page and the audit-log history link                                         |
+| `availability.ts`, `work-counts.ts`        | a value one module writes and others read, so readers never import the writer                             |
+| `inbox-notices.ts`, `use-badge-refresh.ts` | the bell's notices and the staff badges, read by siblings that must not import the module that fills them |
+
+Each is meaningless in an app with no modules.
 
 Three near misses show where the line falls, because each survives perfectly well in an app with no
 modules and none is imported by the registry: `src/ui/molecules/PageSizeSelect.vue` imports
@@ -108,30 +118,18 @@ drives its locale-prefixed routes, and `src/modules/example/store.ts` is one dom
 rather than shared state. None of the three belongs to the module system; each
 belongs to the tier its dependencies name.
 
-Two files is the honest size of a module system in a frontend, and it is deliberate: the tier earns
-its place by being unambiguous, not by being large. Everything domain-free that is _not_ the module
-system has two better homes already — `ui` for anything with a template, `infrastructure` for the
-rest.
+The tier stays small and unambiguous. Everything domain-free that is _not_ the module system has two better homes already: `ui` for anything with a template, `infrastructure` for the rest.
 
-#### A note on the names
+#### Why these names
 
-These two tiers were called `core` and `platform` until the rename, and both moved for reasons
-worth keeping.
+`kernel` names what the folder is: a microkernel that loads and connects plugins it has never heard of. The alternatives each mean something else in the wild:
 
-`core` is not an unusual name — it is an **overloaded** one, which is worse. Nest and Angular use
-`@nestjs/core` and `@angular/core` for the DI container and call their substrate `common`; Spring
-and Backstage use "core" for the substrate, as an earlier name here did. A name
-that needs a standing disclaimer for readers arriving from Vue tooling is doing negative work. A novel name makes someone look it up; an
-overloaded one makes them think they already know, and that failure is silent.
+| Name       | Why not                                                                                                   |
+| ---------- | --------------------------------------------------------------------------------------------------------- |
+| `core`     | overloaded: Nest and Angular use it for the DI container, Spring and Backstage for the substrate          |
+| `platform` | in VS Code it is a service and DI layer; in current usage it is the base layer, which is `infrastructure` |
 
-`platform` was borrowed from VS Code, where `vs/base` is utility code, `vs/platform` is the service
-layer and `vs/workbench` is the application. Two things outweighed the precedent: `vs/platform` is a
-_service and DI layer_, a third meaning again, and in current industry usage "the platform" is the
-base layer everything runs on — which is this repo's `infrastructure`. Read cold, the two old names
-pointed at each other's contents. `kernel` names what the folder is: a microkernel that loads and
-connects plugins it has never heard of.
-
-The backend repo carries the full comparison table, in its own `docs/understand/modules.md`.
+An overloaded name makes a reader think they already know it, and that failure is silent.
 
 ### The one arrow that cannot point down
 
@@ -261,97 +259,9 @@ Copy the folder, rename it, delete the screens and the patterns you do not need 
 when), and delete `example` once you have your own domain. The transition table lives on the
 backend; a client never holds one (`actions.publish`, `archive` and `unarchive` are the server's answer).
 
-## Adding and deleting a domain
-
-One folder and one line, in both directions. The procedure — the manifest fields and the commands —
-is [Adding & removing a module](../build/module-lifecycle.md). What belongs here is
-what the exercise taught.
-
-The template to copy is `src/modules/example` ([The module template](#the-module-template)): a small note domain with a list, a detail, a create
-form, an edit form (with a cover upload) and one public screen, a store over the generated client,
-the Zod schemas, the response-schema rows, a provide/inject pair and both
-languages. It has no page of its own and a barrel exporting all of it (unused on purpose); `demo:remove` deletes it with the shop, so copy it first. Copy
-the folder, rename it, and delete the screens you do not need; delete the folder, and its line in
-`src/modules.ts`, once you have your own domain.
-
-Both halves are measured rather than asserted. A scaffold `events` module cost 5 files and 2 lines
-in `src/modules.ts`, with **zero** edits to any existing file. Deleting `products`, `cart`, `orders`
-**and `account`** together — four folders, five lines, and `account` is the hard one because the app
-shell shows who is signed in — left the app shell intact (no menu entry, no sign-in button, no dead
-link) but neither `src/` type-checking nor the production build clean: 12 type errors, 4 of them in
-the shell (`AppVerificationBanner.vue` and `ReauthDialog.vue` importing `account`'s stores
-directly), the rest in `inventory` (which reaches `products`) and `wishlist` (which reaches `cart`);
-`vite build` then fails outright on `InventoryLedger.vue`'s static import of the now-missing
-`@/modules/products` — real coupling the deletion makes visible, not a flaw in the procedure.
-
-**None of this is fixable inside this repo alone.** The type errors and the failed build name
-`inventory`'s and `wishlist`'s direct imports of `products`/`cart` — the coupling the procedure
-exists to surface — and `response-schema-map.spec.ts` reports `expected [ 'GET /products', …(25) ]
-to deeply equal []` — operations that `openapi.yaml` documents and no enabled module covers.
-
-That is the parity gate working exactly as intended. Deleting a domain from the frontend does not
-delete it from a contract shared byte-identically with the backend, so trimming it is a two-repo
-change driven from the backend, not a frontend chore. **A green suite here would mean the gate had
-stopped checking.**
-
-Getting there took fixing four genuinely different things, and the first is the one worth
-remembering:
-
-1. **A route name is a string.** Three places in the app shell addressed a module's route by name,
-   and neither the compiler, the type-checker nor lint could see any of them: `Home.vue`'s
-   call-to-action pointed at `ProductsList`, and `loginContinueTo` plus the sign-in/sign-up buttons
-   pointed at `Login` / `Signup`. Each rendered a control that navigated nowhere, and a 401 with no
-   sign-in route aborted the navigation and stranded the visitor with nothing on screen. All now
-   ask `router.hasRoute()` first. **This class of bug is invisible to every gate except actually
-   deleting the module**, which is the whole argument for running this exercise rather than
-   trusting the architecture.
-
-2. **Specs that named a domain.** A platform spec asserting `navigation.label-products-list`, or a
-   central parity file importing two modules' handlers, is the same coupling the manifest removed
-   from `src/` — just moved into `tests/`. The rule that fixed it:
-
-    > A spec outside a module may **iterate** the registry. It may never **name** a domain.
-
-    So the mechanism tests use invented domains (`public-domain`, `staff-domain`, `/widgets`) and
-    invented schemas; the per-domain facts moved into `src/modules/<name>/tests/`; and
-    `tests/cross-cutting/registry.spec.ts` sweeps every enabled module for invariants — every
-    navigation entry points at a route that module declares, every route is named, every module
-    ships the same set of locales — without naming one.
-
-3. **The contract, which is not ours alone.** See above.
-
-4. **One store split into four, along two different seams.** A single `infrastructure` store holding
-   the access token _and_ the `User` record puts a domain entity in a delivery tier and makes the app
-   shell reach into a domain to render a name. The first seam is `infrastructure/session.ts` — token, plus
-   a `{ id, email, role, imageUrl, thumbnailUrl, verified }` projection and the calls a session needs
-   to restore or end itself — and the account module's own store. The second seam runs by the same
-   logic one level down: `modules/account/stores/auth.ts` establishes or ends a session (login,
-   signup, password reset, logout), `stores/profile.ts` owns the editable record itself
-   (fetch/update, role view, email verification, account deletion), and `stores/sessions.ts` /
-   `stores/addresses.ts` / `stores/oauth-providers.ts` / `stores/two-factor.ts` each hold state scoped to the
-   one component that renders it. The shell knows only _someone is signed in, here is their name and
-   picture, here is their role_ — the second seam divides responsibilities within the account
-   domain, without moving anything across the session/account boundary. The shell's other calls
-   that need a session but not the credential lifecycle — the step-up re-proof, the verification
-   resend and the language preference — sit in their own files beside `session.ts`
-   (`reauth.ts`, `email-verification.ts`, `locale-preference.ts`).
-
-### The honest scorecard
-
-The goal test passes for `src/` and for the suite. It fails only where the answer is not this
-repo's to give: the shared contract still documents the deleted endpoints.
-
-That is worth stating precisely, because "green" would have been the wrong outcome.
-
-::: tip Run a deletability test after any significant change
-Delete two or three domains on a throwaway copy and see what breaks. Nothing in the suite checks
-this, and every finding above was invisible to lint, to `vue-tsc` and to a fully green run — the
-dead links most of all. The procedure is
-[Re-running the deletability check](../build/module-lifecycle.md#re-running-the-deletability-check).
-:::
-
 ## Related pages
 
+- [Adding and deleting a domain](./modules-adding-and-deleting.md)
 - [Modules overview](../modules/start.md) — every domain, one page each
 
 - [Adding & removing a module](../build/module-lifecycle.md) — the procedure, with the commands

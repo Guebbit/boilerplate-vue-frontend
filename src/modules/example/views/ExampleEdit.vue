@@ -15,7 +15,7 @@ export default {
  * says so when the record moved under it (412, with "reload latest").
  * Here: title, body and a cover; the status is not a field but the server's own moves, and the form
  * is read-only when the row's `actions.update` is false.
- * @see docs/understand/request-flow.md#conditional-writes
+ * @see docs/understand/request-flow-strategies.md#conditional-writes
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';

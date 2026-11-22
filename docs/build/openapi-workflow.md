@@ -5,6 +5,8 @@ audience: [developer]
 
 # OpenAPI Workflow
 
+How the HTTP contract reaches this repo, what is generated from it and how to change it.
+
 ## The backend owns the contract
 
 `openapi.yaml` and `asyncapi.yaml` are **owned by the backend**, which builds them from per-module
@@ -119,7 +121,7 @@ Naming convention: schema name + property name, PascalCase. Example: `ReauthPass
 
 ## Orval configuration
 
-`orval.config.ts` at the project root controls code generation. It defines **three independent output blocks**, each reading the same spec:
+`orval.config.ts` at the project root controls code generation. It defines **two independent output blocks**, each reading the same spec:
 
 | Block        | Target                                      | Effect                                               |
 | ------------ | ------------------------------------------- | ---------------------------------------------------- |

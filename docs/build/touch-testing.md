@@ -9,7 +9,7 @@ A phone is not a narrow desktop. A finger cannot hover, taps fire compatibility 
 swipe can do things a click never did. This page is how the e2e suites become a touch device, and
 what they check once they are one.
 
-Theory (why input is not width, why a tooltip is a mouse thing): [Pointer vs touch](../understand/design-system.md#pointer-vs-touch).
+Theory (why input is not width, why a tooltip is a mouse thing): [Pointer vs touch](../understand/design-system-touch-and-layout.md#pointer-vs-touch).
 
 ## What emulation changes
 

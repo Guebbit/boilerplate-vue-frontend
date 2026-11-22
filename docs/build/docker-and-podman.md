@@ -67,9 +67,8 @@ That single fact decides everything else: `VITE_API_URL`, `VITE_API_SSE`, `VITE_
 inside the backend's own network.
 
 To run the pair, start the **backend** stack first (it owns the API, Alloy and Umami this app points at),
-then this one. What has to line up on the backend's side (CORS origin, cookies, ports) is its
-[pairing page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/pairing-and-ports.md#what-has-to-line-up).
-How the cookies and session modes work is in its [account-sessions page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account-sessions.md).
+then this one. What has to line up on the backend's side: its CORS allowlist must include this app's origin, its
+cookies must be sent with `withCredentials: true` (the session mode is the backend's `jwt` or `cookie` setting; see [Security](../understand/security.md)), and its host ports stay in `3000–3099`.
 
 Keeping the two host-port blocks disjoint (`8080–8099` here, `3000–3099` there) is what lets both
 be up at once — the full map lives in

@@ -21,7 +21,18 @@ names mean, the tripwire) live in
 
 ## The one rule
 
-Owned by the backend: [The one rule](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#the-one-rule).
+> The model proposes. A deterministic oracle disposes.
+
+```mermaid
+flowchart LR
+    A["LLM proposes<br/>a hypothesis"] --> B{"Deterministic<br/>gate"}
+    B -->|survives| C["Finding<br/>with a citation"]
+    B -->|dies| D["Discarded<br/>silently"]
+    C --> E["Human reads it,<br/>decides, writes a test"]
+```
+
+- **Nothing AI-generated gates CI.** A red build must be reproducible by re-running it. An LLM verdict is not, so these report and never block.
+- **A finding without a citation is not a finding.** Either a `file:line` in the spec, or nothing.
 
 ## The prompts
 
@@ -46,7 +57,7 @@ from `npm run audit:css -- --json` and judges what the scanner cannot.
 
 ### Each repo keeps the prompts its own stack needs
 
-The two repos do **not** hold one set, and no longer try to. `accessibility-manual`,
+The two repos do **not** hold one set. `accessibility-manual`,
 `design-manual` and `css-invasive` audit UI/UX judgement calls with no backend equivalent; the backend's own
 `boilerplate-node-backend/scripts/audit/reachability/SKILL.md` and
 `boilerplate-node-backend/scripts/audit/rate-limit-keys/SKILL.md` reason about a mounted Express request
@@ -76,31 +87,58 @@ This page is per-repo in the same way. It names this repo's own tools and its ow
 
 ### Naming the scope
 
-Owned by the backend: [Naming the scope](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#naming-the-scope).
+`scripts/audit/RULES.md` rules 4 and 5 own the report folder (`reports/audit-<run>/<audit>/`) and the `<SCOPE>` names.
+
+| Argument     | `<SCOPE>`                                      |
+| ------------ | ---------------------------------------------- |
+| a module     | the module name, `cart`                        |
+| a path       | slugged, `src/` dropped                        |
+| `--diff`     | the current branch name, slugged               |
+| `whole-repo` | `whole-repo`; an empty argument means the same |
 
 ### The tripwire
 
-Owned by the backend: [The tripwire](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#the-tripwire).
+An audit is read-only. `npm run audit:check-clean` snapshots both repos (HEAD, refs, the stash list, `git status --ignored`, the index hashes) before the run and diffs them after, ignoring the run's own report folder. It reports a write after the fact; it does not stop one. A peer session in the same worktree shows up as a change, and the reader judges.
 
 ### The reports are disposable
 
-Owned by the backend: [The reports are disposable](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#the-reports-are-disposable).
+`reports/` is gitignored on purpose. A report is working evidence: once its conclusions land as a fixed test, a commit message or a tracked issue, the file has done its job. The prompts are the durable asset, not their output.
 
 This repo's delta: the report folder is `reports/audit-<run>/`, not `tmp/reports`. `design-manual` is the exception and keeps one fixed folder, `reports/audit/design-manual/`.
 
 ## The two-pass method
 
-Owned by the backend: [The two-pass method](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#the-two-pass-method).
+`spec-drift` is the audit whose ordering is the method. Spec drift is a test and an implementation sharing one wrong reading of the spec: CI is green and the test only agrees with the code.
+
+```mermaid
+flowchart TD
+    S["Pass 1: spec only<br/>openapi.yaml, docs/"] --> F["Freeze expectations to a file,<br/>one row per behaviour"]
+    F --> I["Pass 2: open the code and the tests"]
+    I --> C{"spec says X, code does Y,<br/>test asserts Y"}
+    C -->|yes| M["MISMATCH: spec drift"]
+    C -->|no| O["OK, or spec-silent"]
+```
+
+Write the expectations down before opening `src/`: that file is the uncontaminated control. If a pass-1 row turns out wrong, add a pass-2 row saying so; never rewrite the control.
 
 ## How to run one
 
-Owned by the backend: [How to run one](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#how-to-run-one).
+Each prompt is an [Agent Skill](https://agentskills.io): a folder holding a `SKILL.md` an AI reads and follows. In Claude Code, `/audit-spec-drift cart` or `/audit-code-shape --diff` passes the argument through as the scope. In any other tool: "Read `scripts/audit/spec-drift/SKILL.md` and follow it, scope `cart`." The tool must be able to read the repo.
+
+The pointer's `allowed-tools` only skips prompts; what keeps an audit read-only is rule 1 of `RULES.md`. Use a long-context model for `spec-drift` and `spec-gaps`: small local models invent `file:line` citations.
 
 This repo's delta: `design-manual` needs a model that can read images; the screenshots go only into the reviewing session's own context, and nothing is uploaded to an image service. The mutation report that `test-honesty` reads is `reports/mutation/mutation.json`.
 
 ## `test-honesty`: a test is innocent once it has failed
 
-Owned by the backend: [test-honesty: a test is innocent once it has failed](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#test-honesty-a-test-is-innocent-once-it-has-failed).
+A test that stays green whatever the code does is the fear this answers: coverage padding, a mocked subject, a swallowed failure, a title that lies, an input that cannot discriminate. The model writes what each suspect test's title claims and the smallest `src/` change that would break it, then looks that change up in Stryker's report (`reports/mutation/mutation.json`), which records per mutant which tests ran and which failed.
+
+| Verdict      | Meaning                                                              |
+| ------------ | -------------------------------------------------------------------- |
+| `CONFIRMED`  | the mutant survived this test                                        |
+| `CLEAN`      | a test killed it; dropped silently                                   |
+| `LIAR-TITLE` | the title names a rule `src/` does not have; reported even if clean  |
+| `UNVERIFIED` | no mutator can make the break; listed with a reason tag, not counted |
 
 This repo's delta:
 
@@ -223,7 +261,7 @@ apart — not on a schedule.
 
 ## Footnote: the tools we evaluated, and why none were adopted
 
-Owned by the backend: [Footnote: the tools we evaluated, and why none were adopted](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/build/ai-auditing.md#footnote-the-tools-we-evaluated-and-why-none-were-adopted).
+No LLM-mutation or review-bot tool is adopted: the LLM-mutant tools (Mutahunter, LLMorpheus) are dead or archived, coverage-gated test generators agree with the code by construction (the defect `spec-drift` hunts), and review bots duplicate `/code-review` and `/security-review`. If that changes, these prompt files are what would be replaced.
 
 ## Related
 

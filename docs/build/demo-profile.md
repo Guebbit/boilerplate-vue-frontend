@@ -5,8 +5,10 @@ audience: [developer]
 
 # The demo profile
 
+Run the app against a real, seeded, disposable backend with one command.
+
 ::: tip Mechanism here, domain on its module page
-The seeded backend, the profile and the commands are here. The `example` **module** — the small domain written to be copied, which `npm run demo:remove` deletes with the shop (copy it first) — is explained in [Adding & deleting a domain](../understand/modules.md#adding-and-deleting-a-domain).
+The seeded backend, the profile and the commands are here. The `example` **module** — the small domain written to be copied, which `npm run demo:remove` deletes with the shop (copy it first) — is explained in [Adding & deleting a domain](../understand/modules-adding-and-deleting.md#adding-and-deleting-a-domain).
 :::
 
 Development and the fast e2e suite run against the paired backend's **demo profile** — the real API, booted self-contained and disposable:
@@ -17,13 +19,18 @@ npm --prefix ../boilerplate-node-backend run demo
 
 One process: the actual application against an in-memory MongoDB (the same `mongodb-memory-server` its test suite uses), seeded with every enabled module's demo fixtures, cache and queue running `disabled` — a supported deployment shape the health endpoint reports honestly. It boots in seconds, holds nothing on disk, and several instances run side by side (`NODE_PORT=3101 npm run demo`), each owning its own database.
 
-## What replaced MSW, and why
+## Why a real backend, not a mock
 
-This repo used to carry a hand-written MSW imitation of the backend — per-module handlers, an in-page mock database, a journal to survive reloads, and a byte-shared copy of the demo dataset to keep the imitation honest. The docs of that era said it plainly: _MSW is a convenience, not a contract; it is allowed to be wrong._ The live CI gate existed precisely because the imitation could drift.
+There is one implementation of the API's behaviour, the backend's, and both the dev server and the e2e suite talk to it. A new endpoint exists here the moment the backend implements it, and a filtering rule is right because it is the same code. A hand-written imitation is allowed to be wrong; a copy cannot be.
 
-The demo profile removes the imitation instead of guarding it. There is one implementation of the API's behaviour — the backend's — and both the dev server and the e2e suite talk to it. A new endpoint exists here the moment the backend implements it; a filtering rule is right here because it is the same code. Nothing is allowed to be wrong, because nothing is a copy.
+```mermaid
+flowchart LR
+    Dev["npm run dev"] --> Demo
+    E2E["npm run test:e2e<br/>one backend per shard"] --> Demo
+    Demo["backend demo profile<br/>in-memory MongoDB, seeded"] --> Seed["scenarios/ dataset<br/>reseeded on every restore"]
+```
 
-What each concern maps to now:
+What each concern maps to:
 
 | Concern                                        | Where it lives                                                                                              |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -35,7 +42,7 @@ What each concern maps to now:
 
 ## How the e2e suite uses it
 
-`npm run test:e2e` builds the bundle once, then boots **one demo backend per shard** (ports `3101+`) so the four Cypress processes cannot see each other's writes — the isolation MSW's in-page state used to provide, now with the real application behind it. Each shard's Cypress carries `CYPRESS_apiUrl`, and the overwritten `cy.visit` injects it into the page as the `__E2E_API_URL` runtime override the axios client reads before falling back to the baked `VITE_API_URL` (`src/infrastructure/http/client.ts`).
+`npm run test:e2e` builds the bundle once, then boots **one demo backend per shard** (ports `3101+`) so the four Cypress processes cannot see each other's writes. Each shard's Cypress carries `CYPRESS_apiUrl`, and the overwritten `cy.visit` injects it into the page as `window.__APP_CONFIG.API_URL`, the runtime override the axios client reads before falling back to the baked `VITE_API_URL` (`src/infrastructure/http/client.ts`).
 
 `E2E_SESSION_MODE=cookie npm run test:e2e` boots every shard's backend with `NODE_SESSION_MODE=cookie` (the default is `jwt`) and tells the journeys the same, so the whole suite also runs against the cookie session; CI runs both.
 
@@ -54,4 +61,4 @@ Four more doors, for the journeys (see [Tests — Journeys](../reference/tests-e
 
 ## Working without any backend
 
-There is no offline mock of the app any more, deliberately: a stateless imitation renders pages whose every flow is dead, which demonstrates less than it appears to. The demo profile _is_ the no-infrastructure path — it needs Node and the sibling checkout, nothing else.
+There is no offline mock of the app, deliberately: a stateless imitation renders pages whose every flow is dead, which demonstrates less than it appears to. The demo profile _is_ the no-infrastructure path — it needs Node and the sibling checkout, nothing else.

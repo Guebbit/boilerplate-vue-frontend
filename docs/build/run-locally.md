@@ -137,7 +137,7 @@ npm run test:unit             # fast — the jsdom suite alone
 npm run test:mutation         # Stryker; nightly in CI, by hand when you want it
 ```
 
-[Test timings](./testing-and-docs.md#test-timings) has what each of these costs.
+[Test timings](./testing-and-docs-gates.md#test-timings) has what each of these costs.
 
 ## After you clone: the GitHub settings
 

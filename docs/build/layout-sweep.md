@@ -34,7 +34,7 @@ Sizes live in one module, `scripts/e2e/viewports.ts`, and nowhere else.
 | `tablet`          | 1024×768 | md (960–1279) | yes   | the nav is collapsed but the grid is wide                      |
 | `desktop`         | 1280×800 | lg (≥ 1280)   | no    | the configured default; every desktop baseline is this size    |
 
-Why one size per band is enough, and what a band means: [Design System](../understand/design-system.md#breakpoints-viewport-bands-and-layout-invariants).
+Why one size per band is enough, and what a band means: [Design System](../understand/design-system-touch-and-layout.md#breakpoints-viewport-bands-and-layout-invariants).
 
 ## The flow
 

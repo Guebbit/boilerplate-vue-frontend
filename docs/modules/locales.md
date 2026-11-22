@@ -72,7 +72,7 @@ so _may I request this language_ and _may I download a dictionary for it_ stay t
 **A stale save says so.** A language's record, its entries and a translation set
 are versioned writes: when someone saved first, the server answers `412`, the screen shows a warning
 (not an error) and offers "reload latest" instead of resending (`useStaleRecord`, see
-[Request Flow](../understand/request-flow.md#conditional-writes)).
+[Request Flow](../understand/request-flow-strategies.md#conditional-writes)).
 
 **An import warns instead of fencing.** A whole-dictionary tag cannot say which key a colleague
 changed, so the entries import (merge or replace) sends no `If-Match`. The dialog asks one

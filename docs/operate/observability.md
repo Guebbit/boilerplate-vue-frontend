@@ -23,12 +23,10 @@ Both are no-ops when their env vars are absent, so local dev works without the s
 flowchart LR
     Main["src/main.ts\nsyncTracker() on the visitor's answer"]
     Store["src/infrastructure/observability/store.ts\nuseObservabilityStore()"]
-    HTTP["src/infrastructure/http/index.ts\ncaptureException() on 5xx"]
-    Components["Stores + composables\ncaptureException()"]
+    Callers["captureException() callers:\nutils/errors.ts, http/validate.ts,\napp/router/index.ts, app/vue-error-handler.ts"]
 
     Main --> Store
-    HTTP --> Store
-    Components --> Store
+    Callers --> Store
     Store -->|VITE_FARO_URL set| Faro["Grafana Faro SDK"]
     Store -->|VITE_UMAMI_WEBSITE_ID set| Umami["Umami tracker"]
     Faro -->|errors, traces, web-vitals| Alloy["Grafana Alloy :12347"]
@@ -96,7 +94,7 @@ flowchart LR
 
 The `TracingInstrumentation` opens a span for every `fetch`/XHR and **propagates the W3C `traceparent` header to the API origin** (`VITE_API_URL`). The API links its own request span to the browser span instead of continuing its trace, so a request's two halves are findable from each other in Grafana/Tempo but stay two separate traces.
 
-Manual exceptions go through `captureException()` — called from `src/infrastructure/http/index.ts` on `5xx` responses and from `router.onError`. Faro pushes them via `faro.api.pushError()`.
+Manual exceptions go through `captureException()` — called from `utils/errors.ts`, `http/validate.ts` (a contract mismatch), `app/router/index.ts` and `app/vue-error-handler.ts`. Faro pushes them via `faro.api.pushError()`.
 
 > **Backend note:** for traces to link, the API must allow the `traceparent` request header in its CORS config.
 
@@ -131,8 +129,7 @@ The trace-propagation origin is derived from `VITE_API_URL`, the same value the 
 exception is browsing: a product page opened and a search made are reported to the backend's
 `POST /analytics/events` relay (`trackBrowsing` on the consent store), because the response cache
 hides most reads from the server. Nothing is sent, and nothing queued, before the visitor accepts
-analytics. The rule, in the backend's words, is in
-`boilerplate-node-backend/docs/understand/analytics.md` under "Who sends which event".
+analytics. The rule: the browser sends only page and consent events, the server sends the business ones, and nothing is sent before consent.
 Two things cover the rest of the ground:
 
 - **Pageviews**, including SPA route changes, are written by the Umami tag itself. There is nothing
@@ -149,9 +146,7 @@ are all emitted there.
 
 The names live beside the controllers that fire them, in the backend's
 `src/modules/<name>/analytics.ts` — deliberately not restated here. A list in this repo is a copy of
-the other repo's data with nothing comparing the two, which is the same failure that once had both
-sides emitting the same event; the last copy that lived here had already lost four names before
-anyone noticed.
+the other repo's data with nothing comparing the two, which lets the two sides drift and emit the same event twice, unnoticed.
 
 There is no general `track()`; `trackBrowsing` sends only the backend's closed browsing list. An app
 built on this boilerplate that genuinely has another moment only the browser can see adds it to the
@@ -192,4 +187,4 @@ obs.captureException(error);
 
 - [Umami](./umami.md)
 - [Request Flow](../understand/request-flow.md)
-- [Observability endpoints](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/observability.md) — the backend's page for the reads
+- [Observability dashboard](../modules/observability-dashboard.md#the-five-reads) — the reads the privacy page's table is built from.

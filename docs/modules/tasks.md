@@ -42,7 +42,7 @@ declarations, not of anything in this folder, which is why the menu entry can be
 without restating a permission.
 
 ::: tip A leaf in both directions
-Together with `example` (see [Adding & deleting a domain](../understand/modules.md#adding-and-deleting-a-domain)) and [`observability`](./observability.md), this is a module to read when you
+Together with `example` (see [Adding & deleting a domain](../understand/modules-adding-and-deleting.md#adding-and-deleting-a-domain)) and [`observability`](./observability.md), this is a module to read when you
 want the module system with none of the interesting coupling in the way. Zero edges, one store, three
 screens.
 :::

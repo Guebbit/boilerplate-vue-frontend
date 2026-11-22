@@ -1,7 +1,7 @@
 /**
  * @module
  * What a background read does when it fails: an ambient toast, reported to Faro.
- * The "ambient" half of `docs/understand/request-flow.md#blocked-vs-ambient-failures`, as
+ * The "ambient" half of `docs/understand/request-flow-strategies.md#blocked-vs-ambient-failures`, as
  * `useMissingRecord` is the "record is not there" half.
  */
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
