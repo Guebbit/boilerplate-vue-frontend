@@ -49,7 +49,7 @@ const viewOf = (route: RouteRecordRaw): string => {
 const pageLinkOf = (moduleName: string): string =>
     existsSync(path.resolve(PAGE, '../../modules', `${moduleName}.md`))
         ? `../modules/${moduleName}.md`
-        : './modules.md#adding-and-deleting-a-domain';
+        : './modules-adding-and-deleting.md#adding-and-deleting-a-domain';
 
 /**
  * One row's cells, in the table's column order.

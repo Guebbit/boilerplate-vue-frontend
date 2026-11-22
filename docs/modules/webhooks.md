@@ -60,7 +60,7 @@ stateDiagram-v2
   (`update`, `delete`, `enable`, `disable`, `createSecret`, `removeSecret`); a delivery's
   Replay follows `actions.replay`, which is false while its subscription is off.
 - A save that lost a race (`412`) shows a warning and offers "reload latest" (`useStaleRecord`, see
-  [Request Flow](../understand/request-flow.md#conditional-writes)); the subscription forms also disable
+  [Request Flow](../understand/request-flow-strategies.md#conditional-writes)); the subscription forms also disable
   the event types the caller may not read.
 - A superseded secret shows when it stops signing (`retiringSecrets`); the page never restates
   the server's overlap window.

@@ -5,6 +5,8 @@ audience: [developer]
 
 # AsyncAPI Workflow
 
+How the async contract (SSE events) reaches this repo and how to change it.
+
 ## AsyncAPI is the async contract source of truth
 
 Keep REST and async contracts separate:
@@ -14,9 +16,18 @@ Keep REST and async contracts separate:
 
 Current scope of `asyncapi.yaml`:
 
-- SSE observability stream (`observability.metrics.snapshot`, `observability.metrics.updated`, `observability.heartbeat`)
+| Family        | Transport | Channels                                                                                                                 |
+| ------------- | --------- | ------------------------------------------------------------------------------------------------------------------------ |
+| observability | SSE       | `observability.metrics.snapshot`, `.updated`, `.heartbeat`                                                               |
+| notifications | SSE       | `notifications.created`, `.deleted`, `.read`                                                                             |
+| orders        | webhook   | `order.created`, `.paid`, `.canceled`, `.redacted`                                                                       |
+| shipments     | webhook   | `shipment.shipped`, `.delivered`, `.lost`                                                                                |
+| payments      | webhook   | `payment.succeeded`, `.failed`, `.refunded`, `.refund_failed`, `.refund_reversed`, `.dispute_opened`, `.dispute_updated` |
+| returns       | webhook   | `return.requested`, `.received`, `.closed`                                                                               |
+| users         | webhook   | `user.erased`, `user.updated`                                                                                            |
+| example       | webhook   | `example.published`                                                                                                      |
 
-That is the whole of it, and deliberately so — see below.
+SSE channels are streams this app opens. Webhook channels bind to `subscriberEndpoint`: outbound HTTPS deliveries from the backend to a subscriber URL, which a browser never receives, so only their contract is shared. The backend's RabbitMQ worker queues are not here — see below.
 
 ## This repo holds the SHARED HALF of the contract
 
@@ -39,13 +50,13 @@ backend broke something.
 
 ## Servers declared
 
-| Name       | Protocol | Purpose                  | Env var        |
-| ---------- | -------- | ------------------------ | -------------- |
-| `sseLocal` | `http`   | SSE observability stream | `VITE_API_SSE` |
+| Name                    | Protocol | Purpose                                             | Env var                           |
+| ----------------------- | -------- | --------------------------------------------------- | --------------------------------- |
+| `sseLocal`              | `http`   | SSE observability stream                            | `VITE_API_SSE`                    |
+| `sseNotificationsLocal` | `http`   | SSE notifications stream                            | none (derived from the REST base) |
+| `subscriberEndpoint`    | `https`  | outbound webhook deliveries, a URL per subscription | none                              |
 
-One server, because a server travels with the channels bound to it and this document holds only the
-SSE ones. The AMQP broker is declared beside the queues in the backend's own contract and never
-reaches this file.
+A server travels with the channels bound to it. The AMQP broker is declared beside the queues in the backend's own contract and never reaches this file.
 
 ## Generated TypeScript types
 
@@ -86,8 +97,7 @@ npm run check                 # among its checks: the spec is the backend's byte
 
 ## Shared with the backend
 
-`scripts/contracts/generate-asyncapi-types.ts` **started** byte-identical to the one in
-`boilerplate-node-backend` — but it is NOT byte-identical any more: this copy also emits an
+`scripts/contracts/generate-asyncapi-types.ts` and the backend's generator of the same name are **not** byte-identical: this copy emits an
 inlined-JSON-Schema map for `create-sse-client.ts`'s runtime SSE-frame validation, which the
 backend copy has no use for and emits queue-payload Zod validators instead. What both copies
 still share is the input format, the channel/message-naming machinery, and `--out` being a

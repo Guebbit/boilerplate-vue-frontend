@@ -5,9 +5,19 @@ audience: [developer]
 
 # Web Attack Defences
 
-The attack theory (every flaw a website can have, family by family) lives in the backend repo's
-[Web attacks and defences][index]. This page is scoped to **this frontend**: which attack each
-control stops, and where that control lives.
+Which web attacks this frontend stops, which it leaves to the backend, and where each control lives.
+
+Each row below is tagged with one of these families:
+
+- authentication
+- client-side
+- business logic
+- cryptography and secrets
+- disclosure
+- infrastructure
+- supply chain
+- API surface
+- automation and abuse
 
 This is one of two defences pages for one pair of repos. The split follows where a defence
 actually runs, not which repo "owns" the feature it protects:
@@ -15,8 +25,7 @@ actually runs, not which repo "owns" the feature it protects:
 - **This page** answers the rows only a browser can decide — what the DOM renders, what a script
   can read, what a cross-site page can trick a visitor's browser into sending, and what ships in
   this bundle's own dependency tree.
-- **[The backend's defences section][index]**
-  answers the rows a server decides — the ones needing a database, a signing key, or a header the
+- **The backend's defences pages** answer the rows a server decides — the ones needing a database, a signing key, or a header the
   browser cannot be trusted to set honestly.
 
 A handful of rows need both halves to close: the browser enforces what the server declares (CORS,
@@ -60,10 +69,10 @@ Silence is not one of the three.
 
 ## The trust boundary this app is built around
 
-Families: [authentication][authentication], [client-side][client-side].
+Families: authentication, client-side.
 
 The full login → refresh flow is diagrammed in [Security](./security.md). The one fact
-worth repeating here, because most of the [client-side][client-side] rows below trace back to it: the access token lives in
+worth repeating here, because most of the client-side rows below trace back to it: the access token lives in
 a Pinia ref, in memory only, and is attached explicitly per request; it is never in a cookie, never
 in `localStorage`. The only thing the browser sends automatically is the refresh cookie, and that
 one is `HttpOnly` — set by the backend, unreadable from here by construction.
@@ -77,7 +86,7 @@ one is `HttpOnly` — set by the backend, unreadable from here by construction.
 
 ## XSS and script execution
 
-Family: [client-side][client-side].
+Family: client-side.
 
 No occurrence of `v-html`, `innerHTML`/`outerHTML`, `eval`, `new Function`, or `document.write`
 anywhere in `src/` — checked by grep, not by reading every file, so this is a repo-wide fact
@@ -98,7 +107,7 @@ user or API text ever reaches the DOM in this codebase.
 
 ## CSRF, clickjacking and cross-origin trust (shared)
 
-Families: [client-side][client-side], [infrastructure][infrastructure].
+Families: client-side, infrastructure.
 
 | Attack                                                | Control                                                                                                                                                                                                                                                                                                                                                                                               | Where                                                                                                                    |
 | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -114,8 +123,8 @@ Families: [client-side][client-side], [infrastructure][infrastructure].
 
 ## Session, cookies and the redirect targets this app trusts
 
-Families: [authentication][authentication], plus the redirect and autocomplete rows from
-[client-side][client-side] and [disclosure][disclosure].
+Families: authentication, plus the redirect and autocomplete rows from
+client-side and disclosure.
 
 Beyond the token model above, two more rows follow from how login and OAuth hand control back to
 this app.
@@ -130,7 +139,7 @@ this app.
 
 ## Information disclosure — what ships in the bundle
 
-Family: [disclosure][disclosure].
+Family: disclosure.
 
 | Attack                                   | Control                                                                                                                                                                                                                                                                                             | Where                                                                                                        |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
@@ -144,7 +153,7 @@ Family: [disclosure][disclosure].
 
 ## Security headers this repo sets itself (shared)
 
-Family: [infrastructure][infrastructure].
+Family: infrastructure.
 
 The API sets its own headers via `helmet()`; this repo answers for a different set of responses
 (the HTML shell and static assets) and cannot rely on the API's `helmet()` call reaching them —
@@ -159,7 +168,7 @@ individual rows; this is the artifact they all point at.
 
 ## Supply chain — this repo's own tree
 
-Family: [supply chain][supply-chain].
+Family: supply chain.
 
 A separate dependency tree from the backend's, audited on its own: sharing a contract does not
 mean sharing a `node_modules`.
@@ -179,7 +188,7 @@ The check is `npm audit --omit=dev --audit-level=moderate`.
 
 ## API consumption and anti-automation (shared)
 
-Families: [the API surface][api-surface], [automation and abuse][automation].
+Families: the API surface, automation and abuse.
 
 | Attack                                           | Control                                                                                                                                                                                                                                                                                                          | Where                                                                                                      |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
@@ -190,7 +199,7 @@ Families: [the API surface][api-surface], [automation and abuse][automation].
 
 ## Business logic — this app echoes money, never decides it
 
-Family: [business logic, money and payments][business-logic].
+Family: business logic, money and payments.
 
 | Attack                                    | Control                                                                                                                                                                                                                                                                                                                    | Where                                |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
@@ -201,21 +210,20 @@ Family: [business logic, money and payments][business-logic].
 
 ### Deliberate, and why
 
-- **Content-Security-Policy** ([client-side][client-side]) — not set on this app's HTML. A correct policy has to know whether Faro/Umami are
+- **Content-Security-Policy** (client-side) — not set on this app's HTML. A correct policy has to know whether Faro/Umami are
   enabled and which origins they need, which the static nginx config cannot see at build time.
   `docker/nginx.conf` documents the exact `Content-Security-Policy-Report-Only` line to start
   from once those choices are made at the reverse proxy. The API's `helmet()` default CSP covers
   only its own JSON answers, so it does not close this.
-- **TLS, `Strict-Transport-Security`** ([cryptography and secrets][crypto]) — this container speaks plain HTTP on a private network;
+- **TLS, `Strict-Transport-Security`** (cryptography and secrets) — this container speaks plain HTTP on a private network;
   both belong at the TLS-terminating proxy in front of it, exactly as on the backend.
-- **Anti-automation beyond the honeypot** ([automation and abuse][automation]) — the contact form's honeypot is the only
-  human-detection this app ships. No CAPTCHA, no proof-of-work, deliberately — see the backend's
-  `boilerplate-node-backend/docs/understand/defences/automation-and-abuse.md`, which says why the
-  vendor is a deployment's decision.
+- **Anti-automation beyond the honeypot** (automation and abuse) — the contact form's honeypot is the only
+  human-detection this app ships. No CAPTCHA, no proof-of-work, deliberately: which
+  challenge vendor to trust (and what it costs a visitor's privacy) is the deployment's decision, not the boilerplate's.
 
 ### Found by this walk, not yet answered
 
-- **Subresource without integrity** ([client-side][client-side]). The Umami tracker script is injected with a plain
+- **Subresource without integrity** (client-side). The Umami tracker script is injected with a plain
   `<script src>` and no `integrity` attribute (`infrastructure/observability/store.ts#initUmami`).
   The instance is self-hosted by this deployment's own compose stack rather than a third-party
   CDN, which limits who could tamper with it, but the same reasoning that added `server_tokens
@@ -246,14 +254,3 @@ Same caveat as the backend's defences section: nothing enforces this structurall
 named in a row above that moves or is renamed should update that row in the same commit. The
 supply-chain table has the shortest shelf life here too — it records what `npm audit --omit=dev`
 said on the day it was walked, not a durable fact.
-
-[index]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/index.md
-[client-side]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/client-side.md
-[authentication]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/authentication.md
-[business-logic]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/business-logic.md
-[crypto]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/crypto-and-secrets.md
-[disclosure]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/disclosure.md
-[infrastructure]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/infrastructure.md
-[supply-chain]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/supply-chain.md
-[api-surface]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/api-surface.md
-[automation]: https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/automation-and-abuse.md

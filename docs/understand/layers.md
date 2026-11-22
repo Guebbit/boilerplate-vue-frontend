@@ -22,12 +22,12 @@ There are two axes, and confusing them is the usual source of "where does this g
 | App            | `src/app`            | this application                                | router, layouts, guards, app views, the navigation                                                            |
 | Registry       | `src/modules.ts`     | which domains are in this build                 | the one file that names every enabled domain                                                                  |
 | Modules        | `src/modules/*`      | one domain each, top to bottom                  | `index.ts` is a module's only public surface                                                                  |
-| Kernel         | `src/kernel`         | that modules exist — never which                | the module registry mechanism, and nothing else                                                               |
+| Kernel         | `src/kernel`         | that modules exist — never which                | the module registry, slots and the seams siblings reach each other through (`src/kernel/*.ts`)                |
 | UI             | `src/ui`             | the design system, no domain                    | Vuetify theme tokens + icon set, the components built on them, and the confirmation-dialog store              |
 | Infrastructure | `src/infrastructure` | nothing about this app                          | `http/`, `observability/`, `utils/`, `locale-overrides.ts`, plus `session.ts` and `create-sse-client.ts`      |
 | i18n           | `src/i18n`           | nothing about this app, not even infrastructure | the vue-i18n instance, locale load/activate/merge, locale-aware router links — extractable as its own package |
 
-Dependencies point one way — `i18n → infrastructure → ui → kernel → modules → app` — and
+Dependencies point one way — `i18n → infrastructure → {ui, kernel} → modules → app` (`kernel` never imports `ui`) — and
 `eslint.config.ts`'s `eslint-plugin-boundaries` config enforces it: every file under `src/` is
 classified into exactly one of these tiers (`boundaries/no-unknown-files`), and every edge between
 two tiers is denied by default until a policy names it allowed (`boundaries/dependencies`).
@@ -52,7 +52,7 @@ points one way.
 
 The modules in this build are `account`, `api-keys`, `cart`, `delivery`, `example`, `inventory`,
 `locales`, `notifications`, `observability`, `orders`, `payments`, `products`, `returns`,
-`shop-tasks`, `stats`, `stock-alerts`, `tasks`, `users`, `webhooks` and `wishlist`.
+`shop`, `shop-tasks`, `stats`, `stock-alerts`, `tasks`, `users`, `webhooks` and `wishlist`.
 
 `example` is the odd one: it serves no business at all. It is a small note domain with its own
 screens, store, form, teaching route guard and provide/inject pair: everything that exists to show
@@ -121,7 +121,7 @@ flowchart TD
     B --> C["src/infrastructure/ (session, observability)\nsrc/modules/*/store.ts\nPinia stores"]
     B -->|"one-shot calls"| D["contracts/rest.generated/index.ts\nGenerated axios client"]
     C --> D
-    D --> E["src/infrastructure/http/index.ts\nAxios + interceptors"]
+    D --> E["src/infrastructure/http/\nAxios + interceptors"]
     E --> F[("Backend\n(demo or full stack)")]
 
     classDef view fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -231,7 +231,7 @@ flowchart LR
     View[Module view] --> Composable[Module composable\nor store]
     Composable --> Store[Pinia store]
     Store --> Client[Generated API function\ncontracts/rest.generated/index.ts]
-    Client --> HTTP[infrastructure/http/index.ts]
+    Client --> HTTP[infrastructure/http/]
 
     classDef view fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef comp fill:#ddd6fe,stroke:#7c3aed,color:#111827;
@@ -278,89 +278,9 @@ Two signals, wired through a single Pinia store:
 
 Both are initialized in `src/main.ts` and accessed via `useObservabilityStore()`. Page views are tracked automatically by the Umami tracker.
 
-## Two decisions the source files do not argue
-
-### The session store is not the account module
-
-`infrastructure/http` reads the access token on every request and the router guards read `isAuth`
-and the caller's own rules before any domain code runs — both are the bottom of the stack. The _user record_ — the
-editable `User`, its email, its avatar, the endpoints that change it — is domain knowledge and
-lives in `src/modules/account`.
-
-One store for both would give `infrastructure` a `User` entity and make the app shell reach into a
-domain to render a name. So the session holds a deliberately minimal projection instead:
-
-```ts
-viewer = { id, email, role, imageUrl, thumbnailUrl, verified };
-```
-
-The shell knows _someone is signed in, here is their display name and picture, here is their role
-and whether their address is verified_. It does not know what a `User` is, and deleting the account
-module does not break it.
-
-Which `/account` calls belong to the session: the ones it needs to restore, remember or end
-**itself** — `GET /account` (who am I), `/account/refresh`, `/account/logout`, `/account/sessions`,
-and the language preference write. Everything else under `/account` — signup, the password resets,
-the deletion flow, editing your own record — is an operation _on_ an account rather than _on_ the
-session, and belongs to the module.
-
-### Each repository owns its own dictionary
-
-The two repos synchronize the _choice_ of language — that is what `Accept-Language` does — and
-nothing else. Neither depends on the other for its own strings, which is what lets either
-boilerplate be recombined with a different counterpart.
-
-The API's own copy never reaches this app. It resolves its own keys and puts finished text on the
-wire, so a response arrives already translated and the client prints what it was sent. There is no
-reserved `api.*` namespace holding the API's dictionary. The one case that needs this app's own
-words — no response at all, a 401 with an empty body, a bare 502 — reads `api-errors.*` in this
-app's dictionary, translatable for every language, including the ones this build does not bundle.
-
-### Files are defaults, the database overrides them
-
-Both repos work the same way, and the shape is worth stating once:
-
-|                    | defaults                            | overrides                                                        |
-| ------------------ | ----------------------------------- | ---------------------------------------------------------------- |
-| this app's strings | `src/locales/*.json`, in the bundle | `app`-scoped rows, fetched from `GET /locales/{locale}/messages` |
-| the API's strings  | its own `src/locales/*.json`        | `api`-scoped rows, layered onto them inside the API              |
-
-One collection, one row per `(language, scope, key)`, edited by people who never open a code
-editor. `scope` is what keeps the two apart, and it has to be part of the row's identity rather
-than a label on it: both dictionaries declare a top-level `generic`, so `generic.error-internal`
-names one string in each.
-
-Overrides are merged **per key and deep**. An edit names one leaf, and the twenty untouched keys of
-its group must survive — a shallow assign there deletes them silently, and the damage shows up on
-an unrelated screen.
-
-Nothing in this is load-bearing. Every function in `src/infrastructure/locale-overrides.ts`
-**resolves rather than rejects**, and the app is fully usable when all of them return nothing: the
-bundled files are the floor, and a locale switch must never be blocked by an API that is slow, old,
-or absent. What that costs when the API is unreachable is the edits, and only the edits.
-
-### Which languages exist
-
-Three sources, one job each, and no fourth:
-
-1. **`src/locales/*.json`** — what this build renders with no network. A build-time glob; the
-   offline floor.
-2. **`GET /locales`** — what the deployment offers right now, with `nativeName`, `direction` and
-   per-language `scopes`. `mergeRemoteLocales` unions it into `supportedLanguages` at boot, which
-   is how a language an editor adds appears in the switcher with no frontend deploy, and removes a
-   bundled language the shop has switched off (`active: false`).
-3. **`GET /locales/{locale}/messages`** — what has been edited for one of them.
-
-There is deliberately no env list. Naming a language in `.env` claimed support without supplying
-anything able to render it.
-
-The two sides are NOT reconciled, and that is a decision rather than an oversight. This app can
-bundle `it.json` while the API has no Italian at all: the interface is Italian and the API's
-messages arrive in its fallback. Someone wanted the interface translated and did not care about the
-backend's half, and only a person can judge whether that is wrong.
-
 ## Related pages
 
+- [Decisions the source files do not argue](./layers-decisions.md)
 - [Modules](./modules.md) — what a module may know, and what adding or deleting one costs
 - [Domain Layer](./domain-layer.md) — where a client-side business rule goes, and why the layer is thin
 - [Architecture](./architecture.md)

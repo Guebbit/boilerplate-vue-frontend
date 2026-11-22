@@ -7,7 +7,7 @@ audience: [developer]
 
 This page describes security from the **frontend perspective**: how the SPA stores and uses auth tokens, and how route guards enforce access control.
 
-For the backend auth architecture (JWT signing, bcrypt, refresh token DB storage), see the [backend docs](https://github.com/Guebbit/boilerplate-node-backend).
+The backend signs the tokens, hashes the passwords and stores the refresh token; none of that is visible here, and this page covers only what the SPA sees.
 
 ## Two session modes
 
@@ -39,11 +39,11 @@ flowchart TD
     class End error;
 ```
 
-The rest of this page describes the `jwt` flow in detail; `cookie` mode drops the token and the refresh step. The backend's [session-mode page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account-sessions.md#choosing-the-session-mode) explains when to pick which.
+The rest of this page describes the `jwt` flow in detail; `cookie` mode drops the token and the refresh step. `jwt` suits a client that cannot rely on cookies; `cookie` keeps the token away from JavaScript entirely.
 
 ## Auth token model in `jwt` mode (what the FE sees)
 
-The backend uses a **split-token model** (its [sessions theory](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/sessions.md) owns it). What
+The backend uses a **split-token model** (a short-lived access token plus a long-lived refresh token). What
 the FE sees: a short-lived access token in the login response body, sent on every protected call as
 `Authorization: Bearer <token>`; and a refresh token in an `HttpOnly` cookie the browser sends
 automatically on `POST /account/refresh`, which the FE never reads. That keeps the refresh token out
@@ -114,7 +114,7 @@ flowchart TD
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Token storage + session state      | `src/infrastructure/session.ts` — the mode, the token or cookie session, a `{ id, email, role, … }` projection, and the caller's own rules            |
 | The visitor's own account record   | `src/modules/account/stores/profile.ts`                                                                                                               |
-| Attaching Bearer token to requests | `src/infrastructure/http/index.ts` (request interceptor)                                                                                              |
+| Attaching Bearer token to requests | `src/infrastructure/http/interceptors.ts` (request interceptor)                                                                                       |
 | Handling `401` responses           | `src/infrastructure/http/refresh.ts` (refresh and replay in `jwt` mode, end the session in `cookie` mode; a replay as a guest once the session ended) |
 | Restoring auth on page reload      | `src/app/guards/authentications.ts` → `tryRestoreAuth`                                                                                                |
 | Route guards                       | `src/app/guards/authentications.ts` → `canAccess`, `enforceRouteAccess`                                                                               |
@@ -141,7 +141,7 @@ The requirement has two halves, and they are ANDed:
 published for this caller at the `abilities` of `GET /account`, which are the same rules the server
 enforces. A ladder of role names cannot express the model behind it: `warehouse` may move stock and
 not answer a message, `support` may answer a message and not move stock — neither is "more
-privileged" than the other — and the boolean that used to stand in for all of it could not say
+privileged" than the other — and a single boolean could not say
 _administrator of what_.
 
 A rule always implies a session — rules are published for a caller the server identified — so a
@@ -199,8 +199,7 @@ step-up prompt); the route guards decide where a signed-out visitor goes. A `403
 The backend's antibot rung is off by default (`NODE_ANTIBOT_PROVIDER=none`) but an operator can
 turn it on. Once on, `POST /account/signup`, `POST /account/password/reset` and `POST /tasks`
 always require an `antibot-challenge-token` header; `POST /account/login` and
-`POST /payments/:id/confirm` only require it after a prior failure — see
-`boilerplate-node-backend/docs/modules/antibot.md`.
+`POST /payments/:id/confirm` only require it after a prior failure.
 
 `src/ui/organisms/HumanCheck.vue` is the one provider-neutral component every gated form mounts:
 

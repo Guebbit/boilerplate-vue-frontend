@@ -33,7 +33,7 @@ Two words appear on almost every page below, so they are worth ten lines here.
 
 ### A **domain** is one area of the business
 
-Defined once, in [the backend's Theory page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/start.md); the word means the same here.
+The word means the same on both sides of the pair.
 
 ### The confusing part: a domain contains a folder called `domain/`
 
@@ -113,22 +113,21 @@ purpose, so the next author finds what they need there instead of copying it.
 
 ## Where each topic lives
 
-| Need                                                | Go to                                                                                                                                                 |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Open the code for the first time**                | **[Reading Path](./reading-path.md)**                                                                                                                 |
-| Understand the big blocks and boundaries            | [Architecture](./architecture.md)                                                                                                                     |
-| Read the folder-by-folder explanation               | [Layers](./layers.md)                                                                                                                                 |
-| Understand how domains stay separable               | [Modules](./modules.md)                                                                                                                               |
-| Actually add or remove a domain                     | [Adding & Removing a Module](../build/module-lifecycle.md)                                                                                            |
-| Understand the domain-modelling stance              | [Strategic DDD](./strategic-ddd.md)                                                                                                                   |
-| Follow one request end-to-end                       | [Request Flow](./request-flow.md)                                                                                                                     |
-| Know what may show a spinner                        | [Loading State](./loading-state.md)                                                                                                                   |
-| Know why a performance number never fails a build   | [Delivery performance](../build/testing-and-docs.md#delivery-performance-lab-field-and-what-may-gate)                                                 |
-| See all routes and access levels at a glance        | [Sitemap & Access Control](./sitemap.md)                                                                                                              |
-| Know what a finger can and cannot reach             | [Design system](./design-system.md)                                                                                                                   |
-| Know which library owns a style token               | [Design system](./design-system.md#who-owns-which-token)                                                                                              |
-| Know what makes a design finding a defect           | [Judging a Design](./design-judgement.md)                                                                                                             |
-| Know every attack a site can receive                | [Every attack, A to Z](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/defences/index.md#every-attack-a-to-z) (backend) |
-| Know which of those attacks this app stops, and how | [Web Attack Defences](./web-attack-defences.md)                                                                                                       |
-| Understand dependency choices                       | [Tool map](./tool-map.md)                                                                                                                             |
-| Change contract, types, or mocks                    | [API](../build/api-contracts.md)                                                                                                                      |
+| Need                                                | Go to                                                                                                       |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Open the code for the first time**                | **[Reading Path](./reading-path.md)**                                                                       |
+| Understand the big blocks and boundaries            | [Architecture](./architecture.md)                                                                           |
+| Read the folder-by-folder explanation               | [Layers](./layers.md)                                                                                       |
+| Understand how domains stay separable               | [Modules](./modules.md)                                                                                     |
+| Actually add or remove a domain                     | [Adding & Removing a Module](../build/module-lifecycle.md)                                                  |
+| Understand the domain-modelling stance              | [Strategic DDD](./strategic-ddd.md)                                                                         |
+| Follow one request end-to-end                       | [Request Flow](./request-flow.md)                                                                           |
+| Know what may show a spinner                        | [Loading State](./loading-state.md)                                                                         |
+| Know why a performance number never fails a build   | [Delivery performance](../build/testing-and-docs-gates.md#delivery-performance-lab-field-and-what-may-gate) |
+| See all routes and access levels at a glance        | [Sitemap & Access Control](./sitemap.md)                                                                    |
+| Know what a finger can and cannot reach             | [Design system](./design-system.md)                                                                         |
+| Know which library owns a style token               | [Design system](./design-system.md#who-owns-which-token)                                                    |
+| Know what makes a design finding a defect           | [Judging a Design](./design-judgement.md)                                                                   |
+| Know which of those attacks this app stops, and how | [Web Attack Defences](./web-attack-defences.md)                                                             |
+| Understand dependency choices                       | [Tool map](./tool-map.md)                                                                                   |
+| Change contract, types, or mocks                    | [API](../build/api-contracts.md)                                                                            |

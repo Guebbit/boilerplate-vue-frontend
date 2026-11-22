@@ -172,6 +172,6 @@ The nightly (`.github/workflows/lighthouse.yml`, 04:15 UTC) runs in the same pin
 
 ## Related pages
 
-- [Testing & Docs](./testing-and-docs.md#delivery-performance-lab-field-and-what-may-gate)
+- [Testing & Docs](./testing-and-docs-gates.md#delivery-performance-lab-field-and-what-may-gate)
 - [Visual Regression](./visual-regression.md): the other browser nightly, same pinned image
 - [Accessibility Testing](./accessibility-testing.md)

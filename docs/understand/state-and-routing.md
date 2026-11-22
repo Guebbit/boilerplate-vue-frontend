@@ -35,8 +35,8 @@ reached through the module's barrel (`@/modules/<name>`), never by their file pa
 // Always call useXYZStore() inside functions, not at top level
 // Avoids circular dependency issues
 const doSomething = () => {
-    const profileStore = useAccountProfileStore();
-    profileStore.login({ email, password });
+    const authStore = useAccountAuthStore();
+    authStore.login({ email, password });
 };
 ```
 
@@ -83,13 +83,15 @@ flowchart LR
 
 ### Error routing
 
-| Situation                   | Outcome                                                 |
-| --------------------------- | ------------------------------------------------------- |
-| Unknown path                | Redirect to `Error` with `status=404`                   |
-| `401` from HTTP interceptor | Redirect to `Login` with `?continue=<path>`             |
-| `403` from HTTP interceptor | Navigate to `Error` with `status=403`                   |
-| `5xx` from HTTP interceptor | Navigate to `Error` with `status=500`                   |
-| Unhandled `router.onError`  | Navigate to `Error`; exception captured in Grafana Faro |
+| Situation                              | Outcome                                                               |
+| -------------------------------------- | --------------------------------------------------------------------- |
+| Unknown path                           | Redirect to `Error` with `status=404`                                 |
+| Anonymous visitor on a protected route | `Login` with `?continue=<path>` (access guard)                        |
+| Signed in but not permitted            | `Home` with a "forbidden" message, no `continue` (access guard)       |
+| Navigation error carrying `status` 401 | `Login` with `?continue=<path>` (`router.onError`)                    |
+| Navigation error carrying `status` 403 | `Error` with `status=403`                                             |
+| Other 4xx navigation error             | `Error` with that status; the exception is captured for Grafana Faro  |
+| No status, or 5xx                      | `Error` with `status=500`; the exception is captured for Grafana Faro |
 
 ### External references
 

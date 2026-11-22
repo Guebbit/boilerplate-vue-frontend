@@ -5,6 +5,8 @@ audience: [developer]
 
 # Realtime (SSE)
 
+How the app receives server-pushed events, and where the mechanism ends and a module begins.
+
 ::: tip Mechanism here, domain on its module page
 The SSE client, its reconnection behaviour and the generated event types are here. What the
 `observability` **module** is — the realtime playground screen, its store, and why the transport
@@ -18,8 +20,8 @@ The boilerplate exposes one realtime transport — Server-Sent Events — driven
 never reach this repo — a browser cannot open a broker connection, so their payload types would be a
 contract this app carries and cannot honour. See [AsyncAPI Workflow](../build/asyncapi-workflow.md).
 
-Requires the admin role — non-admins are redirected Home by the route's `meta.access`, not by a
-check inside the component. See [Sitemap & Access Control](./sitemap.md). The gate exists
+Requires a signed-in user who can `read` `ObservabilitySnapshot` — anyone else is redirected Home by the route's
+`meta.access: 'auth'` and `meta.can`, not by a check inside the component. See [Sitemap & Access Control](./sitemap.md). The gate exists
 because the stream itself (`GET /observability/events`) needs `platform.observability.read` on the
 API side too — see
 [Admin Dashboard](../operate/admin-dashboard.md).
@@ -69,9 +71,17 @@ sequenceDiagram
         E-->>C: onmessage (event)
         C-->>S: update metrics snapshot
     end
+    opt browser closed the source for good (401, 429, 503 on reconnect)
+        E-->>C: error, readyState CLOSED
+        C->>C: wait 1s, 2s, 4s, 8s, 16s, then 30s
+        C->>E: new EventSource(url)
+        E-->>C: onopen resets the wait to 1s
+    end
     S->>C: disconnect()
     C->>E: eventSource.close()
 ```
+
+The browser reconnects a dropped stream by itself, but never one the server refused: a `401`, `429` or `503` on reconnect closes the source for good. `createSseClient` then opens a new source after a growing wait (1s, 2s, 4s, 8s, 16s, then 30s), and a successful open resets the wait. `close()` cancels any pending reopen, so a closed client never comes back.
 
 ## Observability event contract
 
@@ -97,7 +107,7 @@ schema `asyncapi.yaml` declares for its event. The generator emits those schemas
 turns each into a validator on first use — nothing hand-written. A frame that fails is logged
 with the fields that broke and, in dev, unit and e2e (`VITE_CONTRACT_THROW`), dropped, never forwarded to the store. A production build forwards it.
 
-**Where the stream is opened:** the e2e shard runner's runtime `__E2E_API_URL`, when set, wins
+**Where the stream is opened:** the runtime `window.__APP_CONFIG.API_URL` (the e2e shard runner sets it), when set, wins
 over the build-time `VITE_API_SSE` — the same precedence every REST call already has — so one
 built bundle can stream from whichever shard's backend served the page.
 

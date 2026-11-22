@@ -5,17 +5,19 @@ audience: [developer]
 
 # Runtime
 
+The libraries the running app is built from and what each one is for.
+
 ## Main runtime tools
 
-| Tool                                                                        | Why it is here                               | Repo role                                                                            |
-| --------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------ |
-| [Vue 3](https://vuejs.org/)                                                 | Reactive UI framework, Composition API, SFCs | source of all components and views in `src/`                                         |
-| [TypeScript](https://www.typescriptlang.org/)                               | Static types                                 | source language; `vue-tsc` type-checks `.vue` files                                  |
-| [Node.js 24+](https://nodejs.org/)                                          | JavaScript runtime                           | required for dev tooling (`vite`, `vitest`, `orval`, etc.)                           |
-| [Vite](https://vite.dev/)                                                   | Dev server + production bundler              | `vite.config.ts`; dev on `:8080`, production via `npm run build`                     |
-| [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue)             | `.vue` SFC support in Vite                   | transforms SFCs in both dev and build                                                |
-| [vue-tsc](https://github.com/vuejs/language-tools/tree/master/packages/tsc) | TypeScript type-check for `.vue` files       | runs in `npm run build` and CI                                                       |
-| [Axios](https://axios-http.com/)                                            | HTTP client                                  | used by the generated API client; interceptors in `src/infrastructure/http/index.ts` |
+| Tool                                                                        | Why it is here                               | Repo role                                                                                              |
+| --------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [Vue 3](https://vuejs.org/)                                                 | Reactive UI framework, Composition API, SFCs | source of all components and views in `src/`                                                           |
+| [TypeScript](https://www.typescriptlang.org/)                               | Static types                                 | source language; `vue-tsc` type-checks `.vue` files                                                    |
+| [Node.js 24+](https://nodejs.org/)                                          | JavaScript runtime                           | required for dev tooling (`vite`, `vitest`, `orval`, etc.)                                             |
+| [Vite](https://vite.dev/)                                                   | Dev server + production bundler              | `vite.config.ts`; dev on `:8080`, production via `npm run build`                                       |
+| [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue)             | `.vue` SFC support in Vite                   | transforms SFCs in both dev and build                                                                  |
+| [vue-tsc](https://github.com/vuejs/language-tools/tree/master/packages/tsc) | TypeScript type-check for `.vue` files       | runs in `npm run build` and CI                                                                         |
+| [Axios](https://axios-http.com/)                                            | HTTP client                                  | used by the generated API client; instance in `http/client.ts`, interceptors in `http/interceptors.ts` |
 
 ## Runtime visual
 
@@ -26,7 +28,7 @@ flowchart LR
     SFC --> Components[Components + views]
     SFC --> Styles[CSS: Vuetify + Tailwind]
     Components --> Pinia[Pinia stores]
-    Pinia --> Axios[Axios\nsrc/infrastructure/http/index.ts]
+    Pinia --> Axios[Axios\nsrc/infrastructure/http/client.ts]
     Axios --> API[Generated client\ncontracts/rest.generated/index.ts]
 
     classDef build fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -41,16 +43,17 @@ flowchart LR
 
 - **Vite** owns the dev experience and production bundle — keep `vite.config.ts` minimal.
 - **Vue 3 Composition API** is the only style used — no Options API.
-- **Axios** is configured once in `src/infrastructure/http/index.ts`; the generated client uses it transparently.
+- **Axios** is configured once in `src/infrastructure/http/client.ts`; the generated client uses it transparently.
 - **`vue-tsc`** runs in CI; fix type errors before merging.
 
 ## Path aliases
 
-| Alias          | Resolves to                               |
-| -------------- | ----------------------------------------- |
-| `@/`           | `src/`                                    |
-| `@api`         | `contracts/rest.generated/index.ts`       |
-| `@api/schemas` | `contracts/rest.generated/schemas.zod.ts` |
+| Alias          | Resolves to                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------- |
+| `@/`           | `src/`                                                                                             |
+| `@api`         | `contracts/rest.generated/index.ts`                                                                |
+| `@api/schemas` | `contracts/rest.generated/schemas.zod.ts`                                                          |
+| `@api/*`       | `error-codes`, `routes`, `upload-types` and `permission-vocabulary`, each a sibling generated file |
 
 ## Related pages
 

@@ -33,7 +33,7 @@
  * This repo has not hit that loop — vitest transforms with esbuild, which type-checks nothing and
  * so caches nothing per mutant. The guard is here anyway because the property that keeps it true is
  * a configuration choice rather than a law: see
- * `docs/build/mutation-testing.md#why-this-repo-does-not-hit-the-backend-s-oom-loop`.
+ * `docs/build/mutation-testing-speed.md#why-this-repo-does-not-hit-the-backend-s-oom-loop`.
  *
  * ── 4. A PARTIAL RUN KEEPS THE REPORT WHOLE ──────────────────────────────────────────────────────
  * Stryker writes `reports/mutation/mutation.json` from scratch, so `--mutate <file>` would leave a
@@ -61,7 +61,7 @@ const SANDBOX_ROOT = path.join(REPO_ROOT, '.stryker-tmp');
 
 /**
  * ESTIMATE, not a measurement — unlike the backend, no case study exists for this repo's own
- * worker RSS (docs/build/mutation-testing.md#why-this-repo-does-not-hit-the-backend-s-oom-loop
+ * worker RSS (docs/build/mutation-testing-speed.md#why-this-repo-does-not-hit-the-backend-s-oom-loop
  * documents why it hasn't needed one). Picked above `STRYKER_WORKER_HEAP_MB`'s own default
  * (2048 MB): that number bounds only V8's old-space, while a worker's actual RSS also carries
  * jsdom and Vitest's own overhead on top of it. Re-measure with

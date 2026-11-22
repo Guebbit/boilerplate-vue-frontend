@@ -34,7 +34,7 @@ know _which domain_, the third line is the one.
 | `test:mutation`                | Do the tests **notice** when the source is wrong?         | ❌ nightly        |
 | `complete`                     | All of the gate, in CI's order                            | —                 |
 
-What each costs, dated: [Test timings](./testing-and-docs.md#test-timings).
+What each costs, dated: [Test timings](./testing-and-docs-gates.md#test-timings).
 
 `test:unit:ci` is what the `test-unit` CI job actually runs — the unit run with two reporters (the
 log and the JSON report) in one vitest invocation. Reach for the individual commands above locally.

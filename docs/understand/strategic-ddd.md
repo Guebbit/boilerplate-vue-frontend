@@ -15,11 +15,8 @@ frontend that is more emphatic than a preference. [Domain layer](./domain-layer.
 prices, totals, eligibility and permissions are decided server-side, and a client that
 re-implements them has two implementations of one rule.
 
-::: tip This page mirrors the backend's
-`boilerplate-node-backend/docs/understand/strategic-ddd.md` states the same four ideas for
-the API. Read them together — the interesting parts are where the two **disagree**, and each of
-those disagreements is a fact about where the domain actually lives. The client-capability half of
-§4 below is `boilerplate-node-backend/docs/understand/tactical-ddd.md` §2.
+::: tip The backend has its own page
+The backend states the same four ideas for the API. Where the two disagree is a fact about where the domain actually lives: the client holds capabilities and presentation, the server holds the rules.
 :::
 
 ---
@@ -140,8 +137,7 @@ The same split is drawn as a map in [Modules](../modules/start.md#the-whole-map)
 
 The rule of thumb that follows: **a `generic` module's `domain/` is a smell, not a ban.** Expect it
 to be small (`locales` and `webhooks` each keep one file); a large one says the label is wrong. The
-reasoning is the backend's:
-[Strategic DDD](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/strategic-ddd.md).
+reasoning: a generic subdomain is something every product needs and nobody competes on, so it has little business rule to model.
 
 There is no `subdomain` field on the manifest, and no spec holding it. Nothing would read it at runtime, and the one check it enables — refusing `domain/` inside a `generic` module — would be a test acting on a label nothing else consults. The table above is guidance for a reader deciding where a rule goes; no test proves it, the same as `core`.
 

@@ -107,7 +107,7 @@ rather than reported.
 Two suites sit outside it: the live-backend e2e run (`npm run complete:manual`), which needs the
 paired API up, and pixel diffing, which answers to the machine that took the snapshots and so runs
 only in its pinned CI image (`visual.yml`).
-See [Test timings](./docs/build/testing-and-docs.md#test-timings) for what each layer costs.
+See [Test timings](./docs/build/testing-and-docs-gates.md#test-timings) for what each layer costs.
 
 ---
 

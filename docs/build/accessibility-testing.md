@@ -47,7 +47,7 @@ The lighter findings are logged rather than dropped so the information exists on
 
 ### The record is a file, not a log line
 
-"Logged" used to mean a line in the Cypress command log — which is read in `cypress open` and by nobody in `cypress run`. Every finding now also goes through a `cy.task` to **`reports/a11y/<spec-safe-name>.json`**: one file per spec, one entry per audited state, each with the rule id, impact, help URL, tags and the selectors of the nodes. Gitignored under `reports/`, and uploaded by CI as the `a11y-reports` artifact on every run, green included — the point is the data a passing run still produced.
+A finding is not only a line in the Cypress command log, which nobody reads in `cypress run`. Every finding also goes through a `cy.task` to **`reports/a11y/<spec-safe-name>.json`**: one file per spec, one entry per audited state, each with the rule id, impact, help URL, tags and the selectors of the nodes. Gitignored under `reports/`, and uploaded by CI as the `a11y-reports` artifact on every run, green included — the point is the data a passing run still produced.
 
 A retried test overwrites its own entry rather than appending; the four CI shards each run different specs, so no two processes write the same file.
 
@@ -115,7 +115,7 @@ Worth recording, because all five are **boilerplate** defects rather than demo-a
 
 The last one also made the suite **timing-dependent**: audit before the rows arrived and it failed, audit after and it passed, with nothing about the code having changed. A gate whose result depends on how fast the API replied is not a gate, so this was a correctness fix as much as an accessibility one.
 
-Two of these were only reachable at all after a bug in the shared `cy.visit()` override was fixed — until then most cases were quietly auditing the _previous_ route. That story is in [Visual Regression](./visual-regression.md#the-bug-this-suite-found-in-the-test-harness), which is where it surfaced.
+Two of these were only reachable at all after a bug in the shared `cy.visit()` override was fixed — until then most cases were quietly auditing the _previous_ route. That story is in [Visual Regression](./visual-regression-determinism.md#the-bug-this-suite-found-in-the-test-harness), which is where it surfaced.
 
 ## Everything on the page is ours
 
@@ -127,9 +127,7 @@ If an exclusion ever becomes necessary again, exclude the ELEMENT and never the 
 
 ## Why a sweep per module, and not one central list
 
-This was one central spec listing every route in the app, and that shape had real arguments behind it: the coverage was a list you could read, a failure named the route rather than the domain spec it was hiding inside, and adding a route was adding a line.
-
-What it could not survive is a **deleted module**. `rm -rf src/modules/users` left the central list still naming `/en/users` and `/en/users/create`, so the a11y suite failed on routes the app no longer served — an orphan, and precisely the failure that moved the other e2e specs into their modules. Routes belong to modules; their accessibility coverage does too.
+There is no central spec listing every route. A central list would survive a **deleted module** badly: `rm -rf src/modules/users` would leave it naming `/en/users` and `/en/users/create`, and the a11y suite would fail on routes the app no longer serves. Routes belong to modules, so their accessibility coverage does too.
 
 The readable list was not discarded, it was **upgraded into an assertion**. `tests/cross-cutting/a11y-coverage.spec.ts` fails when a module declaring routes has no sweep, and fails the other way too when a sweep outlives the routes it audited. A list that is checked beats a list that is merely readable, because nothing obliges a reader to read it.
 

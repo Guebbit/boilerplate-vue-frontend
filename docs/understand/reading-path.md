@@ -42,7 +42,7 @@ flowchart TD
     E --> F["6 · modules/products/routes.ts<br/><i>this domain's pages</i>"]
     F --> G["7 · views/ProductsList.vue<br/><i>one page</i>"]
     G --> H["8 · products/store.ts<br/><i>the state + the calls</i>"]
-    H --> I["9 · infrastructure/http/index.ts<br/><i>every request, one place</i>"]
+    H --> I["9 · infrastructure/http/<br/><i>every request, one place</i>"]
 
     classDef boot fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef mod fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -120,12 +120,12 @@ client functions imported from `@api`.
 **Take away:** `@api` and `@types` are generated from `openapi.yaml` by Orval. Never edit them.
 Changing an endpoint starts in the contract — see [OpenAPI Workflow](../build/openapi-workflow.md).
 
-### 9 · `src/infrastructure/http/index.ts` — every request, one place
+### 9 · `src/infrastructure/http/` — every request, one place
 
-The axios instance and its interceptors: bearer token attachment, cookie forwarding, error
+The axios instance (`client.ts`) and its interceptors (`interceptors.ts`): bearer token attachment, cookie forwarding, error
 normalisation, and 401 → refresh → replay.
 
-**Take away:** `orvalMutator` at the bottom is what the generated client calls, which is how
+**Take away:** `orvalMutator` in `index.ts` is what the generated client calls, which is how
 generated code inherits all of the above without knowing it exists.
 
 ---
@@ -162,7 +162,7 @@ generated code inherits all of the above without knowing it exists.
 ## The five rules the code assumes you know
 
 1. **A module is a value.** One typed object per domain, listed in `src/modules.ts`.
-2. **Five tiers, pointing downward.** `ui` knows nothing; `infrastructure` and `kernel` know no
+2. **Six tiers, pointing downward.** `i18n` and `ui` know nothing of the domain; `infrastructure` and `kernel` know no
    domain; `modules/*` know each other only through a sibling's public barrel; `app` assembles.
 3. **The contract is an output.** `@api` and `@types` are generated from `openapi.yaml`. Never edit
    generated files, and never hand-write a request type.

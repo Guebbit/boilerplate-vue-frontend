@@ -90,7 +90,7 @@ for `docker run -e`.
 | `VITE_VALIDATE_REQUESTS`, `VITE_VALIDATE_RESPONSES` | Not on the whitelist: read from `import.meta.env` only                                                         |
 | `VITE_TEST_CARDS`                                   | Decides at build time whether the test-card picker is in the bundle at all                                     |
 | `VITE_CONTRACT_THROW`                               | Decides at build time whether a production build rejects a contract mismatch; read from `import.meta.env` only |
-| `VITE_APP_PORT`                                     | The dev server's port, read in `vite.config.ts`; a production container serves on 80                           |
+| `VITE_APP_PORT`                                     | The dev server's port, read in `vite.config.ts`; a production container serves on 8080                         |
 
 `VITE_SECURITY_*` is a third case: `docker/docker-entrypoint.d/41-generate-security-txt.sh` reads
 them from the container at start, but it writes a file for nginx, not `config.js`
@@ -124,7 +124,7 @@ still says "Guebbit" until you change it:
 | `VITE_LOCALE_APP`          | This frontend's translation app — whose dictionary `GET /locales/{locale}/messages` builds for it. Must be one of the ids `GET /locales/apps` lists; unset means the demo pair's `demo-fe`. See [Internationalisation](../understand/i18n.md) |
 | `VITE_APP_FALLBACK_LOCALE` | Locale used when a key is missing from the active one — `vue-i18n` `fallbackLocale` (default `en`). Must name a locale this build BUNDLES, or the fallback cannot answer offline                                                              |
 
-Which languages the app offers is not configured here. `src/locales/*.json` is the offline floor, discovered by a glob at build time, and `GET /locales` adds whatever the API offers at boot — including languages translated in its database that this build ships no file for. See [Layers → files are defaults, the database overrides them](../understand/layers.md#files-are-defaults-the-database-overrides-them).
+Which languages the app offers is not configured here. `src/locales/*.json` is the offline floor, discovered by a glob at build time, and `GET /locales` adds whatever the API offers at boot — including languages translated in its database that this build ships no file for. See [Layers → files are defaults, the database overrides them](../understand/i18n.md#files-are-defaults-the-database-overrides-them).
 
 ## API and realtime
 
@@ -154,7 +154,7 @@ together.
 | Variable              | Purpose                                                                                                                             |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `VITE_APP_LOG_LEVEL`  | `error` \| `warn` \| `info` \| `debug`. Same ladder as the API's `NODE_LOG_LEVEL`; defaults to `debug` in dev, `warn` in production |
-| `VITE_APP_LOG_SCOPES` | Areas that emit `debug`/`info`: comma-separated, or `*`. Empty means none. Known areas: `router`, `http`, `observability`, `demo`   |
+| `VITE_APP_LOG_SCOPES` | Areas that emit `debug`/`info`: comma-separated, or `*`. Empty means none. Known areas: `router`, `http`, `observability`           |
 
 ## Telemetry
 

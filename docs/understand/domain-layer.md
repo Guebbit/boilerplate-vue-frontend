@@ -216,15 +216,7 @@ application's route tree_, not about one domain.
 
 ---
 
-## 2. What DDD is
-
-Owned by the backend: [2. What DDD is](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/domain-layer.md#2-what-ddd-is).
-
-## 3. DDD vs feature/domain architecture
-
-Owned by the backend: [3. DDD vs feature/domain architecture](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/understand/domain-layer.md#3-ddd-vs-featuredomain-architecture).
-
-## 4. Where this repo stands
+## 2. Where this repo stands
 
 **Strategic DDD — adopted, most of it machine-checked, none of it a claim about intent.** See
 [Strategic DDD](./strategic-ddd.md) for what each one enforces, what it refuses, and — for context
@@ -252,7 +244,7 @@ On a client backed by an API, that list being empty is the expected answer, not 
 
 ---
 
-## 5. Should you go further?
+## 3. Should you go further?
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 40}}}%%
@@ -271,11 +263,11 @@ flowchart TD
 
 For an API-backed storefront or admin — which is what this boilerplate produces — the answer is the
 left branch. Going right means maintaining a client model _and_ keeping it reconciled with the
-server's — worth it only for a real core domain the paired backend's own tactical patterns (see its
-`Tactical DDD` theory page) can no longer keep straight, which is why this repo stays out of scope
+server's — worth it only for a real core domain the backend's own tactical patterns cannot keep straight, which is why this repo stays out of scope
 for it.
 
 ## Related pages
 
+- [2. What DDD is](./domain-layer-ddd.md)
 - [Layers](./layers.md) — the folder map
 - [Modules](./modules.md) — the tier rules and their naming

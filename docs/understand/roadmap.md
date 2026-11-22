@@ -7,10 +7,7 @@ audience: [anyone]
 
 What is planned but not built.
 
-Reviewed 2026-08-14. Everything the old README roadmap listed as pending and which has since
-shipped — the registration-confirmation page, both password-reset pages, image upload in forms,
-the Vitest suite, the Cypress suite — has been removed rather than left to rot. A roadmap that
-lists finished work stops being read.
+Reviewed 2026-08-14. This page lists only pending work: a roadmap that lists finished work stops being read.
 
 ## Variants
 
