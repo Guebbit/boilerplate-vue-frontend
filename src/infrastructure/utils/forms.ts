@@ -49,7 +49,6 @@ const unwrapField = (field: ZodType): ZodType =>
  * describe children (a scalar, an array) or does not know the key.
  *
  * @param node - The parent field schema, or `undefined` when unknown.
- * @param key - The child key.
  */
 const childSchema = (node: ZodType | undefined, key: string): ZodType | undefined => {
     const parent = node && unwrapField(node);

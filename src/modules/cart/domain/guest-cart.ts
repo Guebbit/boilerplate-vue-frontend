@@ -144,7 +144,6 @@ export const subtractGuestLines = (
 /**
  * How many units the cart holds in all: what the app bar's badge shows.
  *
- * @param lines - The cart.
  * @returns The sum of every line's quantity.
  */
 export const guestCartQuantity = (lines: readonly GuestCartLine[]): number =>

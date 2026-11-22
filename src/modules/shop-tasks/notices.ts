@@ -43,8 +43,6 @@ type SummaryCode = (typeof SUMMARY_CODES)[number];
 
 /**
  * Where a buyer notice about an order links: the order's page.
- *
- * @param notice - The notice.
  */
 const orderTarget = (
     notice: ShopNotice<
@@ -58,7 +56,7 @@ const orderTarget = (
  * The notice of a do-not-retry write whose outcome nobody knows, as it reads: what the write was
  * and what it was on (an order's number printed as "order no. …", a product's name), and when it began.
  *
- * @param notice - The notice.
+ * @param notice - The notice whose params name the operation, its target and its start.
  * @param context - The bell's translate and date formatter.
  */
 const describeOutcomeUnknown = (
@@ -79,8 +77,6 @@ const describeOutcomeUnknown = (
 /**
  * Where an unknown-outcome notice links: the order a refund or a ship was about, the stock board for
  * a stock write. Both are where the staff member reads the result back.
- *
- * @param notice - The notice.
  */
 const outcomeUnknownTarget = (
     notice: ShopNotice<'shop-tasks.staff.outcome-unknown'>

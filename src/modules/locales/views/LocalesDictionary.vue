@@ -275,7 +275,6 @@ const CELL_STATE_ICONS = { entry: undefined, baseline: FileText, missing: Circle
  * The Vuetify props one cell gets from its state.
  *
  * @param tag - The cell's language.
- * @param key - The cell's key.
  * @returns The state-keyed props, plus the clear button for an entry.
  */
 const cellFieldProps = (tag: string, key: string) => ({

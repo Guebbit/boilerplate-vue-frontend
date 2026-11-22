@@ -73,7 +73,6 @@ onMounted(() => {
 /**
  * The key an item's text lives under.
  *
- * @param item - The item.
  * @param cell - Which cell of its row.
  * @returns The translation key.
  */
@@ -84,7 +83,6 @@ const rowKey = (item: BrowserStorageItem, cell: 'purpose' | 'lifetime'): string 
  * The lifetime cell. Two rows follow the "remember me" tier the server states; until the session
  * config has answered they show a dash rather than a number of the page's own.
  *
- * @param item - The item.
  * @returns The text of its lifetime cell.
  */
 const lifetimeOf = (item: BrowserStorageItem): string => {

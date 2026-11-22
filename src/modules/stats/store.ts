@@ -151,7 +151,6 @@ export const useStatsStore = defineStore('stats', () => {
     /**
      * Loads one product's sales series.
      *
-     * @param productId - The product.
      * @param period - The days and bucket size to ask about.
      * @returns A promise resolving with the series.
      */

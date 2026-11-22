@@ -65,7 +65,6 @@ export const xyChartSource = (chart: ChartModel): string =>
  * Mermaid refuses them, and a zero slice draws nothing anyway.
  *
  * @param chart - The data; only its first series is read.
- * @returns `pie` source.
  */
 export const pieChartSource = (chart: ChartModel): string => {
     const values = chart.series[0]?.values ?? [];

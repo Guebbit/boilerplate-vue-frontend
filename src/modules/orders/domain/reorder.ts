@@ -30,7 +30,6 @@ export interface ReorderOutcome {
  *
  * `summed` is not news: the shopper asked for the order added on top of the cart.
  *
- * @param orderLines - the order's lines
  * @param results - the answer's `lines`: one result per order line
  * @returns the display names of the products left out and of those held back at the cap
  */

@@ -365,7 +365,6 @@ const sendProductUpdate = (
  * the one place both live, so it is reloaded rather than patched by hand — the store's own
  * optimistic patch skips `translations` for the same reason (see `products/store.ts`).
  *
- * @param productId - The saved product.
  * @returns A promise resolving `void` once the admin record is reloaded (`handleSubmit`'s
  *  callback must resolve `void`; the reload, not its value, is the point).
  */

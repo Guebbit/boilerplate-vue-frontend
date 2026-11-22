@@ -1248,6 +1248,7 @@ export default defineConfigWithVueTs(
             'jsdoc/check-tag-names': 'error',
             'jsdoc/require-param-description': 'error',
             'jsdoc/require-returns-description': 'error',
+            'jsdoc/informative-docs': 'error',
             'jsdoc/require-throws': 'error'
         }
     },

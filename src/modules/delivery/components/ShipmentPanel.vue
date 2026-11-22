@@ -116,7 +116,6 @@ const {
 /**
  * The shipments cut from one fulfillment order.
  *
- * @param fulfillmentOrderId - The fulfillment order's id.
  * @returns Its shipments, in the order the server sent them.
  */
 const shipmentsOf = (fulfillmentOrderId: string) =>

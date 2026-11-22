@@ -207,7 +207,6 @@ const dateMove: DetailBuilder<DataOf<'release_date_moved'>> = (tools, { from, to
  * What a delay notice told the buyer: the date now expected.
  *
  * @param tools - The injected helpers.
- * @param data - The notice's data.
  * @returns The expected-date fragment.
  */
 const delayNotice: DetailBuilder<DataOf<'delay_notice_sent'>> = (tools, { expectedAt }) => [

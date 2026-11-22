@@ -58,7 +58,6 @@ export const productName = (
  * The sentence of a notice that names one product and nothing else: a cart line or wishlist item
  * that vanished, or a stock alert.
  *
- * @param notice - The notice.
  * @param context - Languages and translate function.
  * @returns The finished text.
  */
@@ -76,7 +75,6 @@ export const describeProduct = (
  * sentence when none is listed. The line layout is a dictionary entry, since word order is the
  * language's business.
  *
- * @param notice - The notice.
  * @param context - Languages and translate function.
  * @returns The finished text.
  */
@@ -99,7 +97,7 @@ export const describeMergeRefused = (
  * The sentence of a late preorder's notice: the new date, or that there is none yet. The notice
  * asks nothing: the reader can cancel from the order, and doing nothing keeps them waiting.
  *
- * @param notice - The notice.
+ * @param notice - The delay notice; its params carry the new date, when there is one.
  * @param context - Translate function and date spelling.
  * @returns The finished text.
  */
@@ -135,7 +133,7 @@ const HELD_KEYS = {
  * The sentence of a hold the buyer can act on or should read: what the notice means, then what
  * the shop wrote for them. Never a reason: the server does not send one.
  *
- * @param notice - The notice.
+ * @param notice - The shop notice whose params carry the shop's message, if any.
  * @param context - Translate function.
  * @returns The finished text.
  */
@@ -165,7 +163,7 @@ const LOST_KEYS = {
  * The sentence of a parcel reported lost or damaged: what happened, what is still owed and when
  * (only when the shelf could not cover it), then what the shop wrote for the buyer.
  *
- * @param notice - The notice.
+ * @param notice - The shop notice whose params carry what is owed, its date and the shop's message.
  * @param context - Translate function and date spelling.
  * @returns The finished text.
  */

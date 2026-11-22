@@ -170,8 +170,6 @@ const countsOf = (row: PreorderRow) =>
 /**
  * A product's edit page — where its release date moves — or nothing when the viewer cannot update
  * products or this build ships none.
- *
- * @param productId - The product.
  */
 const editLink = (productId: string) => {
     const target = session.can('update', 'Product')

@@ -232,7 +232,6 @@ export const useLocalesStore = defineStore('locales', () => {
      * An app's display name, from the registry — the id itself when the registry has not
      * answered or does not know it, so a row never renders blank.
      *
-     * @param id - The app id.
      * @returns The label to show.
      */
     const appLabel = (id: string): string => apps.value.find((app) => app.id === id)?.label ?? id;

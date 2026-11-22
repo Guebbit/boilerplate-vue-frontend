@@ -28,7 +28,7 @@ const isOneOf = (values: readonly string[], value: string | undefined): value is
  * and category are closed codes the server sends; their words are this client's own, shared with
  * the task screens (`task-kind.*`, `task-category.*`).
  *
- * @param notice - The task notice.
+ * @param notice - The task notice whose kind and params pick the words.
  * @param context - Translate function.
  * @returns The finished text.
  */
@@ -61,8 +61,6 @@ const describeTask = (
 /**
  * Where a task notice links: the screen the server named for the work (`work`, opener, due-soon and
  * overdue notices only), else the task's own page.
- *
- * @param notice - The task notice.
  */
 const taskTarget = (
     notice: Of<

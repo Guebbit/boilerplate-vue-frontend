@@ -44,7 +44,6 @@ const { t } = useI18n();
 /**
  * A product's sales page, for the same days.
  *
- * @param productId - The product.
  * @returns A locale-aware location carrying the period as a query.
  */
 const productLink = (productId: string) =>

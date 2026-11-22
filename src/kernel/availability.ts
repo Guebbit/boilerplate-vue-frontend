@@ -42,7 +42,6 @@ const stockCounts = ref<Record<string, number | undefined>>({});
 /**
  * What a shopper may know about one product's stock.
  *
- * @param productId - The product.
  * @returns Its answer, or `undefined` while it is not loaded and for a product the server left out
  *  (see {@link isLeftOut}).
  */
@@ -52,8 +51,6 @@ export const availabilityOf = (productId: string): ProductAvailability | undefin
 /**
  * Whether the server was asked and left the product out: it does not exist, or this viewer may not
  * see it (a hidden product to a guest).
- *
- * @param productId - The product.
  */
 export const isLeftOut = (productId: string): boolean => {
     const entry = entries.value[productId];
@@ -63,7 +60,6 @@ export const isLeftOut = (productId: string): boolean => {
 /**
  * When the product was last asked about, for the writer to decide whether to ask again.
  *
- * @param productId - The product.
  * @returns Epoch milliseconds, or `undefined` when it never was.
  */
 export const availabilityAskedAt = (productId: string): number | undefined =>
@@ -72,7 +68,6 @@ export const availabilityAskedAt = (productId: string): number | undefined =>
 /**
  * Record what the server answered for one product. Only `inventory` calls this.
  *
- * @param productId - The product.
  * @param answer - The server's answer, `undefined` when it left the product out.
  * @param askedAt - When it was asked, in epoch milliseconds.
  */
@@ -87,7 +82,6 @@ export const recordAvailability = (
 /**
  * The shelf count of one product, for a viewer who may read stock.
  *
- * @param productId - The product.
  * @returns The count, or `undefined` for everyone else and until it arrives.
  */
 export const stockCountOf = (productId: string): number | undefined => stockCounts.value[productId];
@@ -95,7 +89,6 @@ export const stockCountOf = (productId: string): number | undefined => stockCoun
 /**
  * Record (or forget, with `undefined`) one product's shelf count. Only `inventory` calls this.
  *
- * @param productId - The product.
  * @param count - The count the inventory level answered.
  */
 export const recordStockCount = (productId: string, count: number | undefined): void => {

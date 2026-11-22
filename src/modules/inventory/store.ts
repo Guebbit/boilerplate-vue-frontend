@@ -183,7 +183,6 @@ export const useInventoryStore = defineStore('inventory', () => {
     /**
      * Sets how many units of a product may be backordered at once, then reloads the board.
      *
-     * @param productId - The product.
      * @param backorderLimit - The new allowance; `0` closes preordering. Lowering it below what is
      *  outstanding is allowed: only new preorders are refused.
      * @returns A promise resolving with the level after the write.

@@ -258,7 +258,6 @@ export const usePaymentsStore = defineStore('payments', () => {
      * the record to confirm) and withdraws `actions.refund`, which greys the control out.
      *
      * @param target - The payment being returned and the order it belongs to.
-     * @param target.id - The payment.
      * @param target.orderId - Its order, for the re-read after a fault.
      * @param amount - A partial refund, a decimal string in the payment's own currency. Absent returns
      *  everything still refundable.

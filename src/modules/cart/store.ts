@@ -148,7 +148,7 @@ export const useCartStore = defineStore('cart', () => {
     const cartItems = computed(() => cart.value?.items ?? []);
 
     /**
-     * Cart summary
+     * The totals of the cart, as the last full read answered them.
      */
     const cartSummary = computed<CartSummaryResponse | undefined>(() => cart.value?.summary);
 

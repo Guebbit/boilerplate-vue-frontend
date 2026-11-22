@@ -181,8 +181,6 @@ const stepLine = ({ productId, quantity }: GuestCartLine, step: number) =>
 
 /**
  * Removes one line.
- *
- * @param productId - The line's product.
  */
 const removeLine = (productId: string) => cartStore.removeGuestItems([productId]);
 

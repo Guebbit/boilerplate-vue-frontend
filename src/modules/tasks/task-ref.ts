@@ -9,7 +9,6 @@ import { shortRef } from '@/infrastructure/utils/formatters.ts';
 /**
  * The `#ref` text of a task, as the backend writes it in a mail subject.
  *
- * @param id - The task's id.
  * @returns The id's last eight characters.
  */
 export const taskRef = (id: string): string => shortRef(id);
