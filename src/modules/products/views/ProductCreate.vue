@@ -39,7 +39,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { sendKeyed, useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { toCreateTranslations } from '../translations-body.ts';
+import { toCreateFields } from '../translations-body.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { normalizeAmount, padDecimal } from '@/infrastructure/utils/money.ts';
 import { backorderPromiseDays, loadShop, shopCurrency, shopMinorUnits } from '@/modules/shop';
@@ -247,7 +247,7 @@ const submitForm = () => {
         if (price === undefined) return;
         // No baseline: a create sends everything the form holds. What the helper adds is the
         // spelling — a cleared weight or category list is omitted rather than sent empty — and a
-        // blank description is dropped from each locale (`toCreateTranslations`).
+        // blank description is dropped from each language (`toCreateFields`).
         return toRequestBody('CreateProductBody', {
             ...form.value,
             // Sent at the shop currency's places ("12.5" becomes "12.50"); `shopMinorUnits` is
@@ -258,7 +258,8 @@ const submitForm = () => {
             ),
             releaseDate: releaseDate ?? '',
             restockDate: restockDate ?? '',
-            translations: toCreateTranslations(translations),
+            // The default language's tab becomes the top-level `title`/`description`.
+            ...toCreateFields(translations, fallbackLocale.value ?? ''),
             imageUpload: undefined
         })
             .then((body) =>

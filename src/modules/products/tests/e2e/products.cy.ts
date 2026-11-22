@@ -157,16 +157,14 @@ describe('Products', () => {
          * Free-text search follows the caller's locale. A word that appears ONLY in the Italian
          * row — never in the English one — must still find the product when searching from
          * `/it/products`, which is what proves search queried the translations collection
-         * rather than the (English) derived index column.
+         * rather than the (English) title column.
          */
         it('finds a product by a word that exists only in its Italian translation', () => {
             const italianOnlyWord = `parolaunica${Date.now()}`;
 
             cy.createProduct({
-                translations: {
-                    en: { title: `EN lamp ${Date.now()}` },
-                    it: { title: `IT ${italianOnlyWord}` }
-                }
+                title: `EN lamp ${Date.now()}`,
+                translations: { it: { title: `IT ${italianOnlyWord}` } }
             }).then(() => {
                 cy.visit('/it/products');
                 cy.get('[data-test=filter-text]').type(italianOnlyWord);

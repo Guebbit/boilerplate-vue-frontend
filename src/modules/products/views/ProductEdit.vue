@@ -11,9 +11,10 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Edit form for a product: fetches `GET /products/{id}`, whose `translations` (every language the
- * row has) the API sends to a caller holding `read:Translation`, populates one tab per language it
- * holds, and submits through the store's multipart-aware, merging `updateProduct`.
+ * Edit form for a product: fetches `GET /products/{id}`, whose `source` (the default-language text)
+ * and `translations` (the other languages) the API sends to a caller holding `read:Translation`,
+ * populates one tab per language, and submits through the store's multipart-aware, merging
+ * `updateProduct`.
  * Removing a tab that existed on the fetched record sends `null` for that locale; removing one
  * opened this session and never saved just drops it — see `handleRemoveLocale`.
  */
@@ -58,7 +59,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { backorderPromiseDays } from '@/modules/shop';
-import { toPatchTranslations } from '../translations-body.ts';
+import { toFormTranslations, toPatchFields } from '../translations-body.ts';
 import { dayChange } from '../release-date.ts';
 import { useReleaseDateConfirm } from '../composables/use-release-date-confirm.ts';
 import type { ProductTranslationsWrite, TaxClass } from '@types';
@@ -265,7 +266,8 @@ const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
  */
 activateAutoHydrate(
     holdWhileSubmitting(isSubmitting, () =>
-        adminProduct.value
+        // Waits for the default language's tag too: its tab is built from the record's `source`.
+        adminProduct.value && fallbackLocale.value
             ? {
                   price: adminProduct.value.price,
                   active: adminProduct.value.active ?? false,
@@ -281,10 +283,14 @@ activateAutoHydrate(
                   // discarded via "Reset changes" must not have mutated the fetched record.
                   categories: [...(adminProduct.value.categories ?? [])],
                   tags: [...(adminProduct.value.tags ?? [])],
-                  // Spread into a fresh object: the admin record's own `translations` must not be
-                  // mutated by a later tab edit — `resetForm()` (the "Reset changes" button) needs
-                  // it intact to hydrate from again.
-                  translations: { ...adminProduct.value.translations }
+                  // A fresh object: the admin record's own `translations` must not be mutated by a
+                  // later tab edit — `resetForm()` (the "Reset changes" button) needs it intact to
+                  // hydrate from again. The default language's tab is the stored `source`.
+                  translations: toFormTranslations(
+                      adminProduct.value.source,
+                      adminProduct.value.translations,
+                      fallbackLocale.value
+                  )
               }
             : undefined
     )
@@ -423,7 +429,8 @@ const submitForm = () => {
                     taxClass,
                     categories,
                     tags,
-                    translations: toPatchTranslations(translations)
+                    // The default language's tab is the top-level `title`/`description`.
+                    ...toPatchFields(translations, fallbackLocale.value ?? '')
                 })
                     .then((body) => sendProductUpdate(id, body, imageUpload))
                     .then(() => onProductSaved(id));

@@ -21,7 +21,8 @@ describe('switching language drops and refetches locale-sensitive stores', () =>
         const itTitle = `IT lampada ${Date.now()}`;
 
         cy.createProduct({
-            translations: { en: { title: enTitle }, it: { title: itTitle } }
+            title: enTitle,
+            translations: { it: { title: itTitle } }
         }).then((product) => {
             cy.visit(`/en/products/${product.id}`);
             cy.contains(enTitle).should('exist');

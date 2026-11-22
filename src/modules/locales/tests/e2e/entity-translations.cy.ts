@@ -20,10 +20,8 @@ describe('Entity translations — the generic admin door', () => {
         const editedItTitle = `IT edited ${Date.now()}`;
 
         cy.createProduct({
-            translations: {
-                en: { title: `EN ${Date.now()}` },
-                it: { title: originalItTitle }
-            }
+            title: `EN ${Date.now()}`,
+            translations: { it: { title: originalItTitle } }
         }).then((product) => {
             cy.visit(`/en/locales/translations/product/${product.id}`);
 
@@ -55,15 +53,13 @@ describe('Entity translations — the generic admin door', () => {
     });
 
     it('reaches the screen from the product edit page', () => {
-        cy.createProduct({ translations: { en: { title: `EN ${Date.now()}` } } }).then(
-            (product) => {
-                cy.visit(`/en/products/${product.id}/edit`);
-                cy.get('[data-test=translations-link]').click();
+        cy.createProduct({ title: `EN ${Date.now()}` }).then((product) => {
+            cy.visit(`/en/products/${product.id}/edit`);
+            cy.get('[data-test=translations-link]').click();
 
-                cy.url().should('include', `/locales/translations/product/${product.id}`);
-                cy.get('#entity-translations-page').should('exist');
-            }
-        );
+            cy.url().should('include', `/locales/translations/product/${product.id}`);
+            cy.get('#entity-translations-page').should('exist');
+        });
     });
     /*
      * Appended last: touch emulation leaks into the tests after it in live Chromium (the desktop
@@ -71,34 +67,37 @@ describe('Entity translations — the generic admin door', () => {
      */
     describe('on a touch screen', () => {
         it('keeps the language when a swipe starts inside a field', () => {
+            // Two languages besides the default one: the default is the product's own text and has
+            // no tab here. Rows come back sorted by locale, so Spanish opens first.
             cy.createProduct({
+                title: `EN swipe ${Date.now()}`,
                 translations: {
-                    en: { title: `EN swipe ${Date.now()}` },
+                    es: { title: `ES swipe ${Date.now()}` },
                     it: { title: `IT swipe ${Date.now()}` }
                 }
             }).then((product) => {
                 applyViewport('phone');
                 cy.visit(`/en/locales/translations/product/${product.id}`);
 
-                cy.get('[data-test=translation-tab-en]').should(
+                cy.get('[data-test=translation-tab-es]').should(
                     'have.attr',
                     'aria-selected',
                     'true'
                 );
-                cy.get('#translation-panel-en [data-field=title] textarea')
+                cy.get('#translation-panel-es [data-field=title] textarea')
                     .invoke('val')
                     .then((typed) => {
-                        cy.get('#translation-panel-en [data-field=title] textarea').realSwipe(
+                        cy.get('#translation-panel-es [data-field=title] textarea').realSwipe(
                             'toLeft',
                             { length: 120 }
                         );
 
-                        cy.get('[data-test=translation-tab-en]').should(
+                        cy.get('[data-test=translation-tab-es]').should(
                             'have.attr',
                             'aria-selected',
                             'true'
                         );
-                        cy.get('#translation-panel-en [data-field=title] textarea').should(
+                        cy.get('#translation-panel-es [data-field=title] textarea').should(
                             'have.value',
                             typed
                         );

@@ -156,16 +156,17 @@ together.
 Every value here is optional, and an empty one disables the integration rather than pointing it at
 nothing. See [Observability](./observability.md).
 
-| Variable                     | Purpose                                                                                          |
-| ---------------------------- | ------------------------------------------------------------------------------------------------ |
-| `VITE_FARO_URL`              | Grafana Faro receiver URL — Alloy `/collect` (empty = off)                                       |
-| `VITE_FARO_APP_NAME`         | App name reported to Faro (default `frontend`)                                                   |
-| `VITE_FARO_APP_VERSION`      | App version reported to Faro (default: `package.json`'s version; leave unset)                    |
-| `VITE_FARO_ENVIRONMENT`      | Faro environment tag (defaults to Vite `MODE`)                                                   |
-| `VITE_UMAMI_WEBSITE_ID`      | [Umami](./umami.md) website id (empty = off)                                                     |
-| `VITE_UMAMI_SRC`             | Umami tracker script URL                                                                         |
-| `VITE_UMAMI_REQUIRE_CONSENT` | `true` (default) loads Umami only after the visitor accepts the banner; `false` loads it unasked |
-| `VITE_TOURS_ENABLED`         | `true` (default) lets [guided tours](./tours.md) open; `false` turns them off                    |
+| Variable                     | Purpose                                                                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `VITE_FARO_URL`              | Grafana Faro receiver URL — Alloy `/collect` (empty = off)                                                                     |
+| `VITE_FARO_APP_NAME`         | App name reported to Faro (default `frontend`)                                                                                 |
+| `VITE_FARO_APP_VERSION`      | App version reported to Faro (default: `package.json`'s version; leave unset)                                                  |
+| `VITE_FARO_ENVIRONMENT`      | Faro environment tag (defaults to Vite `MODE`)                                                                                 |
+| `VITE_UMAMI_WEBSITE_ID`      | [Umami](./umami.md) website id (empty = off)                                                                                   |
+| `VITE_UMAMI_SRC`             | Umami tracker script URL                                                                                                       |
+| `VITE_UMAMI_REQUIRE_CONSENT` | `true` (default) loads Umami only after the visitor accepts the banner; `false` loads it unasked                               |
+| `VITE_TOURS_ENABLED`         | `true` (default) lets [guided tours](./tours.md) open; `false` turns them off                                                  |
+| `VITE_ZAMMAD_URL`            | The helpdesk's public URL; staff see a "Helpdesk" menu link only when set (see [tasks](../modules/tasks.md#the-helpdesk-link)) |
 
 ## `security.txt`
 

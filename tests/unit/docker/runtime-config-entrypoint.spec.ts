@@ -68,6 +68,12 @@ describe('40-generate-runtime-config.sh', () => {
         expect(generate({ VITE_API_URL: 'http://localhost:3100' })).toContain('"API_URL"');
     });
 
+    it('writes the helpdesk URL under its runtime key', () => {
+        expect(generate({ VITE_ZAMMAD_URL: 'https://help.example.com' })).toContain(
+            '"ZAMMAD_URL": "https://help.example.com",'
+        );
+    });
+
     it('omits a blank key', () => {
         expect(generate({ VITE_API_URL: '' })).not.toContain('API_URL');
     });

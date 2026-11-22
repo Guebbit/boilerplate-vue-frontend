@@ -5,8 +5,10 @@
  * error. The views keep what differs — the fields around the tabs, the request itself, and
  * whether a 412 can happen at all.
  *
- * `translations` mirrors the write body's own shape (`ProductTranslationsWrite`): an object
- * upserts a locale, `null` marks it for deletion, an absent key leaves it alone.
+ * `translations` is the form's one map of language tabs (`ProductTranslationsWrite`): the default
+ * language's tab is first and becomes the body's top-level `title`/`description` on submit; for
+ * every other tab an object upserts a locale, `null` marks it for deletion, an absent key leaves it
+ * alone (see `translations-body.ts`).
  */
 import { ref, watch, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -214,10 +216,18 @@ export const useTranslatedEntityForm = <TForm extends TranslatedForm>(
      */
     const handleSubmitFailure = (error: unknown) => {
         if (options.onStale?.(error)) return;
-        const serverTabErrors = translationTabErrorCountsFromServerError(error);
+        // Unknown only before the locales load, when no form is open to fail a submit.
+        const serverTabErrors = translationTabErrorCountsFromServerError(
+            error,
+            options.fallbackLocale.value ?? ''
+        );
         if (Object.keys(serverTabErrors).length > 0)
             tabErrorCounts.value = { ...tabErrorCounts.value, ...serverTabErrors };
-        applyServerErrors(error, { onUnmapped: () => options.reportSubmitError(error) });
+        applyServerErrors(error, {
+            // The default language is the body's top-level pair; its tab lives in `translations`.
+            map: { title: 'translations', description: 'translations' },
+            onUnmapped: () => options.reportSubmitError(error)
+        });
     };
 
     return {

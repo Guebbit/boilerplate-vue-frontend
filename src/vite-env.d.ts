@@ -45,4 +45,5 @@ interface ImportMetaEnv {
     readonly VITE_TOURS_ENABLED?: string;
     readonly VITE_VALIDATE_REQUESTS?: string;
     readonly VITE_VALIDATE_RESPONSES?: string;
+    readonly VITE_ZAMMAD_URL?: string;
 }

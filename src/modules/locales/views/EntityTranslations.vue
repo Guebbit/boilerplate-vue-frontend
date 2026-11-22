@@ -12,7 +12,8 @@ export default {
 /**
  * @module
  * The generic translation door's own screen: `GET`/`PATCH /translations/{entityType}/{id}`, one
- * tab per language the entity has a row for. Reachable for any `translatables`-registered entity
+ * tab per language but the default that the entity has a row for, each showing the entity's own
+ * text (the default language) read-only beside it and flagged when it is out of date. Reachable for any `translatables`-registered entity
  * — currently only `product`, linked from `ProductEdit.vue`'s "Translations" action. The field
  * set comes from the response's own `fields`, the registry's declared list for this entity type —
  * never guessed from whatever the fetched rows happen to carry, which would offer nothing for a
@@ -87,6 +88,25 @@ const entityType = computed(() => String(route.params.entityType));
 
 /** The entity's id, from the route. */
 const entityId = computed(() => String(route.params.id));
+
+/**
+ * The entity's own text, in the default language, as last fetched: what every tab is a copy of,
+ * shown read-only beside each field.
+ */
+const source = ref<Record<string, string>>({});
+
+/**
+ * Which locales' rows were written from a text that is not the entity's current one, as last fetched.
+ */
+const outdatedTags = ref<string[]>([]);
+
+/**
+ * The languages a tab can be opened for: every one but the default, which is the entity's own text
+ * and never a translation.
+ */
+const translatableLocales = computed(() =>
+    capabilities.value.filter(({ tag }) => tag !== fallbackLocale.value)
+);
 
 /**
  * The rows as last fetched, kept around so `handleAddLocale` can restore a removed-then-readded
@@ -172,6 +192,8 @@ const load = () => {
     ])
         .then(([, result]) => {
             rows.value = result?.translations ?? [];
+            source.value = { ...result?.source.fields };
+            outdatedTags.value = rows.value.filter((row) => row.outdated).map((row) => row.locale);
             fieldNames.value = result?.fields ?? [];
             const byLocale: Record<string, Record<string, string> | null> = {};
             for (const row of rows.value) byLocale[row.locale] = { ...row.fields };
@@ -288,9 +310,8 @@ const handleSave = () => {
         <v-card class="p-5">
             <TranslationTabs
                 v-model="activeTab"
-                :locales="capabilities"
+                :locales="translatableLocales"
                 :open-tags="openTags"
-                :fallback-tag="fallbackLocale"
                 @add="handleAddLocale"
                 @remove="handleRemoveLocale"
             />
@@ -312,22 +333,43 @@ const handleSave = () => {
                     role="tabpanel"
                     :aria-labelledby="`translation-tab-${tag}`"
                 >
-                    <v-textarea
-                        v-for="field in fieldNames"
-                        :key="field"
-                        v-model="drafts[tag]![field]"
-                        :label="field"
-                        :rows="field === 'description' ? 5 : 1"
-                        :hint="
-                            drafts[tag]?.[field]
-                                ? undefined
-                                : t('entity-translations-page.hint-field-blank-skipped')
-                        "
-                        persistent-hint
-                        class="mb-2"
-                        data-test="entity-translation-field"
-                        :data-field="field"
-                    />
+                    <v-alert
+                        v-if="outdatedTags.includes(tag)"
+                        type="warning"
+                        variant="tonal"
+                        density="compact"
+                        class="mb-3"
+                        data-test="entity-translation-outdated"
+                    >
+                        {{ t('entity-translations-page.outdated') }}
+                    </v-alert>
+                    <template v-for="field in fieldNames" :key="field">
+                        <p
+                            v-if="source[field]"
+                            class="mb-1 whitespace-pre-line text-sm opacity-muted"
+                            data-test="entity-translation-source"
+                            :data-field="field"
+                        >
+                            <span class="font-semibold">
+                                {{ t('entity-translations-page.source-label', { field }) }}
+                            </span>
+                            {{ source[field] }}
+                        </p>
+                        <v-textarea
+                            v-model="drafts[tag]![field]"
+                            :label="field"
+                            :rows="field === 'description' ? 5 : 1"
+                            :hint="
+                                drafts[tag]?.[field]
+                                    ? undefined
+                                    : t('entity-translations-page.hint-field-blank-skipped')
+                            "
+                            persistent-hint
+                            class="mb-2"
+                            data-test="entity-translation-field"
+                            :data-field="field"
+                        />
+                    </template>
                 </v-tabs-window-item>
             </v-tabs-window>
 

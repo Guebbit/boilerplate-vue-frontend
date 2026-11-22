@@ -1,11 +1,12 @@
 /**
- * `runtimeValue` — `src/infrastructure/runtime-config.ts`.
+ * `runtimeValue`, `readToursEnabled` and `readZammadUrl` — `src/infrastructure/runtime-config.ts`.
  */
-import { describe, it, expect, afterEach } from 'vitest';
-import { readToursEnabled, runtimeValue } from '@/infrastructure/runtime-config.ts';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { readToursEnabled, readZammadUrl, runtimeValue } from '@/infrastructure/runtime-config.ts';
 
 afterEach(() => {
     Reflect.deleteProperty(globalThis, '__APP_CONFIG');
+    vi.unstubAllEnvs();
 });
 
 describe('runtimeValue', () => {
@@ -51,5 +52,36 @@ describe('readToursEnabled', () => {
     it('stays on for any other value', () => {
         (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = { TOURS_ENABLED: 'true' };
         expect(readToursEnabled()).toBe(true);
+    });
+});
+
+describe('readZammadUrl', () => {
+    it('is undefined when neither the container nor the build set it', () => {
+        vi.stubEnv('VITE_ZAMMAD_URL', '');
+        expect(readZammadUrl()).toBeUndefined();
+    });
+
+    it('falls back to the build-time value', () => {
+        vi.stubEnv('VITE_ZAMMAD_URL', 'https://build.example.com');
+        expect(readZammadUrl()).toBe('https://build.example.com');
+    });
+
+    it('prefers the container value over the build-time one', () => {
+        vi.stubEnv('VITE_ZAMMAD_URL', 'https://build.example.com');
+        (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = {
+            ZAMMAD_URL: 'https://help.example.com'
+        };
+        expect(readZammadUrl()).toBe('https://help.example.com');
+    });
+
+    it('reads a blank container value as unset, so the build-time value still applies', () => {
+        vi.stubEnv('VITE_ZAMMAD_URL', 'https://build.example.com');
+        (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = { ZAMMAD_URL: '   ' };
+        expect(readZammadUrl()).toBe('https://build.example.com');
+    });
+
+    it('reads a blank build-time value as unset', () => {
+        vi.stubEnv('VITE_ZAMMAD_URL', '   ');
+        expect(readZammadUrl()).toBeUndefined();
     });
 });

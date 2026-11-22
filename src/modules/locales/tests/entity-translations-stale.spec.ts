@@ -27,14 +27,18 @@ vi.mock('@/infrastructure/session.ts', () => ({
     useSessionStore: () => ({ can: () => true, isAuth: true })
 }));
 
-vi.mock('../store.ts', () => ({
-    useLocalesStore: () => ({
-        capabilities: [],
-        fallbackLocale: 'en',
-        fetchLanguages: () => Promise.resolve([]),
-        ...store
-    })
-}));
+vi.mock('../store.ts', async () => {
+    // Refs, as the real store's `capabilities` and `fallbackLocale` are: the screen reads them via `storeToRefs`.
+    const { ref } = await import('vue');
+    return {
+        useLocalesStore: () => ({
+            capabilities: ref([]),
+            fallbackLocale: ref('en'),
+            fetchLanguages: () => Promise.resolve([]),
+            ...store
+        })
+    };
+});
 
 /** The tab bar is not under test: an inert stand-in that takes no props. */
 const renderEmpty = () => h('div');
@@ -45,7 +49,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     store.fetchEntityTranslations.mockReset().mockResolvedValue({
         fields: ['name'],
-        translations: [{ locale: 'en', fields: { name: 'Shoe' } }]
+        source: { fields: { name: 'Shoe' }, digest: 'd1' },
+        translations: [{ locale: 'it', fields: { name: 'Scarpa' }, outdated: false }]
     });
     store.saveEntityTranslations
         .mockReset()

@@ -3,10 +3,10 @@
  * Module manifest: wires the tasks routes, nav entries, response schemas
  * and locale loaders into the app's module registry.
  */
-import { Inbox, Mail } from 'lucide-vue-next';
+import { Inbox, LifeBuoy, Mail } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
-import type { AppModule } from '@/kernel/registry';
-import routes from './routes';
+import type { AppModule, AppNavigationEntry } from '@/kernel/registry';
+import routes, { helpdeskUrl } from './routes';
 import { useTaskBadge } from './composables/use-task-badge';
 
 /**
@@ -44,7 +44,20 @@ export default {
             icon: Inbox,
             // Tasks waiting for someone plus the ones the viewer holds; see the composable.
             badge: () => useTaskBadge()
-        }
+        },
+        // The route behind it exists only when the deployment sets a helpdesk URL.
+        ...(helpdeskUrl
+            ? [
+                  {
+                      name: 'Helpdesk',
+                      label: 'navigation.label-helpdesk',
+                      plural: 1,
+                      order: 46,
+                      section: 'admin',
+                      icon: LifeBuoy
+                  } satisfies AppNavigationEntry
+              ]
+            : [])
     ],
     responseSchemas: () => import('./response-schemas').then((m) => m.tasksResponseSchemas),
     locales: {

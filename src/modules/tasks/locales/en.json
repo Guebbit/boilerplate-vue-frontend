@@ -74,7 +74,8 @@
     },
     "navigation": {
         "label-contact": "Contact",
-        "label-tasks": "Tasks"
+        "label-tasks": "Tasks",
+        "label-helpdesk": "Helpdesk"
     },
     "task-detail-page": {
         "page-title": "Task",
