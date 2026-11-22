@@ -74,7 +74,8 @@
     },
     "navigation": {
         "label-contact": "Contatti",
-        "label-tasks": "Attività"
+        "label-tasks": "Attività",
+        "label-helpdesk": "Assistenza clienti"
     },
     "task-detail-page": {
         "page-title": "Task",
