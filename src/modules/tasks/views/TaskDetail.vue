@@ -30,6 +30,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -82,6 +83,12 @@ watch(
     },
     { immediate: true }
 );
+
+/**
+ * Action-button size: `small` with a mouse, `large` (44px) under a finger, where `small` fails the
+ * WCAG 2.5.8 target-size check.
+ */
+const actionSize = useTouchFriendlySize();
 
 /**
  * The row-write pipeline, failing into the page's blocking alert.
@@ -192,7 +199,7 @@ const handleNote = () =>
             <div class="mt-4 flex flex-wrap gap-2">
                 <v-btn
                     v-if="task.actions.assign && task.assigneeId !== session.viewer?.id"
-                    size="small"
+                    :size="actionSize"
                     variant="tonal"
                     data-test="task-take"
                     @click="
@@ -206,7 +213,7 @@ const handleNote = () =>
                 </v-btn>
                 <v-btn
                     v-if="task.actions.unassign"
-                    size="small"
+                    :size="actionSize"
                     variant="tonal"
                     data-test="task-give-back"
                     @click="
@@ -220,7 +227,7 @@ const handleNote = () =>
                 </v-btn>
                 <v-btn
                     v-if="task.actions.resolve"
-                    size="small"
+                    :size="actionSize"
                     variant="tonal"
                     data-test="task-resolve"
                     @click="handle(() => store.resolve(task!.id), t('tasks-page.success-status'))"
@@ -229,7 +236,7 @@ const handleNote = () =>
                 </v-btn>
                 <v-btn
                     v-if="task.actions.markSpam"
-                    size="small"
+                    :size="actionSize"
                     variant="tonal"
                     data-test="task-spam"
                     @click="handle(() => store.markSpam(task!.id), t('tasks-page.success-status'))"
@@ -238,7 +245,7 @@ const handleNote = () =>
                 </v-btn>
                 <v-btn
                     v-if="task.actions.reopen"
-                    size="small"
+                    :size="actionSize"
                     variant="tonal"
                     data-test="task-reopen"
                     @click="handle(() => store.reopen(task!.id), t('tasks-page.success-status'))"
@@ -247,7 +254,7 @@ const handleNote = () =>
                 </v-btn>
                 <v-btn
                     v-if="historyTo"
-                    size="small"
+                    :size="actionSize"
                     variant="tonal"
                     data-test="task-history"
                     :to="historyTo"

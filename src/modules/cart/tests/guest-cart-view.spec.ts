@@ -380,6 +380,61 @@ describe('a product that is no longer there', () => {
     });
 });
 
+describe('the warning beside a line', () => {
+    it('says what the clamp did, beside the line it happened to and no other', async () => {
+        const { wrapper: page, cart } = await mountPage([
+            ['p1', 3],
+            ['p2', 1]
+        ]);
+
+        cart.lineWarnings = {
+            p1: {
+                code: 'MERCHANDISE_NOT_ENOUGH_STOCK',
+                productId: 'p1',
+                requested: 4,
+                resulting: 3
+            }
+        };
+        await flushPromises();
+
+        const warnings = page.findAll('[data-test=guest-cart-line-warning]');
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]?.text()).toBe(
+            'Only 3 available, so the line was set to 3 instead of 4.'
+        );
+        // One polite live region, so it is read once when it appears.
+        expect(warnings[0]?.attributes('role')).toBe('status');
+        // Beside the first line, not the second.
+        const [first, second] = page.findAll('[data-test=guest-cart-item]');
+        expect(first?.element.parentElement?.contains(warnings[0]?.element ?? null)).toBe(true);
+        expect(second?.element.parentElement?.contains(warnings[0]?.element ?? null)).toBe(false);
+    });
+
+    it('names the product when it cannot be bought at all', async () => {
+        const { wrapper: page, cart } = await mountPage([['p1', 1]]);
+
+        cart.lineWarnings = {
+            p1: {
+                code: 'MERCHANDISE_OUT_OF_STOCK',
+                productId: 'p1',
+                requested: 1,
+                resulting: 0
+            }
+        };
+        await flushPromises();
+
+        expect(page.get('[data-test=guest-cart-line-warning]').text()).toContain(
+            'Product p1 cannot be bought right now, so nothing was added.'
+        );
+    });
+
+    it('is absent when every write landed as asked', async () => {
+        const { wrapper: page } = await mountPage([['p1', 1]]);
+
+        expect(page.find('[data-test=guest-cart-line-warning]').exists()).toBe(false);
+    });
+});
+
 describe('the page, audited', () => {
     it('breaks no accessibility rule axe can check without a rendered page', async () => {
         await mountPage([

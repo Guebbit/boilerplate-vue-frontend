@@ -18,6 +18,8 @@
  * - **Short**: more units than are for sale are merged anyway, at the quantity chosen, and flagged:
  *   the alert and the cart line both say "not enough in stock" without a number, a reload takes the
  *   alert away but the line keeps its flag (the server's), and lowering the line clears it.
+ * - **Clamped**: adding to a line that already holds all that can be bought is held back, and the
+ *   cart line carries a warning beside it ("Only 1 available") until it is written again.
  *
  * The editor works through the API, where the story needs the shop to change under the guest.
  */
@@ -223,6 +225,17 @@ describe('CU27 · I filled a cart before I had signed in', () => {
                 cy.reload();
                 cy.get('#cart-page').should('exist');
                 cy.get(MERGE_ALERT).should('not.exist');
+                cy.get('[data-test=cart-line-warning]').should('not.exist');
+
+                cy.step('adding one more is clamped: the line keeps a warning beside it');
+                cy.navigateTo('/en/products');
+                searchAndOpenProduct('product.lowStock');
+                cy.get('[data-test=add-to-cart]').click();
+                cy.goToCart();
+                cy.contains('[data-test=cart-item]', title).should('contain.text', 'Quantity: 1');
+                cy.get('[data-test=cart-line-warning]')
+                    .should('have.length', 1)
+                    .and('contain.text', 'Only 1 available');
             });
         });
     });
