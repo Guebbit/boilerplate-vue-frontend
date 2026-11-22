@@ -72,8 +72,10 @@ interface TurnstileGlobal {
  * @returns The global, or `undefined` before the script has loaded.
  */
 const turnstileGlobal = (): TurnstileGlobal | undefined =>
-    // Single cast narrowing an untyped vendor global — `globalThis` is a real, concrete type
-    // here, never `unknown`, so this is not the laundering `as unknown as X` pattern.
+    /**
+     * Single cast narrowing an untyped vendor global — `globalThis` is a real, concrete type
+     * here, never `unknown`, so this is not the laundering `as unknown as X` pattern.
+     */
     (globalThis as typeof globalThis & { turnstile?: TurnstileGlobal }).turnstile;
 
 /**
@@ -126,14 +128,18 @@ const loadVendorScript = (src: string): Promise<void> => {
 const configureAltcha = (): Promise<void> =>
     fetchAntibotChallenge().then((envelope) => {
         const widget = altchaElement.value;
-        // `typeof widget.configure === 'function'` rather than just checking `widget`: custom
-        // elements upgrade the instant `customElements.define` has run, which happens at import
-        // time above — but a widget that failed to load its script is still a plain, unupgraded
-        // element sitting in the DOM, and calling a method it never gained would throw.
+        /**
+         * `typeof widget.configure === 'function'` rather than just checking `widget`: custom
+         * elements upgrade the instant `customElements.define` has run, which happens at import
+         * time above — but a widget that failed to load its script is still a plain, unupgraded
+         * element sitting in the DOM, and calling a method it never gained would throw.
+         */
         if (!widget || typeof widget.configure !== 'function') return;
-        // No cast needed: `AntibotChallenge` (generated from the contract) and ALTCHA's own
-        // `Challenge` describe the same wire shape — the backend issues exactly what altcha-lib
-        // produced — so this is a plain structural match.
+        /**
+         * No cast needed: `AntibotChallenge` (generated from the contract) and ALTCHA's own
+         * `Challenge` describe the same wire shape — the backend issues exactly what altcha-lib
+         * produced — so this is a plain structural match.
+         */
         return widget.configure({ challenge: envelope });
     });
 
@@ -198,10 +204,12 @@ onMounted(() => {
 
             return nextTick().then(() => mountProvider(activeProvider, envelope.parameters));
         })
-        // An unreachable API or a vendor script that would not load leaves the widget absent, and
-        // nothing else: the health banner already says the API is down, and the form's own submit
-        // reports its refusal. Left uncaught, it is an unhandled rejection on every page that
-        // hosts a check.
+        /**
+         * An unreachable API or a vendor script that would not load leaves the widget absent, and
+         * nothing else: the health banner already says the API is down, and the form's own submit
+         * reports its refusal. Left uncaught, it is an unhandled rejection on every page that
+         * hosts a check.
+         */
         .catch((error: unknown) => {
             logger.warn('HumanCheck: the human check could not be prepared', error);
         });

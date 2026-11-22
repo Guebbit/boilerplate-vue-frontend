@@ -150,8 +150,10 @@ describe('IN8 · An endpoint that never answers', () => {
         cy.step('a few failed chains are not enough: the streak is young, the subscription is on');
         cy.then(() =>
             stateOf(subscriptionId).then((state) => {
-                // The seed leaves an unpaid order open, and the first order frees it: its
-                // cancellation is a third row, so the streak is two or three, below the five.
+                /**
+                 * The seed leaves an unpaid order open, and the first order frees it: its
+                 * cancellation is a third row, so the streak is two or three, below the five.
+                 */
                 expect(state.consecutiveFailures).to.be.at.least(2).and.below(5);
                 expect(state.enabled).to.equal(true);
                 expect(state.disabledAt).to.equal(undefined);

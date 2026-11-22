@@ -24,8 +24,10 @@ sweepA11y('products — public', [
     // Shoppers' view: the storefront grid. Its cards are `<article>`s with one link each.
     ['products list', '/en/products'],
     ['product detail', productDetail],
-    // The storefront's most-used page in its other theme: the product cards and the facet
-    // chips carry their own colours, and a pair that passes on white can fail on dark.
+    /**
+     * The storefront's most-used page in its other theme: the product cards and the facet
+     * chips carry their own colours, and a pair that passes on white can fail on dark.
+     */
     { name: 'products list, dark theme', route: '/en/products', theme: 'dark' }
 ]);
 
@@ -37,8 +39,10 @@ sweepA11y(
         ['product create', '/en/products/create'],
         ['product edit', productEdit],
         {
-            // The remove-language button exists only beside a non-fallback tab, which no other
-            // case opens.
+            /**
+             * The remove-language button exists only beside a non-fallback tab, which no other
+             * case opens.
+             */
             name: 'product edit, second language tab',
             route: productEdit,
             prepare: () => {
@@ -47,8 +51,10 @@ sweepA11y(
             }
         },
         {
-            // Submitted empty: every field shows its error, and an error message has to be
-            // associated with its field (`aria-describedby`) and announced, not only coloured.
+            /**
+             * Submitted empty: every field shows its error, and an error message has to be
+             * associated with its field (`aria-describedby`) and announced, not only coloured.
+             */
             name: 'product create, submitted empty',
             route: '/en/products/create',
             prepare: () => {

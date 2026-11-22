@@ -60,8 +60,10 @@ import { enabledModules } from '@/modules.ts';
  * mount below.
  */
 registerLocaleContributors(collectModuleLocales(enabledModules));
-// The axios interceptors (auth, etag, download, step-up) read the session store, so the http tier
-// cannot register them itself without a cycle: this is where they are wired, before any request.
+/**
+ * The axios interceptors (auth, etag, download, step-up) read the session store, so the http tier
+ * cannot register them itself without a cycle: this is where they are wired, before any request.
+ */
 installHttpInterceptors();
 // How each notification code reads and links: declared by the module that owns the code.
 registerNotices(collectModuleNotices(enabledModules));
@@ -112,14 +114,18 @@ const bootstrapApp = () =>
                 .use(router)
                 .use(i18n)
                 .use(vuetify)
-                // Every store passes `queryClient` (src/infrastructure/query-client.ts)
-                // explicitly rather than relying on this injection — see that file's own
-                // docblock — so this is only for a future caller that reaches for
-                // `useQueryClient()` directly.
+                /**
+                 * Every store passes `queryClient` (src/infrastructure/query-client.ts)
+                 * explicitly rather than relying on this injection — see that file's own
+                 * docblock — so this is only for a future caller that reaches for
+                 * `useQueryClient()` directly.
+                 */
                 .use(VueQueryPlugin, { queryClient });
 
-            // Anything a component's render/setup/watcher throws with nothing downstream to
-            // catch it lands here instead of a blank page — see vue-error-handler.ts.
+            /**
+             * Anything a component's render/setup/watcher throws with nothing downstream to
+             * catch it lands here instead of a blank page — see vue-error-handler.ts.
+             */
             app.config.errorHandler = handleUncaughtVueError;
 
             // Extension points: what every enabled module contributes to another module's slots.
@@ -149,8 +155,10 @@ const bootstrapApp = () =>
                 );
             }
 
-            // Each module's own boot work (the shop's settings: currency for every price label and
-            // input); fire-and-forget, and never rejects.
+            /**
+             * Each module's own boot work (the shop's settings: currency for every price label and
+             * input); fire-and-forget, and never rejects.
+             */
             runModuleSetups(enabledModules);
 
             // The public config (`GET /config`: session mode, OAuth providers, human check), read
@@ -160,24 +168,30 @@ const bootstrapApp = () =>
             // eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadSessionMode never rejects (a failed read is dropped and retried)
             void useSessionStore().loadSessionMode();
 
-            // The language manifest differs per caller (staff also see draft languages), but the
-            // boot read ran before any session existed. Re-read it whenever the session changes
-            // (sign-in, restore, sign-out); `isAuth` flips on all three. Never rejects.
+            /**
+             * The language manifest differs per caller (staff also see draft languages), but the
+             * boot read ran before any session existed. Re-read it whenever the session changes
+             * (sign-in, restore, sign-out); `isAuth` flips on all three. Never rejects.
+             */
             watch(
                 () => useSessionStore().isAuth,
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises -- mergeRemoteLocales never rejects (an unreachable API keeps the bundled languages)
                 () => void mergeRemoteLocales()
             );
 
-            // Grafana Faro (crash reports, tracing, web-vitals) and Umami (product analytics) both
-            // load only if this visitor already said yes (the guest cookie); Umami also loads when
-            // the build opts out of consent. A signed-in account's own answer arrives with its
-            // profile. Umami's pageview is tracked by the script itself.
+            /**
+             * Grafana Faro (crash reports, tracing, web-vitals) and Umami (product analytics) both
+             * load only if this visitor already said yes (the guest cookie); Umami also loads when
+             * the build opts out of consent. A signed-in account's own answer arrives with its
+             * profile. Umami's pageview is tracked by the script itself.
+             */
             useAnalyticsConsentStore().syncTracker();
 
             return router.isReady().then(() => {
-                // Signal to Cypress (or any test runner) that the app is fully ready: Vue is
-                // mounted and the initial navigation has resolved.
+                /**
+                 * Signal to Cypress (or any test runner) that the app is fully ready: Vue is
+                 * mounted and the initial navigation has resolved.
+                 */
                 (globalThis as typeof globalThis & { _appReady?: boolean })._appReady = true;
             });
         });

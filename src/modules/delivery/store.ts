@@ -235,8 +235,10 @@ export const useDeliveryStore = defineStore('delivery', () => {
         const orderId = fulfillmentOrders.value.find(
             ({ id }) => id === fulfillmentOrderId
         )?.orderId;
-        // A lost connection or an in-flight 409 is the same attempt: nothing new to read. The
-        // re-read is best effort: its own failure must not hide the refusal being reported.
+        /**
+         * A lost connection or an in-flight 409 is the same attempt: nothing new to read. The
+         * re-read is best effort: its own failure must not hide the refusal being reported.
+         */
         const reread =
             !orderId || keepsIdempotencyKey(error)
                 ? Promise.resolve()

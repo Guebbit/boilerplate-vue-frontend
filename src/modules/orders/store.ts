@@ -346,8 +346,10 @@ export const useOrdersStore = defineStore('orders', () => {
     const watchOrder: typeof watchOneOrder = (idSource, settings) =>
         watchOneOrder(() => {
             const orderId = toValue(idSource);
-            // Marks the cached copy stale synchronously, ahead of the watcher's own read; a failed
-            // refetch of a watched copy is the watcher's own error to report.
+            /**
+             * Marks the cached copy stale synchronously, ahead of the watcher's own read; a failed
+             * refetch of a watched copy is the watcher's own error to report.
+             */
             if (orderId && listStale.take(orderId))
                 invalidateTarget(orderId).catch(() => undefined);
             return orderId;

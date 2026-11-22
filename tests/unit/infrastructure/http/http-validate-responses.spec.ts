@@ -40,9 +40,11 @@ const loadHttp = () => {
             { collectModuleResponseSchemas },
             { enabledModules }
         ]) =>
-            // Awaited: the rows load lazily now, so every test below must wait for
-            // them to be in place before it fires a request, exactly like `wireModulesIntoCore`
-            // waits when a spec actually stubs `VITE_VALIDATE_RESPONSES`.
+            /**
+             * Awaited: the rows load lazily now, so every test below must wait for
+             * them to be in place before it fires a request, exactly like `wireModulesIntoCore`
+             * waits when a spec actually stubs `VITE_VALIDATE_RESPONSES`.
+             */
             loadResponseSchemas(collectModuleResponseSchemas(enabledModules))
                 .then(installInterceptors)
                 .then(() => httpModule)
@@ -55,8 +57,10 @@ beforeEach(() => {
 
 describe('orvalMutator contract validation', () => {
     it('is off by default inside Vitest, even though DEV is true (MODE is "test")', () => {
-        // A response that violates GetAccountResponse (missing required `email`) — if
-        // validation ran, this would throw.
+        /**
+         * A response that violates GetAccountResponse (missing required `email`) — if
+         * validation ran, this would throw.
+         */
         server.use(http.get(`${API}/account`, () => HttpResponse.json({ id: '1' })));
         return loadHttp().then(({ orvalMutator }) =>
             expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
@@ -66,8 +70,10 @@ describe('orvalMutator contract validation', () => {
     });
 
     it('is ON by default outside Vitest — a production build validates too (MODE decides)', () => {
-        // Same violating response as above; with MODE stubbed away from 'test' and no flag set,
-        // the default must validate — this is what lets the stores trust the body.
+        /**
+         * Same violating response as above; with MODE stubbed away from 'test' and no flag set,
+         * the default must validate — this is what lets the stores trust the body.
+         */
         server.use(http.get(`${API}/account`, () => HttpResponse.json({ id: '1' })));
         vi.stubEnv('MODE', 'production');
         return loadHttp().then(({ orvalMutator }) =>
@@ -212,8 +218,10 @@ describe('orvalMutator contract validation', () => {
                     id: '1',
                     email: 'a@b.com',
                     username: 'alice',
-                    // Not part of the OpenAPI schema — the exact class of bug (over-serialization)
-                    // this validation exists to catch.
+                    /**
+                     * Not part of the OpenAPI schema — the exact class of bug (over-serialization)
+                     * this validation exists to catch.
+                     */
                     passwordHash: 'should-never-be-serialized'
                 })
             )

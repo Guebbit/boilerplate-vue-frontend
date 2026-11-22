@@ -58,8 +58,10 @@ const documentOf = (rule: SharedRule): unknown =>
  * @returns the formatted text
  */
 const formatted = (file: string, content: string): Promise<string> =>
-    // Prettier: `resolveConfig` reads .prettierrc/.editorconfig; `filepath` picks the parser.
-    // https://prettier.io/docs/api
+    /**
+     * Prettier: `resolveConfig` reads .prettierrc/.editorconfig; `filepath` picks the parser.
+     * https://prettier.io/docs/api
+     */
     resolveConfig(file, { editorconfig: true }).then((config) =>
         format(content, { ...config, filepath: file })
     );

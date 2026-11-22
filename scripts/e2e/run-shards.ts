@@ -96,15 +96,19 @@ const positiveInteger = (value: string | undefined): number | undefined => {
 /** How many shards to run, from `E2E_SHARDS`; four when unset. */
 const shardCount = positiveInteger(process.env.E2E_SHARDS) ?? 4;
 
-// Globbed rather than listed: a new module's suite is sharded the day it appears, and a deleted
-// one stops being scheduled without anyone editing this file.
-//
-// Keyed by the full relative path, not the basename: every module ships its own
-// `a11y.cy.ts`, and a basename key would look up the SAME measured duration for all of them
-// regardless of how much that module's sweep actually costs.
+/**
+ * Globbed rather than listed: a new module's suite is sharded the day it appears, and a deleted
+ * one stops being scheduled without anyone editing this file.
+ *
+ * Keyed by the full relative path, not the basename: every module ships its own
+ * `a11y.cy.ts`, and a basename key would look up the SAME measured duration for all of them
+ * regardless of how much that module's sweep actually costs.
+ */
 const specs = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT })
-    // Cypress' `--spec` wants posix separators whatever the platform globbed with, and the sort
-    // keeps a run's shard assignment stable rather than at the mercy of directory order.
+    /**
+     * Cypress' `--spec` wants posix separators whatever the platform globbed with, and the sort
+     * keeps a run's shard assignment stable rather than at the mercy of directory order.
+     */
     .map((entry) => entry.split(path.sep).join('/'))
     .toSorted()
     .map((file) => ({ file, key: file }));
@@ -256,8 +260,10 @@ const DEMO_PORT_BASE = 3101;
  */
 const backendEnvironmentFor = (index: number, antibot: boolean): Record<string, string> => ({
     NODE_WEBHOOK_DEMO_SINK_URL: sinkUrlForPort(SHARD_SINK_PORT_BASE + index),
-    // The specs read the same name (`cypress.config.ts`'s `sessionMode`), so backend and journeys
-    // always agree on how people stay signed in. Unset runs the backend's default, `jwt`.
+    /**
+     * The specs read the same name (`cypress.config.ts`'s `sessionMode`), so backend and journeys
+     * always agree on how people stay signed in. Unset runs the backend's default, `jwt`.
+     */
     ...(process.env.E2E_SESSION_MODE ? { NODE_SESSION_MODE: process.env.E2E_SESSION_MODE } : {}),
     ...(antibot ? ANTIBOT_BACKEND_ENV : {})
 });
@@ -276,20 +282,24 @@ const backendEnvironmentFor = (index: number, antibot: boolean): Record<string, 
  * `resolveBackendDemoShardLimit`.
  */
 const bootDemoBackends = async (count: number, antibotIndex: number): Promise<() => void> => {
-    // BACKEND_DEMO_COMMAND unset: boot nothing, and treat the ports as somebody else's to serve.
-    // The readiness wait below still runs, so a shard never starts against a port with nothing on
-    // it — it fails there, saying why, instead of inside Cypress.
+    /**
+     * BACKEND_DEMO_COMMAND unset: boot nothing, and treat the ports as somebody else's to serve.
+     * The readiness wait below still runs, so a shard never starts against a port with nothing on
+     * it — it fails there, saying why, instead of inside Cypress.
+     */
     const demoCommand = resolveBackendDemoCommand();
     if (demoCommand === undefined)
         console.log(
             `[e2e-shard] BACKEND_DEMO_COMMAND is unset — booting nothing; expecting backends already on :${DEMO_PORT_BASE}–:${DEMO_PORT_BASE + count - 1}`
         );
 
-    // A shard past the paired backend's provisioned ceiling would compute a `DB_DATABASE` that
-    // backend never created, and fail deep inside its connection layer with no hint of the real
-    // cause. Caught here instead, naming the knob rather than one pairing's SQL: which backend is
-    // on the other end, and how it provisions, is that repo's business — this one only enforces
-    // the number it was given.
+    /**
+     * A shard past the paired backend's provisioned ceiling would compute a `DB_DATABASE` that
+     * backend never created, and fail deep inside its connection layer with no hint of the real
+     * cause. Caught here instead, naming the knob rather than one pairing's SQL: which backend is
+     * on the other end, and how it provisions, is that repo's business — this one only enforces
+     * the number it was given.
+     */
     const shardLimit = resolveBackendDemoShardLimit();
     if (demoCommand && shardLimit !== undefined && count > shardLimit)
         throw new Error(
@@ -298,9 +308,11 @@ const bootDemoBackends = async (count: number, antibotIndex: number): Promise<()
                 'raise the limit, or lower E2E_SHARDS.'
         );
 
-    // Every backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see
-    // `scratch-directory.ts` for the tmpfs it was filling. The PHP twin ignores it; nothing there reads
-    // TMPDIR for its own state.
+    /**
+     * Every backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see
+     * `scratch-directory.ts` for the tmpfs it was filling. The PHP twin ignores it; nothing there reads
+     * TMPDIR for its own state.
+     */
     const scratchDirectory = demoCommand ? createDemoScratchDirectory() : undefined;
     const children = Array.from({ length: count }, (_, index) => {
         const port = DEMO_PORT_BASE + index;
@@ -311,30 +323,36 @@ const bootDemoBackends = async (count: number, antibotIndex: number): Promise<()
                 log: () => '(BACKEND_DEMO_COMMAND is unset, so nothing was booted on this port)'
             };
         const [command, ...commandArguments] = demoCommand;
-        // `detached` puts each backend in its own process GROUP, so the kill below can signal the
-        // whole command chain (npm → tsx → node → mongod, or composer → php → artisan). Killing
-        // only the wrapper orphans the grandchildren, and an orphan holding its port makes the
-        // NEXT run's shard talk to a backend full of last run's state — a flake that reads as
-        // anything but what it is.
+        /**
+         * `detached` puts each backend in its own process GROUP, so the kill below can signal the
+         * whole command chain (npm → tsx → node → mongod, or composer → php → artisan). Killing
+         * only the wrapper orphans the grandchildren, and an orphan holding its port makes the
+         * NEXT run's shard talk to a backend full of last run's state — a flake that reads as
+         * anything but what it is.
+         */
         const child = spawn(command, commandArguments, {
             stdio: ['ignore', 'pipe', 'pipe'],
             detached: true,
             env: {
                 ...process.env,
-                // NODE_PORT: read by the Node twin's own `demo` script. SERVER_PORT: read by
-                // Laravel's `artisan serve` (honoured since the PHP twin's own toolchain started
-                // forwarding it). DB_DATABASE: read by Laravel's own config for which schema to
-                // migrate — the Node twin has no such variable, so it is simply unread there. Each
-                // backend reads what it recognises and ignores the rest.
+                /**
+                 * NODE_PORT: read by the Node twin's own `demo` script. SERVER_PORT: read by
+                 * Laravel's `artisan serve` (honoured since the PHP twin's own toolchain started
+                 * forwarding it). DB_DATABASE: read by Laravel's own config for which schema to
+                 * migrate — the Node twin has no such variable, so it is simply unread there. Each
+                 * backend reads what it recognises and ignores the rest.
+                 */
                 NODE_PORT: String(port),
                 SERVER_PORT: String(port),
                 DB_DATABASE: `e2e_demo_shard_${index + 1}`,
                 NODE_DEMO: 'true',
                 ...backendEnvironmentFor(index, index === antibotIndex),
                 TMPDIR: scratchDirectory,
-                // All shards serve the SAME built bundle on :8085 (the preview server this file's
-                // own module doc names) — every shard's OAuth callback and emailed link must
-                // redirect there too, not at the Node twin's `.env` default of :8080.
+                /**
+                 * All shards serve the SAME built bundle on :8085 (the preview server this file's
+                 * own module doc names) — every shard's OAuth callback and emailed link must
+                 * redirect there too, not at the Node twin's `.env` default of :8080.
+                 */
                 NODE_FRONTEND_URL: 'http://localhost:8085'
             }
         });
@@ -355,11 +373,13 @@ const bootDemoBackends = async (count: number, antibotIndex: number): Promise<()
         if (scratchDirectory) removeDemoScratchDirectory(scratchDirectory);
     };
     process.on('exit', kill);
-    // `exit` does not fire for a signal that terminates by default, so both of the ways this
-    // runner actually gets stopped need saying explicitly: a ^C at a terminal, and the SIGTERM
-    // `start-server-and-test` sends when the suite above it finishes. Without the second one, a
-    // CI run left its ~200 MB of Mongo behind every time. Exit codes are the 128+signal
-    // convention, so a caller can still tell which signal ended the run.
+    /**
+     * `exit` does not fire for a signal that terminates by default, so both of the ways this
+     * runner actually gets stopped need saying explicitly: a ^C at a terminal, and the SIGTERM
+     * `start-server-and-test` sends when the suite above it finishes. Without the second one, a
+     * CI run left its ~200 MB of Mongo behind every time. Exit codes are the 128+signal
+     * convention, so a caller can still tell which signal ended the run.
+     */
     for (const [signal, code] of [
         ['SIGINT', 130],
         ['SIGTERM', 143]
@@ -410,8 +430,10 @@ const runShard = (files: string[], index: number) =>
     new Promise<{ index: number; reason?: string; output: string; seconds: number }>((resolve) => {
         const startedAt = Date.now();
 
-        // Staggered, not concurrent-from-zero — see SHARD_STAGGER_MS. The clock starts before the
-        // wait so a shard's reported seconds stay comparable with the weights in SECONDS.
+        /**
+         * Staggered, not concurrent-from-zero — see SHARD_STAGGER_MS. The clock starts before the
+         * wait so a shard's reported seconds stay comparable with the weights in SECONDS.
+         */
         setTimeout(() => {
             runWatched('npx', ['cypress', 'run', '--e2e', '--spec', files.join(',')], {
                 cwd: REPO_ROOT,
@@ -421,8 +443,10 @@ const runShard = (files: string[], index: number) =>
                     // This shard's own backend — see `bootDemoBackends` below.
                     // eslint-disable-next-line @typescript-eslint/naming-convention -- the CYPRESS_ prefix is Cypress' env-mapping contract, and the suffix names Cypress.env('apiUrl')
                     CYPRESS_apiUrl: `http://localhost:${DEMO_PORT_BASE + index}`,
-                    // Tells `cypress.config.ts` not to reset the shared flaky report: `main`
-                    // already did, once, and a shard resetting it would erase the others'.
+                    /**
+                     * Tells `cypress.config.ts` not to reset the shared flaky report: `main`
+                     * already did, once, and a shard resetting it would erase the others'.
+                     */
                     E2E_SHARDED: 'true',
                     // Where this process hosts the webhook sink its backend was told about.
                     E2E_WEBHOOK_SINK_PORT: String(SHARD_SINK_PORT_BASE + index)
@@ -445,8 +469,10 @@ const runShard = (files: string[], index: number) =>
                     });
                 })
                 .catch((error: unknown) => {
-                    // `runWatched` never rejects; this is the verdict code above throwing. Fail the
-                    // shard with the reason rather than leave its promise pending forever.
+                    /**
+                     * `runWatched` never rejects; this is the verdict code above throwing. Fail the
+                     * shard with the reason rather than leave its promise pending forever.
+                     */
                     resolve({
                         index,
                         reason: `shard verdict could not be judged: ${String(error)}`,

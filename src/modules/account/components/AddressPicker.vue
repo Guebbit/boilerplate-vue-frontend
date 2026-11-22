@@ -166,9 +166,11 @@ watch(
     addresses,
     (list, previous) => {
         if (list.length === 0) {
-            // A book that LOADED empty (a fresh array after the mount-time read) leaves any
-            // restored choice pointing at an entry that is gone; the mount-time call is skipped,
-            // since an empty list there only means the read has not answered yet.
+            /**
+             * A book that LOADED empty (a fresh array after the mount-time read) leaves any
+             * restored choice pointing at an entry that is gone; the mount-time call is skipped,
+             * since an empty list there only means the read has not answered yet.
+             */
             if (previous !== undefined) addressId.value = undefined;
             return;
         }

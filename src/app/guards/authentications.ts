@@ -60,8 +60,10 @@ export type RoutePermission = {
  * hard-coded table.
  */
 declare module 'vue-router' {
-    // The name belongs to the library being augmented, not to this codebase: declaration
-    // merging only works against the exact interface it declares.
+    /**
+     * The name belongs to the library being augmented, not to this codebase: declaration
+     * merging only works against the exact interface it declares.
+     */
     interface RouteMeta {
         access?: RouteAccess;
         /**
@@ -162,11 +164,13 @@ export const tryRestoreAuth = (): Promise<void> => {
     return (
         restoreSessionIfNeeded()
             .then(() => {
-                // The credential alone is not a session: `isAuth` stays false and the abilities stay
-                // empty until the viewer is known, so a guard can never admit someone whose rules
-                // it has not read. `!store.viewer` is what makes this a FIRST-navigation cost: once
-                // known, the viewer is refreshed on login, on a token refresh and on a 403 (see
-                // `http/refresh.ts` and `session.reloadAbilities`), never on every route change.
+                /**
+                 * The credential alone is not a session: `isAuth` stays false and the abilities stay
+                 * empty until the viewer is known, so a guard can never admit someone whose rules
+                 * it has not read. `!store.viewer` is what makes this a FIRST-navigation cost: once
+                 * known, the viewer is refreshed on login, on a token refresh and on a 403 (see
+                 * `http/refresh.ts` and `session.reloadAbilities`), never on every route change.
+                 */
                 if (store.hasSession && !store.viewer) return store.loadViewer();
             })
             // Discard the payload so the guard resolves to void (NavigationGuardReturn)
@@ -197,8 +201,10 @@ export const enforceRouteAccess = (
 ) => {
     const session = useSessionStore();
     const { isAuth } = storeToRefs(session);
-    // `can` is a plain function on the store, not a ref — `storeToRefs` drops actions, so it is
-    // read off the store itself and stays bound to the live abilities.
+    /**
+     * `can` is a plain function on the store, not a ref — `storeToRefs` drops actions, so it is
+     * read off the store itself and stays bound to the live abilities.
+     */
     const visitor = { isAuth: isAuth.value, can: session.can };
     if (canAccess(to.meta, visitor)) return;
 
@@ -211,8 +217,10 @@ export const enforceRouteAccess = (
         return { name: 'Home', params: { locale } };
     }
 
-    // Anonymous: recoverable by logging in, so keep where they were going — or Home, on a
-    // build with no `account` module at all.
+    /**
+     * Anonymous: recoverable by logging in, so keep where they were going — or Home, on a
+     * build with no `account` module at all.
+     */
     if (!visitor.isAuth) {
         addMessage(translate('navigation.error-not-logged'));
         return signInLocation(router, to.fullPath, locale);

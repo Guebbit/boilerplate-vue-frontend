@@ -143,8 +143,10 @@ describe('OP20 · Staff prove it’s still them', () => {
         cy.step('an ordinary delivery never asks, however old the sign-in');
         cy.travel(PAST_CRITICAL_MS);
         cy.subjectId('order.paid').then((orderId) => {
-            // Started above; an override can never leave `pending`, so it is shipped the ordinary
-            // way and then delivered the ordinary way: neither asks.
+            /**
+             * Started above; an override can never leave `pending`, so it is shipped the ordinary
+             * way and then delivered the ordinary way: neither asks.
+             */
             cy.visit(`/en/orders/${orderId}`);
             shipTheOpenGroup('TRK-E2E-OP20');
             cy.get('[data-test=shipment-tracking]').should('contain.text', 'TRK-E2E-OP20');

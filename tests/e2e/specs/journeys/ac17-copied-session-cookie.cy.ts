@@ -63,9 +63,11 @@ describe('AC17 · Someone copied my session cookie', () => {
         cy.restore();
     });
 
-    // `jwt` mode only: rotation and reuse detection are the refresh token's machinery. A `cookie`
-    // session id never rotates, so there is no "old copy" to replay. A regular `function` so
-    // Mocha's `this.skip()` works.
+    /**
+     * `jwt` mode only: rotation and reuse detection are the refresh token's machinery. A `cookie`
+     * session id never rotates, so there is no "old copy" to replay. A regular `function` so
+     * Mocha's `this.skip()` works.
+     */
     it('an old cookie replayed after the grace window is refused and revokes every session', function () {
         skipUnlessSessionMode(this, 'jwt');
         cy.step('the customer signs in with remember me and the cookie is copied');

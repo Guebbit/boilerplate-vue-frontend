@@ -174,10 +174,12 @@ for (const [openApiPath, pathItem] of Object.entries(document.paths ?? {}))
         collectRedirectEnums(operation);
     }
 
-// `paramCount` ascending first — see this file's own header for why a literal segment must sort
-// before a `{param}` sibling that would otherwise absorb it. Everything else is alphabetical, for
-// a stable, reviewable diff: a regeneration that adds an unrelated operation elsewhere must not
-// reshuffle rows a reviewer already read.
+/**
+ * `paramCount` ascending first — see this file's own header for why a literal segment must sort
+ * before a `{param}` sibling that would otherwise absorb it. Everything else is alphabetical, for
+ * a stable, reviewable diff: a regeneration that adds an unrelated operation elsewhere must not
+ * reshuffle rows a reviewer already read.
+ */
 rows.sort(
     (a, b) =>
         a.paramCount - b.paramCount ||

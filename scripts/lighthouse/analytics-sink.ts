@@ -39,8 +39,10 @@ export const sinkScriptUrl = (port: number): string => `http://127.0.0.1:${Strin
 export const startAnalyticsSink = (port: number = ANALYTICS_SINK_PORT): Promise<Server> =>
     new Promise((resolve, reject) => {
         const server = createServer((request, response) => {
-            // Preflight: echo what the browser asks to send, since the sink accepts anything.
-            // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS
+            /**
+             * Preflight: echo what the browser asks to send, since the sink accepts anything.
+             * https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS
+             */
             response.setHeader('access-control-allow-origin', '*');
             response.setHeader('access-control-allow-methods', 'POST, GET, OPTIONS');
             const requested = request.headers['access-control-request-headers'];

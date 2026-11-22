@@ -84,8 +84,10 @@ export const loadModuleManifest = (modulesRoot: string): ModuleManifest => {
             manifest.problems.push(`Module "${name}" has no module.yaml.`);
             continue;
         }
-        // `yaml` package: `parse` turns the document into plain JS values (unknown shape).
-        // https://eemeli.org/yaml/#yaml-parse
+        /**
+         * `yaml` package: `parse` turns the document into plain JS values (unknown shape).
+         * https://eemeli.org/yaml/#yaml-parse
+         */
         const fields = parse(readFileSync(file, 'utf8')) as {
             group?: unknown;
             dependsOn?: unknown;
@@ -140,9 +142,11 @@ export const demoModuleNames = (groups: Record<string, ModuleGroup> = moduleGrou
  * @throws {Error} naming the cycle, on the first one found
  */
 export const assertAcyclicModuleEdges = (edges: Record<string, string[]>): void => {
-    // Standard DFS cycle check: `done` is a node whose whole subtree is known acyclic, `stack`
-    // is the path from the sweep's root to the node being visited — a node reappearing on it IS
-    // the cycle.
+    /**
+     * Standard DFS cycle check: `done` is a node whose whole subtree is known acyclic, `stack`
+     * is the path from the sweep's root to the node being visited — a node reappearing on it IS
+     * the cycle.
+     */
     const done = new Set<string>();
 
     const visit = (node: string, stack: string[]): void => {

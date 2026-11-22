@@ -18,10 +18,12 @@ import { asStub } from '../stub.ts';
 import { sampleForPattern } from './pattern-samples.ts';
 import type { ZodType } from 'zod';
 
-// ─── seeded PRNG ────────────────────────────────────────────────────────────────
-//
-// Mulberry32: small, fast, good statistical quality for test-data purposes (not
-// cryptographic). Returns a function yielding floats in [0, 1), deterministic for a given seed.
+/**
+ * ─── seeded PRNG ────────────────────────────────────────────────────────────────
+ *
+ * Mulberry32: small, fast, good statistical quality for test-data purposes (not
+ * cryptographic). Returns a function yielding floats in [0, 1), deterministic for a given seed.
+ */
 const createRandom = (seed: number) => {
     let state = seed >>> 0;
     return (): number => {
@@ -241,11 +243,13 @@ const buildValue = (schema: ZodType): unknown => {
             const max = checks.find((check) => check.check === 'less_than')?.value;
             const low = typeof min === 'number' ? min : 0;
             const high = typeof max === 'number' ? max : low + 1000;
-            // Always a whole number: a valid `number`/`format: double` either way, but also
-            // satisfies fields the OpenAPI spec declares `type: integer` — a constraint that
-            // doesn't always survive into the generated zod schema as an explicit `.int()`
-            // (e.g. CreateOrderBody's `items[].quantity` is `zod.number().min(1)` in
-            // `contracts/rest.generated/schemas.zod.ts`, but `integer` in `openapi.yaml`).
+            /**
+             * Always a whole number: a valid `number`/`format: double` either way, but also
+             * satisfies fields the OpenAPI spec declares `type: integer` — a constraint that
+             * doesn't always survive into the generated zod schema as an explicit `.int()`
+             * (e.g. CreateOrderBody's `items[].quantity` is `zod.number().min(1)` in
+             * `contracts/rest.generated/schemas.zod.ts`, but `integer` in `openapi.yaml`).
+             */
             return Math.round(low + random() * (high - low));
         }
         case 'boolean': {

@@ -88,8 +88,10 @@ describe('OP32 · People and keys ask a fresh session', () => {
             cy.get('#user-edit-page form').submit();
             cy.get('[data-test=reauth-dialog]').should('not.exist');
 
-            // No jump of its own: the phone edit above never asked, so the password given for the
-            // grant is still 400 s old here, past the critical window.
+            /**
+             * No jump of its own: the phone edit above never asked, so the password given for the
+             * grant is still 400 s old here, past the critical window.
+             */
             cy.step('taking the role away asks too, and the person is a customer again');
             pickRole(targetId, 'No staff role (customer)');
             wrongThenRight();

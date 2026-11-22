@@ -147,12 +147,16 @@ export const trackedTargets = (root: string): { targets: Set<string>; roots: Set
         env: gitEnvironment()
     })
         .split('\n')
-        // `.2brain/` mirrors every source file as `<path>.md`, and the `.md` spelling below would
-        // let a stale mirror page vouch for a source file that no longer exists.
+        /**
+         * `.2brain/` mirrors every source file as `<path>.md`, and the `.md` spelling below would
+         * let a stale mirror page vouch for a source file that no longer exists.
+         */
         .filter((file) => file !== '' && !file.startsWith('.2brain/'));
     const targets = new Set<string>();
-    // What actually sits at the root, taken from the file list rather than from `targets` — that
-    // set holds every TAIL, so `products/create.vue` would make `products` look top-level.
+    /**
+     * What actually sits at the root, taken from the file list rather than from `targets` — that
+     * set holds every TAIL, so `products/create.vue` would make `products` look top-level.
+     */
     const roots = new Set(files.map((file) => file.split('/', 1)[0]));
 
     const addTails = (candidate: string) => {
@@ -202,8 +206,10 @@ export const throughAliases = (
 ): string | undefined => {
     if (!token.startsWith('@')) return token;
 
-    // A wildcard alias (`@/*`) keeps its trailing slash and matches a prefix; a bare one
-    // (`@types`) must match whole, or `@api` would claim `@api-platform/core`.
+    /**
+     * A wildcard alias (`@/*`) keeps its trailing slash and matches a prefix; a bare one
+     * (`@types`) must match whole, or `@api` would claim `@api-platform/core`.
+     */
     const alias = aliases.find((entry) =>
         entry.prefix.endsWith('/') ? token.startsWith(entry.prefix) : token === entry.prefix
     );
@@ -218,8 +224,10 @@ export const throughAliases = (
  * tree rather than listed, so a new top-level directory needs no edit here.
  */
 export const claimsAPath = (roots: Set<string>, token: string): boolean =>
-    // Anchored on the LAST segment, so `.visual.cy.ts` — a suffix convention, not a file — is not
-    // read as one because a filename happens to sit inside it.
+    /**
+     * Anchored on the LAST segment, so `.visual.cy.ts` — a suffix convention, not a file — is not
+     * read as one because a filename happens to sit inside it.
+     */
     FILENAME.test(token.split('/').at(-1) ?? '') || roots.has(token.split('/', 1)[0]);
 
 /** Whether any spelling of this token is the tail of something git tracks. */

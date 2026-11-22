@@ -119,8 +119,10 @@ const parsed = computed<{ entries?: DictionaryRow[]; error?: string }>(() => {
         return { error: t('entries-import.error-parse') };
     const entries = flattenDictionary(dictionary as TranslationDictionaries);
     if (entries.length === 0) return { error: t('entries-import.error-empty') };
-    // The API takes a key-to-text map, so a key named twice (`"a.b"` beside `{ a: { b } }`) would
-    // silently keep one of the two texts.
+    /**
+     * The API takes a key-to-text map, so a key named twice (`"a.b"` beside `{ a: { b } }`) would
+     * silently keep one of the two texts.
+     */
     const duplicate = findDuplicateKey(entries.map(({ key }) => key.trim()));
     if (duplicate !== undefined)
         return { error: t('entries-import.error-duplicate', { key: duplicate }) };
@@ -151,8 +153,10 @@ const modeOptions = computed(() => [
 const handleImport = () => {
     const entries = parsedEntries.value;
     if (!entries) return;
-    // The one confirmation, worded per mode: no `If-Match` guards the import, so this warning is
-    // what tells the person a colleague's recent edits are overwritten.
+    /**
+     * The one confirmation, worded per mode: no `If-Match` guards the import, so this warning is
+     * what tells the person a colleague's recent edits are overwritten.
+     */
     const secondLook = useDialogStore().confirm({
         message: t(`entries-import.confirm-${mode.value}`, {
             app: app.value,

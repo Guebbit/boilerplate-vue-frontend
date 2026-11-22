@@ -131,9 +131,11 @@ describe('UserEdit', () => {
             .then(() => {
                 expect(wrapper.findComponent(UserAccessDialog).props('target')).toBeUndefined();
                 const body = lastPatchBody();
-                // Proves the PATCH is a shape the real endpoint accepts, not just the
-                // shape this test expected — `UpdateUserByIdBody` is a `strictObject`, so a stray
-                // key this assertion never thought to name would fail it too.
+                /**
+                 * Proves the PATCH is a shape the real endpoint accepts, not just the
+                 * shape this test expected — `UpdateUserByIdBody` is a `strictObject`, so a stray
+                 * key this assertion never thought to name would fail it too.
+                 */
                 const sent = contractRequest(schemas.UpdateUserByIdBody, body);
                 // Only what changed is sent: the loaded record is the baseline.
                 expect(sent).toEqual({ username: 'ada2' });
@@ -157,9 +159,11 @@ describe('UserEdit', () => {
             .then(flushPromises)
             .then(() => {
                 const body = lastPatchBody();
-                // Proves the PATCH is a shape the real endpoint accepts — a `strictObject` schema
-                // that also enforces `minLength`/pattern per field, not just the shape this test
-                // expected.
+                /**
+                 * Proves the PATCH is a shape the real endpoint accepts — a `strictObject` schema
+                 * that also enforces `minLength`/pattern per field, not just the shape this test
+                 * expected.
+                 */
                 expect(contractRequest(schemas.UpdateUserByIdBody, body)).toMatchObject({
                     username: 'ada2'
                 });
@@ -213,9 +217,11 @@ describe('UserEdit', () => {
 
         return flushPromises()
             .then(() => {
-                // Vuetify's `VSelect` drives its value through `update:modelValue`, not the
-                // hidden native `<select>` it renders for autofill — emitting the update directly
-                // is what `setValue()` would otherwise need a real menu click to reach.
+                /**
+                 * Vuetify's `VSelect` drives its value through `update:modelValue`, not the
+                 * hidden native `<select>` it renders for autofill — emitting the update directly
+                 * is what `setValue()` would otherwise need a real menu click to reach.
+                 */
                 const roleSelect = wrapper
                     .findAllComponents(VSelect)
                     .find((select) => select.attributes('data-test') === 'user-edit-role');

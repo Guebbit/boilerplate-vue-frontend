@@ -20,8 +20,10 @@ describe('FR21 · I signed in from another tab', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
-        // A customer's own cart may hold lines already; start empty so a line is only there
-        // because this story put it there.
+        /**
+         * A customer's own cart may hold lines already; start empty so a line is only there
+         * because this story put it there.
+         */
         cy.apiAs('user', 'DELETE', '/cart/items');
     });
 

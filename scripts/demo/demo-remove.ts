@@ -36,8 +36,10 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 const findResidueTests = (names: readonly string[]): string[] => {
     const pattern = names.map((name) => `@/modules/${name}/|modules/${name}/`).join('|');
     try {
-        // `git grep`: -l file names only, -E extended regex, -I skip binary. Exit 1 = no matches.
-        // https://git-scm.com/docs/git-grep
+        /**
+         * `git grep`: -l file names only, -E extended regex, -I skip binary. Exit 1 = no matches.
+         * https://git-scm.com/docs/git-grep
+         */
         const result = execFileSync(
             'git',
             ['grep', '-l', '-I', '-E', pattern, '--', 'tests/', 'src/modules/'],

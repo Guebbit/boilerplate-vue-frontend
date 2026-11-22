@@ -15,12 +15,16 @@ sweepA11y(
     'observability',
     [
         ['admin dashboard', '/en/admin'],
-        // The shop's own audit trail — a different route and a different rule (`read:AuditLog`)
-        // from the dashboard's platform-only tab above, see `AuditLog.vue`.
+        /**
+         * The shop's own audit trail — a different route and a different rule (`read:AuditLog`)
+         * from the dashboard's platform-only tab above, see `AuditLog.vue`.
+         */
         ['audit log', '/en/audit'],
         {
-            // A tab the default sweep never opens; its table stacks into cards at the phone sizes
-            // of the layout matrix.
+            /**
+             * A tab the default sweep never opens; its table stacks into cards at the phone sizes
+             * of the layout matrix.
+             */
             name: 'admin dashboard, audit tab',
             route: '/en/admin',
             prepare: () => {

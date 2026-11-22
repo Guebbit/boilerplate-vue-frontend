@@ -19,8 +19,10 @@ describe('isKnownErrorMessage', () => {
     });
 
     it('is not itself a match for the generic key’s own namespace by accident', () => {
-        // A sanity check on the fixture above: the generic key must pass, since Error.vue
-        // translates it the same way as any other known key.
+        /**
+         * A sanity check on the fixture above: the generic key must pass, since Error.vue
+         * translates it the same way as any other known key.
+         */
         expect(isKnownErrorMessage(GENERIC_ERROR_KEY)).toBe(true);
     });
 });

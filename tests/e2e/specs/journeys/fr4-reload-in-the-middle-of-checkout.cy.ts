@@ -115,8 +115,10 @@ describe('FR4 · Reload in the middle of checkout', () => {
             cy.textareaIn('cart-notes').type(NOTE);
 
             cy.step('a quantity click is still in its debounce when the tab reloads');
-            // One tick, so the reload cannot wait out the 400 ms: what reaches the server is what
-            // the page hands over as it goes.
+            /**
+             * One tick, so the reload cannot wait out the 400 ms: what reaches the server is what
+             * the page hands over as it goes.
+             */
             cy.window().then((win) => {
                 win.document.querySelector<HTMLElement>('[data-test=cart-increase]')?.click();
                 win.location.reload();

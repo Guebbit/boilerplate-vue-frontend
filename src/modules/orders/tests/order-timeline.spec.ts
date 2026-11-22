@@ -247,8 +247,10 @@ describe('OrderTimeline — leaving a staff note', () => {
 
         expect(addNote).toHaveBeenCalledExactlyOnceWith('o1', 'Called');
         expect(fetchTimeline).toHaveBeenCalledTimes(2);
-        // The note's path sits under the order's, so the transport forgot the order's tag: the order
-        // is read again to hand it back.
+        /**
+         * The note's path sits under the order's, so the transport forgot the order's tag: the order
+         * is read again to hand it back.
+         */
         expect(fetchOrder).toHaveBeenCalledExactlyOnceWith('o1', { forced: true });
         const box = wrapper.get<HTMLTextAreaElement>(
             '[data-test="order-timeline-note-text"] textarea'

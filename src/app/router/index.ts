@@ -91,17 +91,21 @@ const shellChildRoutes: RouteRecordRaw[] = [
     {
         path: 'error/:status/:message?',
         name: 'Error',
-        // `customHero`: the title carries the HTTP-like status beside it, richer than a plain
-        // translated key — `Error.vue` renders its own `PageHeader`. `centered`: a full-height
-        // centered empty state, not the ordinary left-aligned page flow.
+        /**
+         * `customHero`: the title carries the HTTP-like status beside it, richer than a plain
+         * translated key — `Error.vue` renders its own `PageHeader`. `centered`: a full-height
+         * centered empty state, not the ordinary left-aligned page flow.
+         */
         meta: { title: 'error-page.page-title', customHero: true, centered: true },
         component: () => import('@/app/views/Error.vue'),
         props: true
     }
 ];
 
-// Runs at import time, before `createRouter` below: a module colliding with a sibling OR with one
-// of the shell's own names/paths must fail the build rather than silently losing a route.
+/**
+ * Runs at import time, before `createRouter` below: a module colliding with a sibling OR with one
+ * of the shell's own names/paths must fail the build rather than silently losing a route.
+ */
 assertUniqueRoutes([...shellChildRoutes, ...moduleRoutes]);
 
 /**
@@ -138,8 +142,10 @@ const localeLessRedirects = [
  * the kernel registry, plus the top-level 404/redirect shells the shell owns itself.
  */
 const router = createRouter({
-    // Vite's own BASE_URL, derived from `vite.config.ts`'s `base` — never `VITE_APP_BASE_URL`
-    // directly, which vue-router would treat as a full origin, not a path.
+    /**
+     * Vite's own BASE_URL, derived from `vite.config.ts`'s `base` — never `VITE_APP_BASE_URL`
+     * directly, which vue-router would treat as a full origin, not a path.
+     */
     history: createWebHistory(import.meta.env.BASE_URL),
     /**
      * Back/forward restore where the visitor was; a new page starts at the top, or at its anchor.
@@ -189,14 +195,16 @@ const router = createRouter({
             component: RouterView,
             children: [
                 {
-                    // Empty path: matches `/:locale` exactly, adding nothing of its own — the
-                    // nested-layout pattern vue-router itself documents. `LayoutDefault` becomes
-                    // the actual rendered component for every real page, mounted once
-                    // rather than by each view individually, with its OWN `<RouterView />` for
-                    // whichever child below actually matched. Lazy, same as every route below it:
-                    // it pulls in the nav, both banners and the dialog hosts, and an eager import
-                    // here would put all of that in the entry chunk instead of a route chunk
-                    // (the entry-chunk budget, `entry-chunk-budget.spec.ts`).
+                    /**
+                     * Empty path: matches `/:locale` exactly, adding nothing of its own — the
+                     * nested-layout pattern vue-router itself documents. `LayoutDefault` becomes
+                     * the actual rendered component for every real page, mounted once
+                     * rather than by each view individually, with its OWN `<RouterView />` for
+                     * whichever child below actually matched. Lazy, same as every route below it:
+                     * it pulls in the nav, both banners and the dialog hosts, and an eager import
+                     * here would put all of that in the entry chunk instead of a route chunk
+                     * (the entry-chunk budget, `entry-chunk-budget.spec.ts`).
+                     */
                     path: '',
                     component: () => import('@/app/layouts/LayoutDefault.vue'),
                     children: [
@@ -253,8 +261,10 @@ const readLocaleParameter = ({ params }: RouteLocationNormalized): string | unde
  *  left — which sent people back where they already were after logging in.
  * @returns The `router.push` promise for the chosen redirect.
  */
-// Vite: registered once, at module load, so it is armed before the very first lazy route import
-// can fail. See `stale-deploy.ts` for why the actual reload happens in `onError` below instead.
+/**
+ * Vite: registered once, at module load, so it is armed before the very first lazy route import
+ * can fail. See `stale-deploy.ts` for why the actual reload happens in `onError` below instead.
+ */
 registerStaleDeployRecovery(globalThis);
 
 router.onError((error: Error, to: RouteLocationNormalized) => {
@@ -267,14 +277,18 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
         // Store may not be initialised yet in edge cases — ignore.
     }
 
-    // A stale chunk from a deploy that has since moved on: reload once, to the SAME target, and
-    // stop here — an open tab should recover silently rather than show an error a fresh load
-    // would not have hit at all.
+    /**
+     * A stale chunk from a deploy that has since moved on: reload once, to the SAME target, and
+     * stop here — an open tab should recover silently rather than show an error a fresh load
+     * would not have hit at all.
+     */
     if (recoverFromStaleDeploy(to.fullPath, (url) => location.assign(url), sessionStorage))
         return Promise.resolve();
 
-    // The aborted target first, then the route being left, then the default. The second step
-    // matters when the failure came from a route that carries no `:locale` param of its own.
+    /**
+     * The aborted target first, then the route being left, then the default. The second step
+     * matters when the failure came from a route that carries no `:locale` param of its own.
+     */
     const locale =
         readLocaleParameter(to) ??
         readLocaleParameter(router.currentRoute.value) ??
@@ -289,13 +303,17 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
 
     logger.debug('router', 'page error', error);
 
-    // 403 gets its own copy because "you may not see this" is a different thing to tell someone
-    // than whatever `error.message` holds. An absent or >=500 status collapses to a plain 500.
+    /**
+     * 403 gets its own copy because "you may not see this" is a different thing to tell someone
+     * than whatever `error.message` holds. An absent or >=500 status collapses to a plain 500.
+     */
     const isClientError = status !== undefined && status < 500;
 
-    // Only a message THIS app's own dictionary owns reaches the page, the URL and Umami's
-    // pageview — anything else (a caught fetch failure's text, a stale chunk's own URL) folds
-    // into the generic key instead of leaking verbatim.
+    /**
+     * Only a message THIS app's own dictionary owns reaches the page, the URL and Umami's
+     * pageview — anything else (a caught fetch failure's text, a stale chunk's own URL) folds
+     * into the generic key instead of leaking verbatim.
+     */
     const message =
         status === 403
             ? 'navigation.error-forbidden'
@@ -328,8 +346,10 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
  */
 router.beforeEach((to, from) => {
     logger.debug('router', `Navigating from ${from.path} to ${to.path}`);
-    // Silently restore token + profile on every navigation so that public pages
-    // (e.g. ProductsList) render the correct admin controls after a page reload.
+    /**
+     * Silently restore token + profile on every navigation so that public pages
+     * (e.g. ProductsList) render the correct admin controls after a page reload.
+     */
     return tryRestoreAuth().then(() => enforceRouteAccess(to, router));
 });
 
@@ -371,11 +391,13 @@ router.afterEach((to, from, failure) => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises -- announceRouteChange only awaits nextTick
     void announceRouteChange(title);
 
-    // A page behind a sign-in, or the error page, must never be listed: the route table is the one
-    // source, so a route with `meta.access` is kept out and a public one is not. Google renders the
-    // page and honours a `noindex` added by script; it only misses one that script later removes,
-    // and this never removes it from a page that has it.
-    // https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag
+    /**
+     * A page behind a sign-in, or the error page, must never be listed: the route table is the one
+     * source, so a route with `meta.access` is kept out and a public one is not. Google renders the
+     * page and honours a `noindex` added by script; it only misses one that script later removes,
+     * and this never removes it from a page that has it.
+     * https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag
+     */
     const robots = document.head.querySelector('meta[name="robots"]');
     if (to.meta.access !== undefined || to.name === 'Error') {
         const tag = robots ?? document.createElement('meta');
@@ -387,15 +409,19 @@ router.afterEach((to, from, failure) => {
     const isPageChange = from !== START_LOCATION && to.path !== from.path && !isAnchorHash(to.hash);
     if (!isPageChange) return;
 
-    // `LayoutDefault` mounts once for the whole session, not per view, so its own
-    // `onMounted` cannot consume this — this is the SOLE place that does, on every page
-    // change. The tick waits for the new page's own content to actually be in the DOM first.
+    /**
+     * `LayoutDefault` mounts once for the whole session, not per view, so its own
+     * `onMounted` cannot consume this — this is the SOLE place that does, on every page
+     * change. The tick waits for the new page's own content to actually be in the DOM first.
+     */
     requestMainFocus();
     // eslint-disable-next-line @typescript-eslint/no-floating-promises -- nextTick only rejects if its callback throws, and this one cannot
     void nextTick(consumeMainFocus);
 });
 
-// NOTE: pageviews are tracked automatically by the Umami tracker script
-// (it hooks SPA history changes), so there is no manual page_view event here.
+/**
+ * NOTE: pageviews are tracked automatically by the Umami tracker script
+ * (it hooks SPA history changes), so there is no manual page_view event here.
+ */
 
 export default router;

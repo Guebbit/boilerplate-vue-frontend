@@ -20,8 +20,10 @@ export default [
     {
         path: 'sales/returns',
         name: 'SalesReturns',
-        // The staff queue over the same list: `read:Return` is "every return in the shop", which
-        // only staff hold. A separate route so the admin menu can carry its own entry and badge.
+        /**
+         * The staff queue over the same list: `read:Return` is "every return in the shop", which
+         * only staff hold. A separate route so the admin menu can carry its own entry and badge.
+         */
         meta: {
             access: 'auth',
             can: ['read', 'Return'],

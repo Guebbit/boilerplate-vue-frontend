@@ -40,9 +40,11 @@ describe('weighSpecs', () => {
 
 describe('balanceShards', () => {
     it('packs the single heaviest spec alone when it outweighs the rest combined', () => {
-        // LPT: the heaviest spec lands first, on the (still empty) lightest shard; the two
-        // lighter specs that follow both fit on the other shard before it would outweigh the
-        // first — so the heaviest one never gets company.
+        /**
+         * LPT: the heaviest spec lands first, on the (still empty) lightest shard; the two
+         * lighter specs that follow both fit on the other shard before it would outweigh the
+         * first — so the heaviest one never gets company.
+         */
         const weighted = [
             { file: 'heavy.cy.ts', weight: 50 },
             { file: 'light-1.cy.ts', weight: 10 },

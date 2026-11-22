@@ -222,8 +222,10 @@ describe('a guest adding', () => {
     });
 });
 
-// `POST /cart/items` is "add": the server grows a line the shopper already has, so the click sends
-// the ONE unit it means and never reads the cart to compute a total.
+/**
+ * `POST /cart/items` is "add": the server grows a line the shopper already has, so the click sends
+ * the ONE unit it means and never reads the cart to compute a total.
+ */
 describe('adding', () => {
     it('adds one unit and leaves the arithmetic to the server', async () => {
         signIn();
@@ -242,9 +244,11 @@ describe('adding', () => {
     it("never lets a previous account's in-memory cart shape the quantity it sends", async () => {
         signIn();
         const cart = useCartStore();
-        // A stale line left behind by whoever used this browser tab before — a different
-        // account's cart, still in the store's memory because logout resets only the profile
-        // store. A client that computed `existing + 1` from it would send 6.
+        /**
+         * A stale line left behind by whoever used this browser tab before — a different
+         * account's cart, still in the store's memory because logout resets only the profile
+         * store. A client that computed `existing + 1` from it would send 6.
+         */
         cart.cart = {
             ...EMPTY_CART,
             items: [
@@ -266,8 +270,10 @@ describe('adding', () => {
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeUndefined();
 
-        // A genuinely pending API call: a double-click while the first is still out must not
-        // fire a second.
+        /**
+         * A genuinely pending API call: a double-click while the first is still out must not
+         * fire a second.
+         */
         let release: ((error: Error) => void) | undefined;
         const gate = new Promise<never>((_resolve, reject) => {
             release = reject;

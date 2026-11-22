@@ -36,8 +36,10 @@ sweepVisual('the shell', [
         prepare: () => {
             cy.get('[aria-controls=app-drawer]').click();
             cy.get('#app-drawer').should('be.visible');
-            // Visible while it is still sliding in; the scrim fades up after, and a shot taken
-            // before it settles has none.
+            /**
+             * Visible while it is still sliding in; the scrim fades up after, and a shot taken
+             * before it settles has none.
+             */
             cy.get('.v-navigation-drawer__scrim').should('have.css', 'opacity', '0.2');
         }
     },
@@ -73,8 +75,10 @@ sweepVisual(
             prepare: () => {
                 cy.get('[aria-controls=app-drawer]').click();
                 cy.get('#app-drawer').should('be.visible');
-                // Visible while it is still sliding in; the scrim fades up after, and a shot taken
-                // before it settles has none.
+                /**
+                 * Visible while it is still sliding in; the scrim fades up after, and a shot taken
+                 * before it settles has none.
+                 */
                 cy.get('.v-navigation-drawer__scrim').should('have.css', 'opacity', '0.2');
                 cy.get('[data-test=drawer-section-admin]').should('be.visible');
             }

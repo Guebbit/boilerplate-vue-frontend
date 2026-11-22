@@ -20,10 +20,12 @@ const DEMO_RESET_TIMEOUT_MS = 30_000;
 /** Longest wait for the app shell to render after a visit. */
 const APP_READY_TIMEOUT_MS = 15_000;
 
-// A live reset shells out to the backend, which empties the database and then BUILDS the shop by
-// driving several hundred real requests through it — measured at ~5s locally, well up from the
-// row-inserting seeder it replaced. The budget keeps its headroom for a cold tsx start and a
-// slower CI disk.
+/**
+ * A live reset shells out to the backend, which empties the database and then BUILDS the shop by
+ * driving several hundred real requests through it — measured at ~5s locally, well up from the
+ * row-inserting seeder it replaced. The budget keeps its headroom for a cold tsx start and a
+ * slower CI disk.
+ */
 const LIVE_RESET_TIMEOUT_MS = 60_000;
 
 /**
@@ -32,8 +34,10 @@ const LIVE_RESET_TIMEOUT_MS = 60_000;
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace -- Cypress's own typing contract: custom commands merge into its global namespace
     namespace Cypress {
-        // The name belongs to the library being augmented, not to this codebase: declaration
-        // merging only works against the exact interface it declares.
+        /**
+         * The name belongs to the library being augmented, not to this codebase: declaration
+         * merging only works against the exact interface it declares.
+         */
         interface Chainable {
             /**
              * Put the backing data back to a named scenario, whichever profile is running.
@@ -297,8 +301,10 @@ export interface DemoOutboxEmail {
     attachments?: string[];
 }
 
-// `cy.exec` defaults to `failOnNonZeroExit: true`, so a failed seed already fails the test —
-// no extra assertion on the exit code is needed.
+/**
+ * `cy.exec` defaults to `failOnNonZeroExit: true`, so a failed seed already fails the test —
+ * no extra assertion on the exit code is needed.
+ */
 const resetLiveDatabase = (command: string) =>
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- Cypress 15.21 deprecates `cy.exec` for `cy.task`; follow-up: replace with a cy.task when moving to Cypress 16 (cy.exec is removed there)
     cy.exec(command, {
@@ -349,8 +355,10 @@ before(() => {
     });
 });
 Cypress.on('window:before:load', (contentWindow) => {
-    // `TOURS_ENABLED: 'false'`: a first-login tour would cover the screen in every spec. Only
-    // `tours.cy.ts` turns it back on, from its own `cy.visit` `onBeforeLoad`, which runs after this.
+    /**
+     * `TOURS_ENABLED: 'false'`: a first-login tour would cover the screen in every spec. Only
+     * `tours.cy.ts` turns it back on, from its own `cy.visit` `onBeforeLoad`, which runs after this.
+     */
     if (injectedApiUrl !== undefined)
         (
             contentWindow as Cypress.AUTWindow & {
@@ -380,13 +388,15 @@ Cypress.on('window:before:load', (contentWindow) => {
     };
 });
 
-// `allowCypressEnv: false` in cypress.config.ts disables `Cypress.env()`, so the profile flag is
-// read through the stateful `cy.env()` API instead.
-//
-// The three branches below yield different `Chainable<T>` types (`Response`, `null`, `Exec`), and
-// `.then()`'s overloads only collapse a callback's return into `Chainable<S>` for a SINGLE `S` —
-// a union of different `Chainable<...>` wrappers comes back as `Chainable<Chainable<...> | ...>`
-// instead. Answered through the repo's one sanctioned seam, same as `visitAndAwaitApp` below.
+/**
+ * `allowCypressEnv: false` in cypress.config.ts disables `Cypress.env()`, so the profile flag is
+ * read through the stateful `cy.env()` API instead.
+ *
+ * The three branches below yield different `Chainable<T>` types (`Response`, `null`, `Exec`), and
+ * `.then()`'s overloads only collapse a callback's return into `Chainable<S>` for a SINGLE `S` —
+ * a union of different `Chainable<...>` wrappers comes back as `Chainable<Chainable<...> | ...>`
+ * instead. Answered through the repo's one sanctioned seam, same as `visitAndAwaitApp` below.
+ */
 Cypress.Commands.add(
     'restore',
     asStub<Cypress.CommandFn<'restore'>>((scenario?: string) =>
@@ -394,32 +404,40 @@ Cypress.Commands.add(
             .env(['liveProfile', 'liveResetCommand', 'apiUrl', 'mailpitUrl'])
             .then(({ liveProfile, liveResetCommand, apiUrl, mailpitUrl }) => {
                 if (liveProfile !== true)
-                    // The demo backend restores itself in-process; a plain request is all it
-                    // takes, and a non-2xx already fails the test. No `scenario` in the body
-                    // means the backend's own default.
+                    /**
+                     * The demo backend restores itself in-process; a plain request is all it
+                     * takes, and a non-2xx already fails the test. No `scenario` in the body
+                     * means the backend's own default.
+                     */
                     return cy.request({
                         method: 'POST',
                         url: `${String(apiUrl)}/__test/restore`,
                         body: scenario === undefined ? {} : { scenario },
                         timeout: DEMO_RESET_TIMEOUT_MS
                     });
-                // No LIVE_RESET_COMMAND in this checkout's `.env`, so there is nothing to shell
-                // out to: the specs run against the live database as they find it. Logged rather
-                // than silent, because a spec that assumed a seed dataset fails later and
-                // elsewhere.
+                /**
+                 * No LIVE_RESET_COMMAND in this checkout's `.env`, so there is nothing to shell
+                 * out to: the specs run against the live database as they find it. Logged rather
+                 * than silent, because a spec that assumed a seed dataset fails later and
+                 * elsewhere.
+                 */
                 if (typeof liveResetCommand !== 'string' || liveResetCommand === '')
                     return cy.log('restore: LIVE_RESET_COMMAND is unset — not restoring');
-                // The live mailbox is emptied with the database, as the demo outbox is: a spec
-                // must never read the previous spec's mail to the same seed address.
-                // https://mailpit.axllent.org/docs/api-v1/view.html#delete-/api/v1/messages
+                /**
+                 * The live mailbox is emptied with the database, as the demo outbox is: a spec
+                 * must never read the previous spec's mail to the same seed address.
+                 * https://mailpit.axllent.org/docs/api-v1/view.html#delete-/api/v1/messages
+                 */
                 if (mailpitUrl)
                     cy.request({ method: 'DELETE', url: `${String(mailpitUrl)}/api/v1/messages` });
                 return resetLiveDatabase(withScenario(liveResetCommand, scenario));
             })
             // A replayed `GET /products/facets` would still carry the old data's chips.
             .then(() => clearBrowserHttpCache())
-            // A demo restore reset the replay mark of every authenticator code too; a live reseed
-            // did not, and its own staff logins spent the current step.
+            /**
+             * A demo restore reset the replay mark of every authenticator code too; a live reseed
+             * did not, and its own staff logins spent the current step.
+             */
             .then(() => cy.env(['liveProfile']))
             .then(({ liveProfile }) =>
                 cy.task(
@@ -428,8 +446,10 @@ Cypress.Commands.add(
                     { log: false }
                 )
             )
-            // Re-read rather than kept: a different scenario promises different rows, and
-            // under the live profile the reset that just ran is what WROTE the description.
+            /**
+             * Re-read rather than kept: a different scenario promises different rows, and
+             * under the live profile the reset that just ran is what WROTE the description.
+             */
             .then(() => loadScenario())
             .then(() => undefined)
     )
@@ -482,17 +502,21 @@ const visitAndAwaitApp = (
     url: string,
     options?: Partial<Cypress.VisitOptions>
 ) => {
-    // Enqueued before the visit below, so it always runs against the page being navigated away
-    // from. `log: false` because one of these per visit would double the length of the command log.
+    /**
+     * Enqueued before the visit below, so it always runs against the page being navigated away
+     * from. `log: false` because one of these per visit would double the length of the command log.
+     */
     cy.window({ log: false }).then((outgoingWindow) => {
         (
             outgoingWindow as Cypress.AUTWindow & { _supersededByVisit?: boolean }
         )._supersededByVisit = true;
     });
 
-    // Options are passed through untouched — the `__APP_CONFIG` injection lives in the
-    // `window:before:load` hook below, so a caller's own `onBeforeLoad` reaches Cypress
-    // exactly as they wrote it.
+    /**
+     * Options are passed through untouched — the `__APP_CONFIG` injection lives in the
+     * `window:before:load` hook below, so a caller's own `onBeforeLoad` reaches Cypress
+     * exactly as they wrote it.
+     */
     originalFunction(url, options);
 
     cy.window({ timeout: APP_READY_TIMEOUT_MS }).should((contentWindow) => {
@@ -508,8 +532,10 @@ const visitAndAwaitApp = (
     });
 };
 
-// The overload mismatch documented on `visitAndAwaitApp`, answered at the boundary through the
-// repo's one sanctioned seam, so the function body above stays fully type-checked.
+/**
+ * The overload mismatch documented on `visitAndAwaitApp`, answered at the boundary through the
+ * repo's one sanctioned seam, so the function body above stays fully type-checked.
+ */
 Cypress.Commands.overwrite(
     'visit',
     asStub<Cypress.CommandFnWithOriginalFn<'visit'>>(visitAndAwaitApp)
@@ -540,10 +566,12 @@ Cypress.Commands.overwrite(
  * "you returned a promise from a command while also invoking one or more cy commands".
  */
 
-// A regular `function`, not an arrow, so `this` is Mocha's test context and `this.skip()` works.
-// A `.then()` callback that returns nothing types as "subject unchanged" — `Chainable<{
-// liveProfile: ... }>`, not `Chainable<void>` — so this goes through the same seam as
-// `restore` above.
+/**
+ * A regular `function`, not an arrow, so `this` is Mocha's test context and `this.skip()` works.
+ * A `.then()` callback that returns nothing types as "subject unchanged" — `Chainable<{
+ * liveProfile: ... }>`, not `Chainable<void>` — so this goes through the same seam as
+ * `restore` above.
+ */
 Cypress.Commands.add(
     'skipUnlessLive',
     asStub<Cypress.CommandFn<'skipUnlessLive'>>(function skipUnlessLive(this: Mocha.Context) {
@@ -590,9 +618,11 @@ const pollUntilFound = <T>(
     tried = 0
 ): Cypress.Chainable<T> =>
     attempt().then((found): Cypress.Chainable<T> => {
-        // Both branches return a Chainable, never a bare value: mixing the two makes Cypress's
-        // `.then` typing infer `Chainable<Chainable<T>>` instead of flattening, since it can no
-        // longer tell this call always resolves to one T.
+        /**
+         * Both branches return a Chainable, never a bare value: mixing the two makes Cypress's
+         * `.then` typing infer `Chainable<Chainable<T>>` instead of flattening, since it can no
+         * longer tell this call always resolves to one T.
+         */
         if (found !== undefined) return cy.wrap<T>(found);
         expect(tried, subject).to.be.lessThan(maxAttempts);
         // eslint-disable-next-line cypress/no-unnecessary-waiting -- delivery has no event the browser can wait on
@@ -860,14 +890,18 @@ Cypress.Commands.add('logout', () => {
 const TWO_FACTOR_CODE_PREFIX = 'code: ';
 
 Cypress.Commands.add('typeMailedTwoFactorCode', (address: string, selector: string) => {
-    // Only a mail that carries a code: the change notice sent after an enrollment lands in the
-    // same inbox, and is the newest one until the next code arrives.
+    /**
+     * Only a mail that carries a code: the change notice sent after an enrollment lands in the
+     * same inbox, and is the newest one until the next code arrives.
+     */
     cy.emailTo(address, (mail) =>
         Boolean(mail.lines?.some((line) => line.startsWith(TWO_FACTOR_CODE_PREFIX)))
     ).then((sent) => {
         const codeLine = sent.lines?.find((line) => line.startsWith(TWO_FACTOR_CODE_PREFIX));
-        // Asserted rather than asserted-away: without the line there is no code to type, and a
-        // silent `undefined` here would fail later as an unrelated "wrong code".
+        /**
+         * Asserted rather than asserted-away: without the line there is no code to type, and a
+         * silent `undefined` here would fail later as an unrelated "wrong code".
+         */
         expect(codeLine, 'a `code:` line in the mailed 2FA variables').to.be.a('string');
         cy.get(selector).type(String(codeLine).slice(TWO_FACTOR_CODE_PREFIX.length));
     });
@@ -901,8 +935,10 @@ const LINK_URL_PREFIX = 'linkUrl: ';
  */
 export const mailedLinkUrl = (email: MailedEmail): string => {
     const linkLine = email.lines?.find((line) => line.startsWith(LINK_URL_PREFIX));
-    // Asserted rather than asserted-away: without the line there is no link to visit, and a
-    // silent `undefined` here would fail later as an unrelated 404.
+    /**
+     * Asserted rather than asserted-away: without the line there is no link to visit, and a
+     * silent `undefined` here would fail later as an unrelated 404.
+     */
     expect(linkLine, 'a `linkUrl:` line in the mailed variables').to.be.a('string');
     return String(linkLine).slice(LINK_URL_PREFIX.length);
 };
@@ -1034,8 +1070,10 @@ const pageAxe = (win: Window): typeof axe => (win as Window & { axe: typeof axe 
  * @returns The nodes to look at by hand, in the shape the report stores.
  */
 const nodesNeedingReview = (win: Window) =>
-    // axe.run(context, options): `runOnly` with `type: 'rule'` runs just the named rule.
-    // https://github.com/dequelabs/axe-core/blob/master/doc/API.md#options-parameter
+    /**
+     * axe.run(context, options): `runOnly` with `type: 'rule'` runs just the named rule.
+     * https://github.com/dequelabs/axe-core/blob/master/doc/API.md#options-parameter
+     */
     pageAxe(win)
         .run(win.document, {
             runOnly: { type: 'rule', values: [REVIEW_RULE] },
@@ -1150,8 +1188,10 @@ Cypress.Commands.add('checkPageA11y', (context?: string) => {
                             .join('\n')
                 );
         },
-        // Suppress cypress-axe's own assertion: the callback above is the gate, because it is the
-        // only place that can log the advisory findings before deciding.
+        /**
+         * Suppress cypress-axe's own assertion: the callback above is the gate, because it is the
+         * only place that can log the advisory findings before deciding.
+         */
         true
     );
 });
@@ -1202,8 +1242,10 @@ Cypress.Commands.add('freezeForVisual', (isoTime = '2026-01-01T12:00:00.000Z') =
     // A frozen clock, so any rendered date is the same on every run and on every machine.
     cy.clock(new Date(isoTime).getTime(), ['Date']);
 
-    // Kill animation and transition timing. Without this a screenshot can land mid-transition,
-    // and the same page differs from itself between runs.
+    /**
+     * Kill animation and transition timing. Without this a screenshot can land mid-transition,
+     * and the same page differs from itself between runs.
+     */
     cy.freezeAnimations();
 
     cy.document().then((document_) => {
@@ -1328,14 +1370,18 @@ Cypress.Commands.add('compareSnapshot', (name: string) => {
         }
     });
 
-    // The page's own idea of its size: the guard compares the PNG against it, so a clamped or
-    // device-pixel-ratio-2 shot can never be recorded as a baseline.
+    /**
+     * The page's own idea of its size: the guard compares the PNG against it, so a clamped or
+     * device-pixel-ratio-2 shot can never be recorded as a baseline.
+     */
     cy.window({ log: false }).then((win) => {
         const expected = { width: win.innerWidth, height: win.innerHeight };
 
-        // Cypress types `cy.env(keys)` as `Chainable<Record<string, any>>` — every key comes back
-        // `any` regardless of what the config actually holds — so the callback's own parameter is
-        // typed honestly instead of carrying that `any` into the task payload below.
+        /**
+         * Cypress types `cy.env(keys)` as `Chainable<Record<string, any>>` — every key comes back
+         * `any` regardless of what the config actually holds — so the callback's own parameter is
+         * typed honestly instead of carrying that `any` into the task payload below.
+         */
         cy.env(['visualDiffDirectory', 'updateSnapshots']).then(
             ({ visualDiffDirectory, updateSnapshots }: Record<string, string | boolean>) => {
                 /*

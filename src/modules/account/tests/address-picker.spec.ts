@@ -91,8 +91,10 @@ describe('AddressPicker — the pre-select watcher', () => {
             'a2'
         );
 
-        // Never touched: the manual choice was already valid, so the watcher's guard returns
-        // before ever assigning `addressId`.
+        /**
+         * Never touched: the manual choice was already valid, so the watcher's guard returns
+         * before ever assigning `addressId`.
+         */
         expect(lastChosen(wrapper)).toBeUndefined();
     });
 
@@ -103,9 +105,11 @@ describe('AddressPicker — the pre-select watcher', () => {
         );
         expect(lastChosen(wrapper)).toBeUndefined();
 
-        // The entry the visitor had picked is gone — deleted from the book elsewhere. The prop
-        // itself is not updated (no real two-way binding here), which is exactly what proves the
-        // watcher is reading the STORE's list, not a stale local copy of it.
+        /**
+         * The entry the visitor had picked is gone — deleted from the book elsewhere. The prop
+         * itself is not updated (no real two-way binding here), which is exactly what proves the
+         * watcher is reading the STORE's list, not a stale local copy of it.
+         */
         store.addresses = [anAddress({ id: 'a2', default: true })];
 
         return nextRenderTick(wrapper).then(() => {
@@ -114,8 +118,10 @@ describe('AddressPicker — the pre-select watcher', () => {
     });
 
     it('drops a restored choice once the book loads empty, and not before it has answered', () => {
-        // A checkout draft restored an id whose entry was deleted since: the store is empty at
-        // mount, so the picker must wait for the read rather than clear the choice at once.
+        /**
+         * A checkout draft restored an id whose entry was deleted since: the store is empty at
+         * mount, so the picker must wait for the read rather than clear the choice at once.
+         */
         const { store, wrapper } = mountPicker([], 'gone');
         expect(wrapper.emitted('update:modelValue')).toBeUndefined();
 

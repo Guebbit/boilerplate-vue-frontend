@@ -90,8 +90,10 @@ describe('FR13 · A slow network', () => {
         cy.goToCart();
         cy.intercept('PATCH', '**/cart/items/*').as('setQuantity');
         firstLineQuantity().then((before) => {
-            // Both steps and the click on a bar link happen in ONE task, inside the 400 ms debounce:
-            // the page is left with the steps still waiting, and they must reach the server all the same.
+            /**
+             * Both steps and the click on a bar link happen in ONE task, inside the 400 ms debounce:
+             * the page is left with the steps still waiting, and they must reach the server all the same.
+             */
             cy.get('[data-test=cart-item]')
                 .first()
                 .find('[data-test=cart-increase]')

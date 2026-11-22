@@ -309,9 +309,11 @@ const submit = () =>
                 emit('opened');
             })
             .catch((error: unknown) => {
-                // `onUnmapped` also runs, with `[]`, for a rejection that carried no field or form
-                // message at all (a bare 409, a closed window): the blocking alert is then the
-                // only thing the customer sees.
+                /**
+                 * `onUnmapped` also runs, with `[]`, for a rejection that carried no field or form
+                 * message at all (a bare 409, a closed window): the blocking alert is then the
+                 * only thing the customer sees.
+                 */
                 applyServerErrors(error, { onUnmapped: () => reportOpenError(error) });
             });
     });

@@ -74,8 +74,10 @@ describe('ReauthDialog', () => {
 
     it('shows the password prompt once the store opens it', () => {
         const wrapper = mountDialog();
-        // Never awaited in this case — settling it is what the OTHER cases below assert on.
-        // The prompt's outcome is not what this case checks; a cancel rejects it, so catch.
+        /**
+         * Never awaited in this case — settling it is what the OTHER cases below assert on.
+         * The prompt's outcome is not what this case checks; a cancel rejects it, so catch.
+         */
         useReauthPromptStore()
             .requestStepUp()
             .catch(() => undefined);
@@ -109,14 +111,18 @@ describe('ReauthDialog', () => {
     });
 
     it('shows an inline error and stays open when reauth() rejects', () => {
-        // A 422-shaped reject, exactly as `onResponseReject` produces it — the dialog's own
-        // 422-vs-anything-else branch is what picks this fixed wording over the failure's
-        // raw message, covered in full by `reauth-dialog-error-message.spec.ts`.
+        /**
+         * A 422-shaped reject, exactly as `onResponseReject` produces it — the dialog's own
+         * 422-vs-anything-else branch is what picks this fixed wording over the failure's
+         * raw message, covered in full by `reauth-dialog-error-message.spec.ts`.
+         */
         reauth.mockRejectedValue({ status: 422 });
         const wrapper = mountDialog();
-        // Deliberately never settles in this case: a wrong password keeps the prompt open rather
-        // than rejecting the caller's promise.
-        // The prompt's outcome is not what this case checks; a cancel rejects it, so catch.
+        /**
+         * Deliberately never settles in this case: a wrong password keeps the prompt open rather
+         * than rejecting the caller's promise.
+         * The prompt's outcome is not what this case checks; a cancel rejects it, so catch.
+         */
         useReauthPromptStore()
             .requestStepUp()
             .catch(() => undefined);

@@ -142,8 +142,10 @@ export function useDictionaryCellEditor(
                 return afterWrite(language.tag);
             })
             .catch((error: unknown) => {
-                // On the cell, not a toast: the toast is gone in seconds, the cell is not — Faro
-                // still hears about it, through the same call every other blocked write uses.
+                /**
+                 * On the cell, not a toast: the toast is gone in seconds, the cell is not — Faro
+                 * still hears about it, through the same call every other blocked write uses.
+                 */
                 cellErrors.value = {
                     ...cellErrors.value,
                     [id]: t('locales-dictionary-page.error-save')

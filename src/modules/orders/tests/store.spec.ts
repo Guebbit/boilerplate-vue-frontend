@@ -82,9 +82,11 @@ const CREDIT_NOTES = [
     }
 ];
 
-// `meta` matches the real `PaginationMeta` shape — `search:` (`store.ts`) reads
-// `meta.totalPages` for `pageTotal`, so an envelope without one does not represent a real
-// response.
+/**
+ * `meta` matches the real `PaginationMeta` shape — `search:` (`store.ts`) reads
+ * `meta.totalPages` for `pageTotal`, so an envelope without one does not represent a real
+ * response.
+ */
 const EMPTY_PAGE = { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 1 } };
 
 /**
@@ -248,8 +250,10 @@ describe('useOrdersStore', () => {
     });
 
     describe('updateOrder', () => {
-        // `status` is not a field of `UpdateOrderByIdRequest` — `email` is the only field this
-        // body carries.
+        /**
+         * `status` is not a field of `UpdateOrderByIdRequest` — `email` is the only field this
+         * body carries.
+         */
         it('sends the id in the path and the changes in the body', () =>
             useOrdersStore()
                 .updateOrder('o1', { email: 'new@example.com' })
@@ -503,9 +507,11 @@ describe('useOrdersStore', () => {
                 }));
 
         it('passes the id through as the cache key, not just as the URL parameter', () => {
-            // `fetchTarget(fetcher, orderId, ...)` — the second argument is what the toolkit
-            // caches and selects on. Dropping it would still produce a correct HTTP request,
-            // so the request assertion above cannot catch it.
+            /**
+             * `fetchTarget(fetcher, orderId, ...)` — the second argument is what the toolkit
+             * caches and selects on. Dropping it would still produce a correct HTTP request,
+             * so the request assertion above cannot catch it.
+             */
             const store = useOrdersStore();
 
             return store
@@ -552,8 +558,10 @@ describe('useOrdersStore', () => {
                             userId: 'u1',
                             productId: 'p1',
                             email: 'ada@example.com',
-                            // The "awaiting transfer" checkbox and the status select both write
-                            // these two fields — regressed to being dropped here once before.
+                            /**
+                             * The "awaiting transfer" checkbox and the status select both write
+                             * these two fields — regressed to being dropped here once before.
+                             */
                             status: 'pending',
                             paymentMethod: 'bank_transfer'
                         })
@@ -599,8 +607,10 @@ describe('useOrdersStore', () => {
                 .watchSearchOrders()
                 .search()
                 .then(() => {
-                    // Dropping pagination here would silently return only the first page for
-                    // every search, no matter which page the user is on.
+                    /**
+                     * Dropping pagination here would silently return only the first page for
+                     * every search, no matter which page the user is on.
+                     */
                     expect(searchOrders).toHaveBeenCalledWith(
                         expect.objectContaining({
                             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest types `expect.any()` as `any`, since it is a placeholder matcher usable against anything

@@ -175,8 +175,10 @@ const handleSubmit = () => {
     return twoFactor
         .submitLoginCode(code.value)
         .then((outcome) =>
-            // The second factor passed for an account in its deletion grace: no session yet, the
-            // restore offer is open and the visitor answers it on its own page.
+            /**
+             * The second factor passed for an account in its deletion grace: no session yet, the
+             * restore offer is open and the visitor answers it on its own page.
+             */
             outcome === 'deletion-pending'
                 ? router.push(routerLinkI18n({ name: 'AccountRestoreChallenge' }))
                 : redirectAfterLogin()
@@ -184,8 +186,10 @@ const handleSubmit = () => {
         .then(() => undefined)
         .catch((error: unknown) => {
             reportSubmitError(error);
-            // A 429 on a guess is the per-challenge budget running out: no further code can
-            // work on this challenge, so it is dropped and the way out is a fresh login.
+            /**
+             * A 429 on a guess is the per-challenge budget running out: no further code can
+             * work on this challenge, so it is dropped and the way out is a fresh login.
+             */
             if (!isRateLimited(error)) return;
             lockedOut.value = true;
             twoFactor.clearChallenge();

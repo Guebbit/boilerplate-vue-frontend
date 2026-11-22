@@ -31,9 +31,11 @@ describe('switching language drops and refetches locale-sensitive stores', () =>
             cy.get('[data-test=language-option-it]').click();
             cy.url().should('include', '/it/');
 
-            // The router keeps this same page — `products/:id` carries no locale of its own — so
-            // an implementation that only cleared the cache on NAVIGATION and not on the switch
-            // itself would still be showing the English title here.
+            /**
+             * The router keeps this same page — `products/:id` carries no locale of its own — so
+             * an implementation that only cleared the cache on NAVIGATION and not on the switch
+             * itself would still be showing the English title here.
+             */
             cy.contains(itTitle).should('exist');
             cy.contains(enTitle).should('not.exist');
 
@@ -95,8 +97,10 @@ describe('a locale only the API has', () => {
         cy.visit('/en');
 
         cy.window().then((windowObject) => {
-            // The dev server floods the default 250-entry resource buffer with module loads,
-            // which would silently drop the very entry this test exists to see.
+            /**
+             * The dev server floods the default 250-entry resource buffer with module loads,
+             * which would silently drop the very entry this test exists to see.
+             */
             windowObject.performance.setResourceTimingBufferSize(10_000);
             const downloads = windowObject.performance
                 .getEntriesByType('resource')

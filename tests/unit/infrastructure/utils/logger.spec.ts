@@ -155,8 +155,10 @@ describe('level filtering', () => {
     it('falls back to the environment default for an unrecognised level', () =>
         loadLogger({ DEV: true, VITE_APP_LOG_LEVEL: 'lowd', VITE_APP_LOG_SCOPES: '*' }).then(
             ({ logger }) => {
-                // A typo in an env var must not be the reason an error went unseen, so it degrades
-                // to the default rather than to silence.
+                /**
+                 * A typo in an env var must not be the reason an error went unseen, so it degrades
+                 * to the default rather than to silence.
+                 */
                 logger.debug('router', 'a');
                 logger.error('broken');
 

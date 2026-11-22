@@ -33,15 +33,19 @@ describe('example route access', () => {
         const route = byName('ExamplePublished');
 
         expect(route).toBeDefined();
-        // `not.toHaveProperty` rather than reading `.access`: the route table `satisfies`
-        // `RouteRecordRaw[]`, so a key it does not declare is not readable. Absence is the assertion.
+        /**
+         * `not.toHaveProperty` rather than reading `.access`: the route table `satisfies`
+         * `RouteRecordRaw[]`, so a key it does not declare is not readable. Absence is the assertion.
+         */
         expect(route?.meta).not.toHaveProperty('access');
         expect(route?.meta).not.toHaveProperty('can');
     });
 
     it('fetches nothing in a route guard: each view loads its own record', () => {
-        // `in` rather than reading `.beforeEnter`: the table `satisfies` `RouteRecordRaw[]`, so a key it
-        // does not declare is not readable. Absence is the assertion.
+        /**
+         * `in` rather than reading `.beforeEnter`: the table `satisfies` `RouteRecordRaw[]`, so a key it
+         * does not declare is not readable. Absence is the assertion.
+         */
         expect(routes.filter((route) => 'beforeEnter' in route)).toEqual([]);
     });
 

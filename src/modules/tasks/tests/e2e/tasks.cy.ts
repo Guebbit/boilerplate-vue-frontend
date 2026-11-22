@@ -12,9 +12,11 @@ describe('Tasks', () => {
     });
 
     it('a message sent through the form lands in the inbox', () => {
-        // One page session throughout: the admin walks from the form to the inbox through the
-        // app's own navigation, which is the more honest test of the two pages being wired
-        // together — and the only one that proves the task survived without a reload.
+        /**
+         * One page session throughout: the admin walks from the form to the inbox through the
+         * app's own navigation, which is the more honest test of the two pages being wired
+         * together — and the only one that proves the task survived without a reload.
+         */
         cy.loginAs('admin');
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input')
@@ -35,10 +37,12 @@ describe('Tasks', () => {
     });
 
     it('a submission caught by the honeypot lands in the inbox already marked spam', () => {
-        // A real visitor never reaches this field — see Contact.vue's own comment on it — so
-        // filling it is what a generic bot autofill does, not what a person driving the UI would.
-        // `{ force: true }` is what makes Cypress fill an element it would otherwise refuse to
-        // touch for being invisible, which is the honeypot's whole point.
+        /**
+         * A real visitor never reaches this field — see Contact.vue's own comment on it — so
+         * filling it is what a generic bot autofill does, not what a person driving the UI would.
+         * `{ force: true }` is what makes Cypress fill an element it would otherwise refuse to
+         * touch for being invisible, which is the honeypot's whole point.
+         */
         cy.loginAs('admin');
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('bot@example.com');
@@ -74,8 +78,10 @@ describe('Tasks', () => {
         cy.get('[data-test=task-item]').should('have.length', 0);
         cy.contains('Task deleted').should('exist');
 
-        // A fresh load must not hand the row back — the inbox reads through POST /tasks/search,
-        // which no browser cache answers, unlike GET /tasks's 30-second max-age.
+        /**
+         * A fresh load must not hand the row back — the inbox reads through POST /tasks/search,
+         * which no browser cache answers, unlike GET /tasks's 30-second max-age.
+         */
         cy.reload();
         cy.get('#tasks-page').should('exist');
         cy.get('[data-test=task-item]').should('have.length', 0);
@@ -176,12 +182,16 @@ describe('Tasks', () => {
         });
         cy.visit('/en/tasks');
 
-        // Not merely "the inbox is absent" — where they LANDED is the assertion, because a
-        // blank error page would also have no inbox and prove nothing.
+        /**
+         * Not merely "the inbox is absent" — where they LANDED is the assertion, because a
+         * blank error page would also have no inbox and prove nothing.
+         */
         cy.get('#home-page').should('exist');
         cy.get('#tasks-page').should('not.exist');
-        // The notice is asserted as shown, not by its wording: the copy belongs to the guard's
-        // own unit spec.
+        /**
+         * The notice is asserted as shown, not by its wording: the copy belongs to the guard's
+         * own unit spec.
+         */
         cy.get('.v-alert[role=status]').should('be.visible');
         // The guard stops the visitor before the page loads: the inbox is never asked for.
         cy.get('@inboxSearch.all').should('have.length', 0);

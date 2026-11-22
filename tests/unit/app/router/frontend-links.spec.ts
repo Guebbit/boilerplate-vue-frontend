@@ -10,8 +10,10 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { parse } from 'yaml';
 import { OrderFulfillmentFilter, OrderStatus, ReturnStatus } from '@/types/enums.ts';
 
-// The router's guards are not under test: `resolve` never runs them, but importing the router
-// pulls the modules in, so the two it imports at load are stubbed as `router.spec.ts` stubs them.
+/**
+ * The router's guards are not under test: `resolve` never runs them, but importing the router
+ * pulls the modules in, so the two it imports at load are stubbed as `router.spec.ts` stubs them.
+ */
 vi.mock('@/app/guards/authentications.ts', () => ({
     tryRestoreAuth: () => Promise.resolve(),
     enforceRouteAccess: () => undefined

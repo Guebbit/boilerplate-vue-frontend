@@ -62,8 +62,10 @@ const props = defineProps<{
  */
 const open = defineModel<boolean>({ default: false });
 
-// A drawer has no activator: hand focus back to the row that opened it on close (WAI-ARIA APG
-// dialog pattern). A row the reload has since replaced is gone, and focus is left alone.
+/**
+ * A drawer has no activator: hand focus back to the row that opened it on close (WAI-ARIA APG
+ * dialog pattern). A row the reload has since replaced is gone, and focus is left alone.
+ */
 useReturnFocus(() => open.value);
 
 /**

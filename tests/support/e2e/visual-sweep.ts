@@ -119,8 +119,10 @@ const switchDarkAndSettle = (): void => {
     cy.freezeAnimations();
     switchToDarkTheme();
     cy.document({ log: false }).then((document_) => {
-        // `activeElement` is typed `Element`; every focusable one is an HTMLElement, and the
-        // `instanceof` check would compare against the spec window's constructor, not the page's.
+        /**
+         * `activeElement` is typed `Element`; every focusable one is an HTMLElement, and the
+         * `instanceof` check would compare against the spec window's constructor, not the page's.
+         */
         (document_.activeElement as HTMLElement | null)?.blur();
     });
 };
@@ -135,9 +137,11 @@ const scrollUnderBar = (selector: string): void => {
         .first()
         .invoke('outerHeight')
         .then((barHeight) => {
-            // `offset.top` is negative to stop short of the element; duration 0 is no animation,
-            // so the freeze that follows sees a settled page.
-            // https://docs.cypress.io/api/commands/scrollintoview
+            /**
+             * `offset.top` is negative to stop short of the element; duration 0 is no animation,
+             * so the freeze that follows sees a settled page.
+             * https://docs.cypress.io/api/commands/scrollintoview
+             */
             cy.get(selector).scrollIntoView({
                 offset: { top: -(barHeight ?? 0), left: 0 },
                 duration: 0
@@ -196,13 +200,17 @@ export const sweepVisual = (
                 it(
                     `${snapshotName(name, viewport, theme)} matches its baseline`,
                     {
-                        // Namespaced: a plain `@phone` in any other spec would make the grep
-                        // plugin's static pre-filter drop every visual spec.
+                        /**
+                         * Namespaced: a plain `@phone` in any other spec would make the grep
+                         * plugin's static pre-filter drop every visual spec.
+                         */
                         tags: ['@visual', `@visual-${viewport}`, ...(theme ? ['@visual-dark'] : [])]
                     },
                     () => {
-                        // Before any visit of the test, so the page lays out at its size from the
-                        // first paint instead of reflowing under the photograph.
+                        /**
+                         * Before any visit of the test, so the page lays out at its size from the
+                         * first paint instead of reflowing under the photograph.
+                         */
                         applyViewport(viewport);
 
                         // Before the visit, so the page's very first fetch is counted.
@@ -211,12 +219,16 @@ export const sweepVisual = (
                             cy.visit(path);
                         });
 
-                        // Wait for real content before freezing: photographing a loading skeleton
-                        // would produce a stable, meaningless baseline.
+                        /**
+                         * Wait for real content before freezing: photographing a loading skeleton
+                         * would produce a stable, meaningless baseline.
+                         */
                         cy.get(readySelector).should('exist');
                         cy.get('h1').should('be.visible');
-                        // Substantive content, not just the shell: the blank-page failure above
-                        // passed both assertions before this one.
+                        /**
+                         * Substantive content, not just the shell: the blank-page failure above
+                         * passed both assertions before this one.
+                         */
                         cy.get('main, [role=main], #app').should('be.visible');
 
                         /*
@@ -226,13 +238,17 @@ export const sweepVisual = (
                          */
                         cy.settleNetwork();
 
-                        // The theme default is 'system': on a dark OS a light case would record
-                        // dark pixels with no error, so the light cases say so out loud.
+                        /**
+                         * The theme default is 'system': on a dark OS a light case would record
+                         * dark pixels with no error, so the light cases say so out loud.
+                         */
                         if (theme === 'dark') switchDarkAndSettle();
                         else cy.get('.v-application.v-theme--light').should('exist');
 
-                        // Every image loaded: a picture that lands after the scroll below moves
-                        // the page under it, and the shot differs from itself between runs.
+                        /**
+                         * Every image loaded: a picture that lands after the scroll below moves
+                         * the page under it, and the shot differs from itself between runs.
+                         */
                         imagesLoaded();
 
                         prepare?.();

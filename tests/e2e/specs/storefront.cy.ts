@@ -54,10 +54,12 @@ describe('Storefront', () => {
     describe('order actions', () => {
         it('cancels a pending order and buying again refills the cart', () => {
             cy.loginAs('user');
-            // The shopper's own unpaid order: cancel and buy-again are the BUYER's, so no one
-            // else's order offers them. The shopper's seeded cart already carries lines of its
-            // own, so it is emptied through the API first: the reordered line can then only be
-            // there because reorder put it there.
+            /**
+             * The shopper's own unpaid order: cancel and buy-again are the BUYER's, so no one
+             * else's order offers them. The shopper's seeded cart already carries lines of its
+             * own, so it is emptied through the API first: the reordered line can then only be
+             * there because reorder put it there.
+             */
             cy.apiAs('user', 'DELETE', '/cart/items');
             let productTitle = '';
             cy.subjectOrder('order.awaitingTransfer').then((order) => {
@@ -74,9 +76,11 @@ describe('Storefront', () => {
 
             cy.get('[data-test=order-reorder]').click();
             cy.get('#cart-page').should('exist');
-            // `productTitle` is set inside the `.then()` above; reading it here, inside another
-            // `.then()`, is what makes this see that value rather than the empty string the
-            // `let` was declared with — Cypress queues commands, it doesn't await them in place.
+            /**
+             * `productTitle` is set inside the `.then()` above; reading it here, inside another
+             * `.then()`, is what makes this see that value rather than the empty string the
+             * `let` was declared with — Cypress queues commands, it doesn't await them in place.
+             */
             cy.then(() => cy.contains('[data-test=cart-item]', productTitle).should('exist'));
         });
     });

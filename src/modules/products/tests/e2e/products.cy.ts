@@ -55,10 +55,12 @@ describe('Products', () => {
             });
         });
 
-        // The list an anonymous visitor gets IS the API's public scope — no more, no less, on
-        // the one page rendered: a paginated list only ever shows one page's worth of rows, so
-        // comparing against the WHOLE catalogue would fail by design the moment it outgrows one
-        // page, regardless of how correctly pagination itself behaves.
+        /**
+         * The list an anonymous visitor gets IS the API's public scope — no more, no less, on
+         * the one page rendered: a paginated list only ever shows one page's worth of rows, so
+         * comparing against the WHOLE catalogue would fail by design the moment it outgrows one
+         * page, regardless of how correctly pagination itself behaves.
+         */
         it('renders exactly the publicly visible products for anonymous visitors', () => {
             cy.publicProducts().then((products) => {
                 cy.get('[data-test=product-card]').should(
@@ -68,11 +70,13 @@ describe('Products', () => {
             });
         });
 
-        // Addressed by title rather than by row index. The API sorts by `createdAt`, and seeded
-        // rows can share a millisecond — so which product lands in which row is a property of
-        // the seed's insertion timing, not behaviour this spec should pin. The pairing of a
-        // title with its price is the actual claim, and it survives any ordering. Only page 1's
-        // worth is checked, for the same reason as the test above.
+        /**
+         * Addressed by title rather than by row index. The API sorts by `createdAt`, and seeded
+         * rows can share a millisecond — so which product lands in which row is a property of
+         * the seed's insertion timing, not behaviour this spec should pin. The pairing of a
+         * title with its price is the actual claim, and it survives any ordering. Only page 1's
+         * worth is checked, for the same reason as the test above.
+         */
         it('displays product title and price in each row', () => {
             cy.publicProducts().then((products) => {
                 for (const product of products.slice(0, PAGE_ONE_SIZE))
@@ -82,8 +86,10 @@ describe('Products', () => {
             });
         });
 
-        // The list is public, the create page is not: `products/create` needs `products.create`,
-        // so offering the button to an anonymous visitor would be an invitation to a redirect.
+        /**
+         * The list is public, the create page is not: `products/create` needs `products.create`,
+         * so offering the button to an anonymous visitor would be an invitation to a redirect.
+         */
         it('offers the Create product button to admins only', () => {
             cy.get('[data-test=create-product]').should('not.exist');
 
@@ -94,8 +100,10 @@ describe('Products', () => {
             cy.url().should('include', '/products/create');
         });
 
-        // Shoppers get the storefront grid, not the back office: a link to the product, and
-        // none of the staff actions the table carries.
+        /**
+         * Shoppers get the storefront grid, not the back office: a link to the product, and
+         * none of the staff actions the table carries.
+         */
         it('shows a grid with only the product link for non-admin users', () => {
             cy.get('table').should('not.exist');
             cy.get('[data-test=product-card]')
@@ -108,8 +116,10 @@ describe('Products', () => {
                 });
         });
 
-        // The sort is the server's, so it orders the whole catalogue: the first page after
-        // "low to high" starts at the cheapest product, whatever page it used to sit on.
+        /**
+         * The sort is the server's, so it orders the whole catalogue: the first page after
+         * "low to high" starts at the cheapest product, whatever page it used to sit on.
+         */
         it('sorts the whole catalogue by price from the select', () => {
             cy.get('[data-test=sort-select]').click();
             cy.contains('.v-list-item', 'Price: low to high').click();
@@ -174,8 +184,10 @@ describe('Products', () => {
             });
         });
 
-        // The destination is read off the link that gets clicked, not hard-coded: which product
-        // sits first is a property of fixture insertion timing, not of the navigation under test.
+        /**
+         * The destination is read off the link that gets clicked, not hard-coded: which product
+         * sits first is a property of fixture insertion timing, not of the navigation under test.
+         */
         it('navigates to product detail when clicking a product', () => {
             cy.get('[data-test=product-card-link]')
                 .first()

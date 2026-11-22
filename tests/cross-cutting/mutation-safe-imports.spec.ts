@@ -139,8 +139,10 @@ describe('import specifiers inside the mutate scope', () => {
             .filter(({ guarded }) => !guarded)
             .map(({ file, line, kind }) => `${file}:${line} (${kind})`);
 
-        // Listed rather than counted: the failure message has to name the line to fix, because the
-        // run this protects reports a sandbox path and nothing else.
+        /**
+         * Listed rather than counted: the failure message has to name the line to fix, because the
+         * run this protects reports a sandbox path and nothing else.
+         */
         expect(unguarded).toEqual([]);
     });
 });

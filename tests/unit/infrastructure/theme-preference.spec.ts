@@ -8,8 +8,10 @@ import { setCookie, deleteCookie } from '@guebbit/js-toolkit';
 import { readThemePreference, writeThemePreference } from '@/infrastructure/theme-preference.ts';
 
 beforeEach(() => {
-    // jsdom keeps `document.cookie` for the whole file, not per test — cleared through the same
-    // toolkit function the module itself uses, like production code, rather than a raw assignment.
+    /**
+     * jsdom keeps `document.cookie` for the whole file, not per test — cleared through the same
+     * toolkit function the module itself uses, like production code, rather than a raw assignment.
+     */
     deleteCookie('themePreference');
 });
 
@@ -34,9 +36,11 @@ describe('readThemePreference', () => {
     });
 
     it('treats an unrecognised cookie value as no preference at all', () => {
-        // `'system'` is Vuetify's own third state — it is the ABSENCE of this cookie, never a
-        // value written into it, so a cookie holding it (a stale build, a hand-edited one) reads
-        // the same as no cookie.
+        /**
+         * `'system'` is Vuetify's own third state — it is the ABSENCE of this cookie, never a
+         * value written into it, so a cookie holding it (a stale build, a hand-edited one) reads
+         * the same as no cookie.
+         */
         setCookie('themePreference', 'system', { path: '/' });
 
         expect(readThemePreference()).toBeUndefined();

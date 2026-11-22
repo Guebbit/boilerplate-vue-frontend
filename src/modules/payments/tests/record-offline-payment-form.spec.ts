@@ -74,8 +74,10 @@ describe('RecordOfflinePaymentForm', () => {
             .get('form')
             .trigger('submit')
             .then(() => {
-                // `bank_transfer` is the first offline method in the contract's own enum order —
-                // the field's default is that order's first value, not a literal chosen here.
+                /**
+                 * `bank_transfer` is the first offline method in the contract's own enum order —
+                 * the field's default is that order's first value, not a literal chosen here.
+                 */
                 expect(payments.recordOfflinePayment).toHaveBeenCalledWith('order-1', {
                     method: 'bank_transfer',
                     reference: undefined,
@@ -97,8 +99,10 @@ describe('RecordOfflinePaymentForm', () => {
                 const call = vi.mocked(payments.recordOfflinePayment).mock.calls[0]?.[1] as {
                     receivedAt?: string;
                 };
-                // Read back in local time, same as the component's own conversion — asserting the
-                // literal UTC string would make this test depend on the runner's own timezone.
+                /**
+                 * Read back in local time, same as the component's own conversion — asserting the
+                 * literal UTC string would make this test depend on the runner's own timezone.
+                 */
                 const parsed = new Date(call.receivedAt ?? '');
                 expect([parsed.getFullYear(), parsed.getMonth(), parsed.getDate()]).toEqual([
                     2026, 0, 5

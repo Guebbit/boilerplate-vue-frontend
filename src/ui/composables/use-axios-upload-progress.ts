@@ -41,8 +41,10 @@ export interface AxiosUploadProgress {
  */
 export const useAxiosUploadProgress = (): AxiosUploadProgress => {
     const { progress, track } = useToolkitUploadProgress<AxiosRequestConfig>((onProgress) => ({
-        // `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked or
-        // compressed request) — reporting 0 keeps the bar still rather than jumping about.
+        /**
+         * `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked or
+         * compressed request) — reporting 0 keeps the bar still rather than jumping about.
+         */
         onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
     }));
 

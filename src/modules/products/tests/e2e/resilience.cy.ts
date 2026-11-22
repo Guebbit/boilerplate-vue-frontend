@@ -53,8 +53,10 @@ describe('the catalogue renders whatever the dataset holds', () => {
                     cy.visit(href);
                     cy.get('#product-target').should('exist');
                     assertFitsTheScreen(href);
-                    // Long titles and unbroken tokens are what break at 320 px: this loop is the
-                    // one place that walks sparse and rich records alike.
+                    /**
+                     * Long titles and unbroken tokens are what break at 320 px: this loop is the
+                     * one place that walks sparse and rich records alike.
+                     */
                     applyViewport('phone-small');
                     cy.checkLayout(href, {
                         viewport: 'phone-small',

@@ -263,8 +263,10 @@ export const deviceRequest = ({
         jsonOf(response).then((answer) => ({
             status: response.status,
             body: answer,
-            // A request never rotates the access token, but a logout clears the cookie — keep the
-            // old one so the spec can still show that the refresh with it is now refused.
+            /**
+             * A request never rotates the access token, but a logout clears the cookie — keep the
+             * old one so the spec can still show that the refresh with it is now refused.
+             */
             device
         }))
     );

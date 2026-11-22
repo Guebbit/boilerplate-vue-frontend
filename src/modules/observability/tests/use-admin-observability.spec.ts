@@ -122,8 +122,10 @@ describe('useAdminObservability', () => {
             return expect(fetchHealth())
                 .resolves.toBeUndefined()
                 .then(() => {
-                    // The API's own words, not the fallback: the panel is more useful for saying which
-                    // probe failed than for saying that something did.
+                    /**
+                     * The API's own words, not the fallback: the panel is more useful for saying which
+                     * probe failed than for saying that something did.
+                     */
                     expect(errorHealth.value).toBe('Health probe timed out');
                     expect(health.value).toBeUndefined();
                     expect(errorMetrics.value).toBeUndefined();
@@ -142,8 +144,10 @@ describe('useAdminObservability', () => {
         });
 
         it('carries its own fallback message when the rejection says nothing', () => {
-            // A rejection with no readable message at all — a transport failure that never got a
-            // body — is the only case the per-panel fallback is for.
+            /**
+             * A rejection with no readable message at all — a transport failure that never got a
+             * body — is the only case the per-panel fallback is for.
+             */
             vi.mocked(getObservabilityMetricsOverview).mockRejectedValueOnce({ status: 0 });
             const { errorMetrics, fetchMetrics } = useAdminObservability();
 

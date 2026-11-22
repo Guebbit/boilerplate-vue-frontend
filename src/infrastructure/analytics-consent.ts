@@ -68,8 +68,10 @@ const readStoredChoice = (): AnalyticsConsentChoice => {
  * @param choice - The value to persist.
  */
 const writeStoredChoice = (choice: Exclude<AnalyticsConsentChoice, 'unknown'>) => {
-    // js-toolkit `setCookie(name, value, options)`: `days` = lifetime, `path: '/'` = site-wide,
-    // `sameSite: 'Lax'` = sent on top-level navigations only. `secure` follows the page's protocol.
+    /**
+     * js-toolkit `setCookie(name, value, options)`: `days` = lifetime, `path: '/'` = site-wide,
+     * `sameSite: 'Lax'` = sent on top-level navigations only. `secure` follows the page's protocol.
+     */
     setCookie(COOKIE_NAME, choice, {
         days: COOKIE_DAYS,
         path: '/',

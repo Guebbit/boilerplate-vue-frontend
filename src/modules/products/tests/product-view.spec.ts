@@ -315,8 +315,10 @@ describe('the edit button', () => {
         expect(mountProduct(widget).find('[data-test=go-to-edit]').exists()).toBe(false);
     });
 
-    // Holding `update:Product` is not enough: a write also needs `update:Translation`, which the
-    // server folds into the flag.
+    /**
+     * Holding `update:Product` is not enough: a write also needs `update:Translation`, which the
+     * server folds into the flag.
+     */
     it('follows the flag, not the key', () => {
         signInWith([['update', 'Product']]);
 

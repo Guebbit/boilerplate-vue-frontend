@@ -185,8 +185,10 @@ export const translate: TranslateFunction = (key: string, named?: Record<string,
  */
 export function _loadLocale(i18n: I18n, locale: string): Promise<unknown> {
     if (loadedLanguages.includes(locale)) return _changeLanguage(i18n, locale);
-    // Supported but not loaded: it has a file. A dictionary fetched from a server must be
-    // registered with `updateLocale` before getting here.
+    /**
+     * Supported but not loaded: it has a file. A dictionary fetched from a server must be
+     * registered with `updateLocale` before getting here.
+     */
     if (supportedLanguages.includes(locale))
         return (
             // Stryker disable next-line StringLiteral: mutating this template to "" leaves an
@@ -286,9 +288,11 @@ export function loadLocale(locale: string) {
 export function _updateLocale(i18n: I18n, locale: string, messages: TranslationDictionaries) {
     if (!loadedLanguages.includes(locale)) loadedLanguages.push(locale);
 
-    // `mergeDictionaries` is a DEEP merge, which is what lets several modules each contribute a
-    // slice of the shared `navigation` namespace, and what keeps an override from wiping the rest
-    // of the group it edits one key of.
+    /**
+     * `mergeDictionaries` is a DEEP merge, which is what lets several modules each contribute a
+     * slice of the shared `navigation` namespace, and what keeps an override from wiping the rest
+     * of the group it edits one key of.
+     */
     return Promise.all((moduleLocaleLoaders[locale] ?? []).map((load) => load())).then(
         (moduleDictionaries) => {
             let merged: TranslationDictionaries = {};
@@ -296,9 +300,11 @@ export function _updateLocale(i18n: I18n, locale: string, messages: TranslationD
                 merged = mergeDictionaries(merged, dictionary);
             merged = mergeDictionaries(merged, messages);
 
-            // Cloned, not registered by reference: `_loadLocale` passes the imported `en.json`
-            // module object straight through, and writing it by reference would translate the
-            // bundle itself for every other consumer of that import, for the life of the process.
+            /**
+             * Cloned, not registered by reference: `_loadLocale` passes the imported `en.json`
+             * module object straight through, and writing it by reference would translate the
+             * bundle itself for every other consumer of that import, for the life of the process.
+             */
             i18n.global.setLocaleMessage(locale, structuredClone(merged));
             return nextTick();
         }
@@ -377,8 +383,10 @@ export function _changeLanguage(i18n: I18n, locale: string): Promise<unknown> {
         return nextTick();
     };
     if (!loadedLanguages.includes(locale)) return _loadLocale(i18n, locale).then(() => setLocale());
-    // Every activation path funnels through here, so this is the one place that guarantees the
-    // fallback dictionary is present before a locale becomes active.
+    /**
+     * Every activation path funnels through here, so this is the one place that guarantees the
+     * fallback dictionary is present before a locale becomes active.
+     */
     return _ensureFallbackLoaded(i18n, locale).then(() => setLocale());
 }
 
@@ -404,10 +412,12 @@ export function getDefaultLocale() {
     const foundLocale = navigator.language.slice(0, 2);
     // Supported, not loaded: on a first visit nothing is loaded and detection would never match.
     if (supportedLanguages.includes(foundLocale)) return foundLocale;
-    // The configured default is checked BEFORE the instance's fallback locale, not after: the
-    // fallback is never empty (it defaults to 'en' too), so checking it first made the configured
-    // default unreachable — `VITE_APP_DEFAULT_LOCALE` had no effect on a visitor with an
-    // unsupported browser language, regardless of what a deployment set it to.
+    /**
+     * The configured default is checked BEFORE the instance's fallback locale, not after: the
+     * fallback is never empty (it defaults to 'en' too), so checking it first made the configured
+     * default unreachable — `VITE_APP_DEFAULT_LOCALE` had no effect on a visitor with an
+     * unsupported browser language, regardless of what a deployment set it to.
+     */
     return (
         runtimeLocaleValue('APP_DEFAULT_LOCALE') ||
         import.meta.env.VITE_APP_DEFAULT_LOCALE ||

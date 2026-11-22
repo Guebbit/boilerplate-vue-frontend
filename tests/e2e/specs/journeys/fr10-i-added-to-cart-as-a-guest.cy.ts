@@ -18,8 +18,10 @@ describe('FR10 · I wanted to add it to my cart as a guest', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
-        // The customer's own cart may hold lines already; start from empty so a line can only
-        // be there because this story added it.
+        /**
+         * The customer's own cart may hold lines already; start from empty so a line can only
+         * be there because this story added it.
+         */
         cy.apiAs('user', 'DELETE', '/cart/items');
     });
 

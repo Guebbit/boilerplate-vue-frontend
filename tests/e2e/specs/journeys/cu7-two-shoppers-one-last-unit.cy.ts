@@ -49,8 +49,10 @@ describe('CU7 · Two shoppers, one last unit', () => {
 
                 cy.step('the customer checks out the last unit: it is held');
                 cy.goToCart();
-                // `pickup` needs no shipping address, and the customer's default bills, so choosing
-                // it alone enables the button.
+                /**
+                 * `pickup` needs no shipping address, and the customer's default bills, so choosing
+                 * it alone enables the button.
+                 */
                 cy.get('[data-test=shipping-method-pickup]').click();
                 cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
                 cy.get('#order-target').should('exist');

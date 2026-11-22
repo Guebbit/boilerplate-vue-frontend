@@ -132,9 +132,11 @@ export const useTranslatedEntityForm = <TForm extends TranslatedForm>(
         { immediate: true }
     );
 
-    // A create's fallback slot is only ever ADDED, never re-checked: it cannot be removed.
-    // On a form nobody has touched the seeded slot is part of the baseline too, or a pristine
-    // create would read dirty and ask before the visitor leaves.
+    /**
+     * A create's fallback slot is only ever ADDED, never re-checked: it cannot be removed.
+     * On a form nobody has touched the seeded slot is part of the baseline too, or a pristine
+     * create would read dirty and ask before the visitor leaves.
+     */
     if (options.seedFallback)
         watch(
             options.fallbackLocale,
@@ -190,9 +192,11 @@ export const useTranslatedEntityForm = <TForm extends TranslatedForm>(
      */
     const tabErrorCounts = ref<TranslationTabErrorCounts>({});
 
-    // Vue `watch` over a source array: recounts the tab badges when errors are shown or the form
-    // changes. `deep: true` because an edit to a nested translation mutates `form.value` in place.
-    // https://vuejs.org/api/reactivity-core.html#watch
+    /**
+     * Vue `watch` over a source array: recounts the tab badges when errors are shown or the form
+     * changes. `deep: true` because an edit to a nested translation mutates `form.value` in place.
+     * https://vuejs.org/api/reactivity-core.html#watch
+     */
     watch(
         [showFormErrors, () => form.value],
         ([showing]) => {

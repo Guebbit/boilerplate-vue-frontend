@@ -172,8 +172,10 @@ describe('FormImageUpload — the progress bar', () => {
     });
 
     it('is SHOWN at zero percent, which is not the same as idle', async () => {
-        // The distinction the component exists to make: `undefined` is idle, `0` is a request
-        // that has started and sent nothing yet. A truthiness check collapses the two.
+        /**
+         * The distinction the component exists to make: `undefined` is idle, `0` is a request
+         * that has started and sent nothing yet. A truthiness check collapses the two.
+         */
         const wrapper = mountUpload({ progress: 0 });
         await nextRenderTick(wrapper);
 
@@ -188,9 +190,11 @@ describe('FormImageUpload — the progress bar', () => {
     });
 
     it('rounds a fractional percentage', async () => {
-        // Asserted on `aria-valuenow` rather than on the visible label, for two reasons: it is
-        // what a screen reader actually announces, and the label is an i18n message whose
-        // dictionary is lazily loaded, so in a unit test it renders as the raw key.
+        /**
+         * Asserted on `aria-valuenow` rather than on the visible label, for two reasons: it is
+         * what a screen reader actually announces, and the label is an i18n message whose
+         * dictionary is lazily loaded, so in a unit test it renders as the raw key.
+         */
         const wrapper = mountUpload({ progress: 42.6 });
         await nextRenderTick(wrapper);
 
@@ -211,8 +215,10 @@ describe('FormImageUpload — the progress bar', () => {
 
 describe('FormImageUpload — the field', () => {
     it('restricts the picker to the types the backend accepts', () => {
-        // The picker's filter and the validation rule are both derived from ACCEPTED_UPLOAD_TYPES
-        // so they cannot disagree; this pins that the derivation actually reaches the DOM.
+        /**
+         * The picker's filter and the validation rule are both derived from ACCEPTED_UPLOAD_TYPES
+         * so they cannot disagree; this pins that the derivation actually reaches the DOM.
+         */
         expect(mountUpload().find('input[type=file]').attributes('accept')).toBe(
             ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE
         );
@@ -232,9 +238,11 @@ describe('FormImageUpload — the field', () => {
     });
 
     it('collapses an array selection back to a single file', async () => {
-        // Vuetify types VFileInput's model as `File | File[] | null` because one component covers
-        // the `multiple` case. Every `imageUpload` field in the contract is a single file, so an
-        // array reaching the parent would be a contract violation.
+        /**
+         * Vuetify types VFileInput's model as `File | File[] | null` because one component covers
+         * the `multiple` case. Every `imageUpload` field in the contract is a single file, so an
+         * array reaching the parent would be a contract violation.
+         */
         const wrapper = mountUpload();
         const file = makeFile();
 

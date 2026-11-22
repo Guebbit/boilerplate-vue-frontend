@@ -44,8 +44,10 @@ describe('Image upload', () => {
 
             cy.contains('User created successfully').should('exist');
             cy.url().should('include', '/users/');
-            // The toast and the URL would both hold if the file were dropped on the way: the
-            // detail page rendering the uploaded path is the proof it was stored.
+            /**
+             * The toast and the URL would both hold if the file were dropped on the way: the
+             * detail page rendering the uploaded path is the proof it was stored.
+             */
             pollForImageSource(
                 '#user-target [data-test=lazy-image] img:not([data-test=lazy-image-thumbnail])',
                 UPLOAD_PATH
@@ -71,13 +73,17 @@ describe('Image upload', () => {
             cy.get('input[type=checkbox]').first().check({ force: true });
             cy.get('form').submit();
 
-            // Signed in from signup, so the upload's success is the new account's own page
-            // rather than a login form.
+            /**
+             * Signed in from signup, so the upload's success is the new account's own page
+             * rather than a login form.
+             */
             cy.url().should('not.include', '/signup');
             cy.get('#home-page').should('exist');
 
-            // The follow-up PATCH is the part that can silently go missing, and it leaves no trace
-            // on the landing page: the profile's avatar preview is where the stored path shows.
+            /**
+             * The follow-up PATCH is the part that can silently go missing, and it leaves no trace
+             * on the landing page: the profile's avatar preview is where the stored path shows.
+             */
             cy.visit('/en/profile');
             pollForImageSource('img[alt="Image preview"]', UPLOAD_PATH).should(
                 'match',

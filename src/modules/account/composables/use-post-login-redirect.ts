@@ -33,9 +33,11 @@ const SAME_ORIGIN_PLACEHOLDER = 'http://same-origin.invalid';
  */
 export const isSameOriginPath = (value: unknown): value is string => {
     if (typeof value !== 'string' || !value.startsWith('/')) return false;
-    // WHATWG URL parsing is what a browser does: it reads `/\evil.example` (backslash as slash),
-    // so the resolved origin is the truth a prefix check cannot see.
-    // https://url.spec.whatwg.org/#concept-basic-url-parser
+    /**
+     * WHATWG URL parsing is what a browser does: it reads `/\evil.example` (backslash as slash),
+     * so the resolved origin is the truth a prefix check cannot see.
+     * https://url.spec.whatwg.org/#concept-basic-url-parser
+     */
     return (
         URL.canParse(value, SAME_ORIGIN_PLACEHOLDER) &&
         new URL(value, SAME_ORIGIN_PLACEHOLDER).origin === SAME_ORIGIN_PLACEHOLDER

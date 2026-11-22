@@ -34,8 +34,10 @@ describe('CU8 · The product is pulled while I am buying it', () => {
         cy.loginAs('user');
         cy.subjectId('product.inStock').then((productId) => {
             cy.subjectProduct('product.inStock').then(({ title }) => {
-                // The seeded customer already saves this product; the cart is the half to add.
-                // Found by title: its category shelf is longer than one page of the list.
+                /**
+                 * The seeded customer already saves this product; the cart is the half to add.
+                 * Found by title: its category shelf is longer than one page of the list.
+                 */
                 cy.visit('/en/products');
                 searchAndOpenProduct('product.inStock');
                 addOpenProductToCart();

@@ -36,9 +36,11 @@ describe('OP16 · The shop manager’s morning', () => {
             ]) {
                 expect(links, page).to.include(`/en${page}`);
             }
-            // No Users entry: running the shop does not need the accounts, so the manager holds no
-            // `read:User` (the role-by-role pass), and the page turns them back. The audit trail is
-            // the administrator's alone.
+            /**
+             * No Users entry: running the shop does not need the accounts, so the manager holds no
+             * `read:User` (the role-by-role pass), and the page turns them back. The audit trail is
+             * the administrator's alone.
+             */
             for (const page of [
                 '/users',
                 '/audit',

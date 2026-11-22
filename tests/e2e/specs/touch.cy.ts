@@ -80,9 +80,11 @@ describe('touch', () => {
             cy.visit('/en');
             cy.get('h1').should('exist');
 
-            // The drawer is `location="end"`: Vuetify opens it for a swipe that starts within
-            // 25 px of the right edge of the DOCUMENT, which a classic scrollbar makes narrower
-            // than the window (a touch on the scrollbar reaches the page as nothing).
+            /**
+             * The drawer is `location="end"`: Vuetify opens it for a swipe that starts within
+             * 25 px of the right edge of the DOCUMENT, which a classic scrollbar makes narrower
+             * than the window (a touch on the scrollbar reaches the page as nothing).
+             */
             cy.window({ log: false }).then((win) => {
                 const edge = win.document.documentElement.clientWidth;
                 cy.get('body').realSwipe('toLeft', { x: edge - 10, y: 400, length: 200 });

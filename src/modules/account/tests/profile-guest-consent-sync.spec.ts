@@ -45,15 +45,19 @@ const patchBodies = () =>
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    // jsdom keeps `document.cookie` for the whole file, not per test — cleared through the same
-    // toolkit function the store itself never gets to for a "never granted" starting point,
-    // same reasoning as `session.spec.ts`'s own `clearSession()` reset.
+    /**
+     * jsdom keeps `document.cookie` for the whole file, not per test — cleared through the same
+     * toolkit function the store itself never gets to for a "never granted" starting point,
+     * same reasoning as `session.spec.ts`'s own `clearSession()` reset.
+     */
     deleteCookie('analyticsConsent');
     responses = {
         'GET /account': accountView(NEVER_ASKED_USER),
         'PATCH /account': { ...NEVER_ASKED_USER, analyticsConsent: true }
-        // The rules `setViewer` fetches for every freshly-loaded profile — same fixture shape as
-        // `profile.spec.ts`'s own.
+        /**
+         * The rules `setViewer` fetches for every freshly-loaded profile — same fixture shape as
+         * `profile.spec.ts`'s own.
+         */
     };
 });
 

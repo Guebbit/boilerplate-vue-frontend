@@ -39,8 +39,10 @@ const listElement = ref<ComponentPublicInstance | null>(null);
  */
 const focusFirstItemOnOpen = () => {
     if (!menuOpen.value) return;
-    // `$el` is typed loosely on a component instance; this ref only ever points at the `v-list`
-    // below, which always renders a real element.
+    /**
+     * `$el` is typed loosely on a component instance; this ref only ever points at the `v-list`
+     * below, which always renders a real element.
+     */
     const content = listElement.value?.$el as HTMLElement | undefined;
     if (!content || content.contains(document.activeElement)) return;
     content.querySelector<HTMLElement>('[role="menuitem"]')?.focus();

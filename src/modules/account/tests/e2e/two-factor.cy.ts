@@ -39,8 +39,10 @@ describe('Two-factor authentication', () => {
 
         // ── Send, read, and submit the mailed code ──────────────────────────────────
         cy.get('[data-test=two-factor-challenge-send]').click();
-        // The template is asserted here and only here: it is what pins the login-challenge mail
-        // to the right backend template, not something every code read needs to restate.
+        /**
+         * The template is asserted here and only here: it is what pins the login-challenge mail
+         * to the right backend template, not something every code read needs to restate.
+         */
         cy.emailTo(seedAccount('user').email).then((email) => {
             expectMailTemplate(email, 'account.two-factor-code');
         });
@@ -81,8 +83,10 @@ describe('Two-factor authentication', () => {
     it('regenerating backup codes discards the old set and shows a fresh one once', function () {
         cy.skipUnlessMailbox();
 
-        // ── Enroll by hand: this case needs one of the backup codes to prove the mutation,
-        //    and the shared command dismisses that screen without exposing them. ──────────────
+        /**
+         * ── Enroll by hand: this case needs one of the backup codes to prove the mutation,
+         *    and the shared command dismisses that screen without exposing them. ──────────────
+         */
         cy.loginAs('user');
         cy.visit('/en/profile');
         cy.get('[data-test=two-factor-add-email]').click();
@@ -126,9 +130,11 @@ describe('Two-factor authentication', () => {
     it('removing the last factor turns 2FA off — the next login goes straight through', function () {
         cy.skipUnlessMailbox();
 
-        // ── Enroll by hand, rather than through `cy.enrollEmailTwoFactor()`: this case needs
-        //    one of the backup codes, shown once, and the shared command dismisses that screen
-        //    without exposing them. ──────────────────────────────────────────────────────────
+        /**
+         * ── Enroll by hand, rather than through `cy.enrollEmailTwoFactor()`: this case needs
+         *    one of the backup codes, shown once, and the shared command dismisses that screen
+         *    without exposing them. ──────────────────────────────────────────────────────────
+         */
         cy.loginAs('user');
         cy.visit('/en/profile');
         cy.get('[data-test=two-factor-add-email]').click();

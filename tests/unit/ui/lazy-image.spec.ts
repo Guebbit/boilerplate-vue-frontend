@@ -66,8 +66,10 @@ describe('LazyImage — which picture is shown', () => {
         expect(wrapper.attributes('data-placeholder')).toBeUndefined();
     });
 
-    // The backend sends no `imageUrl` for a record without one (or `null` where a client clears
-    // it); the frontend draws its own stand-in for every spelling of "no image".
+    /**
+     * The backend sends no `imageUrl` for a record without one (or `null` where a client clears
+     * it); the frontend draws its own stand-in for every spelling of "no image".
+     */
     it.each([undefined, null, ''])(
         'shows the placeholder when the record has no image (%j)',
         (source) => {
@@ -90,8 +92,10 @@ describe('LazyImage — which picture is shown', () => {
     });
 
     it('gives a new record a clean slate after the previous one failed', async () => {
-        // The `v-for` case: one component instance, many rows. Without the reset, the first
-        // broken image in a list poisons every row rendered into that slot afterwards.
+        /**
+         * The `v-for` case: one component instance, many rows. Without the reset, the first
+         * broken image in a list poisons every row rendered into that slot afterwards.
+         */
         const wrapper = mountImage({ src: '/images/gone.png' });
         await mainImage(wrapper).trigger('error');
         expect(wrapper.attributes('data-placeholder')).toBe('true');
@@ -173,8 +177,10 @@ describe('LazyImage — how it loads', () => {
     });
 
     it('renders no thumbnail tier when the caller passes none', () => {
-        // The single `img` IS the assertion: a second one would mean the component is painting a
-        // blurred layer with nothing behind it.
+        /**
+         * The single `img` IS the assertion: a second one would mean the component is painting a
+         * blurred layer with nothing behind it.
+         */
         expect(mountImage({ src: '/images/abc.png' }).findAll('img')).toHaveLength(1);
     });
 });
@@ -204,8 +210,10 @@ describe('LazyImage — the thumbnail tier', () => {
     });
 
     it('is independent of `src`: a record with an image but no thumbnail shows only the full tier', () => {
-        // A remote/default image, or an upload whose digest job has not finished — `thumbnailSrc`
-        // is absent in both, and nothing here derives one from `src`.
+        /**
+         * A remote/default image, or an upload whose digest job has not finished — `thumbnailSrc`
+         * is absent in both, and nothing here derives one from `src`.
+         */
         const wrapper = mountImage({ src: '/images/abc.png', thumbnailSrc: undefined });
 
         expect(thumbnailImage(wrapper).exists()).toBe(false);

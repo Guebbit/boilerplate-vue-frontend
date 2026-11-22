@@ -187,8 +187,10 @@ export const useCheckoutRefusals = (hooks: CheckoutRefusalHooks) => {
             case 'cart-changed': {
                 return toastAndRefetch('cart-page.error-cart-changed');
             }
-            // The store already read the cart again, so the page shows the new total; the
-            // button stays live, and the next press confirms that total.
+            /**
+             * The store already read the cart again, so the page shows the new total; the
+             * button stays live, and the next press confirms that total.
+             */
             case 'total-changed': {
                 addMessage(totalChangedMessage(verdict.expected, verdict.actual));
                 return;
@@ -206,15 +208,19 @@ export const useCheckoutRefusals = (hooks: CheckoutRefusalHooks) => {
                 addMessage(t('cart-page.error-billing-address-required'));
                 return;
             }
-            // The page reopens its picker: the basket weight this client knows is advisory, and
-            // the server's enforced check is the one that knows the method cannot carry it.
+            /**
+             * The page reopens its picker: the basket weight this client knows is advisory, and
+             * the server's enforced check is the one that knows the method cannot carry it.
+             */
             case 'shipping-method-weight': {
                 hooks.onShippingMethodRefused();
                 addMessage(t('cart-page.error-shipping-method-weight'));
                 return;
             }
-            // The country select already narrows a NEW address to the ship-to list, so the fix
-            // is picking (or adding) one, not a field this page can correct for the shopper.
+            /**
+             * The country select already narrows a NEW address to the ship-to list, so the fix
+             * is picking (or adding) one, not a field this page can correct for the shopper.
+             */
             case 'ship-to-country-not-supported': {
                 addMessage(t('cart-page.error-ship-to-country-not-supported'));
                 return;

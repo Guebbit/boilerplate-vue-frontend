@@ -172,8 +172,10 @@ export const toRequestBody = <TName extends BodySchemaName>(
 ): Promise<z.input<BodySchemas[TName]>> =>
     import('@api/schemas').then(
         (schemas) =>
-            // The one narrowing the compiler cannot see: the schema probe is what guarantees each
-            // key is spelled the way this schema's input type allows.
+            /**
+             * The one narrowing the compiler cannot see: the schema probe is what guarantees each
+             * key is spelled the way this schema's input type allows.
+             */
             shapeBody(schemas[name] as ZodType, form, baseline) as z.input<BodySchemas[TName]>
     );
 
@@ -206,8 +208,10 @@ export const uploadThenClear = <T extends object, TResult>(
     sendClears: (clears: OnlyClears<T>) => Promise<TResult>
 ): Promise<TResult> => {
     const entries = Object.entries(body);
-    // Narrowing casts below: `Object.fromEntries` is `{ [k: string]: V }`, the mapped types are what
-    // the caller's request types are checked against.
+    /**
+     * Narrowing casts below: `Object.fromEntries` is `{ [k: string]: V }`, the mapped types are what
+     * the caller's request types are checked against.
+     */
     const clears = Object.fromEntries(
         entries.filter(([, value]) => value === null)
     ) as OnlyClears<T>;

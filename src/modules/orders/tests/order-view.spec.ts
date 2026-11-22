@@ -81,9 +81,11 @@ const mountOrder = (order: OrderType) => {
         props: { id: order.id },
         global: {
             plugins: [router, vuetify, i18n],
-            // `PaymentPanel`/`ShipmentPanel` fetch their own data as soon as an order id is
-            // available — decoration on this page, not what is under test, and there is no
-            // mocked transport here for either to talk to.
+            /**
+             * `PaymentPanel`/`ShipmentPanel` fetch their own data as soon as an order id is
+             * available — decoration on this page, not what is under test, and there is no
+             * mocked transport here for either to talk to.
+             */
             stubs: {
                 PaymentPanel: true,
                 ShipmentPanel: true,
@@ -351,8 +353,10 @@ describe('the timeline', () => {
     });
 
     it('is keyed again when a shipment panel reports a move, though `updatedAt` stays', async () => {
-        // A partial shipment no longer moves `updatedAt`, so only the report itself can tell
-        // the timeline that a second parcel left.
+        /**
+         * A partial shipment no longer moves `updatedAt`, so only the report itself can tell
+         * the timeline that a second parcel left.
+         */
         vi.spyOn(useOrdersStore(), 'fetchOrder').mockResolvedValue(undefined);
         const wrapper = mountOrder({ ...BASE_ORDER, status: 'processing', items: [lineWith()] });
         const keyOf = (): string =>
@@ -482,14 +486,18 @@ describe('an order line’s picture', () => {
 
 describe('the reorder button', () => {
     it("disables on the CART store's own loading, not the orders store's", () => {
-        // `reorder` runs under the cart store's `fetchAny` — a double-click firing it twice is
-        // exactly the bug this guard removes, and the orders store's own `loading` (already
-        // exercised by the invoice/cancel cases above) says nothing about it.
+        /**
+         * `reorder` runs under the cart store's `fetchAny` — a double-click firing it twice is
+         * exactly the bug this guard removes, and the orders store's own `loading` (already
+         * exercised by the invoice/cancel cases above) says nothing about it.
+         */
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
         expect(wrapper.get('[data-test=order-reorder]').attributes('disabled')).toBeUndefined();
 
-        // A genuinely pending API call — the cart store's `loading` is real, TanStack-tracked
-        // state now, so nothing short of an actual in-flight `reorder` request moves it.
+        /**
+         * A genuinely pending API call — the cart store's `loading` is real, TanStack-tracked
+         * state now, so nothing short of an actual in-flight `reorder` request moves it.
+         */
         let release: ((error: Error) => void) | undefined;
         const gate = new Promise<never>((_resolve, reject) => {
             release = reject;

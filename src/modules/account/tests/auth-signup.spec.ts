@@ -156,8 +156,10 @@ describe('useAccountAuthStore.signup', () => {
     });
 
     it('keeps the store id stable', () => {
-        // Pinia keys the store, devtools and any persistence plugin by this string, and every
-        // other test here reaches the store through useAccountAuthStore() so none would notice.
+        /**
+         * Pinia keys the store, devtools and any persistence plugin by this string, and every
+         * other test here reaches the store through useAccountAuthStore() so none would notice.
+         */
         expect(useAccountAuthStore().$id).toBe('account-auth');
     });
 });

@@ -74,9 +74,11 @@ beforeEach(() => {
     );
 });
 
-// A create that succeeds navigates to the new user, and that navigation resolves a lazy route
-// component after the test body has returned. Left running it can land after the environment is
-// torn down (`history is not defined`), so each test ends by superseding it with a settled one.
+/**
+ * A create that succeeds navigates to the new user, and that navigation resolves a lazy route
+ * component after the test body has returned. Left running it can land after the environment is
+ * torn down (`history is not defined`), so each test ends by superseding it with a settled one.
+ */
 afterEach(() => router.push('/en/users/create').then(() => undefined));
 
 describe('UserCreate', () => {
@@ -151,8 +153,10 @@ describe('UserCreate', () => {
             });
     });
 
-    // A credential is its owner's alone: the form has no password and no setup switch, and says the
-    // new owner is emailed a link to choose their own.
+    /**
+     * A credential is its owner's alone: the form has no password and no setup switch, and says the
+     * new owner is emailed a link to choose their own.
+     */
     it('has no password field and no setup-email switch, and says the owner chooses their own', () => {
         const { wrapper } = mountPage();
 
@@ -185,10 +189,12 @@ describe('UserCreate', () => {
         });
     });
 
-    // FormCard's submit button bound :loading only, and in Vuetify 4.1.5 loading does not
-    // disable the button — a real second click (or Enter) while the first create was still in
-    // flight fired a second request. FormCard now also binds :disabled="loading", which a
-    // browser (and jsdom) refuses to dispatch a click's default action through.
+    /**
+     * FormCard's submit button bound :loading only, and in Vuetify 4.1.5 loading does not
+     * disable the button — a real second click (or Enter) while the first create was still in
+     * flight fired a second request. FormCard now also binds :disabled="loading", which a
+     * browser (and jsdom) refuses to dispatch a click's default action through.
+     */
     it('disables the submit button while a create is in flight', () => {
         const { wrapper, create } = mountPage();
         create.mockReturnValue(new Promise(() => undefined));

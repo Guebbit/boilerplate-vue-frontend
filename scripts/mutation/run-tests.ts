@@ -206,8 +206,10 @@ const main = async () => {
     const stryker = spawn('npx', ['stryker', ...strykerArguments], {
         cwd: REPO_ROOT,
         env: childEnvironment,
-        // `pipe` on stdout so the OOM line can be counted; every chunk is forwarded unchanged, so
-        // the progress bar and the report still reach the terminal as they would unwrapped.
+        /**
+         * `pipe` on stdout so the OOM line can be counted; every chunk is forwarded unchanged, so
+         * the progress bar and the report still reach the terminal as they would unwrapped.
+         */
         stdio: ['inherit', 'pipe', 'inherit']
     });
 

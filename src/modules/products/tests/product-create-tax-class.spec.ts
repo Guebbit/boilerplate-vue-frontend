@@ -104,9 +104,11 @@ describe('ProductCreate — taxClass', () => {
             .then(flushPromises)
             .then(flushPromises)
             .then(() => {
-                // Present-but-`undefined`, same as every other unset optional field here
-                // (`weight`, `categories`) — JSON serialization is what actually drops the key
-                // on the wire; this asserts the value that makes that happen.
+                /**
+                 * Present-but-`undefined`, same as every other unset optional field here
+                 * (`weight`, `categories`) — JSON serialization is what actually drops the key
+                 * on the wire; this asserts the value that makes that happen.
+                 */
                 expect(lastPost().data.taxClass).toBeUndefined();
             });
     });

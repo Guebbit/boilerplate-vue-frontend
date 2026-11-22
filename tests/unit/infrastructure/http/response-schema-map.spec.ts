@@ -133,8 +133,10 @@ const ROUTE_KEYS = GENERATED_ROUTES.map((route) => `${route.method} ${route.patt
  * CONSTRUCTION, not by a hand-kept exception list staying in sync with reality.
  */
 const SPEC_OPERATIONS: [method: string, path: string, name: string][] = (() => {
-    // `process.cwd()` is the project root under vitest; `import.meta.url` is not a file URL once
-    // the suite has been through the jsdom transform.
+    /**
+     * `process.cwd()` is the project root under vitest; `import.meta.url` is not a file URL once
+     * the suite has been through the jsdom transform.
+     */
     const spec = parse(readFileSync(path.resolve(process.cwd(), 'openapi.yaml'), 'utf8')) as {
         paths: Record<string, Record<string, { operationId?: string }>>;
     };
@@ -161,8 +163,10 @@ describe('routeSchemas table', () => {
             ([method, path]) => !resolveResponseSchema(method, path)
         );
 
-        // Named, not counted: the failure message is the list of operations whose responses go
-        // unvalidated, which is the thing someone has to act on.
+        /**
+         * Named, not counted: the failure message is the list of operations whose responses go
+         * unvalidated, which is the thing someone has to act on.
+         */
         expect(unmapped).toEqual([]);
     });
 
@@ -187,10 +191,12 @@ describe('routeSchemas table', () => {
     });
 
     it('has no two generated rows for the same method and pattern', () => {
-        // The regression this generator exists to prevent: the 7 webhooks rows used to be
-        // registered TWICE, once on the core shelf and once in `webhooks/response-schemas.ts` —
-        // `find()` silently returned whichever was listed first, and nothing caught the other
-        // becoming dead weight.
+        /**
+         * The regression this generator exists to prevent: the 7 webhooks rows used to be
+         * registered TWICE, once on the core shelf and once in `webhooks/response-schemas.ts` —
+         * `find()` silently returned whichever was listed first, and nothing caught the other
+         * becoming dead weight.
+         */
         expect(new Set(ROUTE_KEYS).size).toBe(ROUTE_KEYS.length);
     });
 
@@ -242,8 +248,10 @@ describe('routeSchemas table', () => {
  */
 describe('operations this app actually imports', () => {
     it('finds a real, partial subset — not every declared operation, and not none', () => {
-        // A canary: an empty set would make every assertion below vacuous; a full set would mean
-        // the import scan silently matched everything, not just real call sites.
+        /**
+         * A canary: an empty set would make every assertion below vacuous; a full set would mean
+         * the import scan silently matched everything, not just real call sites.
+         */
         const importedCount = SPEC_OPERATIONS.filter((operation) =>
             isImportedByApp(operation[2])
         ).length;
@@ -292,10 +300,12 @@ const widgetRows: ResponseSchemaRoute[] = [
 ];
 
 describe('resolveResponseSchema', () => {
-    // Replaces the module rows for this block only; the parity table above re-registers the real
-    // ones for itself. Through `loadResponseSchemas`, not `registerResponseSchemas` directly, so
-    // the real core rows are still resolved and merged in — exactly what "keeps the core rows"
-    // below checks.
+    /**
+     * Replaces the module rows for this block only; the parity table above re-registers the real
+     * ones for itself. Through `loadResponseSchemas`, not `registerResponseSchemas` directly, so
+     * the real core rows are still resolved and merged in — exactly what "keeps the core rows"
+     * below checks.
+     */
     beforeEach(() => loadResponseSchemas([() => Promise.resolve(widgetRows)]));
 
     it('resolves a simple collection route', () => {
@@ -303,8 +313,10 @@ describe('resolveResponseSchema', () => {
     });
 
     it('distinguishes methods on the same path', () => {
-        // Four operations share `/widgets`; picking the wrong one would validate a creation
-        // response against the list schema.
+        /**
+         * Four operations share `/widgets`; picking the wrong one would validate a creation
+         * response against the list schema.
+         */
         expect(resolveResponseSchema('GET', '/widgets')).toBe(schemas.GetHealthResponse);
         expect(resolveResponseSchema('POST', '/widgets')).toBe(schemas.ListLocalesResponse);
         expect(resolveResponseSchema('PUT', '/widgets')).toBe(schemas.ListTasksResponse);
@@ -325,8 +337,10 @@ describe('resolveResponseSchema', () => {
     });
 
     it('keeps a nested literal segment distinct from an id segment', () => {
-        // The anchoring property, stated as behaviour: `/widgets/:id/detail` and `/widgets/:id`
-        // are different operations with different response shapes.
+        /**
+         * The anchoring property, stated as behaviour: `/widgets/:id/detail` and `/widgets/:id`
+         * are different operations with different response shapes.
+         */
         const detail = resolveResponseSchema('GET', `/widgets/${ID}/detail`);
         const widget = resolveResponseSchema('GET', `/widgets/${ID}`);
 
@@ -341,14 +355,18 @@ describe('resolveResponseSchema', () => {
     });
 
     it('does not let the root pattern match every path', () => {
-        // `^\/$` — if the `$` were dropped, `/` would match everything and every response in the
-        // app would be validated against the health schema.
+        /**
+         * `^\/$` — if the `$` were dropped, `/` would match everything and every response in the
+         * app would be validated against the health schema.
+         */
         expect(resolveResponseSchema('GET', '/widgets')).not.toBe(schemas.ListLocalesResponse);
     });
 
     it('returns undefined for a route absent from the table', () => {
-        // Fail-open by design: a missing entry is a maintenance gap, not proof the response is
-        // wrong, so the caller warns instead of throwing.
+        /**
+         * Fail-open by design: a missing entry is a maintenance gap, not proof the response is
+         * wrong, so the caller warns instead of throwing.
+         */
         expect(resolveResponseSchema('GET', '/not-a-real-route')).toBeUndefined();
     });
 
@@ -367,9 +385,11 @@ describe('resolveResponseSchema', () => {
     });
 
     it('keeps the core rows regardless of what the modules register', () => {
-        // `loadResponseSchemas` always resolves the real core rows alongside whatever module
-        // loaders it is given. `/locales` is core's, so it must still resolve even though only
-        // `/widgets` was just registered above.
+        /**
+         * `loadResponseSchemas` always resolves the real core rows alongside whatever module
+         * loaders it is given. `/locales` is core's, so it must still resolve even though only
+         * `/widgets` was just registered above.
+         */
         expect(resolveResponseSchema('GET', '/locales')).toBe(schemas.ListLocalesResponse);
     });
 });

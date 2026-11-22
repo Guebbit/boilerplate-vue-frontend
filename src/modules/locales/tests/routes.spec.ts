@@ -27,9 +27,11 @@ describe('locales route access', () => {
         ['LocalesList', 'auth', 'update', 'Locale'],
         ['LocalesDictionary', 'auth', 'update', 'Locale'],
         ['LocaleEntries', 'auth', 'update', 'Locale'],
-        // A different key from the three above, on purpose: a translations-only role would reach
-        // the generic translations door on `translations.read` without ever holding
-        // `locales.update` — no shipped role holds that shape, but the key stays separable.
+        /**
+         * A different key from the three above, on purpose: a translations-only role would reach
+         * the generic translations door on `translations.read` without ever holding
+         * `locales.update` — no shipped role holds that shape, but the key stays separable.
+         */
         ['EntityTranslations', 'auth', 'read', 'Translation']
     ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
         expect(byName(name)).toBeDefined();
@@ -38,8 +40,10 @@ describe('locales route access', () => {
     });
 
     it('declares no route this file does not know about', () => {
-        // Catches a new route added without an access decision being made for it — the
-        // delete-everything dictionary import is otherwise unguarded by any spec.
+        /**
+         * Catches a new route added without an access decision being made for it — the
+         * delete-everything dictionary import is otherwise unguarded by any spec.
+         */
         expect(routes.map(({ name }) => name).toSorted()).toEqual(
             ['LocalesList', 'LocalesDictionary', 'LocaleEntries', 'EntityTranslations'].toSorted()
         );

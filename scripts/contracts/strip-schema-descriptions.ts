@@ -62,8 +62,10 @@ if (!existsSync(TARGET)) {
  */
 const stripDescribeVisitor = (context: ts.TransformationContext) => {
     const visit: ts.Visitor = (node) => {
-        // `ts.visitEachChild(node, visitor, context)`: visits every child first, so deeper
-        // `.describe()` calls are already gone by the time this node is checked.
+        /**
+         * `ts.visitEachChild(node, visitor, context)`: visits every child first, so deeper
+         * `.describe()` calls are already gone by the time this node is checked.
+         */
         const visited = ts.visitEachChild(node, visit, context);
         if (
             ts.isCallExpression(visited) &&
@@ -74,9 +76,11 @@ const stripDescribeVisitor = (context: ts.TransformationContext) => {
         }
         return visited;
     };
-    // The root is always a `SourceFile` here, which `visit` never removes — `ts.visitNode` types
-    // its result as possibly `undefined` only because a visitor is allowed to drop the node in
-    // general, so this narrows back to a plain transformer.
+    /**
+     * The root is always a `SourceFile` here, which `visit` never removes — `ts.visitNode` types
+     * its result as possibly `undefined` only because a visitor is allowed to drop the node in
+     * general, so this narrows back to a plain transformer.
+     */
     return (root: ts.Node): ts.Node => ts.visitNode(root, visit) ?? root;
 };
 
@@ -99,8 +103,10 @@ const sourceFile = ts.createSourceFile(
 // `ts.transform(sourceFile, [transformerFactory])`: runs the strip visitor over the whole tree.
 const result = ts.transform(sourceFile, [stripDescribeVisitor]);
 
-// `removeComments: false` (the default) keeps every JSDoc block on the statements this pass
-// leaves untouched — only the `.describe()` calls themselves, and the strings they carried, go.
+/**
+ * `removeComments: false` (the default) keeps every JSDoc block on the statements this pass
+ * leaves untouched — only the `.describe()` calls themselves, and the strings they carried, go.
+ */
 const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 
 /** The stripped file's text. */

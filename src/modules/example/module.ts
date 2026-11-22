@@ -16,8 +16,10 @@ import routes from './routes';
  * What makes `logger.debug('example', …)` type-check. Deleting this folder takes the scope with it.
  */
 declare module '@/infrastructure/utils/logger.ts' {
-    // The name belongs to the module being augmented, not to this one: declaration merging only
-    // works against the exact interface it declares.
+    /**
+     * The name belongs to the module being augmented, not to this one: declaration merging only
+     * works against the exact interface it declares.
+     */
     interface LogScopes {
         example: true;
     }

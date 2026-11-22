@@ -68,8 +68,10 @@ const methodsOf = (details: unknown): readonly string[] => {
 export const onResponseRejectWithStepUp = (
     error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
 ) =>
-    // Read once, here: a `blob` or `text` request (a file export) hands even its refusal over
-    // unparsed, and both the code below and the refresh branch need the same object.
+    /**
+     * Read once, here: a `blob` or `text` request (a file export) hands even its refusal over
+     * unparsed, and both the code below and the refresh branch need the same object.
+     */
     (error.response ? readProblemBody(error.response) : Promise.resolve()).then((body) => {
         const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
         const { code, details } = getFirstApiError(body) ?? {};

@@ -157,8 +157,10 @@ const submit = () => {
         orderId: props.orderId,
         kind: 'cancellation',
         fulfillmentOrderId: props.option.fulfillmentOrderId,
-        // The buyer's door is their withdrawal; staff's own cancel has no legal reason ("other"),
-        // unless they record the buyer's withdrawal with the day and channel it was stated.
+        /**
+         * The buyer's door is their withdrawal; staff's own cancel has no legal reason ("other"),
+         * unless they record the buyer's withdrawal with the day and channel it was stated.
+         */
         reason: props.mode === 'buyer' || asWithdrawal.value ? 'withdrawal' : 'other',
         ...(props.mode === 'staff' && trimmed ? { note: trimmed } : {}),
         ...(asWithdrawal.value && stated && channel

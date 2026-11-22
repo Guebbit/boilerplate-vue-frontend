@@ -45,8 +45,10 @@ describe('FR20 · My staff session idled out with a form open', () => {
             cy.step('at 28.5 idle minutes the dialog opens and holds focus');
             cy.travelEverywhere(28.5 * MINUTE_MS);
             cy.get('[data-test=idle-session-dialog]').should('be.visible');
-            // Vuetify moves focus to the overlay's content element, which carries the dialog's role
-            // and wraps the card.
+            /**
+             * Vuetify moves focus to the overlay's content element, which carries the dialog's role
+             * and wraps the card.
+             */
             cy.focused().closest('[role=alertdialog]').should('exist');
 
             cy.step('Stay counts the session active, closes the dialog and keeps the value');
@@ -57,8 +59,10 @@ describe('FR20 · My staff session idled out with a form open', () => {
                 });
             });
             cy.get('[data-test=idle-session-stay]').click();
-            // The jump aged the access token too, so the first touch may be a 401 that the app
-            // refreshes and repeats: one of the answers must be a success.
+            /**
+             * The jump aged the access token too, so the first touch may be a 401 that the app
+             * refreshes and repeats: one of the answers must be a success.
+             */
             cy.wrap(touched).should('satisfy', (codes: number[]) =>
                 codes.some((code) => code >= 200 && code < 300)
             );

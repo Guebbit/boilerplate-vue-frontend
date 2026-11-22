@@ -153,8 +153,10 @@ describe('every message is resolved at parse time', () => {
         expect(result.success).toBe(false);
         for (const issue of result.error!.issues) {
             expect(issue.message).not.toBe('');
-            // Zod's own built-in text ("Too small: ...") is what a missing thunk would leave
-            // behind, so its absence is the assertion.
+            /**
+             * Zod's own built-in text ("Too small: ...") is what a missing thunk would leave
+             * behind, so its absence is the assertion.
+             */
             expect(issue.message).not.toMatch(/^Too small/);
         }
     });

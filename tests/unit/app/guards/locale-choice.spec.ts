@@ -30,8 +30,10 @@ const i18nState = {
     defaultLocale: 'en'
 };
 
-// Parameters are declared even though the bodies ignore them: `vi.fn(() => ...)` infers a
-// zero-arity signature, so the call sites below (and `toHaveBeenCalledWith`) would not type-check.
+/**
+ * Parameters are declared even though the bodies ignore them: `vi.fn(() => ...)` infers a
+ * zero-arity signature, so the call sites below (and `toHaveBeenCalledWith`) would not type-check.
+ */
 const changeLanguageMock = vi.fn((_locale: string) => Promise.resolve());
 
 /** Stub for the i18n runtime's `updateLocale`. */
@@ -120,8 +122,10 @@ describe('fetchLanguageApi', () => {
     it('loads a supported locale and returns its dictionary', () => {
         return fetchLanguageApi('en').then(([locale, dictionary]) => {
             expect(locale).toBe('en');
-            // Real file, real import: asserting it is a non-empty object proves the dynamic import
-            // actually resolved rather than falling into the catch branch.
+            /**
+             * Real file, real import: asserting it is a non-empty object proves the dynamic import
+             * actually resolved rather than falling into the catch branch.
+             */
             expect(Object.keys(dictionary).length).toBeGreaterThan(0);
         });
     });
@@ -143,8 +147,10 @@ describe('fetchLanguageApi', () => {
     it('never rejects when the overrides cannot be fetched', () => {
         getLocaleMessagesMock.mockRejectedValueOnce(new Error('network down'));
         return fetchLanguageApi('it').then(([locale, dictionary]) => {
-            // The bundled half still loaded. A dead API costs the edits and nothing else — it
-            // must never strand a navigation or blank the interface.
+            /**
+             * The bundled half still loaded. A dead API costs the edits and nothing else — it
+             * must never strand a navigation or blank the interface.
+             */
             expect(locale).toBe('it');
             expect(dictionary.navigation).toBeDefined();
             expect(Object.keys(dictionary).length).toBeGreaterThan(1);
@@ -152,9 +158,11 @@ describe('fetchLanguageApi', () => {
     });
 
     it('lets an override win over the bundled string, without dropping its siblings', () => {
-        // `navigation` is deliberately a namespace the SHARED dictionary owns and fills. Editing
-        // ONE of its keys must not cost the others, which is the difference between a deep merge
-        // and an assign — and the failure would surface on an unrelated screen.
+        /**
+         * `navigation` is deliberately a namespace the SHARED dictionary owns and fills. Editing
+         * ONE of its keys must not cost the others, which is the difference between a deep merge
+         * and an assign — and the failure would surface on an unrelated screen.
+         */
         getLocaleMessagesMock.mockResolvedValueOnce(
             contractResponse(schemas.GetLocaleMessagesResponse, {
                 locale: 'it',
@@ -176,8 +184,10 @@ describe('localeChoice', () => {
         i18nState.loadedLanguages = ['en'];
         i18nState.currentLocale = 'en';
         return localeChoice(routeTo({ params: { locale: 'en' } })).then((result) => {
-            // Literal `true`, not merely truthy: a redirect object is also truthy, and returning one
-            // here is what produces an infinite navigation loop.
+            /**
+             * Literal `true`, not merely truthy: a redirect object is also truthy, and returning one
+             * here is what produces an infinite navigation loop.
+             */
             expect(result).toBe(true);
             expect(changeLanguageMock).not.toHaveBeenCalled();
         });
@@ -199,8 +209,10 @@ describe('localeChoice', () => {
         i18nState.supportedLanguages = ['en', 'it'];
         return localeChoice(routeTo({ params: { locale: 'it' } })).then((result) => {
             expect(result).toBe(true);
-            // Order matters: messages must be registered before the language is switched, or the
-            // first render after the switch has no translations.
+            /**
+             * Order matters: messages must be registered before the language is switched, or the
+             * first render after the switch has no translations.
+             */
             expect(updateLocaleMock).toHaveBeenCalledWith('it', expect.any(Object));
             expect(changeLanguageMock).toHaveBeenCalledWith('it');
         });
@@ -216,8 +228,10 @@ describe('localeChoice', () => {
                 query: { page: '2' }
             })
         ).then((result) => {
-            // Dropping params or query here would silently lose the user's place on every
-            // locale-less deep link.
+            /**
+             * Dropping params or query here would silently lose the user's place on every
+             * locale-less deep link.
+             */
             expect(result).toEqual({
                 name: 'products',
                 params: { locale: 'en', id: '42' },
@@ -284,11 +298,13 @@ describe('localeChoice', () => {
         i18nState.loadedLanguages = [];
         i18nState.supportedLanguages = ['en', 'it', 'es'];
 
-        // `import('@/locales/it.json')` is a REAL dynamic import, whose timing is not
-        // deterministic relative to `es`'s (which rejects instantly, having no file). So this
-        // does not just release a promise on `es` settling — it waits until `it`'s own chain has
-        // actually reached (and is blocked on) the overrides fetch, THEN lets `es` win, THEN
-        // releases `it` to prove the now-abandoned chain still doesn't activate.
+        /**
+         * `import('@/locales/it.json')` is a REAL dynamic import, whose timing is not
+         * deterministic relative to `es`'s (which rejects instantly, having no file). So this
+         * does not just release a promise on `es` settling — it waits until `it`'s own chain has
+         * actually reached (and is blocked on) the overrides fetch, THEN lets `es` win, THEN
+         * releases `it` to prove the now-abandoned chain still doesn't activate.
+         */
         const itOverrides = Promise.withResolvers<ReturnType<typeof contractResponse>>();
         const itRequested = Promise.withResolvers<undefined>();
         getLocaleMessagesMock.mockImplementation((locale: string) => {

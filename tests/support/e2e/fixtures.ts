@@ -290,10 +290,12 @@ const adminApi = <T>(path: string, method: string, body?: Record<string, unknown
     apiAs<T>('admin', path, method, body);
 
 Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) => {
-    // `title` and `description` are the product's own words, in the default language; `translations`
-    // (optional) holds the OTHER languages. A spec that passes no title gets a unique one.
-    // `onHand` is not a product field: the create body carries no stock, so an opening count is
-    // received right after, through the inventory door, as a real shop does it.
+    /**
+     * `title` and `description` are the product's own words, in the default language; `translations`
+     * (optional) holds the OTHER languages. A spec that passes no title gets a unique one.
+     * `onHand` is not a product field: the create body carries no stock, so an opening count is
+     * received right after, through the inventory door, as a real shop does it.
+     */
     const { title, onHand, ...rest } = overrides;
     return adminApi<ProductLike>('/products', 'POST', {
         price: '10.00',
@@ -344,8 +346,10 @@ Cypress.Commands.add('filterByNarrowestCategoryOf', (name: string) =>
             cy.get('[data-test=category-chip]')
                 .contains(`${narrowest.category} (${String(narrowest.count)})`)
                 .click();
-            // The filter is a request: until the list shrinks to the chip's own count, the
-            // unfiltered one is still on screen and a click would land on the wrong card.
+            /**
+             * The filter is a request: until the list shrinks to the chip's own count, the
+             * unfiltered one is still on screen and a click would land on the wrong card.
+             */
             return cy.get('[data-test=product-card]').should('have.length', narrowest.count);
         })
     )
@@ -362,8 +366,10 @@ Cypress.Commands.add('accountInRole', (role: E2ERole) =>
 );
 
 Cypress.Commands.add('createWebhookSubscription', (overrides: Record<string, unknown> = {}) =>
-    // A unique path on the seeded sink's origin: the SSRF guard exempts that origin, so the
-    // subscription never needs public DNS. `overrides` still wins.
+    /**
+     * A unique path on the seeded sink's origin: the SSRF guard exempts that origin, so the
+     * subscription never needs public DNS. `overrides` still wins.
+     */
     sinkEndpoint(`/hook-${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`).then(
         (url) =>
             adminApi<WebhookSubscriptionLike>('/webhooks/subscriptions', 'POST', {
@@ -376,8 +382,10 @@ Cypress.Commands.add('createWebhookSubscription', (overrides: Record<string, unk
 
 Cypress.Commands.add('mintApiKey', (overrides: Record<string, unknown> = {}) =>
     adminApi<ApiKeyLike>('/api-keys', 'POST', {
-        // Unique per test; `display:Product` is a real declared tenant key — an invented
-        // string, or the ungranted `products.read`, is a 422, mint's own floor.
+        /**
+         * Unique per test; `display:Product` is a real declared tenant key — an invented
+         * string, or the ungranted `products.read`, is a 422, mint's own floor.
+         */
         name: `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,
         permissions: ['display:Product'],
         // Every key expires, at most a year ahead — the mint refuses a request without one.

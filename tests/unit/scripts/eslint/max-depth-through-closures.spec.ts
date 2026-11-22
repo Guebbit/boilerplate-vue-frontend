@@ -37,8 +37,10 @@ tester.run('max-depth-through-closures', maxDepthThroughClosures as never, {
             }`
         },
         {
-            // A class method restarts at zero: four levels inside it, within a spec's four,
-            // although the loop that holds the class would make it five if it carried.
+            /**
+             * A class method restarts at zero: four levels inside it, within a spec's four,
+             * although the loop that holds the class would make it five if it carried.
+             */
             options: SPEC,
             code: `function anonymousClass(items) {
                 for (const item of items) {
@@ -105,8 +107,10 @@ tester.run('max-depth-through-closures', maxDepthThroughClosures as never, {
             }`
         },
         {
-            // A loop header sits on the OUTER level: three levels in its callback stay at three,
-            // where counting the header would make the third `if` the fourth.
+            /**
+             * A loop header sits on the OUTER level: three levels in its callback stay at three,
+             * where counting the header would make the third `if` the fourth.
+             */
             options: PROD,
             code: `function loopHeader(items) {
                 for (const a of items.filter((x) => { if (x) { if (x) { if (x) { return true; } } } return false; })) {
@@ -158,8 +162,10 @@ tester.run('max-depth-through-closures', maxDepthThroughClosures as never, {
             errors: [{ messageId: 'tooDeep', line: 5, data: { level: 4, max: 3 } }]
         },
         {
-            // The count carries through a callback (`max-depth` alone would restart there):
-            // the callback's `if` is the third level, one past a limit of two.
+            /**
+             * The count carries through a callback (`max-depth` alone would restart there):
+             * the callback's `if` is the third level, one past a limit of two.
+             */
             options: [{ max: 2 }],
             code: `function throughClosure(items) {
                 for (const item of items) {
@@ -250,8 +256,10 @@ tester.run('max-depth-through-closures', maxDepthThroughClosures as never, {
             errors: [{ messageId: 'tooDeep', line: 7 }]
         },
         {
-            // A `switch` discriminant sits on the outer level: the fourth block in its callback
-            // (line 6) is the fourth level. Counting the switch would report the third (line 5).
+            /**
+             * A `switch` discriminant sits on the outer level: the fourth block in its callback
+             * (line 6) is the fourth level. Counting the switch would report the third (line 5).
+             */
             options: PROD,
             code: `function discriminant(items) {
                 switch (items.find((x) => {
@@ -271,8 +279,10 @@ tester.run('max-depth-through-closures', maxDepthThroughClosures as never, {
             errors: [{ messageId: 'tooDeep', line: 6, data: { level: 4, max: 3 } }]
         },
         {
-            // An `else if` condition, same: the fourth block in its callback (line 8) is the
-            // fourth level. Counting the head `if` would report the third (line 7).
+            /**
+             * An `else if` condition, same: the fourth block in its callback (line 8) is the
+             * fourth level. Counting the head `if` would report the third (line 7).
+             */
             options: PROD,
             code: `function elseIfCondition(items, n) {
                 if (n) {

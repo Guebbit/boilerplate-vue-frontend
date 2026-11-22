@@ -9,8 +9,10 @@
  */
 import type { AxiosResponse } from 'axios';
 import { downloadBlob } from '@guebbit/js-toolkit';
-// content-disposition `parse(header)`: the type and the decoded parameters, `filename*` (RFC 8187)
-// included. It throws on a malformed header. https://github.com/jshttp/content-disposition
+/**
+ * content-disposition `parse(header)`: the type and the decoded parameters, `filename*` (RFC 8187)
+ * included. It throws on a malformed header. https://github.com/jshttp/content-disposition
+ */
 import { parse } from 'content-disposition';
 
 /**

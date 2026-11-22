@@ -142,8 +142,10 @@ const {
  *  form in place ({@link passwordChangeError}).
  */
 const submitPasswordChange = () =>
-    // `handleSubmit` is the gate: an invalid form shows its messages and focuses the first one
-    // rather than sitting behind a button that cannot be pressed.
+    /**
+     * `handleSubmit` is the gate: an invalid form shows its messages and focuses the first one
+     * rather than sitting behind a button that cannot be pressed.
+     */
     handlePasswordSubmit(({ currentPassword, password, passwordConfirm }) => {
         clearPasswordChangeError();
         return changePassword(currentPassword, password, passwordConfirm)
@@ -153,9 +155,11 @@ const submitPasswordChange = () =>
                 passwordForm.value.password = '';
                 passwordForm.value.passwordConfirm = '';
                 showChangePassword.value = false;
-                // Best-effort, and isolated from this form's own error handling below: the change
-                // itself already succeeded, and a failed (or synchronously throwing) refresh here
-                // must only leave the sessions panel stale, never surface as this form's error.
+                /**
+                 * Best-effort, and isolated from this form's own error handling below: the change
+                 * itself already succeeded, and a failed (or synchronously throwing) refresh here
+                 * must only leave the sessions panel stale, never surface as this form's error.
+                 */
                 Promise.resolve()
                     .then(() => fetchSessions())
                     .catch(() => undefined);

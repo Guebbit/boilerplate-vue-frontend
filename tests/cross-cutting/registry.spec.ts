@@ -133,8 +133,10 @@ describe.each(localeCodes)('locale dictionaries — %s', (locale) => {
                 }))
             );
 
-            // Named rather than counted: the message has to say WHICH namespace and WHO, or the
-            // failure is a scavenger hunt through seven JSON files.
+            /**
+             * Named rather than counted: the message has to say WHICH namespace and WHO, or the
+             * failure is a scavenger hunt through seven JSON files.
+             */
             expect(clashes).toEqual({});
         }));
 

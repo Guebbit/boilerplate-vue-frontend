@@ -241,8 +241,10 @@ const {
 } = useStructureFormValidation(
     {
         handlingDeduction: '',
-        // The buyer's wish is preselected; staff may give another (Art. 13(3)). A refund that
-        // opened on the proof of sending is the only remedy left.
+        /**
+         * The buyer's wish is preselected; staff may give another (Art. 13(3)). A refund that
+         * opened on the proof of sending is the only remedy left.
+         */
         remedy: props.item.refundOnProof ? 'refund' : (props.item.preferredRemedy ?? 'refund'),
         restock: startingRestock()
     },
@@ -422,9 +424,11 @@ const run = (
             emit('changed');
         })
         .catch((error: unknown) => {
-            // `onUnmapped` also runs, with `[]`, for a rejection that carried no field or form
-            // message at all (a bare 409, a network failure): the blocking alert is then the only
-            // thing the staff member sees. A move with no form has no field to land on.
+            /**
+             * `onUnmapped` also runs, with `[]`, for a rejection that carried no field or form
+             * message at all (a bare 409, a network failure): the blocking alert is then the only
+             * thing the staff member sees. A move with no form has no field to land on.
+             */
             if (applyFieldErrors)
                 applyFieldErrors(error, { onUnmapped: () => reportMoveError(error) });
             else reportMoveError(error);

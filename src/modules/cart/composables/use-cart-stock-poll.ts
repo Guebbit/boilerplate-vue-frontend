@@ -63,8 +63,10 @@ export const useCartStockPoll = (): void => {
      */
     const ended = ref(false);
 
-    // Vue `watch`: latches the first time the owner is gone, so a later switch back does not resume it.
-    // https://vuejs.org/api/reactivity-core.html#watch
+    /**
+     * Vue `watch`: latches the first time the owner is gone, so a later switch back does not resume it.
+     * https://vuejs.org/api/reactivity-core.html#watch
+     */
     watch(stillOwner, (still) => {
         if (!still) ended.value = true;
     });
@@ -106,17 +108,21 @@ export const useCartStockPoll = (): void => {
         timer = undefined;
     };
 
-    // Vue `watch`: starts or stops the interval as the conditions change. `immediate` starts it
-    // for a page that opens ready; the page has just read the cart, so that start reads nothing.
-    // Coming back from hidden is the one start that does, since the tab may have missed a lot.
-    // https://vuejs.org/api/reactivity-core.html#watch
+    /**
+     * Vue `watch`: starts or stops the interval as the conditions change. `immediate` starts it
+     * for a page that opens ready; the page has just read the cart, so that start reads nothing.
+     * Coming back from hidden is the one start that does, since the tab may have missed a lot.
+     * https://vuejs.org/api/reactivity-core.html#watch
+     */
     watch(
         () => stillOwner.value && !ended.value && visible.value,
         (running, wasRunning) => {
             stop();
             if (!running) return;
-            // setInterval: calls `tick` every `intervalMs` milliseconds until cleared.
-            // https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval
+            /**
+             * setInterval: calls `tick` every `intervalMs` milliseconds until cleared.
+             * https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval
+             */
             timer = setInterval(tick, intervalMs);
             if (wasRunning === false) tick();
         },

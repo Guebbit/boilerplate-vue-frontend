@@ -35,8 +35,10 @@ export const useLanguageSwitch = () => {
 
     const route = useRoute();
 
-    // `te` (its "does this key exist" check) is read off the instance directly, so it stays
-    // bound to it instead of floating as an unbound method reference.
+    /**
+     * `te` (its "does this key exist" check) is read off the instance directly, so it stays
+     * bound to it instead of floating as an unbound method reference.
+     */
     const i18n = useI18n();
 
     const { t, locale } = i18n;

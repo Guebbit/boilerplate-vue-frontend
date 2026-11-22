@@ -26,8 +26,10 @@ export const sendKeepalive = (
 ): void => {
     const { accessToken, hasSession } = storeToRefs(useSessionStore());
     if (!hasSession.value) return;
-    // https://developer.mozilla.org/docs/Web/API/Request/keepalive — `keepalive` lets the request
-    // finish after the page is gone; the body is capped at 64 KiB, far above a quantity.
+    /**
+     * https://developer.mozilla.org/docs/Web/API/Request/keepalive — `keepalive` lets the request
+     * finish after the page is gone; the body is capped at 64 KiB, far above a quantity.
+     */
     fetch(`${instance.defaults.baseURL ?? ''}${path}`, {
         method,
         keepalive: true,

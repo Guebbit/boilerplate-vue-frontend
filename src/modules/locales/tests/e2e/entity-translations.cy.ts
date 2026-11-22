@@ -67,8 +67,10 @@ describe('Entity translations — the generic admin door', () => {
      */
     describe('on a touch screen', () => {
         it('keeps the language when a swipe starts inside a field', () => {
-            // Two languages besides the default one: the default is the product's own text and has
-            // no tab here. Rows come back sorted by locale, so Spanish opens first.
+            /**
+             * Two languages besides the default one: the default is the product's own text and has
+             * no tab here. Rows come back sorted by locale, so Spanish opens first.
+             */
             cy.createProduct({
                 title: `EN swipe ${Date.now()}`,
                 translations: {

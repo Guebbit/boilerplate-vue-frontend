@@ -37,8 +37,10 @@ export interface MeasuredRun {
  * @param totpSecret - the account's base32 authenticator secret
  */
 const answerChallenge = (page: Page, totpSecret: string): Promise<void> =>
-    // Puppeteer: wait for the element to appear in the DOM.
-    // https://pptr.dev/api/puppeteer.page.waitforselector
+    /**
+     * Puppeteer: wait for the element to appear in the DOM.
+     * https://pptr.dev/api/puppeteer.page.waitforselector
+     */
     page
         .waitForSelector('#two-factor-challenge-page')
         .then(() => loginTotpCodeFor(totpSecret, AUDIT_API_URL))
@@ -70,9 +72,11 @@ const signIn = (
         .then(() =>
             credentials.totpSecret ? answerChallenge(page, credentials.totpSecret) : undefined
         )
-        // Puppeteer: poll in the page until the address has left /login (the challenge page
-        // lives under it too, so a refused code times out here, naming the account).
-        // https://pptr.dev/api/puppeteer.page.waitforfunction
+        /**
+         * Puppeteer: poll in the page until the address has left /login (the challenge page
+         * lives under it too, so a refused code times out here, naming the account).
+         * https://pptr.dev/api/puppeteer.page.waitforfunction
+         */
         .then(() => page.waitForFunction(() => !location.pathname.includes('/login')))
         .then(() => undefined)
         .catch((error: unknown) => {
@@ -115,9 +119,11 @@ const toReport = (lhr: Result): Report => ({
  * One Lighthouse run of `url` on `page`.
  */
 const measureOnce = (page: Page, url: string, port: number): Promise<MeasuredRun> =>
-    // lighthouse(url, flags, config, page): the page is the one already signed in; no config means
-    // Lighthouse's default (mobile) with the flags layered on top.
-    // https://github.com/GoogleChrome/lighthouse/blob/main/docs/puppeteer.md
+    /**
+     * lighthouse(url, flags, config, page): the page is the one already signed in; no config means
+     * Lighthouse's default (mobile) with the flags layered on top.
+     * https://github.com/GoogleChrome/lighthouse/blob/main/docs/puppeteer.md
+     */
     lighthouse(url, lighthouseFlags(port), undefined, page).then((result) => {
         if (!result) throw new Error(`Lighthouse returned nothing for ${url}`);
         const html = Array.isArray(result.report) ? result.report[0] : result.report;

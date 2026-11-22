@@ -16,8 +16,10 @@ describe('inventory dialogs by keyboard', () => {
     it('the allowance dialog traps Tab, closes on Escape and hands focus back', () => {
         cy.visit('/en/inventory');
         cy.get('[data-test=level-row]').should('exist');
-        // The first row's own button: a native selector, because the helper also asks the
-        // document whether the opener survived the dialog.
+        /**
+         * The first row's own button: a native selector, because the helper also asks the
+         * document whether the opener survived the dialog.
+         */
         expectDialogKeyboardPattern(
             'tbody tr:nth-child(1) [data-test=level-backorder-limit]',
             '[data-test=backorder-limit-dialog]'

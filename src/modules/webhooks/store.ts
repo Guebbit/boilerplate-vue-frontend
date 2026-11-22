@@ -111,8 +111,10 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         AxiosRequestConfig
     >(
         {
-            // Backfills the cache for the deliveries filter dropdown — not the list screen's own
-            // search, which is paginated below.
+            /**
+             * Backfills the cache for the deliveries filter dropdown — not the list screen's own
+             * search, which is paginated below.
+             */
             list: () => listWebhookSubscriptions({ pageSize: MAX_PAGE_SIZE }).then((r) => r.items),
 
             search: (filters, page, pageSize) =>
@@ -269,8 +271,10 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         pageSize: deliveryPageSize,
         pageTotal: deliveriesPageTotal,
         pageItemList: deliveryPageItemList,
-        // Total delivery rows matching the current filters, across every page — what the
-        // "showing X of Y" line counts with, as distinct from `deliveriesPageTotal`'s page count.
+        /**
+         * Total delivery rows matching the current filters, across every page — what the
+         * "showing X of Y" line counts with, as distinct from `deliveriesPageTotal`'s page count.
+         */
         totalItems: deliveriesTotalItems,
 
         watchList: watchDeliveriesSearch,

@@ -27,10 +27,12 @@ const loadZxcvbn = (): Promise<ZxcvbnFactory> => {
     ])
         .then(
             ([{ ZxcvbnFactory }, commonPackage, enPackage]) =>
-                // zxcvbn-ts `new ZxcvbnFactory(options)`: `dictionary` = word lists to match
-                // against, `graphs` = keyboard adjacency for pattern detection,
-                // `translations` = the feedback wording.
-                // https://zxcvbn-ts.github.io/zxcvbn/guide/getting-started/
+                /**
+                 * zxcvbn-ts `new ZxcvbnFactory(options)`: `dictionary` = word lists to match
+                 * against, `graphs` = keyboard adjacency for pattern detection,
+                 * `translations` = the feedback wording.
+                 * https://zxcvbn-ts.github.io/zxcvbn/guide/getting-started/
+                 */
                 new ZxcvbnFactory({
                     dictionary: {
                         ...commonPackage.dictionary,
@@ -40,8 +42,10 @@ const loadZxcvbn = (): Promise<ZxcvbnFactory> => {
                     translations: enPackage.translations
                 })
         )
-        // A transient failure (e.g. offline) must not cache a broken promise forever — the next
-        // keystroke gets a fresh attempt instead of a permanently silent meter.
+        /**
+         * A transient failure (e.g. offline) must not cache a broken promise forever — the next
+         * keystroke gets a fresh attempt instead of a permanently silent meter.
+         */
         .catch((error: unknown) => {
             zxcvbnPromise = undefined;
             throw error;
@@ -68,9 +72,11 @@ export const usePasswordStrength = (password: Ref<string>) => {
                 score.value = undefined;
                 return;
             }
-            // Fire-and-forget: the score is read reactively from `score`, and the guard inside
-            // handles a keystroke that lands before the (usually cached) chunk resolves. A failed
-            // chunk load (e.g. offline) just means no meter shows — advisory only, nothing to gate.
+            /**
+             * Fire-and-forget: the score is read reactively from `score`, and the guard inside
+             * handles a keystroke that lands before the (usually cached) chunk resolves. A failed
+             * chunk load (e.g. offline) just means no meter shows — advisory only, nothing to gate.
+             */
             void loadZxcvbn()
                 .then((zxcvbn) => {
                     // A newer keystroke, or an emptied field, may land before the chunk resolves.

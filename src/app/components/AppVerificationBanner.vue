@@ -88,8 +88,10 @@ const handleResendVerification = () => {
             addMessage(t('verification-banner.sent'));
         })
         .catch((error) => {
-            // Signup already sent the first link, so the first press can land inside the
-            // server's cooldown: count down ITS number rather than leave the button pressable.
+            /**
+             * Signup already sent the first link, so the first press can land inside the
+             * server's cooldown: count down ITS number rather than leave the button pressable.
+             */
             startCooldown(emailVerifyResendRetryAfter(error) ?? 0);
             notifyErrorMessages(addMessage, error);
         });

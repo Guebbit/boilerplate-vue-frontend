@@ -45,8 +45,10 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        // The caller's own rules. The session store fetches these for every identified viewer,
-        // so every spec that logs somebody in needs an answer for them.
+        /**
+         * The caller's own rules. The session store fetches these for every identified viewer,
+         * so every spec that logs somebody in needs an answer for them.
+         */
         'POST /account/login': { token: 'jwt-token' },
         'GET /account': accountView({ id: 'u1', username: 'ada', email: 'ada@example.com' })
     };

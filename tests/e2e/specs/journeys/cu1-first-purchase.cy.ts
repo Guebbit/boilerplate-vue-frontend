@@ -79,8 +79,10 @@ describe('CU1 · First purchase, from nothing', { tags: '@smoke' }, () => {
         cy.get('[data-test=address-dialog]').should('not.exist');
 
         cy.step('reads the cart: the total is the items plus the shipping');
-        // Two cheap lines on purpose: standard shipping is free from 100 up, and a total with
-        // nothing added for shipping would prove nothing about the sum.
+        /**
+         * Two cheap lines on purpose: standard shipping is free from 100 up, and a total with
+         * nothing added for shipping would prove nothing about the sum.
+         */
         const cart = { items: 0, shipping: 0 };
         centsOf('[data-test=cart-items-total]').then((items) => {
             cart.items = items;
@@ -108,16 +110,20 @@ describe('CU1 · First purchase, from nothing', { tags: '@smoke' }, () => {
         cy.step('reads the order page against the cart');
         cy.get('[data-test=order-number]').invoke('text').should('match', /\d/);
         cy.get('[data-test=order-item-line-total]').should('have.length', 2);
-        // Billing was left on "same as the shipping address", so the order carries the one
-        // address twice: shipped to it and invoiced to it.
+        /**
+         * Billing was left on "same as the shipping address", so the order carries the one
+         * address twice: shipped to it and invoiced to it.
+         */
         cy.get('[data-test=order-shipping-address]').should('contain.text', 'Via Emilia 1');
         cy.get('[data-test=order-billing-address]').should('contain.text', 'Via Emilia 1');
         cy.get('[data-test=order-item-line-total]').then(($lines) => {
             const sum = sumCents($lines.toArray().map((line) => line.textContent ?? ''));
             expect(sum, 'the order lines add up to the cart items').to.equal(cart.items);
         });
-        // Callbacks, not bare arguments: Cypress queues the whole body before the cart reads above
-        // have run, so a value written here would be the zero they start as.
+        /**
+         * Callbacks, not bare arguments: Cypress queues the whole body before the cart reads above
+         * have run, so a value written here would be the zero they start as.
+         */
         centsOf('[data-test=order-shipping]').should((shipping) => {
             expect(shipping, 'the order froze the cart’s shipping').to.equal(cart.shipping);
         });
@@ -146,8 +152,10 @@ describe('CU1 · First purchase, from nothing', { tags: '@smoke' }, () => {
         });
 
         cy.step('finds the order mail, which points at this order');
-        // The shop mails a link to the order and its receipt, never the invoice itself: the PDF
-        // is issued on payment and fetched from the order page above.
+        /**
+         * The shop mails a link to the order and its receipt, never the invoice itself: the PDF
+         * is issued on payment and fetched from the order page above.
+         */
         cy.location('pathname').then((path) => {
             const orderId = String(path.split('/').at(-1));
             cy.emailTo(EMAIL, (mail) => mailMentions(mail, `/orders/${orderId}`));

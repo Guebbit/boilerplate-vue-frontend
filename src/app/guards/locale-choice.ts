@@ -36,8 +36,10 @@ import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router';
  * @returns tuple of `[locale, translationDictionary]`
  */
 export const fetchLanguageApi = (locale: string): Promise<[string, TranslationDictionaries]> => {
-    // Supported by neither side — `supportedLanguages` already includes anything the API
-    // reported at boot. Nothing to import and nothing to fetch, so return before doing either.
+    /**
+     * Supported by neither side — `supportedLanguages` already includes anything the API
+     * reported at boot. Nothing to import and nothing to fetch, so return before doing either.
+     */
     if (!supportedLanguages.includes(locale)) return Promise.resolve([locale, {}]);
 
     return (
@@ -45,12 +47,16 @@ export const fetchLanguageApi = (locale: string): Promise<[string, TranslationDi
         // `import("")` that Vite cannot statically analyse, so the whole module fails to
         // transform and every suite errors out instead of one mutant surviving.
         import(`@/locales/${locale}.json`)
-            // A dynamic import with a template-string specifier resolves to `any` — TypeScript
-            // cannot statically know which module it names — so the callback's own parameter is
-            // typed honestly instead of accessing `.default` on that `any`.
+            /**
+             * A dynamic import with a template-string specifier resolves to `any` — TypeScript
+             * cannot statically know which module it names — so the callback's own parameter is
+             * typed honestly instead of accessing `.default` on that `any`.
+             */
             .then((module: { default: unknown }) => module.default as TranslationDictionaries)
-            // A language this build bundles no file for has nothing to import: an empty base is
-            // the correct result, not an error. Its overrides become the whole dictionary.
+            /**
+             * A language this build bundles no file for has nothing to import: an empty base is
+             * the correct result, not an error. Its overrides become the whole dictionary.
+             */
             .catch((): TranslationDictionaries => ({}))
             .then((ownMessages) => withLocaleOverrides(locale, ownMessages))
             .then((messages): [string, TranslationDictionaries] => [locale, messages])
@@ -137,35 +143,45 @@ export const localeChoice = (to: RouteLocationNormalized): Promise<true | RouteL
     // Locale segment coming from the URL (may be undefined on locale-less routes)
     const requested = to.params.locale as string;
 
-    // A supported tag in another casing (`/pt-br/`) is the same language at the wrong address:
-    // send it to the canonical one rather than to the default language.
+    /**
+     * A supported tag in another casing (`/pt-br/`) is the same language at the wrong address:
+     * send it to the canonical one rather than to the default language.
+     */
     const locale = supportedSpellingOf(requested) ?? requested;
     if (locale !== requested) return Promise.resolve(redirectTo(to, locale));
 
-    // Recorded before any async work starts, so a slower CONCURRENT chain for an earlier
-    // navigation can tell it has been superseded — see `activateIfLatest`.
+    /**
+     * Recorded before any async work starts, so a slower CONCURRENT chain for an earlier
+     * navigation can tell it has been superseded — see `activateIfLatest`.
+     */
     latestRequestedLocale = locale;
 
-    // Already loaded: just make sure it is the active language and proceed.
-    // (covers back/forward navigation and direct URLs between loaded locales)
+    /**
+     * Already loaded: just make sure it is the active language and proceed.
+     * (covers back/forward navigation and direct URLs between loaded locales)
+     */
     if (loadedLanguages.includes(locale))
         return (getCurrentLocale() === locale ? Promise.resolve() : activateIfLatest(locale)).then(
             () => true as const
         );
 
-    // Supported but not yet loaded: fetch it, register the messages, activate it — every
-    // activation funnels through here, whether the navigation came from a language switcher, a
-    // saved profile preference or a locale-less deep link, so an edited translation shows
-    // regardless of how this locale first got loaded.
+    /**
+     * Supported but not yet loaded: fetch it, register the messages, activate it — every
+     * activation funnels through here, whether the navigation came from a language switcher, a
+     * saved profile preference or a locale-less deep link, so an edited translation shows
+     * regardless of how this locale first got loaded.
+     */
     if (supportedLanguages.includes(locale))
         return fetchLanguageApi(locale)
             .then(([lang, vocabulary]) => updateLocale(lang, vocabulary).then(() => lang))
             .then((lang) => activateIfLatest(lang))
             .then(() => true as const);
 
-    // Missing, unsupported or empty locale: redirect to the same route with the
-    // browser/default locale injected into the params.
-    //
-    // `Promise.resolve` rather than a bare object: the guard is declared to return a promise.
+    /**
+     * Missing, unsupported or empty locale: redirect to the same route with the
+     * browser/default locale injected into the params.
+     *
+     * `Promise.resolve` rather than a bare object: the guard is declared to return a promise.
+     */
     return Promise.resolve(redirectTo(to, getDefaultLocale()));
 };

@@ -75,8 +75,10 @@ export const formatDate = (value?: string | null) =>
     formatDateTimeBase(value, {
         locale: getLocale(),
         empty: EMPTY_VALUE,
-        // An explicit numeric date rather than `toLocaleDateString()`'s default, which is the
-        // same thing but leaves the choice to the runtime.
+        /**
+         * An explicit numeric date rather than `toLocaleDateString()`'s default, which is the
+         * same thing but leaves the choice to the runtime.
+         */
         format: { year: 'numeric', month: 'numeric', day: 'numeric' }
     });
 
@@ -162,8 +164,10 @@ export const formatCurrency = (
     if (typeof value !== 'string' || !isDecimal(value)) return EMPTY_VALUE;
     const places = decimalScale(value);
     const digits = { minimumFractionDigits: places, maximumFractionDigits: places };
-    // `format` takes the exact decimal text, so no float rounds the amount on the way in.
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/format#using_format_with_a_string
+    /**
+     * `format` takes the exact decimal text, so no float rounds the amount on the way in.
+     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/format#using_format_with_a_string
+     */
     const exact = value as `${number}`;
     // `Intl` throws a RangeError for a malformed code (not three letters): show the bare number.
     const options: Intl.NumberFormatOptions = WELL_FORMED_CURRENCY.test(currency)

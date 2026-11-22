@@ -37,8 +37,10 @@ describe('loginContinueTo', () => {
     });
 
     it('carries no params at all when no locale is given', () => {
-        // `undefined` rather than `{}`: an empty params object makes vue-router resolve a
-        // locale-less `Login`, which the `/:locale` parent cannot match.
+        /**
+         * `undefined` rather than `{}`: an empty params object makes vue-router resolve a
+         * locale-less `Login`, which the `/:locale` parent cannot match.
+         */
         expect(loginContinueTo('/cart')).toEqual({
             name: 'Login',
             params: undefined,
@@ -51,8 +53,10 @@ describe('loginContinueTo', () => {
     });
 
     it('matches on the word anywhere in the path, not only as a leading segment', () => {
-        // The check is `includes`, so a nested error route is covered too. Pinned because
-        // tightening it to `startsWith` would silently reintroduce the bounce-back.
+        /**
+         * The check is `includes`, so a nested error route is covered too. Pinned because
+         * tightening it to `startsWith` would silently reintroduce the bounce-back.
+         */
         expect(loginContinueTo('/en/admin/error/500', 'en')).toEqual({
             name: 'Login',
             params: { locale: 'en' }

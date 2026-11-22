@@ -136,8 +136,10 @@ describe('TaskInbox message', () => {
 });
 
 describe('TaskInbox unknown kind', () => {
-    // Production validation is report-only: a response passes through as it arrived
-    // (`isReportOnly` in `src/infrastructure/http/validate.ts`).
+    /**
+     * Production validation is report-only: a response passes through as it arrived
+     * (`isReportOnly` in `src/infrastructure/http/validate.ts`).
+     */
     beforeEach(() => {
         vi.stubEnv('PROD', true);
         vi.stubEnv('VITE_CONTRACT_THROW', '');

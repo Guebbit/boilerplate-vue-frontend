@@ -182,8 +182,10 @@ const handleSave = () =>
               )
             : toRequestBody('CreateAddressBody', {
                   ...fields,
-                  // Only ever `true`, never `false`: the backend ignores a `false` here entirely, and
-                  // the only way to demote an entry is making a DIFFERENT one the default instead.
+                  /**
+                   * Only ever `true`, never `false`: the backend ignores a `false` here entirely, and
+                   * the only way to demote an entry is making a DIFFERENT one the default instead.
+                   */
                   ...(offerSetAsDefault.value && setAsDefaultOnAdd.value ? { default: true } : {})
               }).then((body) => addAddress(body));
         return save

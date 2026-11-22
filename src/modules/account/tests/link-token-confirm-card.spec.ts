@@ -45,8 +45,10 @@ const mountPage = (
 ) => {
     const spend = vi.spyOn(useAccountProfileStore(), action).mockResolvedValue(undefined);
     const wrapper = mount(page, { global: { plugins: [router, vuetify, i18n] } });
-    // Spied only once mounted, so the fragment scrub (a `replace`) still runs for real; the
-    // success redirect's target is the assertion, not where the test router can actually go.
+    /**
+     * Spied only once mounted, so the fragment scrub (a `replace`) still runs for real; the
+     * success redirect's target is the assertion, not where the test router can actually go.
+     */
     const navigate = vi.spyOn(router, 'push').mockResolvedValue(undefined);
     return { wrapper, spend, navigate };
 };

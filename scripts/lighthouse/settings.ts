@@ -30,8 +30,10 @@ export const lighthouseFlags = (port: number): Flags & Pick<CliFlags, 'enableErr
     port,
     output: 'html',
     logLevel: 'error',
-    // The Node API never asks Sentry anything; this makes that explicit.
-    // https://github.com/GoogleChrome/lighthouse/blob/main/readme.md#sentry
+    /**
+     * The Node API never asks Sentry anything; this makes that explicit.
+     * https://github.com/GoogleChrome/lighthouse/blob/main/readme.md#sentry
+     */
     enableErrorReporting: false,
     formFactor: 'mobile',
     throttlingMethod: 'simulate',

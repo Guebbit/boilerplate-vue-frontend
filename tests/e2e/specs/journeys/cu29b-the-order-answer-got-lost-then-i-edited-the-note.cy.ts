@@ -49,8 +49,10 @@ describe('CU29b · Lost answer, then a different note', () => {
         const keys: string[] = [];
         cy.intercept('POST', '**/cart/checkout', (request) => {
             keys.push(String(request.headers['idempotency-key'] ?? ''));
-            // `response` fires once the real server has answered: swapping the status HERE is
-            // "applied, then lost". https://docs.cypress.io/api/commands/intercept#Intercepted-responses
+            /**
+             * `response` fires once the real server has answered: swapping the status HERE is
+             * "applied, then lost". https://docs.cypress.io/api/commands/intercept#Intercepted-responses
+             */
             if (keys.length === 1) request.on('response', (response) => response.send(502));
         }).as('checkout');
         cy.get('[data-test=cart-checkout]').click();

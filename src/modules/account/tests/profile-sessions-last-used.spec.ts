@@ -38,8 +38,10 @@ vi.mock('../stores/sessions.ts', () => ({
     })
 }));
 
-// The sessions store above is a plain object, not a real Pinia store — `storeToRefs` only knows
-// how to unwrap the latter. An identity pass-through is enough for a read-only render assertion.
+/**
+ * The sessions store above is a plain object, not a real Pinia store — `storeToRefs` only knows
+ * how to unwrap the latter. An identity pass-through is enough for a read-only render assertion.
+ */
 vi.mock('pinia', async (importOriginal) => ({
     ...(await importOriginal<typeof import('pinia')>()),
     storeToRefs: (store: unknown) => store

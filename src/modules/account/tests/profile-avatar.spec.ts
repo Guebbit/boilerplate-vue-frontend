@@ -72,9 +72,11 @@ beforeEach(() => {
     vi.clearAllMocks();
     responses = {
         'GET /account': accountView(USER),
-        // The rules the server would publish for this viewer. The store unpacks them with CASL's
-        // own reader, so a fixture that is not packed is a fixture no client could use.
-        // PATCH, not PUT — `updateProfile` sends only the fields it was given.
+        /**
+         * The rules the server would publish for this viewer. The store unpacks them with CASL's
+         * own reader, so a fixture that is not packed is a fixture no client could use.
+         * PATCH, not PUT — `updateProfile` sends only the fields it was given.
+         */
         'PATCH /account': { ...USER, imageUrl: undefined }
     };
 });
@@ -139,8 +141,10 @@ describe('an imageUpload switches the call to multipart', () => {
             .then(() => store.updateProfile({ imageUpload: file }))
             .then(() => {
                 const seen = calls().map(({ method, url }) => `${method?.toUpperCase()} ${url}`);
-                // ...GET, PUT, GET: the write, then the re-read `updateProfile` always chains.
-                // The idle-clock read that follows the viewer reload may land after it.
+                /**
+                 * ...GET, PUT, GET: the write, then the re-read `updateProfile` always chains.
+                 * The idle-clock read that follows the viewer reload may land after it.
+                 */
                 const write = seen.findLastIndex((call) => call.startsWith('PATCH '));
                 expect(seen.slice(write + 1)).toContain('GET /account');
             });
@@ -176,8 +180,10 @@ describe('each avatar path owns its loading key', () => {
         return store.fetchProfile(true).then(() => {
             const release = gateNextCall();
             const pending = store.updateProfile({ imageUpload: file });
-            // The composable cancels in-flight queries before it raises the flag, so the write
-            // is a tick away from being counted, not synchronous with the call.
+            /**
+             * The composable cancels in-flight queries before it raises the flag, so the write
+             * is a tick away from being counted, not synchronous with the call.
+             */
             return vi
                 .waitFor(() => expect(store.uploadingAvatar).toBe(true))
                 .then(() => {
@@ -216,8 +222,10 @@ describe('each avatar path owns its loading key', () => {
         return store.fetchProfile(true).then(() => {
             const release = gateNextCall();
             const pending = store.updateProfile({ username: 'ada2' });
-            // The store's own key rises, proving the call is counted — under the plain key,
-            // with neither avatar flag following it.
+            /**
+             * The store's own key rises, proving the call is counted — under the plain key,
+             * with neither avatar flag following it.
+             */
             return vi
                 .waitFor(() => expect(store.loading).toBe(true))
                 .then(() => {

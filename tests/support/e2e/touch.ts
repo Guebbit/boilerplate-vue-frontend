@@ -170,8 +170,10 @@ Cypress.Commands.add(
                 `enableTouch: touch emulation needs a Chromium-family browser (${browserLabel()}); a phone case that passes without touch proves nothing`
             );
         Cypress.log({ name: 'enableTouch', displayName: 'TOUCH', message: 'on' });
-        // `enabled`: switch on. `maxTouchPoints`: how many fingers the page believes the screen
-        // takes (5, a typical phone).
+        /**
+         * `enabled`: switch on. `maxTouchPoints`: how many fingers the page believes the screen
+         * takes (5, a typical phone).
+         */
         return sendTouchEmulation({
             enabled: true,
             maxTouchPoints: 5
@@ -202,11 +204,13 @@ Cypress.Commands.add(
     'shouldBeTappable',
     { prevSubject: true },
     asStub<Cypress.CommandFn<'shouldBeTappable'>>((subject: JQuery) => {
-        // Scrolled before the visibility check: Cypress calls an element clipped by a scrolling
-        // container (a long drawer) not visible, and a finger would scroll to it first.
-        // Centred, not top-aligned: a top-aligned element sits under the sticky app bar, where
-        // the hit test below would then (rightly) call it covered.
-        // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView
+        /**
+         * Scrolled before the visibility check: Cypress calls an element clipped by a scrolling
+         * container (a long drawer) not visible, and a finger would scroll to it first.
+         * Centred, not top-aligned: a top-aligned element sits under the sticky app bar, where
+         * the hit test below would then (rightly) call it covered.
+         * https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView
+         */
         cy.wrap(subject, { log: false }).then(($element) => {
             $element.get(0)?.scrollIntoView({ block: 'center', inline: 'center' });
         });
@@ -268,8 +272,10 @@ Cypress.Commands.add(
     'tap',
     { prevSubject: true },
     asStub<Cypress.CommandFn<'tap'>>((subject: JQuery) =>
-        // `realTouch` (cypress-real-events) sends CDP touch input but checks nothing itself,
-        // so the actionability checks come first, then a wait for the box to hold still.
+        /**
+         * `realTouch` (cypress-real-events) sends CDP touch input but checks nothing itself,
+         * so the actionability checks come first, then a wait for the box to hold still.
+         */
         cy.wrap(subject, { log: false }).shouldBeTappable().then(settled).realTouch()
     )
 );

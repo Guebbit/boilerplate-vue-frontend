@@ -30,8 +30,10 @@ const mountMainLandmark = () => {
 beforeEach(() => {
     document.body.replaceChildren();
     routeAnnouncement.value = '';
-    // The pending flag is module state and a test that requested focus without consuming it would
-    // leak into the next one. Draining it here makes each test start from "nothing pending".
+    /**
+     * The pending flag is module state and a test that requested focus without consuming it would
+     * leak into the next one. Draining it here makes each test start from "nothing pending".
+     */
     consumeMainFocus();
 });
 
@@ -53,9 +55,11 @@ describe('announceRouteChange', () => {
         });
     });
 
-    // The bug this guards: a same-value ref assignment is a no-op in Vue's reactivity, so setting
-    // the announcement straight to a repeated title would never mutate the live region a second
-    // time, and a screen reader would stay silent on the second of two same-titled pages.
+    /**
+     * The bug this guards: a same-value ref assignment is a no-op in Vue's reactivity, so setting
+     * the announcement straight to a repeated title would never mutate the live region a second
+     * time, and a screen reader would stay silent on the second of two same-titled pages.
+     */
     it('mutates the live region twice even when the new title repeats the last one', () => {
         const seen: string[] = [];
         return announceRouteChange('Products')
@@ -92,8 +96,10 @@ describe('consumeMainFocus', () => {
         requestMainFocus();
 
         expect(consumeMainFocus()).toBe(true);
-        // `preventScroll` matters: the router has already restored the scroll position, and
-        // focusing without it would yank the page back to the landmark.
+        /**
+         * `preventScroll` matters: the router has already restored the scroll position, and
+         * focusing without it would yank the page back to the landmark.
+         */
         expect(focus).toHaveBeenCalledWith({ preventScroll: true });
         expect(document.activeElement).toBe(main);
     });

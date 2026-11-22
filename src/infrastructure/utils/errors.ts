@@ -90,8 +90,10 @@ export const isAnswered = (error: unknown): error is AnsweredRejection =>
     typeof error === 'object' &&
     'status' in error &&
     typeof error.status === 'number' &&
-    // `onResponseReject` (`http/interceptors.ts`) writes `status: 0` exactly for the case where no
-    // `response` arrived at all — never for an answered request.
+    /**
+     * `onResponseReject` (`http/interceptors.ts`) writes `status: 0` exactly for the case where no
+     * `response` arrived at all — never for an answered request.
+     */
     error.status !== 0;
 
 /**

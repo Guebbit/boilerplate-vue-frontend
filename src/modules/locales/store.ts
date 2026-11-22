@@ -380,8 +380,10 @@ export const useLocalesStore = defineStore('locales', () => {
                 // The new row's page position is the server's call, so cached pages are stale.
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises -- invalidateQueries resolves even when a refetch fails (no throwOnError)
                 void invalidateEntrySearches();
-                // The write bumped the dictionary revision; hold the new tag so a later import's
-                // `If-Match` is not stale against our own write.
+                /**
+                 * The write bumped the dictionary revision; hold the new tag so a later import's
+                 * `If-Match` is not stale against our own write.
+                 */
                 return resolveAfterTagRefresh(tag, response);
             })
         );
@@ -440,12 +442,16 @@ export const useLocalesStore = defineStore('locales', () => {
         app: string,
         rows: DictionaryRow[]
     ): Promise<LocaleImportResult | undefined> => {
-        // The body is a key-to-text map. The dialog has already refused a key named twice, so
-        // `fromEntries` loses nothing.
+        /**
+         * The body is a key-to-text map. The dialog has already refused a key named twice, so
+         * `fromEntries` loses nothing.
+         */
         const entries = Object.fromEntries(rows.map(({ key, value }) => [key, value]));
-        // No `If-Match`: a whole-dictionary tag cannot say WHICH key a colleague changed, so the
-        // dialog warns before the import instead. The transport would still attach the tag it
-        // holds for the target app's list URL, so that one is dropped first.
+        /**
+         * No `If-Match`: a whole-dictionary tag cannot say WHICH key a colleague changed, so the
+         * dialog warns before the import instead. The transport would still attach the tag it
+         * holds for the target app's list URL, so that one is dropped first.
+         */
         forgetEtag(`/locales/${tag}/apps/${app}/entries`);
         return fetchAny(() =>
             (mode === 'replace'
@@ -519,8 +525,10 @@ export const useLocalesStore = defineStore('locales', () => {
     ): Promise<Pick<EntityTranslations, 'source' | 'translations' | 'fields'> | undefined> =>
         fetchAny(
             () => apiUpdateEntityTranslations(entityType, entityId, body),
-            // Own bucket so the save button spins apart from every read; `forced` because a keyed
-            // fetchAny would otherwise be served from cache.
+            /**
+             * Own bucket so the save button spins apart from every read; `forced` because a keyed
+             * fetchAny would otherwise be served from cache.
+             */
             { key: ['entity-translations-save'], forced: true }
         );
 

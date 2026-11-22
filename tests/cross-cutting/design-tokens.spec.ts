@@ -128,8 +128,10 @@ describe('design tokens, the stylesheet half', () => {
     });
 
     it('generates the two lighten and two darken steps `ThemeColor` spells out', () => {
-        // `src/ui/types.ts` writes the levels as `1 | 2`; a third step added to `variations`
-        // must be added there too.
+        /**
+         * `src/ui/types.ts` writes the levels as `1 | 2`; a third step added to `variations`
+         * must be added there too.
+         */
         expect([variations.lighten, variations.darken]).toEqual([2, 2]);
     });
 });

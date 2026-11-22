@@ -55,8 +55,10 @@ const productsPriceSchema = z
  */
 const productTranslationFieldsSchema = z.object({
     title: productsTitleSchema,
-    // `.optional()`, not `.nullish()`: the write contract's `ProductTranslationFields.description`
-    // has no `null` arm — omitting the key is how the field stays unset.
+    /**
+     * `.optional()`, not `.nullish()`: the write contract's `ProductTranslationFields.description`
+     * has no `null` arm — omitting the key is how the field stays unset.
+     */
     description: z
         .string()
         .max(createProductBodyTranslationsDescriptionMax, {

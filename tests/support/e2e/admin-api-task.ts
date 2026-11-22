@@ -39,8 +39,10 @@ type Payload<T> = T & { title?: string; detail?: string; errors?: unknown };
  * whether a URL, a cap or a field was refused, and a run that fails once cannot be asked again.
  */
 const unwrap = <T>(response: Response, context: string): Promise<T> =>
-    // A body-less answer (204, or the 202 `POST /tasks` gives) has nothing to parse; the resource
-    // itself is the payload of every other success.
+    /**
+     * A body-less answer (204, or the 202 `POST /tasks` gives) has nothing to parse; the resource
+     * itself is the payload of every other success.
+     */
     response
         .text()
         .then((text): Payload<T> | undefined =>
@@ -159,8 +161,10 @@ const sendWith = (
         headers: {
             ...jsonHeaders,
             Authorization: `Bearer ${token}`,
-            // A fresh key on every write: the do-not-retry routes (refund, ship, stock receipt and
-            // adjustment) refuse a request without one, and any other route ignores it.
+            /**
+             * A fresh key on every write: the do-not-retry routes (refund, ship, stock receipt and
+             * adjustment) refuse a request without one, and any other route ignores it.
+             */
             ...(method === 'GET' ? {} : { 'Idempotency-Key': randomUUID() })
         },
         body: body === undefined ? undefined : JSON.stringify(body)
@@ -174,8 +178,10 @@ const sendWith = (
 export const adminApi = <T>(request: AdminApiRequest): Promise<T | null> => {
     const { apiUrl, path, method, email, password, totpSecret } = request;
     const key = `${apiUrl}|${email}`;
-    // A task must resolve to something serialisable, and `undefined` makes Cypress fail the
-    // command — so a body-less answer (DELETE) becomes null rather than nothing.
+    /**
+     * A task must resolve to something serialisable, and `undefined` makes Cypress fail the
+     * command — so a body-less answer (DELETE) becomes null rather than nothing.
+     */
     const read = (response: Response): Promise<T | null> =>
         unwrap<T>(response, `${method} ${path}`).then((data) => data ?? null);
     const signedInCall = (): Promise<T | null> =>

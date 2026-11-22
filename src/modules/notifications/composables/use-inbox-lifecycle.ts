@@ -101,17 +101,21 @@ export const useInboxLifecycle = (): ComputedRef<boolean> => {
         stream = createSseClient(streamUrl(), NOTIFICATION_EVENT_NAMES, {
             onOpen: refresh,
             onEvent: (name, payload) => {
-                // `name` and `payload` arrive as a generic pair the compiler cannot correlate in a
-                // lookup; `SseEventPayload<name>` is by construction the type `handlers[name]` takes.
+                /**
+                 * `name` and `payload` arrive as a generic pair the compiler cannot correlate in a
+                 * lookup; `SseEventPayload<name>` is by construction the type `handlers[name]` takes.
+                 */
                 (handlers[name] as (data: typeof payload) => void)(payload);
             }
         });
     };
 
-    // Vue `watch`: keyed on the person's id (or nothing), so a switch from one account straight to
-    // another restarts the inbox, and a plain logout stops it. `immediate` handles a session that
-    // already exists when this runs, e.g. a restored one.
-    // https://vuejs.org/api/reactivity-core.html#watch
+    /**
+     * Vue `watch`: keyed on the person's id (or nothing), so a switch from one account straight to
+     * another restarts the inbox, and a plain logout stops it. `immediate` handles a session that
+     * already exists when this runs, e.g. a restored one.
+     * https://vuejs.org/api/reactivity-core.html#watch
+     */
     watch(
         () => (mayRead.value ? session.viewer?.id : undefined),
         (viewerId) => {

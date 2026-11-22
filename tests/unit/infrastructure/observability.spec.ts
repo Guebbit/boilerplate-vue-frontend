@@ -116,8 +116,10 @@ describe('useObservabilityStore', () => {
         });
 
         it('treats a whitespace-only website id as unset', () => {
-            // `.trim()` on the way in: a half-filled `.env` should disable analytics rather than
-            // register a website whose id is a space.
+            /**
+             * `.trim()` on the way in: a half-filled `.env` should disable analytics rather than
+             * register a website whose id is a space.
+             */
             vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '   ');
             expect(useObservabilityStore().initUmami()).toBe(false);
         });
@@ -136,8 +138,10 @@ describe('useObservabilityStore', () => {
         });
 
         it('injects once, however many times it is called', () => {
-            // The guard is against HMR and against a second caller, both of which would otherwise
-            // leave two trackers on the page double-counting every pageview.
+            /**
+             * The guard is against HMR and against a second caller, both of which would otherwise
+             * leave two trackers on the page double-counting every pageview.
+             */
             const store = readyStore();
             store.initUmami();
             store.initUmami();

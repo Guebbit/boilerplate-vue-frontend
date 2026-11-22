@@ -30,8 +30,10 @@ export default createVuetify({
     display,
 
     theme: {
-        // A visitor who has explicitly toggled the theme before gets that choice back on the
-        // next visit; nobody who hasn't stays on Vuetify's own 'system' — the OS preference.
+        /**
+         * A visitor who has explicitly toggled the theme before gets that choice back on the
+         * next visit; nobody who hasn't stays on Vuetify's own 'system' — the OS preference.
+         */
         defaultTheme: readThemePreference() ?? 'system',
         themes: { light, dark },
         // generates primary-darken-1 … used by gradients and hover states
@@ -44,8 +46,10 @@ export default createVuetify({
         sets: { lucide: lucideIconSet }
     },
 
-    // Vuetify's own strings (data-table, pagination, aria-labels…).
-    // Kept in sync with vue-i18n by LayoutDefault watching the app locale.
+    /**
+     * Vuetify's own strings (data-table, pagination, aria-labels…).
+     * Kept in sync with vue-i18n by LayoutDefault watching the app locale.
+     */
     locale: {
         locale: 'en',
         fallback: 'en',

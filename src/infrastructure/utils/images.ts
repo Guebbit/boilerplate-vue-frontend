@@ -50,8 +50,10 @@ export const resolveImageUrl = (source?: string | null): string | undefined => {
     if (isSelfContained(source)) return source;
 
     const apiOrigin = instance.defaults.baseURL ?? '';
-    // Deployed behind one origin, the API path already IS the URL — and joining it onto an empty
-    // prefix would produce a leading `//`, which the browser reads as a scheme-relative host.
+    /**
+     * Deployed behind one origin, the API path already IS the URL — and joining it onto an empty
+     * prefix would produce a leading `//`, which the browser reads as a scheme-relative host.
+     */
     if (!apiOrigin) return source.startsWith('/') ? source : `/${source}`;
 
     return `${apiOrigin.replace(/\/+$/, '')}/${source.replace(/^\/+/, '')}`;

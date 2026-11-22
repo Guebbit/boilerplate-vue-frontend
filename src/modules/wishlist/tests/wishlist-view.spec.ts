@@ -78,8 +78,10 @@ const mountWishlist = (
         ...product,
         actions: NO_PRODUCT_ACTIONS
     });
-    // `onMounted` fetches the lines and then the products; both are seeded above, so both are
-    // answered from state rather than from a transport this spec does not exercise.
+    /**
+     * `onMounted` fetches the lines and then the products; both are seeded above, so both are
+     * answered from state rather than from a transport this spec does not exercise.
+     */
     vi.spyOn(wishlist, 'fetchWishlist').mockResolvedValue(wishlist.items);
     spyOnProductReads().mockResolvedValue([]);
 
@@ -100,8 +102,10 @@ const signInAsShopper = () => {
 beforeEach(() => {
     setActivePinia(createPinia());
     signInAsShopper();
-    // Without the dictionaries every `t()` renders its own key, and the label cases below would
-    // compare one key against another and pass.
+    /**
+     * Without the dictionaries every `t()` renders its own key, and the label cases below would
+     * compare one key against another and pass.
+     */
     return loadLocale('en').then(() => router.push('/en/wishlist').then(() => router.isReady()));
 });
 
@@ -120,8 +124,10 @@ describe('the link on a saved item', () => {
             wrapper.get('[data-test=wishlist-item] h2 a').attributes('href') ?? ''
         );
 
-        // The href above is a string; this is the half that says the app can MATCH it — a link
-        // that 404s resolves to the catch-all, not to the product route.
+        /**
+         * The href above is a string; this is the half that says the app can MATCH it — a link
+         * that 404s resolves to the catch-all, not to the product route.
+         */
         expect(resolved.name).toBe('ProductTarget');
         expect(resolved.params).toEqual({ locale: 'en', id: PRODUCT_ID });
     });
@@ -133,8 +139,10 @@ describe('the item list', () => {
         const wrapper = mountWishlist([PRODUCT_ID, other]);
 
         expect(wrapper.findAll('[data-test=wishlist-item]')).toHaveLength(2);
-        // The second product is not in the dictionary (deleted, or hidden from this shopper):
-        // it reads as unavailable, never as its raw id, which a screen reader would spell out.
+        /**
+         * The second product is not in the dictionary (deleted, or hidden from this shopper):
+         * it reads as unavailable, never as its raw id, which a screen reader would spell out.
+         */
         expect(wrapper.findAll('[data-test=wishlist-item] h2 a').at(1)?.text()).toBe(
             'No longer available'
         );

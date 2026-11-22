@@ -99,9 +99,11 @@ export const scoresFromReport = (report: MutationReport): Record<string, number>
 
     for (const [file, { mutants }] of Object.entries(report.files)) {
         const scored = mutants.filter(({ status }) => !NOT_VIABLE.has(status));
-        // A file whose every mutant was non-viable has no score to record. Treated as 100 rather
-        // than 0: there was nothing for the tests to catch, so calling it untested would be a
-        // permanent false alarm on the ratchet.
+        /**
+         * A file whose every mutant was non-viable has no score to record. Treated as 100 rather
+         * than 0: there was nothing for the tests to catch, so calling it untested would be a
+         * permanent false alarm on the ratchet.
+         */
         if (scored.length === 0) {
             scores[file] = 100;
             continue;

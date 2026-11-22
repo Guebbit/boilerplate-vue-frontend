@@ -10,8 +10,10 @@ import { usePasswordStrength } from '../composables/use-password-strength.ts';
 const check = vi.fn();
 
 vi.mock('@zxcvbn-ts/core', () => ({
-    // A named function, not an arrow: the real export is constructed with `new`, and a mock
-    // arrow-function implementation cannot stand in for one.
+    /**
+     * A named function, not an arrow: the real export is constructed with `new`, and a mock
+     * arrow-function implementation cannot stand in for one.
+     */
     ZxcvbnFactory: vi.fn().mockImplementation(function zxcvbnFactoryMock() {
         return { check };
     })

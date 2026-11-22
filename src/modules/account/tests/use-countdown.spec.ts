@@ -48,8 +48,10 @@ describe('useCountdownAnnouncement', () => {
         expect(announcement.value).toBe('expires in 60s');
 
         secondsLeft.value = 45;
-        // Still inside the 60s band — the whole point: a screen reader hears this ONCE, not on
-        // every one of the 15 ticks between 60 and 45.
+        /**
+         * Still inside the 60s band — the whole point: a screen reader hears this ONCE, not on
+         * every one of the 15 ticks between 60 and 45.
+         */
         expect(announcement.value).toBe('expires in 60s');
     });
 
@@ -85,16 +87,20 @@ describe('useCountdownAnnouncement', () => {
         secondsLeft.value = 0;
         expect(announcement.value).toBe('expired');
 
-        // `useCountdown` itself clamps at 0 and stops ticking, but the announcement must not
-        // flip back to a stale threshold if anything ever re-reads a lower value.
+        /**
+         * `useCountdown` itself clamps at 0 and stops ticking, but the announcement must not
+         * flip back to a stale threshold if anything ever re-reads a lower value.
+         */
         secondsLeft.value = 0;
         expect(announcement.value).toBe('expired');
     });
 
     it('announces the nearest crossed threshold even when a tick skips straight past one', () => {
-        // A stalled tab or a GC pause can skip a tick — the real failure mode this guards
-        // against is staying silent for the rest of the countdown because the exact value
-        // (60, or 30) was never actually seen.
+        /**
+         * A stalled tab or a GC pause can skip a tick — the real failure mode this guards
+         * against is staying silent for the rest of the countdown because the exact value
+         * (60, or 30) was never actually seen.
+         */
         const secondsLeft = ref(65);
         const { announcement } = scope.run(() =>
             useCountdownAnnouncement(secondsLeft, message, expiredMessage)

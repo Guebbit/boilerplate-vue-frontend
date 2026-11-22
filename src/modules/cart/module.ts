@@ -78,8 +78,10 @@ export default {
                     { immediate: true, flush: 'post' }
                 );
                 watch(isAuth, (auth, wasAuth) => {
-                    // Only the real end of a session: a reload starts signed out and is restored a
-                    // moment later, and must keep its checkout draft.
+                    /**
+                     * Only the real end of a session: a reload starts signed out and is restored a
+                     * moment later, and must keep its checkout draft.
+                     */
                     if (wasAuth && !auth) clearCheckoutDrafts();
                 });
                 return storeToRefs(cartStore).badgeQuantity;

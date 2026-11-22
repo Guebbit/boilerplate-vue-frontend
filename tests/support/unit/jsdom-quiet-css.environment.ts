@@ -22,9 +22,11 @@ const CSS_PARSING_ERROR = 'css-parsing';
  * https://github.com/jsdom/jsdom#virtual-consoles
  */
 const createFilteredConsole = () => {
-    // jsdom swaps `globalThis.console` for its own on boot, and that one routes back
-    // into this virtual console — resolve it lazily below and the message loops instead
-    // of printing. Grab the real one while it is still the real one.
+    /**
+     * jsdom swaps `globalThis.console` for its own on boot, and that one routes back
+     * into this virtual console — resolve it lazily below and the message loops instead
+     * of printing. Grab the real one while it is still the real one.
+     */
     const realConsole = console;
 
     const virtualConsole = new VirtualConsole();
@@ -52,9 +54,11 @@ const createFilteredConsole = () => {
 /** Vitest's built-in jsdom environment, reused for everything but the console. */
 const jsdomEnvironment = builtinEnvironments.jsdom;
 
-// Built here rather than in vitest.config.ts: the config is serialized to the worker
-// processes and a VirtualConsole is not cloneable. Vitest spreads these options after
-// its own `virtualConsole`, so this one wins.
+/**
+ * Built here rather than in vitest.config.ts: the config is serialized to the worker
+ * processes and a VirtualConsole is not cloneable. Vitest spreads these options after
+ * its own `virtualConsole`, so this one wins.
+ */
 const withFilteredConsole = (options: Record<string, unknown>) => ({
     ...options,
     jsdom: {

@@ -65,8 +65,10 @@ const runCapture = (specs: string[]): Promise<void> =>
                 ...process.env,
                 E2E_SPEC: specs.join(','),
                 E2E_DESIGN_CAPTURE: 'true',
-                // Electron hides its scrollbars, so a scrolling page lays out at the viewport's
-                // full width, as a phone does. Same switch as the visual suite.
+                /**
+                 * Electron hides its scrollbars, so a scrolling page lays out at the viewport's
+                 * full width, as a phone does. Same switch as the visual suite.
+                 */
                 ELECTRON_EXTRA_LAUNCH_ARGS: '--hide-scrollbars'
             }
         });

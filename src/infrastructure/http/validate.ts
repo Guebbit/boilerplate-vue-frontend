@@ -97,17 +97,21 @@ export const validateResponseAgainstContract = (
     config: AxiosRequestConfig,
     data: unknown
 ): void => {
-    // A blob is a file, not a JSON document: the contract types the export's file as its JSON
-    // content, but the bytes are handed over untouched, so there is no body to check. Keyed on
-    // the request's `responseType`, not `instanceof Blob`, so the rule reads the same in every
-    // runtime.
+    /**
+     * A blob is a file, not a JSON document: the contract types the export's file as its JSON
+     * content, but the bytes are handed over untouched, so there is no body to check. Keyed on
+     * the request's `responseType`, not `instanceof Blob`, so the rule reads the same in every
+     * runtime.
+     */
     if (config.responseType === 'blob') return;
 
     const mappedSchema = resolveResponseSchema(config.method, config.url);
     if (!mappedSchema) {
-        // The lazy schema chunk is still loading: every route reads as unmapped
-        // during this window, not just the ones that genuinely have no row — stay quiet rather
-        // than warn about a gap that closes itself in a moment.
+        /**
+         * The lazy schema chunk is still loading: every route reads as unmapped
+         * during this window, not just the ones that genuinely have no row — stay quiet rather
+         * than warn about a gap that closes itself in a moment.
+         */
         if (!isResponseSchemaTableLoading()) {
             logger.warn(
                 `[contract] no response schema mapped for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} — skipping validation`
@@ -117,10 +121,12 @@ export const validateResponseAgainstContract = (
     }
 
     const reportOnly = isReportOnly();
-    // `.strip()` only exists on an object schema — a resource or list schema is one, but a `oneOf`
-    // answer (login) is not, so it is never stripped. Checked by `type`, not `instanceof`: a value
-    // import of zod here would pull all of it into the entry chunk (see forms.ts), and the cast
-    // narrows what the lookup's wider `ZodType` cannot say.
+    /**
+     * `.strip()` only exists on an object schema — a resource or list schema is one, but a `oneOf`
+     * answer (login) is not, so it is never stripped. Checked by `type`, not `instanceof`: a value
+     * import of zod here would pull all of it into the entry chunk (see forms.ts), and the cast
+     * narrows what the lookup's wider `ZodType` cannot say.
+     */
     const schema =
         reportOnly && mappedSchema.type === 'object'
             ? (mappedSchema as z.ZodObject).strip()
@@ -138,8 +144,10 @@ export const validateResponseAgainstContract = (
 
     if (reportOnly) return;
 
-    // Faro is a no-op in e2e and stores swallow the rejection: the console is the one place the
-    // field list survives. The Cypress `[contract]` hook fails the running test on this line.
+    /**
+     * Faro is a no-op in e2e and stores swallow the rejection: the console is the one place the
+     * field list survives. The Cypress `[contract]` hook fails the running test on this line.
+     */
     logger.error(diagnostic);
 
     const message = translate('api-errors.unknown');

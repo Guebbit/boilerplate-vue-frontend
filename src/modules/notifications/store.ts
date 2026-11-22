@@ -115,8 +115,10 @@ const TOAST_TYPE: Record<NotificationSeverity, EToastType> = {
  */
 const notificationOf = (message: IToastMessage): Notification | undefined => {
     const { meta } = message;
-    // `meta` is the toolkit's free-form `Record<string, unknown>`; the `source` stamp is what
-    // proves this store wrote the shape it is read back as.
+    /**
+     * `meta` is the toolkit's free-form `Record<string, unknown>`; the `source` stamp is what
+     * proves this store wrote the shape it is read back as.
+     */
     return meta?.source === INBOX_SOURCE ? (meta.notification as Notification) : undefined;
 };
 

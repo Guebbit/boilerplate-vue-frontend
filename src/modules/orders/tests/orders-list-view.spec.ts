@@ -151,9 +151,11 @@ describe('OrdersList — the RF-reference lookup it mounts', () => {
     });
 
     it('jumps to OrderEdit when the lookup emits a found order (the lookup itself does not)', () => {
-        // `payments` declares no `dependsOn` reach into `orders`, so `OrderReferenceSearch`
-        // emits rather than navigating; this page owns `OrderEdit` directly and is the one that
-        // turns a found order into a push.
+        /**
+         * `payments` declares no `dependsOn` reach into `orders`, so `OrderReferenceSearch`
+         * emits rather than navigating; this page owns `OrderEdit` directly and is the one that
+         * turns a found order into a push.
+         */
         signInAsPaymentRecorder();
         const wrapper = mountList('all');
 

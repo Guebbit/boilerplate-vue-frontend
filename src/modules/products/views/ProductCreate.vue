@@ -112,8 +112,10 @@ interface ProductCreateForm {
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     weight?: number;
-    // Absent means the shop's standard rate; an edit sends `null` for the same meaning, but a
-    // create simply omits the key rather than declaring a clear that has nothing to clear yet.
+    /**
+     * Absent means the shop's standard rate; an edit sends `null` for the same meaning, but a
+     * create simply omits the key rather than declaring a clear that has nothing to clear yet.
+     */
     taxClass?: TaxClass;
     categories?: string[];
     tags?: string[];
@@ -245,13 +247,17 @@ const submitForm = () => {
     return handleSubmit(() => {
         const { imageUpload, translations, price, releaseDate, restockDate } = form.value;
         if (price === undefined) return;
-        // No baseline: a create sends everything the form holds. What the helper adds is the
-        // spelling — a cleared weight or category list is omitted rather than sent empty — and a
-        // blank description is dropped from each language (`toCreateFields`).
+        /**
+         * No baseline: a create sends everything the form holds. What the helper adds is the
+         * spelling — a cleared weight or category list is omitted rather than sent empty — and a
+         * blank description is dropped from each language (`toCreateFields`).
+         */
         return toRequestBody('CreateProductBody', {
             ...form.value,
-            // Sent at the shop currency's places ("12.5" becomes "12.50"); `shopMinorUnits` is
-            // known by now, the boot read or the `loadShop` above has answered.
+            /**
+             * Sent at the shop currency's places ("12.5" becomes "12.50"); `shopMinorUnits` is
+             * known by now, the boot read or the `loadShop` above has answered.
+             */
             price: padDecimal(
                 normalizeAmount(price, getCurrentLocale()),
                 shopMinorUnits.value ?? 0

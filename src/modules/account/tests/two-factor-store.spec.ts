@@ -86,8 +86,10 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        // The caller's own rules. The session store fetches these for every identified viewer,
-        // so every spec that logs somebody in needs an answer for them.
+        /**
+         * The caller's own rules. The session store fetches these for every identified viewer,
+         * so every spec that logs somebody in needs an answer for them.
+         */
         'GET /account/2fa': STATUS_OFF,
         // Every 2FA write reads the profile again: it changed the user record.
         'GET /account': accountView({
@@ -204,8 +206,10 @@ describe('the enrollment machine', () => {
                 errors: [{ code: 'TWO_FACTOR_RESEND_TOO_SOON' }]
             })
             .then(() => {
-                // The button must not be hammerable while the SERVER is still refusing it — the
-                // countdown starts from its own `retryAfter`, not only from a successful send.
+                /**
+                 * The button must not be hammerable while the SERVER is still refusing it — the
+                 * countdown starts from its own `retryAfter`, not only from a successful send.
+                 */
                 expect(store.secondsUntilResend).toBe(12);
             });
     });
@@ -255,8 +259,10 @@ describe('the enrollment machine', () => {
 });
 
 describe('a write that changes the user record reads the profile again', () => {
-    // The write drops the tag held for `/account`; the read hands it back, so the profile's next
-    // save is still checked.
+    /**
+     * The write drops the tag held for `/account`; the read hands it back, so the profile's next
+     * save is still checked.
+     */
     it.each([
         [
             'setupMethod',

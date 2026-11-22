@@ -204,8 +204,10 @@ const submitForm = () => {
                     : undefined
             )
             .then(() => {
-                // The served `imageUrl` is back in the record, so the picked file has done its job
-                // and holding it would only re-upload the same bytes on the next save.
+                /**
+                 * The served `imageUrl` is back in the record, so the picked file has done its job
+                 * and holding it would only re-upload the same bytes on the next save.
+                 */
                 form.value.imageUpload = undefined;
                 markSaved();
                 addMessage(t('example-edit-page.success-update'));

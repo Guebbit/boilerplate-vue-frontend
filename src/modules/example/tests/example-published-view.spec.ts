@@ -92,8 +92,10 @@ describe('ExamplePublished', () => {
     });
 
     it('sends the visitor to the Error page when the server answers 404', () => {
-        // The API's refusal travels as the reject envelope; an `Error` carrying it satisfies the
-        // lint rule about rejection reasons without changing what the page reads (`status`).
+        /**
+         * The API's refusal travels as the reject envelope; an `Error` carrying it satisfies the
+         * lint rule about rejection reasons without changing what the page reads (`status`).
+         */
         mountPage(() =>
             Promise.reject(
                 Object.assign(

@@ -40,8 +40,10 @@ describe('AT4 · Housekeeping on the admin page', () => {
         cy.wait('@overview').its('response.statusCode').should('equal', 200);
 
         cy.step('a row per worker queue the broker answered for, and none where it is off');
-        // The queues exist only when the broker is enabled (`NODE_RABBITMQ_ENABLED`), which the demo
-        // backend and the live recipe both leave off; the page must agree with whatever was sent.
+        /**
+         * The queues exist only when the broker is enabled (`NODE_RABBITMQ_ENABLED`), which the demo
+         * backend and the live recipe both leave off; the page must agree with whatever was sent.
+         */
         cy.get<{ name: string }[]>('@queues').then((queues) => {
             cy.get('[data-test=parked-queue-row]').should('have.length', queues.length);
         });
@@ -51,8 +53,10 @@ describe('AT4 · Housekeeping on the admin page', () => {
         cy.get('[data-test=list-row]').should('have.length.gte', 1);
         cy.get('[data-test=filter-action] input').type('auth.login');
         cy.get('[data-test=search-submit]').click();
-        // Retried as one assertion: the list is refetched on the press, and a read at once can be
-        // the page from before it.
+        /**
+         * Retried as one assertion: the list is refetched on the press, and a read at once can be
+         * the page from before it.
+         */
         cy.get('[data-test=list-row]').should(($rows) => {
             expect($rows.length).to.be.greaterThan(0);
             for (const row of $rows) expect(row.textContent).to.contain('auth.login');

@@ -115,8 +115,10 @@ afterAll(() => {
 
 describe('SHARED_FILES', () => {
     it('names the backend as the sibling of this repo', () => {
-        // The one value that differs from the backend's copy of the module. If it were wrong,
-        // every cross-path pair would be compared against the wrong filename and report missing.
+        /**
+         * The one value that differs from the backend's copy of the module. If it were wrong,
+         * every cross-path pair would be compared against the wrong filename and report missing.
+         */
         expect(siblingRole(THIS_REPO)).toBe('backend');
     });
 
@@ -131,9 +133,11 @@ describe('SHARED_FILES', () => {
         expect(frontendPaths).toContain('scripts/e2e/tls/webhook-sink-ca.pem');
         expect(frontendPaths).toContain('scripts/e2e/tls/webhook-sink-cert.pem');
         expect(frontendPaths).toContain('scripts/e2e/tls/webhook-sink-key.pem');
-        // And nothing else. Eight files, all produced in the backend, which is what makes a fork
-        // answerable at all — the three shared scripts are gone, along with
-        // the Node backend's own copy of them.
+        /**
+         * And nothing else. Eight files, all produced in the backend, which is what makes a fork
+         * answerable at all — the three shared scripts are gone, along with
+         * the Node backend's own copy of them.
+         */
         expect(frontendPaths.size).toBe(8);
     });
 
@@ -156,8 +160,10 @@ describe('SHARED_FILES', () => {
 
 describe('compareSharedFiles', () => {
     it('reports every shared file as matching when the two copies are identical', () => {
-        // Note the two roots are built with DIFFERENT path sets — backend spelling here, frontend
-        // spelling there — which is the whole point of the pair structure.
+        /**
+         * Note the two roots are built with DIFFERENT path sets — backend spelling here, frontend
+         * spelling there — which is the whole point of the pair structure.
+         */
         const here = root(sharedFiles(HERE));
         const there = root(sharedFiles(THERE));
 
@@ -181,8 +187,10 @@ describe('compareSharedFiles', () => {
     });
 
     it('reports a cross-path pair as forked when only one side changed', () => {
-        // The bug these pairs exist to catch: a contract edited in one repo only. Both suites stay
-        // green — each is consistent with its own copy — and only this notices.
+        /**
+         * The bug these pairs exist to catch: a contract edited in one repo only. Both suites stay
+         * green — each is consistent with its own copy — and only this notices.
+         */
         const here = root(sharedFiles(HERE));
         const there = root({
             ...sharedFiles(THERE),
@@ -197,8 +205,10 @@ describe('compareSharedFiles', () => {
     });
 
     it('distinguishes a missing sibling checkout from a forked contract', () => {
-        // Every file `missing-there` is what an unchecked-out sibling looks like, and it wants a
-        // different message from "your specs disagree". Reported, never thrown.
+        /**
+         * Every file `missing-there` is what an unchecked-out sibling looks like, and it wants a
+         * different message from "your specs disagree". Reported, never thrown.
+         */
         const here = root(sharedFiles(HERE));
         const there = root({});
 
@@ -231,8 +241,10 @@ describe('fingerprint', () => {
     });
 
     it('agrees on two YAML documents that mean the same thing but are quoted differently', () => {
-        // The real case this exists for: the PHP backend's `symfony/yaml` quotes what redocly
-        // leaves bare. A raw byte hash would call a real sync forked on formatting alone.
+        /**
+         * The real case this exists for: the PHP backend's `symfony/yaml` quotes what redocly
+         * leaves bare. A raw byte hash would call a real sync forked on formatting alone.
+         */
         const a = root({ 'openapi.yaml': 'title: Demo API\nversion: 2.0.0\n' });
         const b = root({ 'openapi.yaml': "title: 'Demo API'\nversion: '2.0.0'\n" });
 
@@ -251,9 +263,11 @@ describe('fingerprint', () => {
     });
 
     it('agrees on two YAML documents whose only difference is a trailing newline in a block scalar', () => {
-        // `|` keeps the block scalar's trailing newline, `|-` strips it — a dumper's chomping
-        // choice, not content. The real case: BE(php)'s `info.description` carried one, BEold's
-        // did not, for text that was otherwise identical.
+        /**
+         * `|` keeps the block scalar's trailing newline, `|-` strips it — a dumper's chomping
+         * choice, not content. The real case: BE(php)'s `info.description` carried one, BEold's
+         * did not, for text that was otherwise identical.
+         */
         const a = root({ 'openapi.yaml': 'description: |\n  one line\n' });
         const b = root({ 'openapi.yaml': 'description: |-\n  one line\n' });
 
@@ -272,8 +286,10 @@ describe('fingerprint', () => {
     });
 
     it('does not reorder a LIST the way it reorders a MAP', () => {
-        // `security`, `enum` and a path's `parameters` all mean something by their position, so a
-        // blanket sort would call two different documents identical.
+        /**
+         * `security`, `enum` and a path's `parameters` all mean something by their position, so a
+         * blanket sort would call two different documents identical.
+         */
         const a = root({ 'openapi.yaml': 'enum: [a, b]\n' });
         const b = root({ 'openapi.yaml': 'enum: [b, a]\n' });
 
@@ -303,8 +319,10 @@ describe('formatSharedFileProblems', () => {
     });
 
     it('names the forked file and both fingerprints', () => {
-        // A same-path pair, so one constant names the file in both roots. The cross-path case has
-        // its own test below.
+        /**
+         * A same-path pair, so one constant names the file in both roots. The cross-path case has
+         * its own test below.
+         */
         const here = root(sharedFiles(HERE));
         const there = root(forkedOpenApi());
 
@@ -333,10 +351,12 @@ describe('formatSharedFileProblems', () => {
         const message = formatSharedFileProblems(compareSharedFiles(there, here, HERE), there);
 
         expect(message).toContain('npm run gen:api');
-        // Every entry is assembled from per-module fragments in the backend, so "copy whichever
-        // side is right" is the wrong instruction: the fix is to re-bundle there and copy the
-        // result here. A message that omitted that invites an edit to this repo's copy that the
-        // next `contracts:bundle` silently reverts.
+        /**
+         * Every entry is assembled from per-module fragments in the backend, so "copy whichever
+         * side is right" is the wrong instruction: the fix is to re-bundle there and copy the
+         * result here. A message that omitted that invites an edit to this repo's copy that the
+         * next `contracts:bundle` silently reverts.
+         */
         expect(message).toContain('contracts:bundle');
         expect(message).toContain('npm run gen:asyncapi');
     });

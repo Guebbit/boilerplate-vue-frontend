@@ -34,8 +34,10 @@ export const light = {
         'on-surface': '#1d2433',
         'surface-variant': '#eef1f8',
         'on-surface-variant': '#43506b',
-        // Drawn at the medium emphasis below (0.82) for a field's label and message: 5.0:1 on the
-        // page background, 4.8:1 on `surface-variant`, and white `on-error` stays above 8:1.
+        /**
+         * Drawn at the medium emphasis below (0.82) for a field's label and message: 5.0:1 on the
+         * page background, 4.8:1 on `surface-variant`, and white `on-error` stays above 8:1.
+         */
         error: '#ad1919',
         /*
          * Status colours, dark enough to read as TEXT on their own tonal wash.
@@ -68,9 +70,11 @@ export const light = {
         link: '#a35a00'
     },
     variables: {
-        // Vuetify draws labels, hints, messages, list subtitles and sort icons at this opacity.
-        // Its 0.60 default is 4.0-4.2:1 on a white surface; 0.82 is 8.7:1 for `on-surface` there
-        // and 8.0:1 on `surface-variant`. `opacity-muted` reads the same value.
+        /**
+         * Vuetify draws labels, hints, messages, list subtitles and sort icons at this opacity.
+         * Its 0.60 default is 4.0-4.2:1 on a white surface; 0.82 is 8.7:1 for `on-surface` there
+         * and 8.0:1 on `surface-variant`. `opacity-muted` reads the same value.
+         */
         'medium-emphasis-opacity': 0.82
     }
 } as const satisfies ThemeDefinition;
@@ -95,8 +99,10 @@ export const dark = {
         'on-surface': '#e7eaf1',
         'surface-variant': '#232936',
         'on-surface-variant': '#aab4c8',
-        // Lighter than the #ef5350 it replaces: on its own 12% tonal wash over the dark
-        // surface that measured about 4.0:1, this 5.9:1. The other three already pass.
+        /**
+         * Lighter than the #ef5350 it replaces: on its own 12% tonal wash over the dark
+         * surface that measured about 4.0:1, this 5.9:1. The other three already pass.
+         */
         error: '#ff8a80',
         success: '#66bb6a',
         warning: '#ffb74d',
@@ -107,8 +113,10 @@ export const dark = {
         link: '#ffb74d'
     },
     variables: {
-        // Passes at its 0.70 default; 0.82 keeps one "secondary text" value across both themes
-        // (`on-surface` 10.0:1 on the surface, 8.6:1 on `surface-variant`).
+        /**
+         * Passes at its 0.70 default; 0.82 keeps one "secondary text" value across both themes
+         * (`on-surface` 10.0:1 on the surface, 8.6:1 on `surface-variant`).
+         */
         'medium-emphasis-opacity': 0.82
     }
 } as const satisfies {

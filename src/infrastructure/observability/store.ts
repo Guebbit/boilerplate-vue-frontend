@@ -280,9 +280,11 @@ export const useObservabilityStore = defineStore('observability', () => {
             .then(([sdk, { TracingInstrumentation }]) => {
                 const { initializeFaro } = sdk;
 
-                // Faro Web SDK `initializeFaro`: `url` = the Alloy Faro receiver, `app` tags every
-                // signal, `instrumentations` = web defaults + tracing.
-                // https://github.com/grafana/faro-web-sdk
+                /**
+                 * Faro Web SDK `initializeFaro`: `url` = the Alloy Faro receiver, `app` tags every
+                 * signal, `instrumentations` = web defaults + tracing.
+                 * https://github.com/grafana/faro-web-sdk
+                 */
                 faro = initializeFaro({
                     url: config.url,
                     app: {
@@ -290,24 +292,32 @@ export const useObservabilityStore = defineStore('observability', () => {
                         version: config.appVersion,
                         environment: config.environment
                     },
-                    // Applies to the fetch/XHR instrumentations and to tracing: these URLs produce
-                    // neither spans nor request events. See `FaroConfig.ignoreUrls`.
+                    /**
+                     * Applies to the fetch/XHR instrumentations and to tracing: these URLs produce
+                     * neither spans nor request events. See `FaroConfig.ignoreUrls`.
+                     */
                     ignoreUrls: config.ignoreUrls,
-                    // A one-time email token is the only credential for its action, and it arrives as
-                    // a URL query param — this keeps it out of every page-meta and trace-span URL Faro
-                    // ships. See `stripTokensFromTelemetry`.
+                    /**
+                     * A one-time email token is the only credential for its action, and it arrives as
+                     * a URL query param — this keeps it out of every page-meta and trace-span URL Faro
+                     * ships. See `stripTokensFromTelemetry`.
+                     */
                     beforeSend: stripTokensFromTelemetry,
-                    // No session id before consent: Faro would otherwise store one in
-                    // `sessionStorage` (`com.grafana.faro.session`) and tag every signal with it.
+                    /**
+                     * No session id before consent: Faro would otherwise store one in
+                     * `sessionStorage` (`com.grafana.faro.session`) and tag every signal with it.
+                     */
                     sessionTracking: { enabled: false },
                     instrumentations: [
                         new sdk.ErrorsInstrumentation(),
                         new sdk.ConsoleInstrumentation(),
                         new sdk.CSPInstrumentation(),
                         new sdk.ViewInstrumentation(),
-                        // Core Web Vitals and performance timing. Their events carry a URL each,
-                        // which `beforeSend` strips. No NavigationInstrumentation: it is
-                        // experimental and the views above already say where the visitor is.
+                        /**
+                         * Core Web Vitals and performance timing. Their events carry a URL each,
+                         * which `beforeSend` strips. No NavigationInstrumentation: it is
+                         * experimental and the views above already say where the visitor is.
+                         */
                         new sdk.WebVitalsInstrumentation(),
                         new sdk.PerformanceInstrumentation(),
                         new TracingInstrumentation({
@@ -331,14 +341,16 @@ export const useObservabilityStore = defineStore('observability', () => {
                 return true;
             })
             .catch((error: unknown) => {
-                // A rejection (a flaky CDN, a dropped connection loading either dynamic import) must
-                // not stick around: `??=` above only re-runs the block while `faroInitPromise` is
-                // `undefined`, so a cached rejection would refuse every later `initFaro()` call
-                // forever, on every future page of the same session, for a failure that was never
-                // permanent. Chained onto the same promise the `??=` assigns, rather than reassigned
-                // afterwards, so every concurrent caller still shares the one attempt the docblock
-                // above promises — a second `.catch` bolted on separately would hand a later
-                // concurrent caller a different promise object each time.
+                /**
+                 * A rejection (a flaky CDN, a dropped connection loading either dynamic import) must
+                 * not stick around: `??=` above only re-runs the block while `faroInitPromise` is
+                 * `undefined`, so a cached rejection would refuse every later `initFaro()` call
+                 * forever, on every future page of the same session, for a failure that was never
+                 * permanent. Chained onto the same promise the `??=` assigns, rather than reassigned
+                 * afterwards, so every concurrent caller still shares the one attempt the docblock
+                 * above promises — a second `.catch` bolted on separately would hand a later
+                 * concurrent caller a different promise object each time.
+                 */
                 faroInitPromise = undefined;
                 logger.debug('observability', '[Faro] Initialization failed', error);
                 return false;
@@ -367,8 +379,10 @@ export const useObservabilityStore = defineStore('observability', () => {
         initFaro()
             .then((ready) => {
                 if (!ready) return;
-                // Faro `unpause()` undoes an earlier `pause()` (a no-op on a transport never paused);
-                // a consent withdrawn while Faro loaded pauses it instead.
+                /**
+                 * Faro `unpause()` undoes an earlier `pause()` (a no-op on a transport never paused);
+                 * a consent withdrawn while Faro loaded pauses it instead.
+                 */
                 if (faroConsent) faro?.unpause();
                 else faro?.pause();
             })
@@ -448,10 +462,12 @@ export const useObservabilityStore = defineStore('observability', () => {
             script.defer = true;
             script.src = config.src;
             script.dataset.websiteId = config.websiteId;
-            // A one-time email token travels as a `#token=` fragment on the confirm pages
-            // (verification, password reset, account deletion, email change) — Umami's own
-            // flags keep it, and any query string, out of every pageview this tag records.
-            // https://umami.is/docs/tracker-configuration
+            /**
+             * A one-time email token travels as a `#token=` fragment on the confirm pages
+             * (verification, password reset, account deletion, email change) — Umami's own
+             * flags keep it, and any query string, out of every pageview this tag records.
+             * https://umami.is/docs/tracker-configuration
+             */
             script.dataset.excludeSearch = 'true';
             script.dataset.excludeHash = 'true';
             document.head.append(script);

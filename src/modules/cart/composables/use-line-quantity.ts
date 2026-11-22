@@ -90,8 +90,10 @@ export const useLineQuantity = (
             const quantity = pending.value[productId];
             if (quantity === undefined) return;
             const request: Promise<boolean> = update(productId, quantity)
-                // `update`'s own resolved value is not this composable's to know — only whether
-                // the request succeeded, which is all `settle()` needs.
+                /**
+                 * `update`'s own resolved value is not this composable's to know — only whether
+                 * the request succeeded, which is all `settle()` needs.
+                 */
                 .then(() => true)
                 .catch((error: unknown) => {
                     onError(error);
@@ -104,9 +106,11 @@ export const useLineQuantity = (
                      * — the debounce losing the very data it was added to protect.
                      */
                     if (pending.value[productId] === quantity) forgetPending(productId);
-                    // Same reasoning, for `inFlight`: an older request finishing AFTER a newer one
-                    // has already started must not delete the newer one's entry — that is what let
-                    // `settle()` stop waiting on a request that was still on the wire.
+                    /**
+                     * Same reasoning, for `inFlight`: an older request finishing AFTER a newer one
+                     * has already started must not delete the newer one's entry — that is what let
+                     * `settle()` stop waiting on a request that was still on the wire.
+                     */
                     if (inFlight.get(productId) === request) inFlight.delete(productId);
                 });
             inFlight.set(productId, request);

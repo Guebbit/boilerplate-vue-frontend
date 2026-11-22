@@ -87,8 +87,10 @@ describe('recoverFromStaleDeploy', () => {
     });
 
     it('consumes the preload-error flag even when the retry was already spent', () => {
-        // Guards against the flag itself leaking into a LATER, unrelated failure once the
-        // session has already retried once.
+        /**
+         * Guards against the flag itself leaking into a LATER, unrelated failure once the
+         * session has already retried once.
+         */
         const target = makeTarget();
         registerStaleDeployRecovery(target);
         storage.setItem('app:stale-deploy-reloaded', '1');

@@ -185,8 +185,10 @@ useLeaveGuard(isDirty, () => session.isAuth);
  */
 const load = () => {
     return Promise.all([
-        // Refetched on every load, not cached for the session: who is signed in decides whether the
-        // manifest carries the draft languages, and a session can change under an open store.
+        /**
+         * Refetched on every load, not cached for the session: who is signed in decides whether the
+         * manifest carries the draft languages, and a session can change under an open store.
+         */
         localesStore.fetchLanguages(),
         localesStore.fetchEntityTranslations(entityType.value, entityId.value)
     ])

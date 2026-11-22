@@ -67,8 +67,10 @@ describe('AT5 · Stock ledger filters', () => {
                 cy.get('[data-test=movements-filter-product] input').type(title);
                 cy.get('[role=listbox] [role=option]').contains(title).click();
                 cy.subjectId('product.inStock').then((productId) => {
-                    // The column names a product by title, or by id when the catalogue page the
-                    // ledger loaded does not hold it — either way it is this product.
+                    /**
+                     * The column names a product by title, or by id when the catalogue page the
+                     * ledger loaded does not hold it — either way it is this product.
+                     */
                     cy.get('[data-test=movement-row]').should(($rows) => {
                         expect($rows.length).to.be.greaterThan(0);
                         for (const row of $rows)

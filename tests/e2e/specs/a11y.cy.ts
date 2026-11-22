@@ -37,11 +37,15 @@ sweepA11y('the shell', [
     ['privacy', '/en/privacy'],
     ['legal', '/en/legal'],
     ['404', '/en/this-route-does-not-exist'],
-    // The Error route by its own address: `:status` is required, `:message?` is an i18n key
-    // the page translates, and the error handler sends real failures here with both.
+    /**
+     * The Error route by its own address: `:status` is required, `:message?` is an i18n key
+     * the page translates, and the error handler sends real failures here with both.
+     */
     ['error page', '/en/error/500/error-page.not-found'],
-    // One page in the other shipped locale: the dictionary swap is the only thing that differs,
-    // and a translated label that lost its `aria-` counterpart would only show up here.
+    /**
+     * One page in the other shipped locale: the dictionary swap is the only thing that differs,
+     * and a translated label that lost its `aria-` counterpart would only show up here.
+     */
     ['home (italian)', '/it'],
     {
         name: 'home, dark theme',
@@ -84,16 +88,20 @@ const NAV_TOOLTIP_SHOWN = {
     name: 'home, navigation tooltip shown',
     route: '/en',
     prepare: () => {
-        // A real keystroke: the tooltip opens on `:focus-visible`, which `.focus()` does not
-        // set. Tab away and Shift+Tab back lands on the control with the keyboard's focus ring.
+        /**
+         * A real keystroke: the tooltip opens on `:focus-visible`, which `.focus()` does not
+         * set. Tab away and Shift+Tab back lands on the control with the keyboard's focus ring.
+         */
         cy.get('[data-test^=pinned-]').first().focus();
         cy.realPress('Tab');
         cy.realPress(['Shift', 'Tab']);
         cy.focused()
             .should('have.attr', 'data-test')
             .and('match', /^pinned-/);
-        // By Vuetify's active class: tooltip content is `pointer-events: none`, which Cypress
-        // reads as "covered", i.e. not visible — axe and a visitor both see it.
+        /**
+         * By Vuetify's active class: tooltip content is `pointer-events: none`, which Cypress
+         * reads as "covered", i.e. not visible — axe and a visitor both see it.
+         */
         cy.get('.v-tooltip.v-overlay--active .v-overlay__content').should('have.length', 1);
     }
 };

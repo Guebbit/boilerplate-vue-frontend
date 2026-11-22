@@ -19,8 +19,10 @@ import { AUDIT_BUILD_DIR, auditEnvironment, generatorScripts } from './audit-env
 
 const environment = { ...process.env, ...auditEnvironment(ANALYTICS_SINK_PORT) };
 
-// The local vite binary, as `entry-chunk-budget.spec.ts` calls it.
-// `vite build --outDir <dir>`: https://vite.dev/guide/cli.html#build
+/**
+ * The local vite binary, as `entry-chunk-budget.spec.ts` calls it.
+ * `vite build --outDir <dir>`: https://vite.dev/guide/cli.html#build
+ */
 execFileSync('node_modules/.bin/vite', ['build', '--outDir', AUDIT_BUILD_DIR], {
     env: environment,
     stdio: 'inherit'

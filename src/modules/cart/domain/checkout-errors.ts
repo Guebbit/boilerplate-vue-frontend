@@ -119,9 +119,11 @@ const asMoney = (value: unknown): ExpectedTotal | undefined => {
 const firstErrorItem = (error: unknown): { code?: unknown; details?: unknown } | undefined => {
     if (typeof error !== 'object' || error === null) return undefined;
     const items = (error as { errors?: unknown }).errors;
-    // `Array.isArray` narrows its argument to `any[]` in the standard lib typings — a stdlib
-    // quirk, not a real `any` — so `items` is re-read through an `unknown` cast rather than
-    // destructured straight off the narrowed array.
+    /**
+     * `Array.isArray` narrows its argument to `any[]` in the standard lib typings — a stdlib
+     * quirk, not a real `any` — so `items` is re-read through an `unknown` cast rather than
+     * destructured straight off the narrowed array.
+     */
     if (!Array.isArray(items) || items.length === 0) return undefined;
     const item: unknown = (items as unknown[])[0];
     return typeof item === 'object' && item !== null ? item : undefined;
@@ -217,9 +219,11 @@ const VERDICT_BY_CODE: ReadonlyMap<unknown, (details: unknown) => CheckoutErrorV
     [ERROR_CODES.CART_PURCHASE_HOLD, () => ({ kind: 'purchase-hold' })],
     [ERROR_CODES.CART_EMPTY, () => ({ kind: 'cart-empty' })],
     [ERROR_CODES.IDEMPOTENCY_IN_FLIGHT, () => ({ kind: 'in-flight' })],
-    // The API's own 503s: it answered, so a keyed checkout's 503 is STORED and replayed to the
-    // same key. Read like a bare 500: the cart is re-read, and the attempt ends if it is still full.
-    // A body-less 502/503/504 from a proxy has no code, so it still keeps the key.
+    /**
+     * The API's own 503s: it answered, so a keyed checkout's 503 is STORED and replayed to the
+     * same key. Read like a bare 500: the cart is re-read, and the attempt ends if it is still full.
+     * A body-less 502/503/504 from a proxy has no code, so it still keeps the key.
+     */
     [ERROR_CODES.SERVICE_UNAVAILABLE, () => ({ kind: 'server-error' })],
     [ERROR_CODES.QUERY_TIMEOUT, () => ({ kind: 'server-error' })]
 ]);

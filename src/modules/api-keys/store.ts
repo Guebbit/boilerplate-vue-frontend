@@ -82,8 +82,10 @@ export const useApiKeysStore = defineStore('api-keys', () => {
         fetchAny(() =>
             createApiKey(data).then((created) => {
                 const { secret: _secret, ...record } = created;
-                // A key just minted is live. The mint response carries neither a status nor
-                // `actions`; the next list read replaces this row with the server's own answer.
+                /**
+                 * A key just minted is live. The mint response carries neither a status nor
+                 * `actions`; the next list read replaces this row with the server's own answer.
+                 */
                 editApiKeyRecord(
                     {
                         ...record,

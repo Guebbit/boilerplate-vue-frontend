@@ -68,8 +68,10 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        // `totalPages` is required by the real contract alongside `totalItems` — absent from
-        // this fixture before wiring in `parseOrvalFixture` ever proved it against the schema.
+        /**
+         * `totalPages` is required by the real contract alongside `totalItems` — absent from
+         * this fixture before wiring in `parseOrvalFixture` ever proved it against the schema.
+         */
         'GET /inventory/movements': {
             items: [MOVEMENT],
             meta: { totalItems: 1, totalPages: 1 }
@@ -182,8 +184,10 @@ describe('fetchPreorderLevels', () => {
     });
 
     it('reads page after page until the last, and keeps them in order', () => {
-        // Two answers in a row: page 1 says there is a page 2. `Once`, so the file's own transport
-        // mock is back in place for every test after this one.
+        /**
+         * Two answers in a row: page 1 says there is a page 2. `Once`, so the file's own transport
+         * mock is back in place for every test after this one.
+         */
         vi.mocked(orvalMutator)
             .mockImplementationOnce((config) =>
                 Promise.resolve(parseOrvalFixture('GET', config.url ?? '', allowancePage('p1', 1)))

@@ -112,8 +112,10 @@ describe('CU31 · It arrived broken', () => {
                 cy.get('[data-test=return-note] textarea').type('The bowl arrived cracked.');
                 cy.get('[data-test=return-request-submit]').dblclick();
                 cy.wait('@openReturn').then(({ request, response }) => {
-                    // what the customer asked for: one unit of A, defective, with the note
-                    // an intercepted body is `any`: it is the request the form built
+                    /**
+                     * what the customer asked for: one unit of A, defective, with the note
+                     * an intercepted body is `any`: it is the request the form built
+                     */
                     const sent = request.body as { lines: unknown[] };
                     expect(sent).to.deep.include({
                         orderId,

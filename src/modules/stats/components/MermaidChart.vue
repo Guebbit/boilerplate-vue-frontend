@@ -76,10 +76,12 @@ const render = (): Promise<void> => {
     const current = renderCounter;
     return import('mermaid')
         .then(({ default: mermaid }) => {
-            // Mermaid initialize: `startOnLoad: false` (we render on demand), `securityLevel` strict
-            // (labels never become HTML), `suppressErrorRendering` (a syntax error throws instead
-            // of drawing a bomb icon into the page). Theme names are Mermaid's own.
-            // https://mermaid.js.org/config/schema-docs/config.html
+            /**
+             * Mermaid initialize: `startOnLoad: false` (we render on demand), `securityLevel` strict
+             * (labels never become HTML), `suppressErrorRendering` (a syntax error throws instead
+             * of drawing a bomb icon into the page). Theme names are Mermaid's own.
+             * https://mermaid.js.org/config/schema-docs/config.html
+             */
             mermaid.initialize({
                 startOnLoad: false,
                 securityLevel: 'strict',
@@ -90,8 +92,10 @@ const render = (): Promise<void> => {
         })
         .then(({ svg }) => {
             if (unmounted || current !== renderCounter || !host.value) return;
-            // Parsed as HTML, not XML: Mermaid's HTML labels (`<br>`, `<i>`) are not well-formed XML, so
-            // an `image/svg+xml` parse would yield a parse error. Already sanitised by `strict`.
+            /**
+             * Parsed as HTML, not XML: Mermaid's HTML labels (`<br>`, `<i>`) are not well-formed XML, so
+             * an `image/svg+xml` parse would yield a parse error. Already sanitised by `strict`.
+             */
             const parsed = new DOMParser().parseFromString(svg, 'text/html');
             const drawing = parsed.body.firstElementChild;
             if (drawing) host.value.replaceChildren(drawing);

@@ -46,8 +46,10 @@ const files = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT }).map((entry) =>
     entry.split(path.sep).join('/')
 );
 
-// Recorded seconds if this checkout has them, else the committed medians, else the table's
-// guess by basename; a spec in none is weighed at the mean. Warning goes to stderr: stdout is the value.
+/**
+ * Recorded seconds if this checkout has them, else the committed medians, else the table's
+ * guess by basename; a spec in none is weighed at the mean. Warning goes to stderr: stdout is the value.
+ */
 const { seconds: durations, unmeasured } = resolveSpecSeconds(files);
 
 if (unmeasured.length > 0)
@@ -55,8 +57,10 @@ if (unmeasured.length > 0)
         `${String(unmeasured.length)} spec(s) have no recorded seconds, weighed at the mean`
     );
 
-// Either every slice, from the one `durations` snapshot above, or just this one (which also
-// refuses an out-of-range index).
+/**
+ * Either every slice, from the one `durations` snapshot above, or just this one (which also
+ * refuses an out-of-range index).
+ */
 const wanted = printAll
     ? liveShardSlices(files, durations, total)
     : [liveShardFiles(files, durations, index, total)];

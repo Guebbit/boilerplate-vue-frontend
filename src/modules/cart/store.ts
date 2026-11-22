@@ -344,8 +344,10 @@ export const useCartStore = defineStore('cart', () => {
                 return response;
             })
             .catch((error: unknown) => {
-                // 401 only — a guest has no cart. Anything else is a real failure, and swallowing
-                // it would empty the header badge for someone whose cart is full.
+                /**
+                 * 401 only — a guest has no cart. Anything else is a real failure, and swallowing
+                 * it would empty the header badge for someone whose cart is full.
+                 */
                 rethrowUnlessAbsent(error, 401);
                 if (claim()) summarySeed.value = undefined;
                 return undefined;
@@ -527,8 +529,10 @@ export const useCartStore = defineStore('cart', () => {
     const settleFailedCheckout = (error: unknown): Promise<void> => {
         const verdict = classifyCheckoutError(error).kind;
         if (verdict === 'in-flight') return Promise.resolve();
-        // The server wrote nothing and the screen was out of date: read the cart again, so the
-        // page shows the total the next press will confirm.
+        /**
+         * The server wrote nothing and the screen was out of date: read the cart again, so the
+         * page shows the total the next press will confirm.
+         */
         if (verdict === 'total-changed') {
             endCheckoutAttempt();
             return fetchCart().then(
@@ -596,10 +600,12 @@ export const useCartStore = defineStore('cart', () => {
             const key = checkoutKeyFor(body, cart.value, useSessionStore().viewer?.id ?? '');
             return sendCheckout(body, key)
                 .then((response) => {
-                    // The server empties the cart on success: setting it to the known-empty
-                    // shape, rather than dropping it to `undefined`, is what keeps the header badge
-                    // from falling back to `summarySeed`'s stale count from before checkout ran.
-                    // The currency survives the empty: the order was just frozen from this basket.
+                    /**
+                     * The server empties the cart on success: setting it to the known-empty
+                     * shape, rather than dropping it to `undefined`, is what keeps the header badge
+                     * from falling back to `summarySeed`'s stale count from before checkout ran.
+                     * The currency survives the empty: the order was just frozen from this basket.
+                     */
                     store(
                         emptyCart(
                             shown.currency,
@@ -644,8 +650,10 @@ export const useCartStore = defineStore('cart', () => {
             return mergeCart({ lines: [...sent] }, { headers: { [IDEMPOTENCY_KEY_HEADER]: key } })
                 .then((response) => {
                     if (claim()) cart.value = response.cart;
-                    // The guest list is device-scoped only until the session ends: what the call
-                    // carried left it either way.
+                    /**
+                     * The guest list is device-scoped only until the session ends: what the call
+                     * carried left it either way.
+                     */
                     guestLines.value = subtractGuestLines(guestLines.value, sent);
                     writeMergeAttempt(undefined);
                     return response;
@@ -659,8 +667,10 @@ export const useCartStore = defineStore('cart', () => {
                      */
                     if (!keepsIdempotencyKey(error) && !isGatewayFailure(error))
                         writeMergeAttempt(undefined);
-                    // The list itself is what the server refused: carrying it to the next
-                    // sign-in would only refuse again, with a toast each time.
+                    /**
+                     * The list itself is what the server refused: carrying it to the next
+                     * sign-in would only refuse again, with a toast each time.
+                     */
                     if (isMergeRefusedForGood(error))
                         guestLines.value = subtractGuestLines(guestLines.value, sent);
                     throw error;
@@ -702,8 +712,10 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the merged cart and the per-line results of the last call.
      */
     const mergeGuestCart = (): Promise<MergeCartResponse | undefined> => {
-        // The report is the previous person's once the tab has moved on, so it lands only for the
-        // one who asked.
+        /**
+         * The report is the previous person's once the tab has moved on, so it lands only for the
+         * one who asked.
+         */
         const sameEra = cartTickets.take().isSameEra;
         const lost = lostMergeToReplay();
         if (!lost) {

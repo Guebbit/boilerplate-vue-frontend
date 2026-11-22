@@ -92,8 +92,10 @@ export const compareSnapshot = (options: CompareOptions): CompareResult => {
 
     const actual = PNG.sync.read(readFileSync(actualPath));
 
-    // Before any baseline logic, update mode included: a clamped or double-density shot must
-    // never become a baseline, and "the window is too small" must not read as "the page changed".
+    /**
+     * Before any baseline logic, update mode included: a clamped or double-density shot must
+     * never become a baseline, and "the window is too small" must not read as "the page changed".
+     */
     const problem = shotSizeProblem(actual, expected);
     if (problem) return { passed: false, message: `${name}: ${problem}` };
 
@@ -127,13 +129,17 @@ export const compareSnapshot = (options: CompareOptions): CompareResult => {
                 `nothing meaningful to diff pixel by pixel.`
         };
 
-    // pngjs `new PNG({ width, height })`: an empty image buffer the diff is drawn into.
-    // https://github.com/pngjs/pngjs
+    /**
+     * pngjs `new PNG({ width, height })`: an empty image buffer the diff is drawn into.
+     * https://github.com/pngjs/pngjs
+     */
     const diff = new PNG({ width: baseline.width, height: baseline.height });
-    // pixelmatch `(img1, img2, output, width, height, options)`: compares two RGBA buffers,
-    // writes the differing pixels into `output` and returns how many differ. `threshold` is
-    // the per-pixel colour tolerance (0-1).
-    // https://github.com/mapbox/pixelmatch
+    /**
+     * pixelmatch `(img1, img2, output, width, height, options)`: compares two RGBA buffers,
+     * writes the differing pixels into `output` and returns how many differ. `threshold` is
+     * the per-pixel colour tolerance (0-1).
+     * https://github.com/mapbox/pixelmatch
+     */
     const differingPixels = pixelmatch(
         baseline.data,
         actual.data,

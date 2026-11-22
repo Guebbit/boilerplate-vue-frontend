@@ -153,8 +153,10 @@ describe('WebhookCreate', () => {
             .then(() => wrapper.get('form').trigger('submit'))
             .then(flushPromises)
             .then(() => {
-                // `CreateWebhookSubscriptionBody.description` is not nullable: `''` and `null`
-                // are both refused, so the key must be absent.
+                /**
+                 * `CreateWebhookSubscriptionBody.description` is not nullable: `''` and `null`
+                 * are both refused, so the key must be absent.
+                 */
                 const body = create.mock.calls[0]?.[0];
                 expect(contractRequest(schemas.CreateWebhookSubscriptionBody, body)).toBeDefined();
                 expect(JSON.stringify(body)).not.toContain('description');
@@ -167,8 +169,10 @@ describe('WebhookCreate', () => {
 
         return fillAndSubmit(wrapper, 'https://hooks.example.com/in')
             .then(() => {
-                // The modal is teleported to <body>: `Done` stays disabled until the visitor
-                // confirms having saved the secret — the whole point of showing it once.
+                /**
+                 * The modal is teleported to <body>: `Done` stays disabled until the visitor
+                 * confirms having saved the secret — the whole point of showing it once.
+                 */
                 const confirm = document.body.querySelector<HTMLInputElement>(
                     '[data-test=secret-reveal-confirm-saved] input'
                 );

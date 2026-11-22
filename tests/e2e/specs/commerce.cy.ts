@@ -109,9 +109,11 @@ describe('Commerce', () => {
         cy.payWith('Card that pays');
         cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
 
-        // The paid order's own edit page, reached by its id so the admin ships exactly it.
-        // Log out first — an authenticated visit to /login redirects away, so `loginAs`
-        // would never find its form.
+        /**
+         * The paid order's own edit page, reached by its id so the admin ships exactly it.
+         * Log out first — an authenticated visit to /login redirects away, so `loginAs`
+         * would never find its form.
+         */
         cy.location('pathname').then((pathname) => {
             const orderId = pathname.split('/').at(-1);
 
@@ -123,10 +125,12 @@ describe('Commerce', () => {
         cy.get('#order-edit-page').should('exist');
         // Interact only once the form has hydrated — the email field carries the record.
         cy.get('#order-edit-page [type=email]').should('not.have.value', '');
-        // This walk takes the override correction to `processing`, because it is about shipping
-        // and the ledger. The ordinary door — `POST /orders/{id}/process`, the
-        // `mark-started` button — is a different arc; `processing → shipped` is the shipment
-        // panel's own move, below.
+        /**
+         * This walk takes the override correction to `processing`, because it is about shipping
+         * and the ledger. The ordinary door — `POST /orders/{id}/process`, the
+         * `mark-started` button — is a different arc; `processing → shipped` is the shipment
+         * panel's own move, below.
+         */
         correctStatusTo(/processing/i);
 
         // ── Ship it: the shipment panel is the one door for the move ────────────────
@@ -138,14 +142,16 @@ describe('Commerce', () => {
         // ── The parcel exists: tracking on the order page, the email in the outbox ──
         cy.get('[data-test=shipment-tracking]').invoke('text').should('match', /TRK-/);
         cy.get('[data-test=shipment-status]').should('contain.text', 'Shipped');
-        // By template, not recipient: whichever seeded customer's order the admin shipped,
-        // the tracking email carries the code the panel shows.
-        //
-        // Only the demo profile has a readable outbox — `GET /__test/emails` is mounted behind
-        // `NODE_DEMO=true` — so live, the email leaves for real and there is nothing to read.
-        // Guarded here rather than with `cy.skipUnlessDemo()` at the top of the test, because
-        // everything around it is exactly what the live profile exists to prove: the shipment
-        // panel above, and the delivery mark and the ledger below. Same shape as `journey.cy.ts`.
+        /**
+         * By template, not recipient: whichever seeded customer's order the admin shipped,
+         * the tracking email carries the code the panel shows.
+         *
+         * Only the demo profile has a readable outbox — `GET /__test/emails` is mounted behind
+         * `NODE_DEMO=true` — so live, the email leaves for real and there is nothing to read.
+         * Guarded here rather than with `cy.skipUnlessDemo()` at the top of the test, because
+         * everything around it is exactly what the live profile exists to prove: the shipment
+         * panel above, and the delivery mark and the ledger below. Same shape as `journey.cy.ts`.
+         */
         cy.env(['apiUrl', 'liveProfile']).then(({ apiUrl, liveProfile }) => {
             if (liveProfile === true) return;
             cy.request(`${String(apiUrl)}/__test/emails`).then((response) => {
@@ -156,8 +162,10 @@ describe('Commerce', () => {
                     ({ template }) => template === 'delivery.shipment-shipped'
                 );
                 expect(shipped, 'the shipped email in the outbox').to.not.equal(undefined);
-                // Order-independent on purpose: the outbox records template variables, not rendered
-                // body lines, and their order is the template's business.
+                /**
+                 * Order-independent on purpose: the outbox records template variables, not rendered
+                 * body lines, and their order is the template's business.
+                 */
                 expect(shipped!.lines?.some((line) => line.includes('TRK-'))).to.equal(true);
             });
         });

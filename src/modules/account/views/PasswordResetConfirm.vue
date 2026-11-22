@@ -151,8 +151,10 @@ const {
     }
 );
 
-// The token is the only credential for this action; it must not linger in the URL (a `#token=` fragment) for every
-// pageview and observability event after mount to carry to Umami, Faro and browser history.
+/**
+ * The token is the only credential for this action; it must not linger in the URL (a `#token=` fragment) for every
+ * pageview and observability event after mount to carry to Umami, Faro and browser history.
+ */
 useLinkTokenCleanup(route, router);
 
 /**
@@ -198,9 +200,11 @@ const submitForm = () => {
                 addMessage(t('password-reset-confirm-page.success'));
                 return router.push(routerLinkI18n({ name: 'Login' }));
             })
-            // Swallows `router.push`'s resolved value: it is a `NavigationFailure | undefined`,
-            // which the submit handler's `Promise<void>` will not take, and a failed navigation is
-            // the router's own `onError` to report rather than this form's.
+            /**
+             * Swallows `router.push`'s resolved value: it is a `NavigationFailure | undefined`,
+             * which the submit handler's `Promise<void>` will not take, and a failed navigation is
+             * the router's own `onError` to report rather than this form's.
+             */
             .then(() => undefined)
     ).catch((error) => {
         if (namesTerms(error)) termsRequired.value = true;

@@ -27,8 +27,10 @@ const sessionStore = {
     loadViewer: vi.fn()
 };
 
-// Typed against the real `getCookie` so the mock factory below returns a properly-typed value
-// instead of `vi.fn()`'s untyped default.
+/**
+ * Typed against the real `getCookie` so the mock factory below returns a properly-typed value
+ * instead of `vi.fn()`'s untyped default.
+ */
 const getCookieMock = vi.fn<typeof getCookie>();
 
 vi.mock('@/infrastructure/session', () => ({ useSessionStore: () => sessionStore }));
@@ -46,8 +48,10 @@ beforeEach(() => {
     sessionStore.hasSession = false;
     sessionStore.viewer = undefined;
     sessionStore.loadSessionMode.mockResolvedValue(undefined);
-    // The realistic default: a successful restore is what puts the session in place, so the second
-    // half of the function sees a state the first half created.
+    /**
+     * The realistic default: a successful restore is what puts the session in place, so the second
+     * half of the function sees a state the first half created.
+     */
     sessionStore.restoreFromCookies.mockImplementation(() => {
         sessionStore.hasSession = true;
         return Promise.resolve();
@@ -60,8 +64,10 @@ describe('a guest with no isAuth cookie', () => {
 
     it('resolves without touching the network', () =>
         tryRestoreAuth().then(() => {
-            // The reason the cookie is checked at all: every anonymous page view would otherwise
-            // pay for a refresh round-trip that cannot succeed.
+            /**
+             * The reason the cookie is checked at all: every anonymous page view would otherwise
+             * pay for a refresh round-trip that cannot succeed.
+             */
             expect(sessionStore.restoreFromCookies).not.toHaveBeenCalled();
             expect(sessionStore.loadViewer).not.toHaveBeenCalled();
         }));
@@ -86,8 +92,10 @@ describe('a returning visitor holding the isAuth cookie', () => {
         }));
 
     it('does not load a viewer when the restore left no session', () => {
-        // An expired refresh cookie: the endpoint answers, but with nothing to store. Asking for
-        // the viewer anyway is an anonymous request that 401s on every navigation.
+        /**
+         * An expired refresh cookie: the endpoint answers, but with nothing to store. Asking for
+         * the viewer anyway is an anonymous request that 401s on every navigation.
+         */
         sessionStore.restoreFromCookies.mockResolvedValue(undefined);
 
         return tryRestoreAuth().then(() => {
@@ -104,8 +112,10 @@ describe('a returning visitor holding the isAuth cookie', () => {
     it('resolves rather than rejecting when the restore fails', () => {
         sessionStore.restoreFromCookies.mockRejectedValue(new Error('401'));
 
-        // Resolving is the assertion. A rejection aborts the navigation, so a failed refresh would
-        // strand the visitor instead of showing them the page as a guest.
+        /**
+         * Resolving is the assertion. A rejection aborts the navigation, so a failed refresh would
+         * strand the visitor instead of showing them the page as a guest.
+         */
         return expect(tryRestoreAuth()).resolves.toBeUndefined();
     });
 
@@ -123,8 +133,10 @@ describe('a visitor whose session is already held', () => {
         sessionStore.hasSession = true;
 
         return tryRestoreAuth().then(() => {
-            // Two separate facts: holding a session is not the same as knowing whose it is, so the
-            // second call must happen even though the first is skipped.
+            /**
+             * Two separate facts: holding a session is not the same as knowing whose it is, so the
+             * second call must happen even though the first is skipped.
+             */
             expect(sessionStore.restoreFromCookies).not.toHaveBeenCalled();
             expect(sessionStore.loadViewer).toHaveBeenCalledTimes(1);
         });
@@ -148,8 +160,10 @@ describe('the value handed back to the router', () => {
     it('is undefined, which is vue-router for "proceed"', () => {
         getCookieMock.mockReturnValue('true');
 
-        // `loadViewer` resolves a user record; leaking it through would be read as a redirect
-        // target by the guard chain.
+        /**
+         * `loadViewer` resolves a user record; leaking it through would be read as a redirect
+         * target by the guard chain.
+         */
         return expect(tryRestoreAuth()).resolves.toBeUndefined();
     });
 });

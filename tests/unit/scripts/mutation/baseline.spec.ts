@@ -73,16 +73,20 @@ describe('scoresFromReport', () => {
     });
 
     it('excludes non-viable mutants from the denominator entirely', () => {
-        // A mutant that would not compile was never a test the suite could have passed or failed,
-        // so counting it either way would misreport the file.
+        /**
+         * A mutant that would not compile was never a test the suite could have passed or failed,
+         * so counting it either way would misreport the file.
+         */
         expect(
             scoresFromReport(report([FILE, ['Killed', 'CompileError', 'RuntimeError', 'Ignored']]))
         ).toEqual(scores([FILE, 100]));
     });
 
     it('treats a file with no viable mutants as 100, not 0', () => {
-        // Otherwise a file Stryker could not mutate at all would sit permanently at zero and the
-        // ratchet would cry wolf forever.
+        /**
+         * Otherwise a file Stryker could not mutate at all would sit permanently at zero and the
+         * ratchet would cry wolf forever.
+         */
         expect(scoresFromReport(report([FILE, ['CompileError']]))).toEqual(scores([FILE, 100]));
     });
 
@@ -108,8 +112,10 @@ describe('compareToBaseline', () => {
     });
 
     it('does NOT fail a drop within the tolerance', () => {
-        // The tolerance is a measurement error bar for the timeout/survivor race, not slack.
-        // Without it the gate fails on machine load, and a gate that fails randomly gets removed.
+        /**
+         * The tolerance is a measurement error bar for the timeout/survivor race, not slack.
+         * Without it the gate fails on machine load, and a gate that fails randomly gets removed.
+         */
         const comparisons = compareToBaseline(
             scores([FILE, 90 - SCORE_TOLERANCE]),
             baselineOf([FILE, 90])
@@ -139,8 +145,10 @@ describe('compareToBaseline', () => {
     });
 
     it('reports a file that left the mutate scope rather than ignoring it', () => {
-        // Dropping a file out of scope is how a weak file gets "fixed". Legitimate sometimes, but
-        // it belongs in the output where a reviewer can see it.
+        /**
+         * Dropping a file out of scope is how a weak file gets "fixed". Legitimate sometimes, but
+         * it belongs in the output where a reviewer can see it.
+         */
         expect(compareToBaseline(scores(), baselineOf([GONE, 40]))[0]?.verdict).toBe('removed');
     });
 
@@ -159,8 +167,10 @@ describe('nextBaseline — the ratchet', () => {
     });
 
     it('KEEPS the higher value when a file regressed', () => {
-        // The single most important case in this file. If a regression could rewrite the baseline
-        // downward, `--update` would launder every drop and the ratchet would be decorative.
+        /**
+         * The single most important case in this file. If a regression could rewrite the baseline
+         * downward, `--update` would launder every drop and the ratchet would be decorative.
+         */
         expect(nextBaseline(scores([FILE, 40]), baselineOf([FILE, 90])).files).toEqual(
             scores([FILE, 90])
         );
@@ -263,8 +273,10 @@ describe('missingFromReport — the partial-run guard', () => {
     });
 
     it('says nothing for a report that covers MORE than the baseline', () => {
-        // A widened `mutate` adds files. That is a re-baselining, not a partial run, and it must
-        // not be blocked — the new file simply arrives as `new`.
+        /**
+         * A widened `mutate` adds files. That is a re-baselining, not a partial run, and it must
+         * not be blocked — the new file simply arrives as `new`.
+         */
         expect(
             missingFromReport(scores([FILE, 90], [NEWCOMER, 0]), baselineOf([FILE, 90]))
         ).toEqual([]);

@@ -75,8 +75,10 @@ describe('useAccountOAuthLinksStore', () => {
             .fetchLinks()
             .then(() => store.unlinkProvider('google'))
             .then(() => {
-                // The list is not read again; the profile is, since the write changed the user record
-                // and dropped the tag held for `/account`.
+                /**
+                 * The list is not read again; the profile is, since the write changed the user record
+                 * and dropped the tag held for `/account`.
+                 */
                 expect(requests()).toEqual([
                     'GET /account/oauth/links',
                     'DELETE /account/oauth/links/google',

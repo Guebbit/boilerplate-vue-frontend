@@ -134,8 +134,10 @@ Cypress.Commands.add('accountOf', (role: E2ERole) =>
     cy.wrap(null, { log: false }).then(() => seedAccount(role))
 );
 
-// Once per spec file, before anything reads it. `cy.restore()` re-reads it whenever a spec puts a
-// different scenario in place.
+/**
+ * Once per spec file, before anything reads it. `cy.restore()` re-reads it whenever a spec puts a
+ * different scenario in place.
+ */
 before(() => {
     loadScenario();
 });

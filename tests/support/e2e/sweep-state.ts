@@ -55,8 +55,10 @@ export const switchToDarkTheme = (): void => {
             cy.get(THEME_TOGGLE).click();
         }
     });
-    // Vuetify stamps the active theme on the app root; colours are only worth measuring once
-    // that has flipped.
+    /**
+     * Vuetify stamps the active theme on the app root; colours are only worth measuring once
+     * that has flipped.
+     */
     cy.get('.v-application.v-theme--dark').should('exist');
 };
 
@@ -76,8 +78,10 @@ export const reachState = ({ route, prepare, theme, viewport }: SweepState): voi
     resolveRoute(route).then((path) => {
         cy.visit(path);
     });
-    // Wait for real content rather than the shell, so an audit does not run on a loading state
-    // and report an empty page as perfect.
+    /**
+     * Wait for real content rather than the shell, so an audit does not run on a loading state
+     * and report an empty page as perfect.
+     */
     cy.get('h1').should('exist');
     /*
      * ...and then for the panels BELOW the heading, which fetch their own data after it renders.

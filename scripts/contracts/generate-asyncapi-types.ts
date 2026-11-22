@@ -215,8 +215,10 @@ const renderPayloadSchemas = (
             return `    ${JSON.stringify(channelName)}: ${JSON.stringify(inlineReferences(payload ?? {}, schemas))},`;
         })
         .join('\n');
-    // Typed loosely on purpose: `as const` would make every array `readonly`, which no JSON
-    // Schema consumer's parameter type accepts. The event-name keys stay exact.
+    /**
+     * Typed loosely on purpose: `as const` would make every array `readonly`, which no JSON
+     * Schema consumer's parameter type accepts. The event-name keys stay exact.
+     */
     return `export const ${exportName}: Record<SseEventName, Record<string, unknown>> = {\n${rows}\n};`;
 };
 

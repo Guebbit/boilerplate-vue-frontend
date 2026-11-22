@@ -73,8 +73,10 @@ export const usePasswordBreachCheck = (delayMs = 500) => {
         send(password);
     };
 
-    // Leaving the form within `delayMs` (Signup, reset-confirm, the password panel) must not
-    // still fire the trailing edge and POST the typed password after the caller is gone.
+    /**
+     * Leaving the form within `delayMs` (Signup, reset-confirm, the password panel) must not
+     * still fire the trailing edge and POST the typed password after the caller is gone.
+     */
     onScopeDispose(() => send.cancel());
 
     return { breached, checking, check };

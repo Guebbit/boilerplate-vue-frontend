@@ -92,8 +92,10 @@ describe('Users', () => {
                 const id = url.split('/users/', 2)[1]?.replace(/\/$/, '');
 
                 cy.visit(`/en/users/${id}/edit`);
-                // Waits for the form to hydrate from the fetched record — and doubles as proof the
-                // create above actually persisted the username being edited here.
+                /**
+                 * Waits for the form to hydrate from the fetched record — and doubles as proof the
+                 * create above actually persisted the username being edited here.
+                 */
                 cy.get('[data-test=user-edit-username] input').should(
                     'have.value',
                     originalUsername
@@ -120,8 +122,10 @@ describe('Users', () => {
             cy.get('form').submit();
             cy.url().should('include', '/users/').and('not.include', '/create');
 
-            // Narrowed by username throughout: the seeded scenario ships enough other users that
-            // the default page would not reliably show this one, deleted-filter aside.
+            /**
+             * Narrowed by username throughout: the seeded scenario ships enough other users that
+             * the default page would not reliably show this one, deleted-filter aside.
+             */
             searchUser(username, 'All');
 
             cy.contains('[data-test=list-row]', username).within(() => {
@@ -130,8 +134,10 @@ describe('Users', () => {
             cy.get('[data-test=app-dialog-confirm]').click();
             cy.contains('User deleted successfully').should('exist');
 
-            // A fresh search — see searchUser's own note on racing a row action's reload — proves
-            // the soft-delete actually took effect server-side, not just that a toast fired.
+            /**
+             * A fresh search — see searchUser's own note on racing a row action's reload — proves
+             * the soft-delete actually took effect server-side, not just that a toast fired.
+             */
             searchUser(username, 'All');
             cy.contains('[data-test=list-row]', username).within(() => {
                 cy.get('[data-test=row-deleted]').should('exist');
@@ -147,12 +153,14 @@ describe('Users', () => {
             });
             cy.contains('User restored').should('exist');
 
-            // A fresh search, same as the delete check above — proves the restore is real on the
-            // server, not just an optimistic client-side flip. Reads directly off the row's own
-            // state (the badge gone, `row-delete` back in place of `row-restore`) rather than the
-            // "Not deleted" filter: that filter's own `deletedAt: null` semantics are the search
-            // endpoint's contract, not this row action's behaviour, and are not what this test is
-            // about.
+            /**
+             * A fresh search, same as the delete check above — proves the restore is real on the
+             * server, not just an optimistic client-side flip. Reads directly off the row's own
+             * state (the badge gone, `row-delete` back in place of `row-restore`) rather than the
+             * "Not deleted" filter: that filter's own `deletedAt: null` semantics are the search
+             * endpoint's contract, not this row action's behaviour, and are not what this test is
+             * about.
+             */
             searchUser(username, 'All');
             cy.contains('[data-test=list-row]', username).within(() => {
                 cy.get('[data-test=row-deleted]').should('not.exist');

@@ -83,8 +83,10 @@ export const useReleaseDateConfirm = (
                               color: 'warning'
                           })
                 )
-                // The preview is a courtesy: a module that is off (404), a server error or a dropped
-                // connection must not stop the save.
+                /**
+                 * The preview is a courtesy: a module that is off (404), a server error or a dropped
+                 * connection must not stop the save.
+                 */
                 .catch(() => true)
         );
     };

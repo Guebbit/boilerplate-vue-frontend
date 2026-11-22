@@ -237,8 +237,10 @@ describe('AT1 · Launch a new language', () => {
             cy.get(`[data-language=${TAG}] [data-test=row-activate]`).click();
             cy.get(`[data-language=${TAG}] [data-test=row-deactivate]`).should('exist');
 
-            // The language has rows and no deployed file, and it is served all the same: one
-            // language per request, so the product text drafted above reaches the page now.
+            /**
+             * The language has rows and no deployed file, and it is served all the same: one
+             * language per request, so the product text drafted above reaches the page now.
+             */
             cy.step('with German back on, the product page reads the German title');
             cy.visit(`/${TAG}/products/${product.id}`);
             cy.contains('Hundekorb 2').should('exist');

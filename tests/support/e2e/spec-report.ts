@@ -25,8 +25,10 @@ const readReport = (file: string, spec: string): SpecReport => {
     try {
         return JSON.parse(readFileSync(file, 'utf8')) as SpecReport;
     } catch {
-        // First write for this spec, or a file a crashed run left half-written: either way the
-        // entries being recorded now are the ones that count.
+        /**
+         * First write for this spec, or a file a crashed run left half-written: either way the
+         * entries being recorded now are the ones that count.
+         */
         return { spec, entries: {} };
     }
 };

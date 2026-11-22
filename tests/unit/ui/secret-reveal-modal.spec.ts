@@ -13,16 +13,20 @@ import vuetify from '@/ui/vuetify';
 import { i18n, loadLocale } from '@/i18n';
 import enMessages from '@/locales/en.json';
 
-// `vi.hoisted` rather than a plain top-level `const`: `@guebbit/vue-toolkit`'s own import graph
-// pulls in `@guebbit/js-toolkit` while its mock factory below runs, which can evaluate BOTH
-// factories before a later `const` in this file would otherwise have run.
+/**
+ * `vi.hoisted` rather than a plain top-level `const`: `@guebbit/vue-toolkit`'s own import graph
+ * pulls in `@guebbit/js-toolkit` while its mock factory below runs, which can evaluate BOTH
+ * factories before a later `const` in this file would otherwise have run.
+ */
 const { addMessageMock, copyToClipboardMock } = vi.hoisted(() => ({
     addMessageMock: vi.fn(),
     copyToClipboardMock: vi.fn()
 }));
 
-// `EToastType` stays real (it is a plain enum the component branches on); only `addMessage` is a
-// spy, so the assertions below can read what severity the toast actually carried.
+/**
+ * `EToastType` stays real (it is a plain enum the component branches on); only `addMessage` is a
+ * spy, so the assertions below can read what severity the toast actually carried.
+ */
 vi.mock('@guebbit/vue-toolkit', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@guebbit/vue-toolkit')>()),
     useNotificationsStore: () => ({ addMessage: addMessageMock })

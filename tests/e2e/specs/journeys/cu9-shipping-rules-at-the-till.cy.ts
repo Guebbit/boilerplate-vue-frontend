@@ -46,8 +46,10 @@ describe('CU9 · Shipping rules at the till', () => {
         cy.step('the cart carries a fitting method only: a heavy basket is offered no express');
         cy.get('[data-test=shipping-method-express]').should('exist');
         cy.subjectId('product.heavy').then((heavyId) => {
-            // Added behind the open page's back, so its express radio is now stale — the refusal
-            // below is what the server says to a choice the page still offers.
+            /**
+             * Added behind the open page's back, so its express radio is now stale — the refusal
+             * below is what the server says to a choice the page still offers.
+             */
             cy.apiAs('user', 'POST', '/cart/items', { productId: heavyId, quantity: 1 });
         });
         cy.get('[data-test=shipping-method-express]').click();

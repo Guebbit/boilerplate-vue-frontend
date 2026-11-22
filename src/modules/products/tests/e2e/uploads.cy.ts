@@ -105,9 +105,11 @@ describe('Image upload', () => {
          * that the user sees their choice without waiting for a round trip.
          */
         it('previews the picked file immediately, before any upload', () => {
-            // Not `should('not.exist')`: under the live profile the seeded product HAS an image,
-            // so the form correctly shows it as the starting preview. What must be true on both
-            // is that nothing local is pending yet.
+            /**
+             * Not `should('not.exist')`: under the live profile the seeded product HAS an image,
+             * so the form correctly shows it as the starting preview. What must be true on both
+             * is that nothing local is pending yet.
+             */
             expectNoPendingLocalPreview();
 
             selectSampleImage();
@@ -127,13 +129,15 @@ describe('Image upload', () => {
             cy.get('form').submit();
             cy.contains('Product updated successfully').should('exist');
 
-            // The backend's image digest worker invalidates the collection's cache tag once its
-            // writeback matches (`settleWriteback` in `<paired-backend>/src/infrastructure/adapters/image.worker.ts`),
-            // so a re-fetch after the async digest lands sees the promoted url on both profiles —
-            // the demo profile has no broker and digests inline; the live profile's queued digest
-            // just takes longer to appear. With a broker the first answer is the pending
-            // placeholder and nothing re-fetches on its own, so the poll reloads between reads
-            // (`.should()` retries would re-read a page that never changes).
+            /**
+             * The backend's image digest worker invalidates the collection's cache tag once its
+             * writeback matches (`settleWriteback` in `<paired-backend>/src/infrastructure/adapters/image.worker.ts`),
+             * so a re-fetch after the async digest lands sees the promoted url on both profiles —
+             * the demo profile has no broker and digests inline; the live profile's queued digest
+             * just takes longer to appear. With a broker the first answer is the pending
+             * placeholder and nothing re-fetches on its own, so the poll reloads between reads
+             * (`.should()` retries would re-read a page that never changes).
+             */
             pollForImageSource('img[alt="Image preview"]', UPLOAD_PATH).should(
                 'match',
                 UPLOAD_PATH
@@ -187,8 +191,10 @@ describe('Image upload', () => {
             cy.get('form').submit();
 
             cy.contains('Product updated successfully').should('exist');
-            // The claim is "no image was uploaded", not "the product has no image": under the
-            // live profile the seeded image is still there afterwards, and correctly so.
+            /**
+             * The claim is "no image was uploaded", not "the product has no image": under the
+             * live profile the seeded image is still there afterwards, and correctly so.
+             */
             expectNoPendingLocalPreview();
         });
     });
@@ -277,8 +283,10 @@ describe('Image upload', () => {
             cy.get('form').submit();
             cy.contains('Product updated successfully').should('exist');
 
-            // The edit form's own preview never shows the thumbnail (`FormImageUpload.vue` has
-            // no thumbnail tier); the detail page's `LazyImage` does, which is why this visits it.
+            /**
+             * The edit form's own preview never shows the thumbnail (`FormImageUpload.vue` has
+             * no thumbnail tier); the detail page's `LazyImage` does, which is why this visits it.
+             */
             cy.url().then((editUrl) => cy.visit(editUrl.replace(/\/edit$/, '')));
 
             /*
@@ -334,8 +342,10 @@ describe('Image upload', () => {
             );
             cy.get('form').submit();
 
-            // The API's own refusal, not just the absence of the success toast: that would also
-            // hold if the request never left.
+            /**
+             * The API's own refusal, not just the absence of the success toast: that would also
+             * hold if the request never left.
+             */
             cy.wait('@productWrite').its('response.statusCode').should('eq', 422);
             cy.get('[data-test=product-edit-submit-error]').should('not.be.empty');
             cy.contains('Product updated successfully').should('not.exist');

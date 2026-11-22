@@ -29,13 +29,17 @@ describe('Registration', () => {
         cy.get('[type=email]').should('not.be.disabled').type('new.customer@example.com');
         cy.get('[type=password]').eq(0).should('not.be.disabled').type('BrandNew_Pass1!');
         cy.get('[type=password]').eq(1).should('not.be.disabled').type('BrandNew_Pass1!');
-        // Specifically the required one: a second, optional checkbox (`analyticsConsent`) now
-        // shares this form, and `[type=checkbox]` would check both.
+        /**
+         * Specifically the required one: a second, optional checkbox (`analyticsConsent`) now
+         * shares this form, and `[type=checkbox]` would check both.
+         */
         cy.get('[data-test=signup-terms-accepted] input[type=checkbox]').check();
         cy.get('#signup-page button[type="submit"]').click();
 
-        // Signed in from the first moment: `POST /account/signup` sets the session cookies, so
-        // the new account lands on Home as `unverified` — wearing the banner, not shut out.
+        /**
+         * Signed in from the first moment: `POST /account/signup` sets the session cookies, so
+         * the new account lands on Home as `unverified` — wearing the banner, not shut out.
+         */
         cy.get('#home-page').should('exist');
         cy.get('[data-test=verify-banner]').should('exist');
 
@@ -81,20 +85,26 @@ describe('Registration', () => {
         cy.get('[type=email]').should('not.be.disabled').type('slow.reader@example.com');
         cy.get('[type=password]').eq(0).should('not.be.disabled').type('Another_Pass1!');
         cy.get('[type=password]').eq(1).should('not.be.disabled').type('Another_Pass1!');
-        // Specifically the required one: a second, optional checkbox (`analyticsConsent`) now
-        // shares this form, and `[type=checkbox]` would check both.
+        /**
+         * Specifically the required one: a second, optional checkbox (`analyticsConsent`) now
+         * shares this form, and `[type=checkbox]` would check both.
+         */
         cy.get('[data-test=signup-terms-accepted] input[type=checkbox]').check();
         cy.get('#signup-page button[type="submit"]').click();
 
-        // No login step at all: the banner is up before the visitor has touched their inbox,
-        // which is the point — a warning first met at the till arrives too late.
+        /**
+         * No login step at all: the banner is up before the visitor has touched their inbox,
+         * which is the point — a warning first met at the till arrives too late.
+         */
         cy.get('#home-page').should('exist');
         cy.get('[data-test=verify-banner]').should('exist');
         cy.visit('/en/profile');
         cy.get('[data-test=verify-banner]').should('exist');
 
-        // Pressing Resend hands back the server's own cooldown, and the button honours it rather
-        // than letting the next press spend a 429.
+        /**
+         * Pressing Resend hands back the server's own cooldown, and the button honours it rather
+         * than letting the next press spend a 429.
+         */
         cy.get('[data-test=verify-resend]').click();
         cy.get('[data-test=verify-resend]').should('be.disabled');
 

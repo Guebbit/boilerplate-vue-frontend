@@ -43,9 +43,11 @@ describe('keyboard', () => {
         cy.visit('/en');
         cy.get('h1').should('exist');
 
-        // "First Tab stop" is DOM order: the first element Tab can reach must be the skip link.
-        // Asserted on the document rather than by pressing Tab from a fresh `cy.visit`, where the
-        // first real Tab lands on the runner's iframe boundary before it enters the page.
+        /**
+         * "First Tab stop" is DOM order: the first element Tab can reach must be the skip link.
+         * Asserted on the document rather than by pressing Tab from a fresh `cy.visit`, where the
+         * first real Tab lands on the runner's iframe boundary before it enters the page.
+         */
         cy.get('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')
             .first()
             .should('have.attr', 'data-test', 'skip-link');
@@ -61,10 +63,12 @@ describe('keyboard', () => {
         cy.visit('/en');
         cy.get('h1').should('exist');
         cy.title().then((homeTitle) => {
-            // A real navigation by a real link, so the router's `afterEach` is what runs. `about`
-            // is a shell-owned static page (`src/app/router/index.ts`), not a module route, so
-            // this holds whatever domain modules this build ships.
-            // The drawer holds the same link, inert and hidden at this width: the visible one.
+            /**
+             * A real navigation by a real link, so the router's `afterEach` is what runs. `about`
+             * is a shell-owned static page (`src/app/router/index.ts`), not a module route, so
+             * this holds whatever domain modules this build ships.
+             * The drawer holds the same link, inert and hidden at this width: the visible one.
+             */
             cy.get('nav a[href="/en/about"]').filter(':visible').first().click();
             cy.location('pathname').should('eq', '/en/about');
 
@@ -76,8 +80,10 @@ describe('keyboard', () => {
             cy.get('[data-test=route-announcer]').should('have.text', 'About this shop');
         });
 
-        // Back on a page the announcer already named once, it says so again: the region is cleared
-        // before it is set, so a repeat is a real mutation a screen reader hears.
+        /**
+         * Back on a page the announcer already named once, it says so again: the region is cleared
+         * before it is set, so a repeat is a real mutation a screen reader hears.
+         */
         cy.go('back');
         cy.location('pathname').should('eq', '/en');
         cy.get('[data-test=route-announcer]').should('not.have.text', 'About this shop');
@@ -131,14 +137,18 @@ describe('keyboard', () => {
         cy.loginAs('user');
         cy.visit('/en');
         cy.get('h1').should('exist');
-        // What is asserted is that the tooltip OPENS, not how it animates in. With the transition
-        // live, this races it — and loses whenever the four e2e shards leave the browser short of
-        // CPU. After the visit, since a page load discards the injected style.
+        /**
+         * What is asserted is that the tooltip OPENS, not how it animates in. With the transition
+         * live, this races it — and loses whenever the four e2e shards leave the browser short of
+         * CPU. After the visit, since a page load discards the injected style.
+         */
         cy.freezeAnimations();
 
-        // By a real keystroke, not `.focus()`: the tooltip opens on `:focus-visible`, which a
-        // script focus does not set. Tab away and Shift+Tab back lands on the same control
-        // with the keyboard's focus ring.
+        /**
+         * By a real keystroke, not `.focus()`: the tooltip opens on `:focus-visible`, which a
+         * script focus does not set. Tab away and Shift+Tab back lands on the same control
+         * with the keyboard's focus ring.
+         */
         cy.get('[data-test^=pinned-]').first().focus();
         cy.realPress('Tab');
         cy.realPress(['Shift', 'Tab']);
@@ -161,9 +171,11 @@ describe('keyboard', () => {
         cy.loginAs('admin');
         cy.visit('/en');
         cy.get('h1').should('exist');
-        // `aria-expanded` flips when the menu opens, and the menu opens through a transition —
-        // so this asserts on the end state and must not race the animation. See the tooltip
-        // case above.
+        /**
+         * `aria-expanded` flips when the menu opens, and the menu opens through a transition —
+         * so this asserts on the end state and must not race the animation. See the tooltip
+         * case above.
+         */
         cy.freezeAnimations();
 
         cy.get('[data-test=admin-menu]').focus();
@@ -172,9 +184,11 @@ describe('keyboard', () => {
         cy.get('[data-test=admin-menu]').should('have.attr', 'aria-expanded', 'true');
         cy.get('[role=menu] [role=menuitem]').should('exist');
 
-        // Escape is dispatched at the document, so it only reaches the menu once Vuetify has
-        // moved focus into the overlay — which it does asynchronously after opening. Waiting on
-        // that here is the difference between a state assertion and a race the shards lose.
+        /**
+         * Escape is dispatched at the document, so it only reaches the menu once Vuetify has
+         * moved focus into the overlay — which it does asynchronously after opening. Waiting on
+         * that here is the difference between a state assertion and a race the shards lose.
+         */
         cy.focused().should(($element) => {
             expect($element.closest('[role=menu]').length, 'focus moved into the menu').to.equal(1);
         });
@@ -202,18 +216,22 @@ describe('keyboard', () => {
 
     it('keeps focus inside the confirmation dialog and treats Escape as a decline', () => {
         cy.loginAs('admin');
-        // `useConfirm` (`DialogHost.vue`) is the one shared confirmation dialog every domain that
-        // has something destructive to confirm opens the same way — users is foundation, not
-        // shop, and (unlike webhooks' subscription list, empty unless
-        // `NODE_WEBHOOK_DEMO_SINK_URL` is set) always seeds more than one row, so its delete
-        // button reliably exercises the exact same overlay a shop-owned delete would have. The
-        // dialog is declined below, so which row it opens on never matters.
+        /**
+         * `useConfirm` (`DialogHost.vue`) is the one shared confirmation dialog every domain that
+         * has something destructive to confirm opens the same way — users is foundation, not
+         * shop, and (unlike webhooks' subscription list, empty unless
+         * `NODE_WEBHOOK_DEMO_SINK_URL` is set) always seeds more than one row, so its delete
+         * button reliably exercises the exact same overlay a shop-owned delete would have. The
+         * dialog is declined below, so which row it opens on never matters.
+         */
         cy.visit('/en/users');
         cy.get('[data-test=row-delete]').first().click();
         cy.get('[data-test=app-dialog-message]').should('be.visible');
 
-        // Tab around more times than the dialog has controls: focus must wrap within the
-        // overlay, never escape to the page behind it.
+        /**
+         * Tab around more times than the dialog has controls: focus must wrap within the
+         * overlay, never escape to the page behind it.
+         */
         for (let press = 0; press < 4; press += 1) {
             cy.realPress('Tab');
             cy.focused().closest('.v-overlay--active').should('exist');

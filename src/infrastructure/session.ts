@@ -58,8 +58,10 @@ const sessionChannel =
  * @param error - The rejection `apiRefreshToken` settled with.
  */
 const isDefinitiveAuthFailure = (error: unknown): boolean => {
-    // Two shapes: the raw axios error, and the API's envelope that `onResponseReject` turns every
-    // rejection into before a caller sees it — the real one, which carries `status` on top.
+    /**
+     * Two shapes: the raw axios error, and the API's envelope that `onResponseReject` turns every
+     * rejection into before a caller sees it — the real one, which carries `status` on top.
+     */
     const { response, status: envelopeStatus } = (error ?? {}) as Partial<AxiosError> & {
         status?: number;
     };
@@ -164,8 +166,10 @@ export interface SessionViewer {
  *  and the marker is then a browser-session cookie.
  */
 const applyRememberChoice = (remember?: boolean, days?: number) => {
-    // js-toolkit `setCookie(name, value, options)`: `days` = lifetime, `path: '/'` = site-wide,
-    // `sameSite: 'Lax'` = sent on top-level navigations only.
+    /**
+     * js-toolkit `setCookie(name, value, options)`: `days` = lifetime, `path: '/'` = site-wide,
+     * `sameSite: 'Lax'` = sent on top-level navigations only.
+     */
     if (remember === true)
         setCookie(BROWSER_STORAGE_NAME.rememberMe, 'true', {
             days,
@@ -402,9 +406,11 @@ export const useSessionStore = defineStore('session', () => {
     const adoptSession = (response: { token?: string } | undefined, remember?: boolean) => {
         if (mode.value === 'cookie') startCookieSession(remember);
         else setAccessToken(response?.token, remember);
-        // A sign-in (it names a "remember me" choice) replaces the browser-wide session: every
-        // other tab must re-read who it is, not keep acting as the person it was. A re-proof
-        // keeps the same person, so it says nothing.
+        /**
+         * A sign-in (it names a "remember me" choice) replaces the browser-wide session: every
+         * other tab must re-read who it is, not keep acting as the person it was. A re-proof
+         * keeps the same person, so it says nothing.
+         */
         if (remember !== undefined) sessionChannel?.postMessage({ type: 'login' });
     };
 
@@ -542,8 +548,10 @@ export const useSessionStore = defineStore('session', () => {
         // `POST /account/refresh` is a 404 in `cookie` mode: there is no token to renew.
         if (mode.value === 'cookie') return Promise.resolve(undefined);
         if (!refreshInFlight) {
-            // Captured before the request goes out, not read again after: this attempt answers
-            // for the session as it was when it started, not as it is when the response lands.
+            /**
+             * Captured before the request goes out, not read again after: this attempt answers
+             * for the session as it was when it started, not as it is when the response lands.
+             */
             const epochAtStart = sessionEpoch.value;
             // `_refreshed` marks the call so the 401 interceptor never answers it with a refresh.
             const refreshCall: AxiosRequestConfigWithRetry = { _refreshed: true };
@@ -552,9 +560,11 @@ export const useSessionStore = defineStore('session', () => {
                     const { token, abilities } = data;
                     if (epochAtStart === sessionEpoch.value) {
                         setAccessToken(token);
-                        // The rules may have moved while the old token lived, and the answer
-                        // carries them. The first restore has no viewer yet and reads them with
-                        // `loadViewer` instead.
+                        /**
+                         * The rules may have moved while the old token lived, and the answer
+                         * carries them. The first restore has no viewer yet and reads them with
+                         * `loadViewer` instead.
+                         */
                         if (viewer.value) {
                             setAbilities(abilities);
                             abilitiesSignal.value += 1;
@@ -585,8 +595,10 @@ export const useSessionStore = defineStore('session', () => {
      *  the next attempt.
      */
     const restoreFromCookies = (): Promise<void> =>
-        // A mode that is still unknown is asked again, never assumed `jwt`: that refresh is a 404
-        // in a cookie deployment, and the answer to it ends a login that was perfectly good.
+        /**
+         * A mode that is still unknown is asked again, never assumed `jwt`: that refresh is a 404
+         * in a cookie deployment, and the answer to it ends a login that was perfectly good.
+         */
         (mode.value === undefined ? loadSessionMode() : Promise.resolve()).then(() => {
             if (mode.value === undefined) return;
             if (mode.value !== 'cookie') return refreshToken().then(() => undefined);
@@ -600,8 +612,10 @@ export const useSessionStore = defineStore('session', () => {
      */
     const loadViewer = () =>
         apiGetAccount().then((data) => {
-            // Typed structurally rather than as the generated `User`: naming the domain entity
-            // here would put a `User` back into `infrastructure`.
+            /**
+             * Typed structurally rather than as the generated `User`: naming the domain entity
+             * here would put a `User` back into `infrastructure`.
+             */
             setViewer(
                 {
                     id: data.id,
@@ -629,19 +643,25 @@ export const useSessionStore = defineStore('session', () => {
         accessToken.value = undefined;
         cookieSession.value = false;
         viewer.value = undefined;
-        // Back to the empty abilities: a stranger's rules arrive with the next viewer, and until
-        // they do the least-privileged answer is the right one.
+        /**
+         * Back to the empty abilities: a stranger's rules arrive with the next viewer, and until
+         * they do the least-privileged answer is the right one.
+         */
         setAbilities();
         // The record versions the last person read are theirs; the next one must not send them.
         clearEtags();
         idle.value = undefined;
         lifetimeEndsAt.value = undefined;
-        // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
-        // js-toolkit `deleteCookie(name)`: rewrites it already expired on `path=/`, where both live.
+        /**
+         * The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
+         * js-toolkit `deleteCookie(name)`: rewrites it already expired on `path=/`, where both live.
+         */
         deleteCookie(BROWSER_STORAGE_NAME.isAuth);
         deleteCookie(BROWSER_STORAGE_NAME.rememberMe);
-        // A refresh that started before this must not act on its result once it lands — see
-        // `refreshToken`'s own epoch check.
+        /**
+         * A refresh that started before this must not act on its result once it lands — see
+         * `refreshToken`'s own epoch check.
+         */
         sessionEpoch.value += 1;
     };
 
@@ -708,8 +728,10 @@ export const useSessionStore = defineStore('session', () => {
      * ping-pong it.
      */
     const onBroadcast = (event: MessageEvent<unknown>) => {
-        // Defensive, not just typed: this channel is a cross-tab boundary — another tab could be
-        // running an older or newer build with a different message shape.
+        /**
+         * Defensive, not just typed: this channel is a cross-tab boundary — another tab could be
+         * running an older or newer build with a different message shape.
+         */
         const message = event.data as { type?: unknown; endsAt?: unknown } | undefined;
         if (message?.type === 'logout') clearSessionLocally();
         // Another tab signed in: the shared session is now that person's, so this tab re-reads it.
@@ -721,8 +743,10 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     sessionChannel?.addEventListener('message', onBroadcast);
-    // Each `createPinia()` (every test file, every HMR reload) re-runs this setup and would
-    // otherwise pile another listener onto the one module-scoped channel.
+    /**
+     * Each `createPinia()` (every test file, every HMR reload) re-runs this setup and would
+     * otherwise pile another listener onto the one module-scoped channel.
+     */
     onScopeDispose(() => sessionChannel?.removeEventListener('message', onBroadcast));
 
     /**

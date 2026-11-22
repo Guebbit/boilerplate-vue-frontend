@@ -54,8 +54,10 @@ export const MAX_UPLOAD_SIZE_LABEL = formatFileSize(MAX_UPLOAD_BYTES);
  * @returns `true` when the type is accepted.
  */
 export const isAcceptedImageType = (file: File) =>
-    // `caseSensitive`, because the backend's fileFilter compares verbatim: lowercasing first here
-    // would accept files the server then rejects.
+    /**
+     * `caseSensitive`, because the backend's fileFilter compares verbatim: lowercasing first here
+     * would accept files the server then rejects.
+     */
     isAcceptedFileType(file, ACCEPTED_UPLOAD_TYPES, { caseSensitive: true });
 
 /**

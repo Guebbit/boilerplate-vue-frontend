@@ -52,8 +52,10 @@ describe('API keys', () => {
             cy.url().should('include', '/api-keys').and('not.include', '/create');
             cy.contains('Credential minted').should('exist');
 
-            // A large page size, since this list has no search of its own — the newly minted
-            // credential has to be somewhere on the one page this fetches.
+            /**
+             * A large page size, since this list has no search of its own — the newly minted
+             * credential has to be somewhere on the one page this fetches.
+             */
             cy.pickOption('[data-test=page-size]', '50');
             cy.contains('[data-test=list-row]', name).within(() => {
                 cy.get('[data-test=row-revoke]').should('not.be.disabled').click();

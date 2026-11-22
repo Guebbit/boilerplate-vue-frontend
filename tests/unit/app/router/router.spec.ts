@@ -16,9 +16,11 @@ import { signInLocation } from '@/app/router/navigation.ts';
 /** Stub for the session restore the router's guard awaits. */
 const tryRestoreAuth = vi.fn(() => Promise.resolve());
 
-// Returns nothing, i.e. "let the navigation through". Left untyped against the real
-// `enforceRouteAccess`: this suite calls it with only the one argument it cares about
-// (`mockImplementationOnce(() => order.push(...))`), which the real 2-argument signature refuses.
+/**
+ * Returns nothing, i.e. "let the navigation through". Left untyped against the real
+ * `enforceRouteAccess`: this suite calls it with only the one argument it cares about
+ * (`mockImplementationOnce(() => order.push(...))`), which the real 2-argument signature refuses.
+ */
 const enforceRouteAccess = vi.fn();
 
 vi.mock('@/app/guards/authentications.ts', () => ({
@@ -212,8 +214,10 @@ describe('unknown routes', () => {
             })
         ));
 
-    // An address with no locale but a real page's name keeps its path: `/products` is the products
-    // page under the default locale, not an unsupported locale that falls back to Home.
+    /**
+     * An address with no locale but a real page's name keeps its path: `/products` is the products
+     * page under the default locale, not an unsupported locale that falls back to Home.
+     */
     it('keeps the path of a locale-less address for a page the app serves', () =>
         loadRouter().then((router) =>
             router.push('/products?tag=a').then(() => {
@@ -230,11 +234,13 @@ describe('unknown routes', () => {
             })
         ));
 
-    // A single unknown segment is indistinguishable from a locale: `/:locale` matches it, the
-    // empty child matches the rest, and `localeChoice` then rewrites the unsupported locale to
-    // the default one. So `/nonsense` lands on Home, not on the 404 page — the top-level
-    // `/:catchAll(.*)` route is only reachable for paths that cannot be read as a locale at all.
-    // Asserted here so the behaviour is a decision on record rather than a surprise.
+    /**
+     * A single unknown segment is indistinguishable from a locale: `/:locale` matches it, the
+     * empty child matches the rest, and `localeChoice` then rewrites the unsupported locale to
+     * the default one. So `/nonsense` lands on Home, not on the 404 page — the top-level
+     * `/:catchAll(.*)` route is only reachable for paths that cannot be read as a locale at all.
+     * Asserted here so the behaviour is a decision on record rather than a surprise.
+     */
     it('treats a single unknown segment as a locale and lands on home', () =>
         loadRouter().then((router) =>
             router.push('/nonsense').then(() => {
@@ -317,8 +323,10 @@ describe('access enforcement', () => {
     it('runs on every navigation, public routes included', () =>
         loadRouter().then((router) =>
             router.push('/en/examples/published/an-example').then(() => {
-                // Enforcement is global, so it is reached even where it has nothing to enforce.
-                // That is the point: a route cannot opt out of being checked by omission.
+                /**
+                 * Enforcement is global, so it is reached even where it has nothing to enforce.
+                 * That is the point: a route cannot opt out of being checked by omission.
+                 */
                 expect(enforceRouteAccess).toHaveBeenCalled();
             })
         ));
@@ -376,8 +384,10 @@ const failNavigationWith = (error: Error) =>
                 .push('/en')
                 .catch(() => {})
                 .then(() =>
-                    // A thrown Error rather than `expect`, so this reads as a wait condition in a
-                    // helper rather than as an assertion outside a test block.
+                    /**
+                     * A thrown Error rather than `expect`, so this reads as a wait condition in a
+                     * helper rather than as an assertion outside a test block.
+                     */
                     vi.waitFor(() => {
                         if (router.currentRoute.value.fullPath === before)
                             throw new Error(`still on ${before}`);
@@ -399,8 +409,10 @@ describe('onError redirects', () => {
             expect(router.currentRoute.value.name).toBe(
                 signInLocation(router, '/en/examples/published/an-example', 'en').name
             );
-            // The point of the 401 branch: a recoverable status must not dead-end on the error
-            // page, which is where every other status goes.
+            /**
+             * The point of the 401 branch: a recoverable status must not dead-end on the error
+             * page, which is where every other status goes.
+             */
             expect(router.currentRoute.value.name).not.toBe('Error');
         }));
 
@@ -408,15 +420,19 @@ describe('onError redirects', () => {
         failNavigationWith(Object.assign(new Error('nope'), { status: 403 })).then((router) => {
             expect(router.currentRoute.value.name).toBe('Error');
             expect(router.currentRoute.value.params.status).toBe('403');
-            // The reason 403 keeps a branch of its own: "you may not see this" is a different
-            // thing to tell someone than whatever `error.message` happened to hold ('nope').
+            /**
+             * The reason 403 keeps a branch of its own: "you may not see this" is a different
+             * thing to tell someone than whatever `error.message` happened to hold ('nope').
+             */
             expect(router.currentRoute.value.params.message).toBe('navigation.error-forbidden');
         }));
 
     it('folds an error message this app does not own into the generic key', () =>
-        // 'teapot' is free-form text a caught error happened to carry, not one of THIS app's own
-        // `error-page.*`/`navigation.*` dictionary keys — showing it verbatim would leak
-        // implementation detail into the page, the URL and Umami's pageview.
+        /**
+         * 'teapot' is free-form text a caught error happened to carry, not one of THIS app's own
+         * `error-page.*`/`navigation.*` dictionary keys — showing it verbatim would leak
+         * implementation detail into the page, the URL and Umami's pageview.
+         */
         failNavigationWith(Object.assign(new Error('teapot'), { status: 418 })).then((router) => {
             expect(router.currentRoute.value.params.status).toBe('418');
             expect(router.currentRoute.value.params.message).toBe('error-page.unexpected');
@@ -452,10 +468,12 @@ describe('onError redirects', () => {
 
 describe('stale-deploy recovery', () => {
     it('arms Vite’s own preload-error signal as soon as the router module loads', () => {
-        // `stale-deploy.spec.ts` proves the recovery logic itself (exactly one reload, to the
-        // failed navigation's own target) against injected fakes — jsdom's `location` cannot be
-        // stubbed the same way `Storage` can. What belongs at THIS level is that the router
-        // actually wires the listener up, not a second copy of the logic it wires in.
+        /**
+         * `stale-deploy.spec.ts` proves the recovery logic itself (exactly one reload, to the
+         * failed navigation's own target) against injected fakes — jsdom's `location` cannot be
+         * stubbed the same way `Storage` can. What belongs at THIS level is that the router
+         * actually wires the listener up, not a second copy of the logic it wires in.
+         */
         const addEventListenerSpy = vi.spyOn(globalThis, 'addEventListener');
 
         return loadRouter().then(() => {
@@ -523,8 +541,10 @@ describe('router navigation tracing', () => {
         return loadRouterWithDebug(true)
             .then((router) => router.push('/en/examples/published/an-example'))
             .then(() => {
-                // The logger prefixes its own scope, so the assertion is on the whole line rather
-                // than on the first argument.
+                /**
+                 * The logger prefixes its own scope, so the assertion is on the whole line rather
+                 * than on the first argument.
+                 */
                 expect(debugText(debugSpy)).toContain('[router]');
                 expect(debugText(debugSpy)).toContain('Navigating');
                 debugSpy.mockRestore();
@@ -537,9 +557,11 @@ describe('router navigation tracing', () => {
         return loadRouterWithDebug(false)
             .then((router) => router.push('/en/examples/published/an-example'))
             .then(() => {
-                // Scoped to the navigation line rather than asserting console silence outright:
-                // other modules may log on boot, and a blanket assertion would fail for reasons
-                // that say nothing about the router.
+                /**
+                 * Scoped to the navigation line rather than asserting console silence outright:
+                 * other modules may log on boot, and a blanket assertion would fail for reasons
+                 * that say nothing about the router.
+                 */
                 expect(debugText(debugSpy)).not.toContain('Navigating');
                 debugSpy.mockRestore();
             });

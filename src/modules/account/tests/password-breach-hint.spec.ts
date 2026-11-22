@@ -73,12 +73,16 @@ const mountSignupPage = () =>
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
-                // `RouterLink` targets app-level static-page routes this test's module-only
-                // router never registers — irrelevant to the breach hint under test.
+                /**
+                 * `RouterLink` targets app-level static-page routes this test's module-only
+                 * router never registers — irrelevant to the breach hint under test.
+                 */
                 RouterLink: true,
-                // Antibot's own config fetch and branching are `human-check.spec.ts`'s job; a
-                // real mount here would need `GET /config` mocked for no reason this
-                // suite cares about.
+                /**
+                 * Antibot's own config fetch and branching are `human-check.spec.ts`'s job; a
+                 * real mount here would need `GET /config` mocked for no reason this
+                 * suite cares about.
+                 */
                 HumanCheck: true
             }
         }
@@ -148,9 +152,11 @@ describe('ProfilePasswordChange', () => {
                 .then(() =>
                     wrapper.get('[data-test=current-password] input').setValue('hunter2hunter2')
                 )
-                // Meets `usersPasswordSchema`'s length bounds so the
-                // FORM'S OWN validation lets the submit through — the breach check is a separate
-                // concern from strength, and this proves it never gates the strong-but-breached case.
+                /**
+                 * Meets `usersPasswordSchema`'s length bounds so the
+                 * FORM'S OWN validation lets the submit through — the breach check is a separate
+                 * concern from strength, and this proves it never gates the strong-but-breached case.
+                 */
                 .then(() => wrapper.get('[data-test=new-password] input').setValue('Password1!'))
                 .then(() =>
                     wrapper.get('[data-test=new-password-confirm] input').setValue('Password1!')
@@ -163,8 +169,10 @@ describe('ProfilePasswordChange', () => {
                 })
                 .then(flushPromises)
                 .then(() => {
-                    // The server accepted the change regardless of the client-side warning — proof
-                    // this is advisory, never a gate.
+                    /**
+                     * The server accepted the change regardless of the client-side warning — proof
+                     * this is advisory, never a gate.
+                     */
                     expect(
                         vi
                             .mocked(orvalMutator)

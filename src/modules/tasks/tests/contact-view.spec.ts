@@ -22,8 +22,10 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 
 wireModulesIntoCore();
 
-// The page reads the support address from `GET /config`; the store call is spied, so this is the
-// only request the page makes.
+/**
+ * The page reads the support address from `GET /config`; the store call is spied, so this is the
+ * only request the page makes.
+ */
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) =>
         Promise.resolve(
@@ -71,8 +73,10 @@ const openContact = (address: string) => {
             wrapper: mount(Contact, {
                 global: {
                     plugins: [router, vuetify, i18n],
-                    // HumanCheck's own branching is tests/unit/ui/human-check.spec.ts's job, and the
-                    // real thing would fire a real GET /config.
+                    /**
+                     * HumanCheck's own branching is tests/unit/ui/human-check.spec.ts's job, and the
+                     * real thing would fire a real GET /config.
+                     */
                     stubs: { HumanCheck: { template: '<div />' } }
                 }
             })

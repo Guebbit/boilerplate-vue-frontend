@@ -70,9 +70,11 @@ beforeEach(() => {
     responses = {
         'POST /account/login': { token: 'jwt-token' },
         'GET /account': accountView(USER),
-        // The rules the server would publish for this viewer. The store unpacks them with CASL's
-        // own reader, so a fixture that is not packed is a fixture no client could use.
-        // `202`: the account is locked now and erased at `purgeAt` unless restored first.
+        /**
+         * The rules the server would publish for this viewer. The store unpacks them with CASL's
+         * own reader, so a fixture that is not packed is a fixture no client could use.
+         * `202`: the account is locked now and erased at `purgeAt` unless restored first.
+         */
         'DELETE /account': {
             requestedAt: '2026-10-24T10:00:00.000Z',
             purgeAt: '2026-11-23T10:00:00.000Z'
@@ -89,8 +91,10 @@ beforeEach(() => {
         // The request answers `202` with the export and its status; the data comes later, by link.
         'POST /account/export': EXPORT,
         'GET /account/export': EXPORT,
-        // The download is a file, not an envelope: the HTTP layer hands it over as a `File` named
-        // by the server's `Content-Disposition`. The document inside is the user's own data.
+        /**
+         * The download is a file, not an envelope: the HTTP layer hands it over as a `File` named
+         * by the server's `Content-Disposition`. The document inside is the user's own data.
+         */
         'GET /account/export/file': new File(
             [JSON.stringify({ exportedAt: '2026-09-07T00:00:00.000Z', profile: USER })],
             'account-export-2026-09-07.json',
@@ -104,14 +108,18 @@ describe('fetchProfile', () => {
         useAccountProfileStore()
             .fetchProfile(true)
             .then(() => {
-                // `updateProfile` rejects without this, so a fetch that loads the record but does
-                // not select it leaves the store readable and unwritable.
+                /**
+                 * `updateProfile` rejects without this, so a fetch that loads the record but does
+                 * not select it leaves the store readable and unwritable.
+                 */
                 expect(useAccountProfileStore().profile).toMatchObject({ id: 'u1' });
             }));
 
     it('publishes the viewer without a login having happened', () =>
-        // The restore path: a returning visitor holds a refresh cookie, so `tryRestoreAuth` calls
-        // this directly and the guards depend on it filling the projection.
+        /**
+         * The restore path: a returning visitor holds a refresh cookie, so `tryRestoreAuth` calls
+         * this directly and the guards depend on it filling the projection.
+         */
         useAccountProfileStore()
             .fetchProfile(true)
             .then(() => {
@@ -121,8 +129,10 @@ describe('fetchProfile', () => {
 
 describe('updateProfile', () => {
     it('rejects when no profile has been loaded', () =>
-        // Not a thrown error: the caller is a form submit handler, and an unhandled rejection here
-        // would surface as a silent no-op on the button.
+        /**
+         * Not a thrown error: the caller is a form submit handler, and an unhandled rejection here
+         * would surface as a silent no-op on the button.
+         */
         expect(useAccountProfileStore().updateProfile({ username: 'ada2' })).rejects.toThrow(
             'invalid user'
         ));
@@ -134,8 +144,10 @@ describe('updateProfile', () => {
             .fetchProfile(true)
             .then(() => store.updateProfile({ username: 'ada2', role: 'admin' }))
             .then(() => {
-                // The write, not the refetch that follows it — `updateProfile` re-reads the
-                // record afterwards, so the LAST call is a GET.
+                /**
+                 * The write, not the refetch that follows it — `updateProfile` re-reads the
+                 * record afterwards, so the LAST call is a GET.
+                 */
                 const last = vi
                     .mocked(orvalMutator)
                     .mock.calls.map(
@@ -148,14 +160,18 @@ describe('updateProfile', () => {
                     )
                     .find(({ method }) => method?.toUpperCase() === 'PATCH')!;
 
-                // PATCH /account, never the admin write: routing self-service through
-                // `/users/{id}` answers 403 for anyone who is not an admin — every visitor
-                // editing their own record.
+                /**
+                 * PATCH /account, never the admin write: routing self-service through
+                 * `/users/{id}` answers 403 for anyone who is not an admin — every visitor
+                 * editing their own record.
+                 */
                 expect(last.url).toBe('/account');
-                // `admin` was passed in and must NOT reach the wire: a user editing their own
-                // record cannot promote themselves, and the store is the only thing enforcing it.
-                // No `imageUrl` either: this call carries none, the same shape as a details-only
-                // save from `Profile.vue` — only `ProfileAvatar.vue` ever includes that key.
+                /**
+                 * `admin` was passed in and must NOT reach the wire: a user editing their own
+                 * record cannot promote themselves, and the store is the only thing enforcing it.
+                 * No `imageUrl` either: this call carries none, the same shape as a details-only
+                 * save from `Profile.vue` — only `ProfileAvatar.vue` ever includes that key.
+                 */
                 expect(
                     Object.keys(
                         contractRequest(schemas.UpdateAccountBody, last.data) as object
@@ -226,8 +242,10 @@ describe('the account deletion flow', () => {
             .then((schedule) => {
                 const session = useSessionStore();
 
-                // The server ended every session in the same write: keeping this one would hold
-                // a token the next request finds dead.
+                /**
+                 * The server ended every session in the same write: keeping this one would hold
+                 * a token the next request finds dead.
+                 */
                 expect(requestedUrls().at(-1)).toBe('/account');
                 expect(schedule).toEqual({
                     requestedAt: '2026-10-24T10:00:00.000Z',
@@ -299,8 +317,10 @@ describe('the self-service actions', () => {
                         contractRequest(schemas.ChangePasswordBody, last.data) as object
                     ).toSorted()
                 ).toEqual(['currentPassword', 'password', 'passwordConfirm'].toSorted());
-                // The API revoked every other session and re-keyed this one; running on with the
-                // old token is the regression this pins against.
+                /**
+                 * The API revoked every other session and re-keyed this one; running on with the
+                 * old token is the regression this pins against.
+                 */
                 expect(useSessionStore().accessToken).toBe('rotated-jwt');
             }));
 
@@ -315,12 +335,14 @@ describe('the self-service actions', () => {
             .then(() => useAccountAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => profile.confirmEmailVerification('a-token'))
             .then(() => {
-                // Authenticated: the freshly verified record is pulled back in, and the rules
-                // that go with it follow.
-                // Unordered: the rules are fetched without being awaited — a shell that blocked on
-                // learning what to hide would be worse than one that hides too much for a moment
-                // — so the order they land in, and the idle-clock read after them, are not facts
-                // worth pinning.
+                /**
+                 * Authenticated: the freshly verified record is pulled back in, and the rules
+                 * that go with it follow.
+                 * Unordered: the rules are fetched without being awaited — a shell that blocked on
+                 * learning what to hide would be worse than one that hides too much for a moment
+                 * — so the order they land in, and the idle-clock read after them, are not facts
+                 * worth pinning.
+                 */
                 expect(requestedUrls().slice(-3)).toEqual(expect.arrayContaining(['/account']));
             });
     });
@@ -344,8 +366,10 @@ describe('the self-service actions', () => {
 
     it('confirmEmailChange refetches the profile only for a live session', () => {
         const profile = useAccountProfileStore();
-        // Guest first: spend a token with no session — no profile call may follow. Same shape as
-        // confirmEmailVerification above — the two prove different tokens, never each other's.
+        /**
+         * Guest first: spend a token with no session — no profile call may follow. Same shape as
+         * confirmEmailVerification above — the two prove different tokens, never each other's.
+         */
         return profile
             .confirmEmailChange('a-token')
             .then(() => {
@@ -354,8 +378,10 @@ describe('the self-service actions', () => {
             .then(() => useAccountAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => profile.confirmEmailChange('a-token'))
             .then(() => {
-                // Authenticated: the freshly swapped-in address is pulled back in, and the rules
-                // that go with it follow — same sorted-tail reasoning as the verification case.
+                /**
+                 * Authenticated: the freshly swapped-in address is pulled back in, and the rules
+                 * that go with it follow — same sorted-tail reasoning as the verification case.
+                 */
                 expect(requestedUrls().slice(-3)).toEqual(expect.arrayContaining(['/account']));
             });
     });

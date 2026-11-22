@@ -24,8 +24,10 @@ export const TOUCH_TARGET_PX = 44;
 export const useIsTouch = (): ComputedRef<boolean> => {
     const { mobile } = useDisplay();
 
-    // `(pointer: coarse)`: the primary input is imprecise, a finger rather than a mouse.
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/@media/pointer
+    /**
+     * `(pointer: coarse)`: the primary input is imprecise, a finger rather than a mouse.
+     * https://developer.mozilla.org/en-US/docs/Web/CSS/@media/pointer
+     */
     const coarse = useMediaQuery('(pointer: coarse)');
 
     return computed(() => mobile.value || coarse.value);

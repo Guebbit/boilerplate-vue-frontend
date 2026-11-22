@@ -170,8 +170,10 @@ describe('resolveLiveResetCommand', () => {
         );
     });
 
-    // The live profile's only way to learn the seeded accounts and subject ids: a live deployment
-    // mounts no `GET /__test/scenario`, so the reset writes the same JSON to a file instead.
+    /**
+     * The live profile's only way to learn the seeded accounts and subject ids: a live deployment
+     * mounts no `GET /__test/scenario`, so the reset writes the same JSON to a file instead.
+     */
     it('substitutes {describeTo} with the file the description is read back from', () => {
         vi.stubEnv('LIVE_RESET_COMMAND', 'reset --describe-to={describeTo}');
 

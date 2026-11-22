@@ -426,8 +426,10 @@ describe('useCartStore', () => {
                     return store.checkout();
                 })
                 .then(() => {
-                    // Not `undefined`: that would fall back to `summarySeed`'s stale count from
-                    // before checkout ran, and the header badge would still read the old total.
+                    /**
+                     * Not `undefined`: that would fall back to `summarySeed`'s stale count from
+                     * before checkout ran, and the header badge would still read the old total.
+                     */
                     expect(store.cartItems).toEqual([]);
                     expect(store.cartSummary).toEqual({
                         itemsCount: 0,
@@ -460,8 +462,10 @@ describe('useCartStore', () => {
         });
 
         it('lets a refusal the API answered reach the caller', () => {
-            // The rejection has to survive the store: the view turns it into the toast the user
-            // sees, and a swallowed error is a failure reported to nobody.
+            /**
+             * The rejection has to survive the store: the view turns it into the toast the user
+             * sees, and a swallowed error is a failure reported to nobody.
+             */
             vi.mocked(apiCheckout).mockRejectedValueOnce({
                 status: 409,
                 errors: [{ code: 'CART_EMPTY' }]
@@ -471,9 +475,11 @@ describe('useCartStore', () => {
         });
 
         it('lets a request that never arrived reach the caller too', () => {
-            // No status means no response: the connection dropped, or the request never left the
-            // browser. Faro's fetch instrumentation already records it, so the store adds nothing
-            // and only has to keep the rejection intact.
+            /**
+             * No status means no response: the connection dropped, or the request never left the
+             * browser. Faro's fetch instrumentation already records it, so the store adds nothing
+             * and only has to keep the rejection intact.
+             */
             vi.mocked(apiCheckout).mockRejectedValueOnce(new Error('Network Error'));
 
             return expect(useCartStore().checkout()).rejects.toThrow('Network Error');

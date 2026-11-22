@@ -95,8 +95,10 @@ describe('a replace-mode import', () => {
             .then((wrapper) => {
                 return Promise.resolve().then(() => {
                     useDialogStore().answer(true);
-                    // Two hops: `confirm()`'s promise resolving, then `handleImport`'s own
-                    // `.then()` that emits — one `$nextTick()` lands between them, not after both.
+                    /**
+                     * Two hops: `confirm()`'s promise resolving, then `handleImport`'s own
+                     * `.then()` that emits — one `$nextTick()` lands between them, not after both.
+                     */
                     return nextRenderTick(wrapper)
                         .then(() => nextRenderTick(wrapper))
                         .then(() => {
