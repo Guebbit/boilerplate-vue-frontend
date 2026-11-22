@@ -76,7 +76,8 @@ export const useReturnsStore = defineStore('returns', () => {
                     pageSize,
                     orderId: filters.orderId,
                     status: filters.status,
-                    reason: filters.reason
+                    reason: filters.reason,
+                    proofOfSending: filters.proofOfSending
                 }).then((response) => ({
                     items: response.items,
                     totalItems: response.meta.totalItems

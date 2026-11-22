@@ -101,8 +101,13 @@ const SUMMARY_READERS: Record<string, { file: string; declares: string[]; accept
     },
     returnsAwaitingGoods: {
         file: 'returns/views/ReturnsList.vue',
-        declares: ['status:'],
-        accepts: [ReturnStatus.approved]
+        declares: ['status:', "proofOfSending: 'boolean'"],
+        accepts: [ReturnStatus.approved, 'false']
+    },
+    returnsProofGoodsLate: {
+        file: 'returns/views/ReturnsList.vue',
+        declares: ['status:', "proofOfSending: 'boolean'"],
+        accepts: [ReturnStatus.approved, 'true']
     },
     returnsUndecided: {
         file: 'returns/views/ReturnsList.vue',
