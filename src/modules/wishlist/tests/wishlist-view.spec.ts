@@ -24,7 +24,8 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import type { LineAvailability } from '@types';
+import type { Availability } from '@types';
+import { clearAvailability, recordAvailability } from '@/kernel/availability.ts';
 import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
@@ -59,19 +60,22 @@ const router = createRouter({
  */
 const mountWishlist = (
     productIds: string[],
-    availabilities: Record<string, LineAvailability> = {}
+    availabilities: Record<string, Availability> = {},
+    product: { purchasable?: boolean; active?: boolean } = {}
 ) => {
     const wishlist = useWishlistStore();
 
-    wishlist.items = productIds.map((productId) => ({
-        productId,
-        availability: availabilities[productId] ?? 'in_stock'
-    }));
+    wishlist.items = productIds.map((productId) => ({ productId }));
+    // The wishlist answers ids only: what each product can do is the one availability store's answer.
+    clearAvailability();
+    for (const [productId, availability] of Object.entries(availabilities))
+        recordAvailability(productId, { productId, availability }, Date.now());
     seedProducts({
         id: PRODUCT_ID,
         title: PRODUCT_TITLE,
         price: '1.00',
         currency: 'EUR',
+        ...product,
         actions: NO_PRODUCT_ACTIONS
     });
     // `onMounted` fetches the lines and then the products; both are seeded above, so both are
@@ -167,15 +171,16 @@ describe('each line wears its availability', () => {
     });
 
     it.each([
-        ['out_of_stock', 'Sold out'],
-        ['unavailable', 'Not available right now']
+        ['sold out', { purchasable: true }, 'Sold out'],
+        ['off sale', { purchasable: false }, 'Not available right now']
     ] as const)(
         'words a %s line as "%s" and still lets it move to the cart',
-        (availability, words) => {
-            const wrapper = mountWishlist([PRODUCT_ID], { [PRODUCT_ID]: availability });
+        (_name, product, words) => {
+            // The server reads both as `out_of_stock`; the product details tell them apart.
+            const wrapper = mountWishlist([PRODUCT_ID], { [PRODUCT_ID]: 'out_of_stock' }, product);
 
             expect(wrapper.get('[data-test=wishlist-line-availability]').text()).toBe(words);
-            // Off sale moves like sold out: the cart accepts both.
+            // Off sale moves like sold out: the cart answers with a warning and the line stays saved.
             expect(
                 wrapper.get('[data-test=wishlist-move-to-cart]').attributes('disabled')
             ).toBeUndefined();
@@ -183,7 +188,11 @@ describe('each line wears its availability', () => {
     );
 
     it('words a removed line, and is the only one that cannot move to the cart', () => {
-        const wrapper = mountWishlist([PRODUCT_ID], { [PRODUCT_ID]: 'removed' });
+        const wrapper = mountWishlist(
+            [PRODUCT_ID],
+            { [PRODUCT_ID]: 'out_of_stock' },
+            { active: false }
+        );
 
         expect(wrapper.get('[data-test=wishlist-line-availability]').text()).toBe(
             'No longer available'

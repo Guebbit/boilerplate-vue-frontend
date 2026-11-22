@@ -8,7 +8,7 @@ import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useNotificationsStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { getWishlist, createWishlistItem, deleteWishlistItem, moveWishlistItemToCart } from '@api';
-import type { WishlistItem } from '@types';
+import type { CartWarning, WishlistItem } from '@types';
 import { useCartStore } from '@/modules/cart';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
@@ -129,14 +129,22 @@ export const useWishlistStore = defineStore('wishlist', () => {
      * did not send, and neither does this one on its behalf.
      *
      * @param productId - The saved product to move.
-     * @returns A promise resolving with the updated saved lines.
+     * @returns A promise resolving with the warnings the move answered with: empty when the product
+     *  went into the cart, and one when stock held it back (the line then stays saved).
      */
-    const moveToCart = (productId: string) =>
-        replaceItems(() => moveWishlistItemToCart(productId)).then(() =>
+    const moveToCart = (productId: string): Promise<CartWarning[]> => {
+        let warnings: CartWarning[] = [];
+        return replaceItems(() =>
+            moveWishlistItemToCart(productId).then((answer) => {
+                warnings = answer.warnings ?? [];
+                return answer;
+            })
+        ).then(() =>
             useCartStore()
                 .fetchCart()
-                .then(() => items.value)
+                .then(() => warnings)
         );
+    };
 
     /**
      * Forgets the previous person's saved lines and the read that fetched them, so the next

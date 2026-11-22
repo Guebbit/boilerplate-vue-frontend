@@ -10,6 +10,7 @@
         "button-move-to-cart": "Sposta nel carrello",
         "button-remove": "Rimuovi",
         "success-moved": "Prodotto spostato nel carrello.",
+        "warning-not-moved": "Non si può acquistare al momento, quindi non è stato aggiunto al carrello. Resta salvato.",
         "success-removed": "Prodotto rimosso dalla lista dei desideri.",
         "button-move-to-cart-named": "Sposta nel carrello: {id}",
         "button-remove-named": "Rimuovi il prodotto {id}"

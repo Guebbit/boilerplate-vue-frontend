@@ -18,7 +18,6 @@ const result = (productId: string, reason?: MergeLineResult['reason']): MergeLin
     productId,
     requested: 1,
     resulting: 1,
-    availability: 'in_stock',
     ...(reason ? { reason } : {})
 });
 

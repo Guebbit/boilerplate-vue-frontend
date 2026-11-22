@@ -12,9 +12,11 @@ export default {
 /**
  * @module
  * Wishlist page. Renders the store's saved lines, joined against the cart store's
- * product-title cache, with the two exits: move-to-cart and remove. Each line wears its
- * `availability` ("Sold out", "Not available right now", "No longer available"); only a removed
- * line cannot be moved, since an off-sale product moves like a sold-out one.
+ * product-title cache, with the two exits: move-to-cart and remove. The wishlist answers ids only:
+ * each line wears what the one availability store says about its product ("Sold out", "Not
+ * available right now", "No longer available"), read for the whole list through the
+ * `availability-watch` slot. Only a removed line cannot be moved; a sold-out or off-sale product
+ * moves into nothing, and the answer says so.
  */
 import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
 import { computed, onMounted } from 'vue';
@@ -26,7 +28,9 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useWishlistStore } from '../store.ts';
 import { useProductLines } from '@/modules/products';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useSlot } from '@/kernel/slots.ts';
+import { availabilityOf } from '@/kernel/availability.ts';
+import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -78,7 +82,29 @@ const { items, loading } = storeToRefs(useWishlistStore());
  * The saved products' titles — the wishlist answers ids only, and the products store holds the
  * records.
  */
-const { titleOf, productOf, loadProducts, availabilityLabel } = useProductLines();
+const { titleOf, loadProducts, lineLabel, statusOf, isRemoved } = useProductLines();
+
+/**
+ * The availability watcher `inventory` contributes, read for the saved lines: the list is one
+ * batch of at most a hundred ids a call. A slot because `inventory` owns the read and this module
+ * cannot depend on it (`@/kernel/availability`).
+ */
+const availabilityWatchers = useSlot('availability-watch');
+
+/**
+ * The saved products' ids, for the watcher.
+ */
+const savedIds = computed(() => items.value.map(({ productId }) => productId));
+
+/**
+ * What a saved line's product can do now: the shared availability answer, read once for the list.
+ *
+ * @param productId - The saved product.
+ */
+const stockOf = (productId: string) => ({
+    availability: availabilityOf(productId)?.availability,
+    availabilityDate: availabilityOf(productId)?.availabilityDate
+});
 
 /**
  * The saved lines' own blocked state — moving a line to the cart or removing it has no per-line
@@ -100,7 +126,12 @@ const {
 const handleMoveToCart = (productId: string) => {
     clearLineActionError();
     moveToCart(productId)
-        .then(() => addMessage(t('wishlist-page.success-moved')))
+        .then((warnings) =>
+            // Stock held it back: the line stays saved, and the toast says why instead of "moved".
+            warnings.length > 0
+                ? addMessage(t('wishlist-page.warning-not-moved'), EToastType.WARNING)
+                : addMessage(t('wishlist-page.success-moved'))
+        )
         .catch((error) => reportLineActionError(error));
 };
 
@@ -137,6 +168,13 @@ onMounted(() =>
         </ListEmptyState>
 
         <div v-else class="mx-auto flex w-full max-w-3xl flex-col gap-4">
+            <component
+                :is="watcher"
+                v-for="(watcher, index) in availabilityWatchers"
+                :key="index"
+                :product-ids="savedIds"
+                :stale-time="30 * 1000"
+            />
             <InlineErrorAlert :message="lineActionError" data-test="wishlist-line-action-error" />
 
             <v-card
@@ -156,20 +194,22 @@ onMounted(() =>
                     <span v-else>{{ titleOf(item.productId) }}</span>
                 </h2>
                 <v-chip
-                    v-if="availabilityLabel(item.availability)"
+                    v-if="lineLabel(item.productId, stockOf(item.productId))"
                     size="small"
                     :color="
-                        item.availability === 'preorder' || item.availability === 'backorder'
+                        ['preorder', 'ships-later'].includes(
+                            statusOf(item.productId, stockOf(item.productId))
+                        )
                             ? 'info'
                             : 'warning'
                     "
                     variant="tonal"
                     label
                     class="mt-1"
-                    :data-availability="item.availability"
+                    :data-availability="statusOf(item.productId, stockOf(item.productId))"
                     data-test="wishlist-line-availability"
                 >
-                    {{ availabilityLabel(item.availability, productOf(item.productId)) }}
+                    {{ lineLabel(item.productId, stockOf(item.productId)) }}
                 </v-chip>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                     <v-btn
@@ -177,7 +217,7 @@ onMounted(() =>
                         variant="tonal"
                         size="small"
                         data-test="wishlist-move-to-cart"
-                        :disabled="loading || item.availability === 'removed'"
+                        :disabled="loading || isRemoved(item.productId)"
                         :aria-label="
                             t('wishlist-page.button-move-to-cart-named', {
                                 id: titleOf(item.productId)

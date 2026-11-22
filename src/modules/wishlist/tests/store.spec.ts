@@ -38,22 +38,16 @@ beforeEach(() => {
     vi.clearAllMocks();
     responses = {
         'GET /wishlist': {
-            items: [
-                { productId: 'p1', availability: 'in_stock' },
-                { productId: 'p2', availability: 'in_stock' }
-            ]
+            items: [{ productId: 'p1' }, { productId: 'p2' }]
         },
         'POST /wishlist/items': {
-            items: [
-                { productId: 'p1', availability: 'in_stock' },
-                { productId: 'p2', availability: 'in_stock' }
-            ]
+            items: [{ productId: 'p1' }, { productId: 'p2' }]
         },
         'DELETE /wishlist/items/p1': {
-            items: [{ productId: 'p2', availability: 'in_stock' }]
+            items: [{ productId: 'p2' }]
         },
         'POST /wishlist/items/p1/move-to-cart': {
-            items: [{ productId: 'p2', availability: 'in_stock' }]
+            items: [{ productId: 'p2' }]
         },
         'GET /cart': {
             items: [],
@@ -114,6 +108,37 @@ describe('removeFromWishlist', () => {
 });
 
 describe('moveToCart', () => {
+    it('answers no warnings when the product went into the cart', () => {
+        const store = useWishlistStore();
+        return store
+            .fetchWishlist()
+            .then(() => expect(store.moveToCart('p1')).resolves.toEqual([]));
+    });
+
+    it('answers the warnings, and keeps the line saved, when stock held the move back', () => {
+        responses['POST /wishlist/items/p1/move-to-cart'] = {
+            items: [{ productId: 'p1' }, { productId: 'p2' }],
+            warnings: [
+                { code: 'MERCHANDISE_OUT_OF_STOCK', productId: 'p1', requested: 1, resulting: 0 }
+            ]
+        };
+        const store = useWishlistStore();
+        return store
+            .fetchWishlist()
+            .then(() => store.moveToCart('p1'))
+            .then((warnings) => {
+                expect(warnings).toEqual([
+                    {
+                        code: 'MERCHANDISE_OUT_OF_STOCK',
+                        productId: 'p1',
+                        requested: 1,
+                        resulting: 0
+                    }
+                ]);
+                expect(store.isSaved('p1')).toBe(true);
+            });
+    });
+
     it('drops the saved line and refetches the cart it wrote into', () => {
         const store = useWishlistStore();
         return store
@@ -160,7 +185,7 @@ describe('ensureWishlist', () => {
             .ensureWishlist()
             .then(() => {
                 responses['GET /wishlist'] = {
-                    items: [{ productId: 'p1', availability: 'in_stock' }]
+                    items: [{ productId: 'p1' }]
                 };
                 return store.ensureWishlist();
             })

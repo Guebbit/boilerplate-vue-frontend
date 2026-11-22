@@ -42,12 +42,14 @@ this module.
 
 ## Line availability
 
-Each saved line arrives as `{ productId, availability }`, and the page words it with the products
+Each saved line arrives as `{ productId }` only. What the product can do comes from the one
+availability store (`@/kernel/availability`), filled for the whole list through the
+`availability-watch` slot (the batch read, 100 ids a call), and the page words it with the products
 module's labels: "Sold out", "Not available right now", "No longer available", and "Preorder ·
 ships {date}" (blue) for a product sold before its release date. "Move to cart" is
-disabled only for `removed`: an off-sale product moves like a sold-out one, since the cart accepts
-both and checkout is the gate. A wishlist line holds no quantity, so it is never "Not enough in
-stock".
+disabled only for a removed product. A move that adds nothing (sold out, off sale, or the cart
+already holds all that can be bought) answers the wishlist with `warnings[]`: the line stays saved
+and a warning toast says so. A wishlist line holds no quantity, so it is never "Only {n} available".
 
 ## State
 

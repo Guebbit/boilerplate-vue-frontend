@@ -4,7 +4,7 @@
  * See `docs/theory/domain-layer.md`.
  */
 
-export { MIN_LINE_QUANTITY, steppedQuantity } from './quantity';
+export { MIN_LINE_QUANTITY, clampToAvailable, steppedQuantity } from './quantity';
 export { classifyCheckoutError } from './checkout-errors';
 export { checkoutFingerprint } from './checkout-attempt';
 export { emptyCart } from './empty-cart';

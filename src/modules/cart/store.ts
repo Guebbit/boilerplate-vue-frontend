@@ -24,6 +24,7 @@ import {
 } from '@api';
 import type {
     CartResponse,
+    CartWarning,
     CartResponseItem,
     CartShipping,
     CartSummaryResponse,
@@ -40,7 +41,14 @@ import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-view
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { invalidateProductsCache } from '@/modules/products';
-import { changedMergeLines, classifyCheckoutError, emptyCart, subtractGuestLines } from './domain';
+import {
+    changedMergeLines,
+    classifyCheckoutError,
+    clampToAvailable,
+    emptyCart,
+    subtractGuestLines
+} from './domain';
+import { availabilityOf } from '@/kernel/availability.ts';
 import type { GuestCartLine, MergeReportLine } from './domain';
 import { checkoutKeyFor, endCheckoutAttempt } from './checkout-attempt-storage';
 import { IDEMPOTENCY_KEY_HEADER, isMergeRefusedForGood, sendCheckout } from './idempotent-calls';
@@ -169,8 +177,8 @@ export const useCartStore = defineStore('cart', () => {
         guestLines,
         guestQuantity,
         hasGuestLines,
-        addGuestItem,
-        updateGuestItem,
+        addGuestItem: addGuestLines,
+        updateGuestItem: setGuestLine,
         removeGuestItems,
         clearGuestCart,
         mergeKeyFor
@@ -184,6 +192,83 @@ export const useCartStore = defineStore('cart', () => {
      * a reload drops it, since the server keeps no copy of what the guest asked for.
      */
     const mergeReport = ref<MergeReportLine[]>([]);
+
+    /**
+     * What stock did to the last write of each line, by product id: fewer could be bought, or none.
+     * Kept apart from `cart` on purpose: a background read replaces the cart and would wipe the
+     * line's message, which must stay beside the line until that line is written again or removed.
+     * Memory only.
+     */
+    const lineWarnings = ref<Record<string, CartWarning | undefined>>({});
+
+    /**
+     * Records the warnings a write answered with: each named product's message is replaced, and a
+     * product written without one loses its old message.
+     *
+     * @param written - The products the write touched.
+     * @param warnings - The answer's `warnings`, absent when the write landed as asked.
+     */
+    const noteWarnings = (
+        written: readonly string[],
+        warnings: readonly CartWarning[] | undefined
+    ) => {
+        // The written products lose their old message; the answer's own warnings are then set.
+        const kept = Object.entries(lineWarnings.value).filter(
+            ([productId]) => !written.includes(productId)
+        );
+        lineWarnings.value = {
+            ...Object.fromEntries(kept),
+            ...Object.fromEntries((warnings ?? []).map((warning) => [warning.productId, warning]))
+        };
+    };
+
+    /**
+     * Adds units to the guest cart, up to what can be bought: the guest cart lives in this browser,
+     * so it clamps from the availability store (`@/kernel/availability`) the way the server clamps
+     * the signed-in cart, and records the same warning. A product whose availability is not loaded
+     * is not clamped: nothing is known, and checkout (after sign-in) is the gate.
+     *
+     * @param productId - Product to add.
+     * @param quantity - How many to add.
+     * @returns `false` when the cart already holds the most distinct products it may and this is a
+     *  new one; the cart is then unchanged.
+     */
+    const addGuestItem = (productId: string, quantity: number): boolean => {
+        const held = guestLines.value.find((line) => line.productId === productId)?.quantity ?? 0;
+        const wanted = held + quantity;
+        const { quantity: next, code } = clampToAvailable(
+            wanted,
+            held,
+            availabilityOf(productId)?.quantityAvailable
+        );
+        const added = next === held || addGuestLines(productId, next - held);
+        if (added)
+            noteWarnings(
+                [productId],
+                code ? [{ code, productId, requested: wanted, resulting: next }] : undefined
+            );
+        return added;
+    };
+
+    /**
+     * Sets the exact quantity of a guest line, up to what can be bought (see {@link addGuestItem}).
+     *
+     * @param productId - Product whose line is updated.
+     * @param quantity - New quantity.
+     */
+    const updateGuestItem = (productId: string, quantity: number) => {
+        const held = guestLines.value.find((line) => line.productId === productId)?.quantity ?? 0;
+        const { quantity: next, code } = clampToAvailable(
+            quantity,
+            held,
+            availabilityOf(productId)?.quantityAvailable
+        );
+        setGuestLine(productId, next);
+        noteWarnings(
+            [productId],
+            code ? [{ code, productId, requested: quantity, resulting: next }] : undefined
+        );
+    };
 
     /**
      * The shopper closed the merge alert.
@@ -239,6 +324,7 @@ export const useCartStore = defineStore('cart', () => {
         cart.value = undefined;
         summarySeed.value = undefined;
         mergeReport.value = [];
+        lineWarnings.value = {};
         endCheckoutAttempt();
         clearGuestCart();
         writeMergeAttempt(undefined);
@@ -370,7 +456,10 @@ export const useCartStore = defineStore('cart', () => {
             sendKeyed(addIdempotencyKeys.forSubject(`${productId}\n${quantity}`), (options) =>
                 addCartItem({ productId, quantity }, options)
             )
-        );
+        ).then((answer) => {
+            if (answer) noteWarnings([productId], answer.warnings);
+            return answer;
+        });
 
     /**
      * Sets the exact quantity of an item already in the cart.
@@ -380,7 +469,10 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the updated cart response.
      */
     const updateCartItem = (productId: string, quantity: number) =>
-        replaceCart(() => updateCartItemByProductId(productId, { quantity }));
+        replaceCart(() => updateCartItemByProductId(productId, { quantity })).then((answer) => {
+            if (answer) noteWarnings([productId], answer.warnings);
+            return answer;
+        });
 
     /**
      * Chooses, or clears (`null`), the shipping method the cart plans to ship by ahead of
@@ -401,7 +493,10 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the updated cart response.
      */
     const removeCartItemAction = (productId: string) =>
-        replaceCart(() => deleteCartItemByProductId(productId));
+        replaceCart(() => deleteCartItemByProductId(productId)).then((answer) => {
+            noteWarnings([productId], undefined);
+            return answer;
+        });
 
     /**
      * Empties the cart entirely. `DELETE /cart/items` — the line collection's own URL, apart from
@@ -409,7 +504,11 @@ export const useCartStore = defineStore('cart', () => {
      *
      * @returns A promise resolving with the updated (empty) cart response.
      */
-    const clearCartAction = () => replaceCart(() => clearCart());
+    const clearCartAction = () =>
+        replaceCart(() => clearCart()).then((answer) => {
+            lineWarnings.value = {};
+            return answer;
+        });
 
     /**
      * What a failed checkout does to the attempt, and to the cart the page shows.
@@ -610,7 +709,8 @@ export const useCartStore = defineStore('cart', () => {
         if (!lost) {
             const lines = guestLines.value;
             return sendMerge(lines, mergeKeyFor(lines)).then((answer) => {
-                if (answer && sameEra()) mergeReport.value = changedMergeLines(answer.lines);
+                if (answer && sameEra())
+                    mergeReport.value = changedMergeLines(answer.lines, answer.warnings);
                 return answer;
             });
         }
@@ -623,10 +723,10 @@ export const useCartStore = defineStore('cart', () => {
                     : sendMerge(rest, mergeKeyFor(rest));
             return second.then((last) => {
                 if (sameEra())
-                    mergeReport.value = changedMergeLines([
-                        ...(first?.lines ?? []),
-                        ...(last?.lines ?? [])
-                    ]);
+                    mergeReport.value = changedMergeLines(
+                        [...(first?.lines ?? []), ...(last?.lines ?? [])],
+                        [...(first?.warnings ?? []), ...(last?.warnings ?? [])]
+                    );
                 return last ?? first;
             });
         });
@@ -696,6 +796,7 @@ export const useCartStore = defineStore('cart', () => {
         mergeGuestCart,
         mergeReport,
         dismissMergeReport,
+        lineWarnings,
         seedAfterSignIn,
 
         loading,

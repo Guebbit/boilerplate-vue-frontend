@@ -180,51 +180,50 @@ describe('CU27 · I filled a cart before I had signed in', () => {
         });
     });
 
-    it('keeps a line the stock does not cover at the quantity chosen, flags it, and clears the flag once it is lowered', () => {
-        cy.subjectProduct('product.lowStock').then(({ title }) => {
-            cy.step('one unit is for sale, and the guest chooses two');
-            guestAdds('product.lowStock');
-            cy.get('[data-test=add-to-cart]').click();
-            cy.get('[data-test=nav-badge]').should('contain.text', '2');
-
-            cy.step('signing in keeps both units: the merge never lowers a line for stock');
-            cy.get('[data-test=nav-login-link]').click();
-            signInThroughTheForm();
-            cy.goToCart();
-            cy.get('[data-test=cart-item]').should('have.length', 1);
-            cy.contains('[data-test=cart-item]', title).should('contain.text', 'Quantity: 2');
-
-            cy.step('the alert marks it short and says to lower it, with no stock number');
-            cy.get(`${MERGE_ALERT} [data-test=cart-merge-report-line]`)
-                .should('have.length', 1)
-                .and('contain.text', title)
-                .and('contain.text', 'you chose 2, your cart now has 2')
-                .and('contain.text', 'Lower the quantity before checkout')
-                .invoke('text')
-                .should((text) => {
-                    expect(text.match(/\d+/g), 'only the two quantities').to.deep.equal(['2', '2']);
+    it('adds a line up to what the stock covers, says so in the merge alert, and leaves no marker on the line', () => {
+        cy.subjectId('product.lowStock').then((productId) => {
+            cy.subjectProduct('product.lowStock').then(({ title }) => {
+                cy.step('two units are for sale while the guest chooses two');
+                cy.apiAs('admin', 'POST', `/inventory/levels/${productId}/receive`, {
+                    quantity: 1
                 });
-            cy.get(`${MERGE_ALERT} [data-test=cart-merge-report-short]`).should(
-                'contain.text',
-                'Not enough in stock'
-            );
+                guestAdds('product.lowStock');
+                cy.get('[data-test=add-to-cart]').click();
+                cy.get('[data-test=nav-badge]').should('contain.text', '2');
 
-            cy.step('the cart line carries the same marker, in words');
-            cy.get('[data-test=cart-line-availability]')
-                .should('have.length', 1)
-                .and('contain.text', 'Not enough in stock');
-            cy.checkPageA11y('cart with a short line and the merge alert');
+                cy.step('a sale takes one before the guest signs in');
+                cy.apiAs('admin', 'POST', `/inventory/levels/${productId}/adjust`, {
+                    delta: -1,
+                    note: 'CU27 stocktake'
+                });
 
-            cy.step('a reload takes the alert away, and the line keeps the server flag');
-            cy.reload();
-            cy.get('#cart-page').should('exist');
-            cy.get(MERGE_ALERT).should('not.exist');
-            cy.get('[data-test=cart-line-availability]').should('have.length', 1);
+                cy.step('signing in adds one: the merge clamps a line to what can be bought');
+                cy.get('[data-test=nav-login-link]').click();
+                signInThroughTheForm();
+                cy.goToCart();
+                cy.get('[data-test=cart-item]').should('have.length', 1);
+                cy.contains('[data-test=cart-item]', title).should('contain.text', 'Quantity: 1');
 
-            cy.step('lowering it to what is for sale clears the marker');
-            cy.get('[data-test=cart-decrease]').click();
-            cy.contains('[data-test=cart-item]', title).should('contain.text', 'Quantity: 1');
-            cy.get('[data-test=cart-line-availability]').should('not.exist');
+                cy.step('the alert marks it short and says it was added only up to that');
+                cy.get(`${MERGE_ALERT} [data-test=cart-merge-report-line]`)
+                    .should('have.length', 1)
+                    .and('contain.text', title)
+                    .and('contain.text', 'you chose 2, your cart now has 1')
+                    .and('contain.text', 'Only that many could be added');
+                cy.get(`${MERGE_ALERT} [data-test=cart-merge-report-short]`).should(
+                    'contain.text',
+                    'Not enough in stock'
+                );
+
+                cy.step('the line fits what can be bought, so it carries no marker');
+                cy.get('[data-test=cart-line-availability]').should('not.exist');
+                cy.checkPageA11y('cart with the merge alert');
+
+                cy.step('a reload takes the alert away');
+                cy.reload();
+                cy.get('#cart-page').should('exist');
+                cy.get(MERGE_ALERT).should('not.exist');
+            });
         });
     });
 });

@@ -170,6 +170,7 @@ export const useProductsStore = defineStore('products', () => {
         itemDictionary: products,
         itemList: productsList,
         addRecord: addProduct,
+        deleteRecord: dropProduct,
         selectedIdentifier: selectedProductId,
         selectedRecord: currentProduct,
 
@@ -433,20 +434,41 @@ export const useProductsStore = defineStore('products', () => {
      * {@link products} dictionary the product page reads, and `forced` makes a cart opened
      * after a price change show the new price rather than a cached one. `pageSize` is set to
      * the batch length because the endpoint's default page is 10. An id the caller may not see
-     * (deleted, inactive) is simply not answered: its slot comes back `undefined`.
+     * (deleted, inactive) is simply not answered: its slot comes back `undefined`, and a record held
+     * from an earlier read is dropped.
      *
      * @param productIds - The products to load; duplicates are folded.
      * @returns A promise resolving with one entry per distinct id, `undefined` where none came back.
      */
-    const fetchProductsByIds = (productIds: string[]) =>
-        fetchMultiple(
+    const fetchProductsByIds = (productIds: string[]) => {
+        // What the server itself answered, kept apart from `fetchMultiple`'s result, which is read
+        // back from the dictionary and so still holds a stale record for an id the server dropped.
+        const answered = new Set<string>();
+        let read = false;
+        return fetchMultiple(
             (missing) =>
-                Promise.all(idBatches(missing).map((batch) => searchBatch(batch))).then((batches) =>
-                    batches.flat()
+                Promise.all(idBatches(missing).map((batch) => searchBatch(batch))).then(
+                    (batches) => {
+                        const records = batches.flat();
+                        for (const record of records) answered.add(record.id);
+                        read = true;
+                        return records;
+                    }
                 ),
             [...new Set(productIds)],
             { forced: true }
-        );
+        ).then((records) => {
+            /**
+             * An id the read did not answer is gone for this viewer (hidden, deleted): a record the
+             * dictionary still holds from an earlier visit is stale, and a cart line would keep
+             * reading it as on sale. Dropped, so `isRemoved` sees what the server says now. Only a read
+             * that COMPLETED with an answer drops: one aborted (a language switch cancels the read) or
+             * failed never reaches `read = true`, and an empty answer from a cancelled read drops nothing.
+             */
+            if (read) for (const id of productIds) if (!answered.has(id)) dropProduct(id);
+            return records;
+        });
+    };
 
     /**
      * Every locale the caller was offered — live ones and, for staff, draft ones (`active: false`).

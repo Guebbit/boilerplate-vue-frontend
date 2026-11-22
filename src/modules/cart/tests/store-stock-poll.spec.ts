@@ -1,7 +1,7 @@
 /**
  * @module
  * The store's background read, `pollCart`: it refreshes the cart (and so each line's
- * `availability`) without ever making a stale answer win. It yields while a call that
+ * stock answer) without ever making a stale answer win. It yields while a call that
  * replaces the cart is on the wire, drops an answer a fresher call overtook or one meant for the
  * previous person, and never toggles `loading` or touches the merge report.
  */
@@ -63,7 +63,13 @@ describe('what a poll does', () => {
         await store.pollCart();
 
         expect(store.cartItems).toEqual([
-            { productId: 'p1', quantity: 2, availability: 'insufficient_stock', canIncrease: true }
+            {
+                productId: 'p1',
+                quantity: 2,
+                availability: 'in_stock',
+                quantityAvailable: 1,
+                canIncrease: false
+            }
         ]);
     });
 
@@ -83,7 +89,12 @@ describe('what a poll does', () => {
     it('leaves the merge report alone', async () => {
         const store = freshStore();
         store.mergeReport = [
-            { productId: 'p1', requested: 2, resulting: 2, availability: 'insufficient_stock' }
+            {
+                productId: 'p1',
+                requested: 2,
+                resulting: 2,
+                warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
+            }
         ];
         serverHolds(aCart([['p1', 2]], null, ['p1']));
 
@@ -136,7 +147,7 @@ describe('a poll yields to anything fresher', () => {
         await store.pollCart();
 
         expect(getCart).toHaveBeenCalledTimes(1);
-        expect(store.cartItems[0]?.availability).toBe('insufficient_stock');
+        expect(store.cartItems[0]?.quantityAvailable).toBe(4);
     });
 
     it('does not ask while another poll is out', async () => {

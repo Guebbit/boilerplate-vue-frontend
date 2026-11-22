@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { steppedQuantity } from '../domain';
+import { clampToAvailable, steppedQuantity } from '../domain';
 
 describe('steppedQuantity', () => {
     it('steps up', () => {
@@ -37,4 +37,40 @@ describe('steppedQuantity', () => {
     it('lifts a line that is already below the floor', () => {
         expect(steppedQuantity(0, -1)).toBe(1);
     });
+});
+
+describe('steppedQuantity with what can be bought', () => {
+    it('stops a raise at the number', () => {
+        expect(steppedQuantity(2, 1, 3)).toBe(3);
+        expect(steppedQuantity(3, 1, 3)).toBe(3);
+    });
+
+    it('never raises a line already above the number, and still lowers it', () => {
+        expect(steppedQuantity(5, 1, 3)).toBe(5);
+        expect(steppedQuantity(5, -1, 3)).toBe(4);
+    });
+
+    it('raises freely when there is no limit', () => {
+        expect(steppedQuantity(5, 1)).toBe(6);
+    });
+});
+
+describe('clampToAvailable', () => {
+    it.each([
+        { wanted: 5, held: 0, available: undefined, quantity: 5, code: undefined },
+        { wanted: 3, held: 0, available: 5, quantity: 3, code: undefined },
+        { wanted: 6, held: 0, available: 5, quantity: 5, code: 'MERCHANDISE_NOT_ENOUGH_STOCK' },
+        { wanted: 6, held: 8, available: 5, quantity: 6, code: undefined },
+        { wanted: 9, held: 8, available: 5, quantity: 8, code: 'MERCHANDISE_NOT_ENOUGH_STOCK' },
+        { wanted: 2, held: 0, available: 0, quantity: 0, code: 'MERCHANDISE_OUT_OF_STOCK' },
+        { wanted: 9, held: 8, available: 0, quantity: 8, code: 'MERCHANDISE_OUT_OF_STOCK' }
+    ] as const)(
+        'holds $wanted at $quantity with $held held and $available buyable',
+        ({ wanted, held, available, quantity, code }) => {
+            expect(clampToAvailable(wanted, held, available)).toEqual({
+                quantity,
+                ...(code ? { code } : {})
+            });
+        }
+    );
 });

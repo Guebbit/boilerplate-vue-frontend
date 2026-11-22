@@ -18,6 +18,7 @@ import {
 import { getCart, getCartSummary, mergeCart } from '@api';
 import * as schemas from '@api/schemas';
 import { loadLocale } from '@/i18n';
+import { clearAvailability, recordAvailability } from '@/kernel/availability.ts';
 import { contractBody } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import { trackStores } from './track-stores.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -49,7 +50,7 @@ const MERGED_CART = {
 const RESPONSES = {
     merged: contractBody<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
         cart: MERGED_CART,
-        lines: [{ productId: 'p1', requested: 3, resulting: 3, availability: 'in_stock' }]
+        lines: [{ productId: 'p1', requested: 3, resulting: 3 }]
     }),
     mergedWithChanges: contractBody<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
         cart: MERGED_CART,
@@ -58,18 +59,19 @@ const RESPONSES = {
                 productId: 'p1',
                 requested: 2,
                 resulting: 5,
-                reason: 'summed',
-                availability: 'in_stock'
+                reason: 'summed'
             },
             {
                 productId: 'p2',
                 requested: 1,
                 resulting: 0,
-                reason: 'removed',
-                availability: 'in_stock'
+                reason: 'removed'
             },
-            { productId: 'p3', requested: 4, resulting: 4, availability: 'insufficient_stock' },
-            { productId: 'p4', requested: 1, resulting: 1, availability: 'in_stock' }
+            { productId: 'p3', requested: 4, resulting: 3 },
+            { productId: 'p4', requested: 1, resulting: 1 }
+        ],
+        warnings: [
+            { code: 'MERCHANDISE_NOT_ENOUGH_STOCK', productId: 'p3', requested: 4, resulting: 3 }
         ]
     }),
     mergedAgain: contractBody<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
@@ -79,8 +81,7 @@ const RESPONSES = {
                 productId: 'p9',
                 requested: 999,
                 resulting: 999,
-                reason: 'capped',
-                availability: 'in_stock'
+                reason: 'capped'
             }
         ]
     }),
@@ -103,6 +104,7 @@ vi.mock('@api', () => ({
 const { fresh: freshStore, disposeAll } = trackStores();
 
 beforeEach(() => {
+    clearAvailability();
     localStorage.clear();
     setActivePinia(createPinia());
     vi.clearAllMocks();
@@ -687,6 +689,69 @@ const storeAfterChangedMerge = async () => {
     return store;
 };
 
+describe('the guest list against what can be bought', () => {
+    it('does not clamp a product whose availability has not loaded', () => {
+        const store = freshStore();
+
+        expect(store.addGuestItem('p1', 40)).toBe(true);
+
+        expect(store.guestLines).toEqual([{ productId: 'p1', quantity: 40 }]);
+        expect(store.lineWarnings).toEqual({});
+    });
+
+    it('stops an add at the number the availability store holds, and says so beside the line', () => {
+        recordAvailability(
+            'p1',
+            { productId: 'p1', availability: 'in_stock', quantityAvailable: 3 },
+            Date.now()
+        );
+        const store = freshStore();
+
+        store.addGuestItem('p1', 2);
+        store.addGuestItem('p1', 2);
+
+        expect(store.guestLines).toEqual([{ productId: 'p1', quantity: 3 }]);
+        expect(store.lineWarnings.p1).toEqual({
+            code: 'MERCHANDISE_NOT_ENOUGH_STOCK',
+            productId: 'p1',
+            requested: 4,
+            resulting: 3
+        });
+    });
+
+    it('adds nothing of a sold-out product, and says it is out of stock', () => {
+        recordAvailability(
+            'p1',
+            { productId: 'p1', availability: 'out_of_stock', quantityAvailable: 0 },
+            Date.now()
+        );
+        const store = freshStore();
+
+        expect(store.addGuestItem('p1', 1)).toBe(true);
+
+        expect(store.guestLines).toEqual([]);
+        expect(store.lineWarnings.p1).toMatchObject({ code: 'MERCHANDISE_OUT_OF_STOCK' });
+    });
+
+    it('lets a line above the number be lowered without a warning, and forgets an old one', () => {
+        recordAvailability(
+            'p1',
+            { productId: 'p1', availability: 'in_stock', quantityAvailable: 3 },
+            Date.now()
+        );
+        writeGuestCart([{ productId: 'p1', quantity: 8 }]);
+        const store = freshStore();
+        store.updateGuestItem('p1', 9);
+        expect(store.guestLines).toEqual([{ productId: 'p1', quantity: 8 }]);
+        expect(store.lineWarnings.p1).toBeDefined();
+
+        store.updateGuestItem('p1', 5);
+
+        expect(store.guestLines).toEqual([{ productId: 'p1', quantity: 5 }]);
+        expect(store.lineWarnings.p1).toBeUndefined();
+    });
+});
+
 describe('the merge report', () => {
     it('holds the lines that changed, are short of stock or are gone, and only those, from the answer', async () => {
         const store = await storeAfterChangedMerge();
@@ -696,40 +761,34 @@ describe('the merge report', () => {
                 productId: 'p1',
                 requested: 2,
                 resulting: 5,
-                reason: 'summed',
-                availability: 'in_stock'
+                reason: 'summed'
             },
             {
                 productId: 'p2',
                 requested: 1,
                 resulting: 0,
-                reason: 'removed',
-                availability: 'in_stock'
+                reason: 'removed'
             },
-            { productId: 'p3', requested: 4, resulting: 4, availability: 'insufficient_stock' }
+            {
+                productId: 'p3',
+                requested: 4,
+                resulting: 3,
+                warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
+            }
         ]);
     });
 
-    it('keeps a short line at the quantity the guest asked: the merge never lowers it for stock', async () => {
+    it('holds a short line at what the server added, with the warning stock gave it', async () => {
         const store = await storeAfterChangedMerge();
 
         const short = store.mergeReport.find(({ productId }) => productId === 'p3');
 
         expect(short).toMatchObject({
             requested: 4,
-            resulting: 4,
-            availability: 'insufficient_stock'
+            resulting: 3,
+            warning: 'MERCHANDISE_NOT_ENOUGH_STOCK'
         });
         expect(short?.reason).toBeUndefined();
-    });
-
-    it('never carries a stock number: a line holds only what was asked, what the cart has and a flag', async () => {
-        const store = await storeAfterChangedMerge();
-
-        for (const line of store.mergeReport)
-            expect(Object.keys(line).toSorted()).toEqual(
-                ['availability', 'productId', 'reason', 'requested', 'resulting'].toSorted()
-            );
     });
 
     it('stays empty when every line landed as asked', async () => {
@@ -770,8 +829,7 @@ describe('the merge report', () => {
                 productId: 'p9',
                 requested: 999,
                 resulting: 999,
-                reason: 'capped',
-                availability: 'in_stock'
+                reason: 'capped'
             }
         ]);
 

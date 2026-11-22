@@ -10,7 +10,7 @@ import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { ShoppingCart } from 'lucide-vue-next';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -68,7 +68,11 @@ const shelf = computed(() => shelfStateOf(product, availabilityOf(product.id)));
  * Whether the product can be ordered now: anything but sold out, off sale, or not known yet.
  */
 const orderable = computed(
-    () => shelf.value === 'in-stock' || shelf.value === 'preorder' || shelf.value === 'backorder'
+    () =>
+        shelf.value === 'in-stock' ||
+        shelf.value === 'low-stock' ||
+        shelf.value === 'preorder' ||
+        shelf.value === 'backorder'
 );
 
 /**
@@ -104,8 +108,12 @@ const { message: error, report: reportError, clear: clearError } = useBlockingEr
  * the only way it fails is a list already full of other products.
  */
 const addToGuestCart = () => {
-    if (cartStore.addGuestItem(product.id, 1)) addMessage(t('add-to-cart-button.success'));
-    else reportError(new Error(t('add-to-cart-button.guest-full')));
+    if (!cartStore.addGuestItem(product.id, 1))
+        reportError(new Error(t('add-to-cart-button.guest-full')));
+    // Stock held the add back (the guest cart clamps from the availability store): say so.
+    else if (cartStore.lineWarnings[product.id])
+        addMessage(t('add-to-cart-button.not-added'), EToastType.WARNING);
+    else addMessage(t('add-to-cart-button.success'));
 };
 
 /**
@@ -123,7 +131,12 @@ const handleAddToCart = () => {
     }
     cartStore
         .addCartItem(product.id, 1)
-        .then(() => addMessage(t('add-to-cart-button.success')))
+        .then((answer) =>
+            // The server clamped it (the line already holds all that can be bought): say so.
+            answer?.warnings
+                ? addMessage(t('add-to-cart-button.not-added'), EToastType.WARNING)
+                : addMessage(t('add-to-cart-button.success'))
+        )
         .catch(reportError);
 };
 </script>

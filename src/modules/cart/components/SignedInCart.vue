@@ -23,6 +23,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useOrderLink } from '@/kernel/order-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useCartStore } from '../store.ts';
+import { useLineWarningText } from '../composables/use-line-warning-text';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`; the
 // clamping half of that rule lives with the stepping itself, in `use-line-quantity.ts`.
 import { MIN_LINE_QUANTITY, classifyCheckoutError } from '../domain';
@@ -86,7 +87,7 @@ const {
  * The lines' product join: one batched read, then title and price off the products dictionary —
  * the record the product page shows, not a copy this store keeps.
  */
-const { loadProducts, productOf, titleOf, availabilityLabel } = useProductLines();
+const { loadProducts, productOf, titleOf, lineLabel, statusOf } = useProductLines();
 
 /**
  * Cart store state, reactive. `loading` is the in-flight guard for checkout and clear: both
@@ -95,16 +96,17 @@ const { loadProducts, productOf, titleOf, availabilityLabel } = useProductLines(
 const { cart, cartItems, cartSummary, cartShipping, loading } = storeToRefs(useCartStore());
 
 /**
- * Whether a line waits for stock or a date (preorder or backorder) rather than shipping now.
+ * Whether a line waits for stock or a date (a preorder, or units past the shelf) rather than
+ * shipping now.
  */
-const shipsLater = (availability: string): boolean =>
-    availability === 'preorder' || availability === 'backorder';
+const shipsLater = (item: CartResponseItem): boolean =>
+    item.availability === 'preorder' || item.quantityBackordered !== undefined;
 
 /**
  * Whether any line waits for stock or a date. The order has one shipping method, and choosing a
  * faster one does not bring those lines forward, so the page says so once, near the choice.
  */
-const hasLaterLine = computed(() => cartItems.value.some((item) => shipsLater(item.availability)));
+const hasLaterLine = computed(() => cartItems.value.some((item) => shipsLater(item)));
 
 /**
  * The chosen shipping method — mirrors `cart.value?.shipping.selected` (see the `watch` below that
@@ -253,19 +255,40 @@ const {
     }
 });
 
+// Vue `watch`: a refusal names lines whose product may have changed behind this page (taken off
+// sale, hidden): the server answers only a number, so "off sale" and "removed" are read from the
+// product details, which must be current. Reads them fresh, and the sentences follow.
+// https://vuejs.org/api/reactivity-core.html#watch
+watch(insufficientStockLines, (lines) => {
+    // A failed read leaves the sentence as it was: "sold out" is still true.
+    loadProducts(lines.map(({ productId }) => productId)).catch(() => undefined);
+});
+
 /**
- * The sentence for one refused line: fewer left, none left, or off sale. Literal keys, so a
- * translation check can see each of them.
+ * The sentence for one refused line: fewer left, none left, or off sale (the product details tell
+ * the last two apart: the server counts both as nothing to buy). Literal keys, so a translation
+ * check can see each of them.
  *
  * @param line - A line the stock refusal named.
  * @returns The line's message.
  */
-const shortfallText = ({ title, requested, availability }: CheckoutShortfallLine): string => {
-    if (availability === 'out_of_stock')
-        return t('cart-page.shortfall-line-out-of-stock', { title });
-    if (availability === 'unavailable') return t('cart-page.shortfall-line-unavailable', { title });
-    return t('cart-page.shortfall-line', { title, requested });
+const shortfallText = ({
+    productId,
+    title,
+    requested,
+    quantityAvailable
+}: CheckoutShortfallLine): string => {
+    if (quantityAvailable > 0)
+        return t('cart-page.shortfall-line', { title, requested, available: quantityAvailable });
+    return productOf(productId)?.purchasable === false
+        ? t('cart-page.shortfall-line-unavailable', { title })
+        : t('cart-page.shortfall-line-out-of-stock', { title });
 };
+
+/**
+ * The sentence for what stock did to a line's last write, beside the line until it is written again.
+ */
+const warningText = useLineWarningText(titleOf);
 
 /**
  * The order page's link-maker; `undefined` when this build ships no order page.
@@ -577,51 +600,84 @@ onMounted(() =>
             />
 
             <div class="flex flex-col gap-4" data-tour="checkout-lines">
-                <CartLineCard
+                <div
                     v-for="item in cartItems"
                     :key="'cart-item-' + item.productId"
-                    test-prefix="cart"
-                    :title="titleOf(item.productId)"
-                    :quantity="lineQuantity(item)"
-                    :unit-price="productOf(item.productId)?.price"
-                    :currency="productOf(item.productId)?.currency ?? ''"
-                    :can-decrease="!placing && lineQuantity(item) > MIN_LINE_QUANTITY"
-                    :can-increase="!placing && item.canIncrease"
-                    :remove-disabled="loading"
-                    @step="(delta) => stepQuantity(item.productId, item.quantity, delta)"
-                    @remove="removeLine(item.productId)"
+                    class="flex flex-col gap-2"
                 >
-                    <template #badges>
-                        <v-chip
-                            v-if="availabilityLabel(item.availability)"
-                            size="small"
-                            :color="
-                                item.availability === 'preorder' ||
-                                item.availability === 'backorder'
-                                    ? 'info'
-                                    : 'warning'
-                            "
-                            variant="tonal"
-                            label
-                            class="ml-2"
-                            :data-availability="item.availability"
-                            data-test="cart-line-availability"
-                        >
-                            {{ availabilityLabel(item.availability, productOf(item.productId)) }}
-                        </v-chip>
-                        <!-- Art. 6(1)(k) CRD: told BEFORE buying that this item has no right of withdrawal. -->
-                        <v-chip
-                            v-if="productOf(item.productId)?.noWithdrawal"
-                            size="small"
-                            variant="tonal"
-                            label
-                            class="ml-2"
-                            data-test="cart-line-no-withdrawal"
-                        >
-                            {{ t('cart-page.label-no-withdrawal') }}
-                        </v-chip>
-                    </template>
-                </CartLineCard>
+                    <CartLineCard
+                        test-prefix="cart"
+                        :title="titleOf(item.productId)"
+                        :quantity="lineQuantity(item)"
+                        :unit-price="productOf(item.productId)?.price"
+                        :currency="productOf(item.productId)?.currency ?? ''"
+                        :can-decrease="!placing && lineQuantity(item) > MIN_LINE_QUANTITY"
+                        :can-increase="
+                            !placing &&
+                            item.canIncrease &&
+                            (item.quantityAvailable === undefined ||
+                                lineQuantity(item) < item.quantityAvailable)
+                        "
+                        :remove-disabled="loading"
+                        @step="
+                            (delta) =>
+                                stepQuantity(
+                                    item.productId,
+                                    item.quantity,
+                                    delta,
+                                    item.quantityAvailable
+                                )
+                        "
+                        @remove="removeLine(item.productId)"
+                    >
+                        <template #badges>
+                            <v-chip
+                                v-if="lineLabel(item.productId, item)"
+                                size="small"
+                                :color="
+                                    ['preorder', 'ships-later'].includes(
+                                        statusOf(item.productId, item)
+                                    )
+                                        ? 'info'
+                                        : 'warning'
+                                "
+                                variant="tonal"
+                                label
+                                class="ml-2"
+                                :data-availability="statusOf(item.productId, item)"
+                                data-test="cart-line-availability"
+                            >
+                                {{ lineLabel(item.productId, item) }}
+                            </v-chip>
+                            <!-- Art. 6(1)(k) CRD: told BEFORE buying that this item has no right of withdrawal. -->
+                            <v-chip
+                                v-if="productOf(item.productId)?.noWithdrawal"
+                                size="small"
+                                variant="tonal"
+                                label
+                                class="ml-2"
+                                data-test="cart-line-no-withdrawal"
+                            >
+                                {{ t('cart-page.label-no-withdrawal') }}
+                            </v-chip>
+                        </template>
+                    </CartLineCard>
+                    <!--
+                    What stock did to this line's last write ("Only 20 available, so we added 20"):
+                    beside the line until it is written again, never only a toast that vanishes. One
+                    polite live region per message, so it is read once when it appears.
+                -->
+                    <v-alert
+                        v-if="warningText(item.productId)"
+                        type="warning"
+                        variant="tonal"
+                        density="compact"
+                        role="status"
+                        data-test="cart-line-warning"
+                    >
+                        {{ warningText(item.productId) }}
+                    </v-alert>
+                </div>
             </div>
 
             <div class="flex flex-col gap-4">
