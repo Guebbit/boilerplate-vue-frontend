@@ -681,9 +681,13 @@ export const counterSale = (sale: {
         cy.get('[role=listbox] [role=option]').contains(sale.paidBy).click();
         cy.get('[data-test=record-offline-submit]').click();
         cy.get('[data-test=record-offline-payment-error]').should('not.exist');
-        cy.apiAs<{ status: string }>('admin', 'GET', `/orders/${orderId}`)
-            .its('status')
-            .should('equal', 'paid');
+        // The order moves to paid a moment after the payment is written: read until it has.
+        eventually(
+            () => cy.apiAs<{ status: string }>('admin', 'GET', `/orders/${orderId}`),
+            (order) => order?.status === 'paid'
+        ).should((order) => {
+            expect(order?.status).to.equal('paid');
+        });
 
         cy.step('the goods are handed over: ship with no tracking code, then deliver');
         cy.visit(`/en/orders/${orderId}`);
