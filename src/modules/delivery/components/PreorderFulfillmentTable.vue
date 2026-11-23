@@ -32,7 +32,7 @@ import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import { PreorderFulfillmentState } from '@/types/enums.ts';
+import { PreorderFulfillmentState } from '../enums.ts';
 import type { PreorderFulfillmentOrder } from '@types';
 import { useDeliveryStore } from '../store.ts';
 

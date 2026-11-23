@@ -42,13 +42,13 @@ import {
     OrderPaymentStatus,
     OrderReturnStatus,
     OrderStatus
-} from '@/types/enums.ts';
+} from '../enums.ts';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import { useServerSort } from '@/ui/composables/use-server-sort.ts';
 import { sortFieldsOf } from '@/infrastructure/utils/sort.ts';
-import { OrderSortItem } from '@/types/enums.ts';
+import { OrderSortItem } from '../enums.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';

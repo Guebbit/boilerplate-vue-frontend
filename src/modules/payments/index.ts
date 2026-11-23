@@ -11,6 +11,7 @@
  * The rule: `docs/understand/strategic-ddd.md` §5.
  */
 
+export * from './enums';
 export * from './refund-notice';
 export * from './store';
 export * from './composables/use-order-refund';
@@ -21,6 +22,7 @@ export { default as AttentionList } from './components/AttentionList.vue';
 export { default as AwaitingTransfersTable } from './components/AwaitingTransfersTable.vue';
 export { default as DisputeBanner } from './components/DisputeBanner.vue';
 export { default as OrderDisputes } from './components/OrderDisputes.vue';
+export { default as PaidOutsideFields } from './components/PaidOutsideFields.vue';
 export { default as OrderReferenceSearch } from './components/OrderReferenceSearch.vue';
 export { default as PaymentDrawer } from './components/PaymentDrawer.vue';
 export { default as PaymentMethodSelector } from './components/PaymentMethodSelector.vue';

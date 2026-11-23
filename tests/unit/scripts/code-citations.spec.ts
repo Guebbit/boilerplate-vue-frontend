@@ -37,6 +37,18 @@ describe('deadCodeCitations', () => {
         expect(deadCodeCitations(root, files)).toEqual([]);
     });
 
+    it('skips a listed file deleted from the tree, and reports a citation of a deleted page', async () => {
+        const files = await track({
+            'docs/tools/umami.md': '# Umami\n',
+            'src/gone.ts': '// docs/tools/umami.md\n',
+            'src/b.ts': '// docs/tools/umami.md\n'
+        });
+        await rm(path.join(root, 'src/gone.ts'));
+        await rm(path.join(root, 'docs/tools/umami.md'));
+
+        expect(deadCodeCitations(root, files)).toEqual(['src/b.ts: docs/tools/umami.md']);
+    });
+
     it('reports an anchor that no heading of the page answers to', async () => {
         const files = await track({
             'docs/tools/umami.md': '# Umami\n\n## Consent\n',

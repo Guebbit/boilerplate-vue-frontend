@@ -32,7 +32,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
-import { StockMovementReason } from '@/types/enums.ts';
+import { StockMovementReason } from '../enums.ts';
 import type { StockMovement, StockMovementReason as TStockMovementReason } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';

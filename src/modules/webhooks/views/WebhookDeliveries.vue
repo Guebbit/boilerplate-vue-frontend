@@ -25,7 +25,7 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import WebhookDeliveriesFilters from '../components/WebhookDeliveriesFilters.vue';
 import type { WebhookDeliveryFilters } from '../types.ts';
-import { WebhookDeliveryStatus } from '@/types/enums.ts';
+import { WebhookDeliveryStatus } from '../enums.ts';
 import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**

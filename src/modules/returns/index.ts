@@ -11,6 +11,7 @@
  * The rule: `docs/understand/strategic-ddd.md` §5.
  */
 
+export * from './domain/enums';
 export * from './store';
 export * from './domain/whole-return';
 export { default as CancelRemainderDialog } from './components/CancelRemainderDialog.vue';

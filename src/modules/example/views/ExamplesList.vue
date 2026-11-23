@@ -29,7 +29,7 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
-import { ExampleSortItem, ExampleStatus } from '@/types/enums.ts';
+import { ExampleSortItem, ExampleStatus } from '../enums.ts';
 import { publicationOf } from '../domain';
 import type { Example } from '@types';
 

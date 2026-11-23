@@ -15,7 +15,7 @@ import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useDeliveryStore } from '../store.ts';
-import { HoldFulfillmentOrderRequestReason } from '@/types/enums.ts';
+import { HoldFulfillmentOrderRequestReason } from '../enums.ts';
 import type { FulfillmentOrder } from '@types';
 
 /**

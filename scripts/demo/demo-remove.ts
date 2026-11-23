@@ -1,7 +1,8 @@
 #!/usr/bin/env tsx
 /**
  * `npm run demo:remove` — deletes every module
- * a `module.yaml` puts in the `shop` or `example` group, and their entry in `src/modules.ts`.
+ * a `module.yaml` puts in the `shop` or `example` group (or only the ones `--modules a,b,c` names;
+ * `example` goes only when listed), and their entry in `src/modules.ts`.
  * A module's `group` and `dependsOn` live in its own folder, so deleting the folder deletes them. Everything else that reaches a domain module — `src/app/router/index.ts`,
  * `src/infrastructure/http/response-schema-map.ts` — already reads `enabledModules` generically,
  * so a module's own folder is the only place its name is written down.
@@ -21,7 +22,7 @@
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { demoModuleNames } from '../module-manifest';
+import { resolveStripModules } from '../module-manifest';
 import { removeModuleFolders, stripModuleRegistry } from './demo-remove-registry';
 import { removeResidueSpecs } from './demo-remove-tests';
 
@@ -53,8 +54,11 @@ const findResidueTests = (names: readonly string[]): string[] => {
     }
 };
 
-/** The demo modules to delete: the `shop` and `example` groups of the `module.yaml` files. */
-const demoNames = demoModuleNames();
+/**
+ * The modules to delete: the `--modules a,b,c` list, else the `shop` and `example` groups of the
+ * `module.yaml` files.
+ */
+const demoNames = resolveStripModules(process.argv.slice(2));
 
 console.info(`[demo-remove] removing ${demoNames.length} demo module(s): ${demoNames.join(', ')}`);
 console.info('\n[demo-remove] module folders:');

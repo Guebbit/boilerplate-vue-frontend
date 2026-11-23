@@ -6,7 +6,7 @@
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
-import { ReturnDeclineReason } from '@/types/enums.ts';
+import { ReturnDeclineReason } from './domain/enums.ts';
 import {
     cancelReturnBodyNoteMax,
     closeReturnBodyNoteMax,

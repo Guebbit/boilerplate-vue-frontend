@@ -35,7 +35,6 @@ import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import PaidOutsideFields from '@/ui/molecules/PaidOutsideFields.vue';
 import { useReturnsStore } from '../store.ts';
 import {
     cancelNoteMax,
@@ -49,6 +48,7 @@ import {
 } from '../schemas.ts';
 import { hasRemedyChoice, REMEDIES } from '../domain/remedy.ts';
 import type { PaidOutside, Return } from '@types';
+import { PaidOutsideFields } from '@/modules/payments';
 
 /**
  * The return being worked on, with the caller's `actions`.

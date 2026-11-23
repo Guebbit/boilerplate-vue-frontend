@@ -156,7 +156,7 @@ Look for pure expressions with 2+ callers sitting in views or stores. Compare th
 rg -n "'[a-z_]+'\s*\|" src -g '!**/tests/**'
 ```
 
-Compare each hit with `src/types/enums.ts` and `@types`.
+Compare each hit with the module's `enums.ts` and `@types`.
 
 ### 6 — name the wrong side
 

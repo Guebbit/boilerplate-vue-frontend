@@ -8,7 +8,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { parse } from 'yaml';
-import { OrderFulfillmentFilter, OrderStatus, ReturnStatus } from '@/types/enums.ts';
+import { OrderFulfillmentFilter, OrderStatus } from '@/modules/orders';
+import { ReturnStatus } from '@/modules/returns';
 
 /**
  * The router's guards are not under test: `resolve` never runs them, but importing the router

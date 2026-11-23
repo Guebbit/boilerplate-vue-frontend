@@ -31,7 +31,7 @@ import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
-import { ReturnStatus, ReturnReason } from '@/types/enums.ts';
+import { ReturnStatus, ReturnReason } from '../domain/enums.ts';
 
 /**
  * Translation function.

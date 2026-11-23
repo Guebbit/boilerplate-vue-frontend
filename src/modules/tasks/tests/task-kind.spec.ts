@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { taskKindKey } from '../task-kind.ts';
 import en from '../locales/en.json';
 import it_ from '../locales/it.json';
-import { TaskKind } from '@/types/enums.ts';
+import { TaskKind } from '../enums.ts';
 
 describe('taskKindKey', () => {
     it.each(Object.values(TaskKind))('keeps the key of the known kind %s', (kind) => {

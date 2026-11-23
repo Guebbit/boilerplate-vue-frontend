@@ -39,7 +39,7 @@ import SortSelect from '@/ui/molecules/SortSelect.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
-import { TaskCategory, TaskKind, TaskSource, TaskStatus } from '@/types/enums.ts';
+import { TaskCategory, TaskKind, TaskSource, TaskStatus } from '../enums.ts';
 import type { TaskListItem } from '@types';
 
 /**

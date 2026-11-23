@@ -30,7 +30,12 @@ import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.
 import { useOrdersStore } from '../store.ts';
 import { ordersSchema } from '../schemas.ts';
 import { useOrderHero } from '../composables/use-order-hero.ts';
-import { useOrderRefund, OrderDisputes, RecordOfflinePaymentForm } from '@/modules/payments';
+import {
+    useOrderRefund,
+    OrderDisputes,
+    PaidOutsideFields,
+    RecordOfflinePaymentForm
+} from '@/modules/payments';
 import ShippingAddressForm from '../components/ShippingAddressForm.vue';
 import BillingAddressForm from '../components/BillingAddressForm.vue';
 import { z } from 'zod';
@@ -54,7 +59,6 @@ import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import PaidOutsideFields from '@/ui/molecules/PaidOutsideFields.vue';
 
 /**
  * Generic utility hooks.

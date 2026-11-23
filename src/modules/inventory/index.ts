@@ -11,6 +11,7 @@
  * The rule: `docs/understand/strategic-ddd.md` §5.
  */
 
+export * from './enums';
 export * from './store';
 export * from './composables/use-product-picker';
 export * from './composables/use-stock-count';

@@ -3,7 +3,7 @@
  * The words for a task kind. The kind is an open enum: a newer backend may send one this client
  * has no word for, and it then reads "Task" (`task-kind.unknown`), as the notification bell does.
  */
-import { TaskKind } from '@/types/enums.ts';
+import { TaskKind } from './enums.ts';
 
 /**
  * The translation key for a task kind, falling back to the generic one for a kind not known yet.

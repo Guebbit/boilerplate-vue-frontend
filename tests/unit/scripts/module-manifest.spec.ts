@@ -12,7 +12,8 @@ import {
     assertAcyclicModuleEdges,
     demoModuleNames,
     loadModuleManifest,
-    moduleDependsOn
+    moduleDependsOn,
+    resolveStripModules
 } from '../../../scripts/module-manifest';
 
 /** The scratch `src/modules` root, fresh per case. */
@@ -69,6 +70,40 @@ describe('demoModuleNames', () => {
         expect(
             demoModuleNames({ a: 'foundation', b: 'shop', c: 'example', d: 'foundation' })
         ).toEqual(['b', 'c']);
+    });
+});
+
+describe('resolveStripModules', () => {
+    const folders = ['users', 'cart', 'orders', 'example'];
+    const edges = { orders: ['cart'] };
+
+    it('takes the demo modules when the flag is absent', () => {
+        expect(resolveStripModules([])).toEqual(demoModuleNames());
+    });
+
+    it('takes exactly the named modules, so `example` stays unless it is listed', () => {
+        expect(resolveStripModules(['--modules', 'orders, cart,orders'], folders, edges)).toEqual([
+            'orders',
+            'cart'
+        ]);
+        expect(resolveStripModules(['--modules=cart,orders,example'], folders, edges)).toEqual([
+            'cart',
+            'orders',
+            'example'
+        ]);
+    });
+
+    it.each([
+        ['a bare flag', ['--modules'], /names no module/u],
+        ['an empty list', ['--modules='], /names no module/u],
+        ['a folder that is not a module', ['--modules=cart,nope'], /no such module: nope/u],
+        [
+            'a list that keeps a module needing a stripped one',
+            ['--modules=cart'],
+            /orders depends on cart/u
+        ]
+    ])('refuses %s', (_case, argv, message) => {
+        expect(() => resolveStripModules(argv, folders, edges)).toThrow(message);
     });
 });
 

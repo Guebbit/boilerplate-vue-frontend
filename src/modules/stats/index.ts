@@ -11,6 +11,7 @@
  * The rule: `docs/understand/strategic-ddd.md` §5.
  */
 
+export * from './domain/enums';
 export * from './store';
 export * from './domain';
 export { default as ChartWithTable } from './components/ChartWithTable.vue';

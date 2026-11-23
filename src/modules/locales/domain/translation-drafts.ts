@@ -2,7 +2,7 @@
  * @module
  * Turns the entity-translations editor's drafts into the PATCH body the API merges.
  */
-import { TranslationOrigin } from '@/types/enums.ts';
+import { TranslationOrigin } from './enums.ts';
 import type { UpdateEntityTranslationsRequest } from '@types';
 
 /**

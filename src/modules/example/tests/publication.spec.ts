@@ -6,7 +6,7 @@
  * read as "live".
  */
 import { describe, expect, it } from 'vitest';
-import { ExampleStatus } from '@/types/enums.ts';
+import { ExampleStatus } from '../enums.ts';
 import { publicationOf } from '../domain';
 
 /** A first-publish stamp. */

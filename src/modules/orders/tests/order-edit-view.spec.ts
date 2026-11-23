@@ -9,7 +9,8 @@
  * `@/modules/payments` is mocked rather than imported past its barrel — `useOrderRefund` would
  * otherwise fire a real, unmocked HTTP call this suite has nothing to answer, and reaching its
  * store directly is exactly what `eslint-plugin-boundaries` forbids for a sibling module.
- * `OrderDisputes` is stubbed the same way (it reads the payments store). `RecordOfflinePaymentForm` likewise, for the same reason: mounting the real one
+ * `PaidOutsideFields` is a small stand-in with the same `v-model` and `data-test` hooks: the real one
+ * has its own spec in the payments module. `OrderDisputes` is stubbed the same way (it reads the payments store). `RecordOfflinePaymentForm` likewise, for the same reason: mounting the real one
  * would wire in `useRecordOfflinePayment` and a live payments store this suite never seeds.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -53,6 +54,22 @@ const settle = vi.fn((_refundId: string) => Promise.resolve());
 const mockSettleable = ref<Refund[]>([]);
 
 vi.mock('@/modules/payments', () => ({
+    PaidOutsideFields: {
+        name: 'PaidOutsideFields',
+        props: ['modelValue'],
+        emits: ['update:modelValue'],
+        template: `<div data-test="paid-outside-fields">
+            <div data-test="paid-outside-switch">
+                <input type="checkbox" :checked="modelValue !== undefined"
+                    @change="$emit('update:modelValue', $event.target.checked ? { method: 'cash' } : undefined)" />
+            </div>
+            <div v-if="modelValue" data-test="paid-outside-method" />
+            <div v-if="modelValue" data-test="paid-outside-reference">
+                <input :value="modelValue.reference ?? ''"
+                    @input="$emit('update:modelValue', { method: modelValue.method, reference: $event.target.value })" />
+            </div>
+        </div>`
+    },
     useOrderRefund: () => ({
         canRefund: mockCanRefund,
         settleable: mockSettleable,

@@ -9,8 +9,8 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import PaidOutsideFields from '@/ui/molecules/PaidOutsideFields.vue';
-import { wireModulesIntoCore } from '../../support/unit/wire-modules.ts';
+import PaidOutsideFields from '../components/PaidOutsideFields.vue';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { PaidOutside } from '@types';
 
 wireModulesIntoCore();

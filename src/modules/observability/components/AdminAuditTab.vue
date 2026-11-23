@@ -19,7 +19,7 @@ import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import AuditMetadataDetail from './AuditMetadataDetail.vue';
 import { auditTargetLocation, shortTargetId } from '../audit-target.ts';
 import { useAuditTrail, type AuditEndpoint } from '../composables/use-audit-trail.ts';
-import { ListAuditEntriesOutcome } from '@/types/enums.ts';
+import { ListAuditEntriesOutcome } from '../enums.ts';
 import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';

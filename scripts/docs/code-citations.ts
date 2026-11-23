@@ -10,7 +10,7 @@
  * Mirrors `scripts/docs/code-citations.ts` in the paired backend; neither is generated from the other.
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { slugify } from '@mdit-vue/shared';
 
@@ -82,7 +82,15 @@ const isCitingFile = (file: string): boolean =>
  * @returns one `file: citation` line per dead link, in file order
  */
 export const deadCodeCitations = (root: string, files: string[]): string[] => {
-    const pages = new Set(files.filter((file) => file.startsWith('docs/') && file.endsWith('.md')));
+    // A page deleted from the tree but still in the index is no target: a citation of it is dead.
+    const pages = new Set(
+        files.filter(
+            (file) =>
+                file.startsWith('docs/') &&
+                file.endsWith('.md') &&
+                existsSync(path.join(root, file))
+        )
+    );
     // One parse per cited page, however many files cite it.
     const slugsCache = new Map<string, Set<string>>();
     const slugsOf = (page: string): Set<string> => {
@@ -92,7 +100,10 @@ export const deadCodeCitations = (root: string, files: string[]): string[] => {
     };
 
     const dead: string[] = [];
-    for (const file of files.filter((file) => isCitingFile(file))) {
+    // `git ls-files` still lists a file deleted from the tree but not yet committed.
+    for (const file of files.filter(
+        (file) => isCitingFile(file) && existsSync(path.join(root, file))
+    )) {
         const text = readFileSync(path.join(root, file), 'utf8');
         for (const [, page, cited = ''] of text.matchAll(CITATION)) {
             // Sentence punctuation after the anchor is not part of it.

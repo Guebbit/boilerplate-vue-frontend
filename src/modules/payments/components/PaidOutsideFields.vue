@@ -8,8 +8,8 @@
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { paidOutsideReferenceMax } from './paid-outside-limits.ts';
-import { OutsideMoneyMethod } from '@/types/enums.ts';
+import { paidOutsideReferenceMax } from '../paid-outside-limits.ts';
+import { OutsideMoneyMethod } from '../enums.ts';
 import type { PaidOutside } from '@types';
 
 /**

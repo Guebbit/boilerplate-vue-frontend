@@ -16,7 +16,7 @@ import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import type { WebhookDeliveryFilters } from '../types.ts';
-import { WebhookDeliveryStatus } from '@/types/enums.ts';
+import { WebhookDeliveryStatus } from '../enums.ts';
 import type { WebhookDelivery, WebhookSubscription } from '@types';
 
 /**

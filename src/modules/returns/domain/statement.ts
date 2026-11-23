@@ -5,7 +5,7 @@
  * the future, so both directions live here and the three forms that ask share them.
  */
 
-import { StaffStatementChannel } from '@/types/enums.ts';
+import { StaffStatementChannel } from './enums.ts';
 
 /**
  * The channels staff can record, in the order the select lists them.

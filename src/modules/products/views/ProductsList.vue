@@ -36,7 +36,7 @@ import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import { useServerSort } from '@/ui/composables/use-server-sort.ts';
 import { sortFieldsOf } from '@/infrastructure/utils/sort.ts';
-import { ProductSortItem } from '@/types/enums.ts';
+import { ProductSortItem } from '../enums.ts';
 import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
 import SortSelect from '@/ui/molecules/SortSelect.vue';
 import ProductCard from '../components/ProductCard.vue';

@@ -23,7 +23,7 @@ import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/ut
 import { boundOf, compareDecimals } from '@/infrastructure/utils/money.ts';
 import { endOfDayInstant, startOfDayInstant } from '@/infrastructure/utils/day-range.ts';
 import { sortFieldsOf, sortTokensOf } from '@/infrastructure/utils/sort.ts';
-import { PaymentDisplayStatus, PaymentMethodKind, PaymentSortItem } from '@/types/enums.ts';
+import { PaymentDisplayStatus, PaymentMethodKind, PaymentSortItem } from '../enums.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';

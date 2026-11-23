@@ -14,7 +14,7 @@ import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useDeliveryStore } from '../store.ts';
-import { ShipmentLostReason } from '@/types/enums.ts';
+import { ShipmentLostReason } from '../enums.ts';
 import type { Shipment } from '@types';
 
 /**

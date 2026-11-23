@@ -21,7 +21,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import { endOfDayInstant, startOfDayInstant } from '@/infrastructure/utils/day-range.ts';
-import { RefundReason, RefundStatus } from '@/types/enums.ts';
+import { RefundReason, RefundStatus } from '../enums.ts';
 import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useListSearch } from '@/ui/composables/use-list-search.ts';

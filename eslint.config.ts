@@ -1102,8 +1102,8 @@ export default defineConfigWithVueTs(
      * `@types` gets the same treatment. `src/types/index.ts` re-exports `@api` as `export type *`
      * — a runtime value never reaches `@types` at all — so this rule exists for the day someone
      * widens that back to `export *` without reading why. The one runtime exception, a generated
-     * enum a template branches on (a status badge's color, a select's options), is named in
-     * `src/types/enums.ts` and reached as `@/types/enums.ts` — a plain `@/*` path the group below
+     * enum a template branches on (a status badge's color, a select's options), is re-exported by
+     * its owning module's `enums.ts` — a plain relative or `@/modules/*` path the group below
      * does not match.
      */
     /*
@@ -1130,7 +1130,7 @@ export default defineConfigWithVueTs(
                             group: ['@types', '@types/*'],
                             allowTypeImports: true,
                             message:
-                                'A component reads generated shapes, not values, through @types. A runtime enum a template branches on lives in @/types/enums.ts; a live call still belongs in the module’s store or composables/.'
+                                'A component reads generated shapes, not values, through @types. A runtime enum a template branches on lives in its module’s enums.ts; a live call still belongs in the module’s store or composables/.'
                         }
                     ]
                 }

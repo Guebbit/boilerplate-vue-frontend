@@ -10,7 +10,7 @@
  * reaching into the generated package directly. Type-only on purpose: `@api` also exports the
  * runtime client and a handful of runtime enum constants, and a `.vue` file importing either
  * through this barrel would dodge the `@api` import ban `eslint.config.ts` enforces on components.
- * The one runtime enum a template legitimately needs lives in `./enums.ts` instead.
+ * The runtime enums a template legitimately needs live in each module's own `enums.ts` instead.
  */
 export type * from '@api';
 

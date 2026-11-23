@@ -4,7 +4,7 @@
  * says how it reads and which screen it links to, and the shell collects them. Nothing outside this
  * file names these codes' wording or routes.
  */
-import { TaskCategory, TaskKind } from '@/types/enums.ts';
+import { TaskCategory, TaskKind } from '@/modules/tasks';
 import type { AppNotice, NoticeContext, NoticeTarget } from '@/kernel/registry';
 import type { Notification } from '@types';
 import { shortRef } from '@/infrastructure/utils/formatters.ts';

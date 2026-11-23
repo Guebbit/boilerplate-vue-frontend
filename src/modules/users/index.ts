@@ -11,6 +11,7 @@
  * The rule: `docs/understand/strategic-ddd.md` §5.
  */
 
+export * from './enums';
 export * from './badge-store';
 export * from './schemas';
 export * from './store';

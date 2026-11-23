@@ -9,7 +9,8 @@
  * - `foundation` ships with every deployment.
  * - `shop` is the removable demo domain.
  * - `example` exists only to be copied.
- * - `npm run demo:remove` deletes `shop` and `example` ({@link demoModuleNames}).
+ * - `npm run demo:remove` deletes `shop` and `example` ({@link demoModuleNames}), or the
+ *   modules `--modules a,b,c` names ({@link resolveStripModules}).
  *
  * `dependsOn` holds BACKEND module names. One with no FE folder (`addresses`, `audit-logs`) is
  * fine: `account` folds address-book screens into itself. A module calling ITS OWN backend
@@ -23,6 +24,7 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 
@@ -130,6 +132,64 @@ export const demoModuleNames = (groups: Record<string, ModuleGroup> = moduleGrou
     Object.entries(groups)
         .filter(([, group]) => group === 'shop' || group === 'example')
         .map(([name]) => name);
+
+/**
+ * The modules a strip takes: the `--modules` list when the command line has one, else every demo
+ * module. A named list is taken as written, so `example` goes only when it is on the list.
+ *
+ * @param argv - the script's own arguments (`process.argv.slice(2)`)
+ * @param folders - the module folders that exist; this checkout's by default
+ * @param edges - every module's `dependsOn`; this checkout's by default
+ * @returns the module folder names, each once
+ * @throws {Error} when `--modules` is bare or empty, names a folder that is not a module, or
+ *   leaves a module standing whose `dependsOn` names a stripped one
+ */
+export const resolveStripModules = (
+    argv: readonly string[],
+    folders: readonly string[] = moduleFolderNames,
+    edges: Record<string, string[]> = moduleDependsOn
+): string[] => {
+    /**
+     * Node: https://nodejs.org/api/util.html#utilparseargsconfig — `strict: false` lets other
+     * flags through; a string option given with no value reads as `true`.
+     */
+    const { values } = parseArgs({
+        args: [...argv],
+        options: { modules: { type: 'string' } },
+        strict: false,
+        allowPositionals: true
+    });
+    if (values.modules === undefined) return demoModuleNames();
+    // A bare `--modules` reads as `true`: no list, which the empty-list refusal below turns away.
+    const requested = typeof values.modules === 'string' ? values.modules : '';
+
+    const names = [
+        ...new Set(
+            requested
+                .split(',')
+                .map((name) => name.trim())
+                .filter(Boolean)
+        )
+    ];
+    if (names.length === 0) throw new Error('--modules names no module');
+
+    const unknown = names.filter((name) => !folders.includes(name));
+    if (unknown.length > 0)
+        throw new Error(`--modules names no such module: ${unknown.join(', ')}`);
+
+    const stranded = Object.entries(edges)
+        .filter(([name]) => !names.includes(name))
+        .flatMap(([name, dependencies]) =>
+            dependencies
+                .filter((dependency) => names.includes(dependency))
+                .map((dependency) => `${name} depends on ${dependency}`)
+        );
+    if (stranded.length > 0)
+        throw new Error(
+            `--modules strips a module another one still needs: ${stranded.join('; ')}`
+        );
+    return names;
+};
 
 /**
  * Refuses a cycle anywhere in a `dependsOn` graph.

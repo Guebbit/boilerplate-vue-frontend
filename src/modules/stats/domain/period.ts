@@ -4,7 +4,7 @@
  * enforces on them so the form can say no before a round trip does. The ceilings are the API's,
  * carried as `limits` on every period answer (the store keeps the last), passed in; none is kept here. Pure functions; "today" is always passed in.
  */
-import { StatsInterval } from '@/types/enums.ts';
+import { StatsInterval } from './enums.ts';
 import type { StatsLimits } from '@types';
 import { addCalendarDays, daysInRange, isCalendarDay, toCalendarDay } from './calendar.ts';
 

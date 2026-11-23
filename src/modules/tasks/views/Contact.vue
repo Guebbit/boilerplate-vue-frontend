@@ -22,7 +22,7 @@ import { useRoute } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useTasksStore } from '../store.ts';
 import { contactSchema, orderNumberMax } from '../schemas.ts';
-import { TaskCategory } from '@/types/enums.ts';
+import { TaskCategory } from '../enums.ts';
 import type { TaskCategory as TTaskCategory } from '@types';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';

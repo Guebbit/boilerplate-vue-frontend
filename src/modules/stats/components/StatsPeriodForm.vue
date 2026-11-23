@@ -17,7 +17,7 @@ export default {
  */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { StatsInterval } from '@/types/enums.ts';
+import { StatsInterval } from '../domain/enums.ts';
 import type { StatsInterval as TStatsInterval, StatsLimits } from '@types';
 import {
     PERIOD_PRESETS,

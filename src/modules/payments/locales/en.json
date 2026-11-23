@@ -224,5 +224,14 @@
     },
     "navigation": {
         "label-payments": "Payments"
+    },
+    "paid-outside-fields": {
+        "label-switch": "Already paid outside the app",
+        "hint-switch": "Cash or a transfer already went back to the buyer. Nothing is sent to the card.",
+        "label-method": "How it went back",
+        "method-cash": "Cash",
+        "method-bank_transfer": "Bank transfer",
+        "method-other": "Other",
+        "label-reference": "Reference"
     }
 }

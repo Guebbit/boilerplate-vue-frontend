@@ -21,7 +21,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { OutsideMoneyMethod } from '@/types/enums.ts';
+import { OutsideMoneyMethod } from '../enums.ts';
 import { usePaymentsStore } from '../store.ts';
 import { offlineReferenceMax } from '../schemas.ts';
 import { useRecordOfflinePayment } from '../composables/use-record-offline-payment.ts';

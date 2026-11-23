@@ -5,7 +5,7 @@
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
-import { TaskCategory } from '@/types/enums.ts';
+import { TaskCategory } from './enums.ts';
 import {
     createContactTaskBodyNameMax,
     createContactTaskBodyEmailMax,

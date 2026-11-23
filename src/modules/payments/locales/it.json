@@ -224,5 +224,14 @@
     },
     "navigation": {
         "label-payments": "Pagamenti"
+    },
+    "paid-outside-fields": {
+        "label-switch": "Già pagato fuori dall'app",
+        "hint-switch": "I soldi sono già tornati all'acquirente, in contanti o con bonifico. Non viene inviato nulla alla carta.",
+        "label-method": "Come sono tornati",
+        "method-cash": "Contanti",
+        "method-bank_transfer": "Bonifico",
+        "method-other": "Altro",
+        "label-reference": "Riferimento"
     }
 }
