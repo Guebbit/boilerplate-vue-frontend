@@ -18,7 +18,7 @@ import {
 import { getCart, getCartSummary, mergeCart } from '@api';
 import * as schemas from '@api/schemas';
 import { loadLocale } from '@/i18n';
-import { clearAvailability, recordAvailability } from '@/kernel/availability.ts';
+import { clearAvailability, recordAvailability } from '@/modules/products';
 import { contractBody } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import { trackStores } from './track-stores.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

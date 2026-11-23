@@ -5,6 +5,7 @@ import {
     collectModuleLoadingKeys,
     collectModuleNavigation,
     collectModuleNotices,
+    collectModuleRecordRoutes,
     collectModuleRoutes,
     collectModuleTours,
     groupNavigation,
@@ -258,5 +259,26 @@ describe('collectModuleNotices', () => {
 
     it('returns nothing for a build with no modules', () => {
         expect(collectModuleNotices([])).toEqual({});
+    });
+});
+
+describe('collectModuleRecordRoutes', () => {
+    it('merges the record routes of every module that declares some, by link type', () => {
+        const routes = collectModuleRecordRoutes([
+            { ...makeModule('tasks'), recordRoutes: { user: 'UserTarget' } },
+            makeModule('quiet'),
+            { ...makeModule('other'), recordRoutes: { thing: 'ThingTarget' } }
+        ]);
+
+        expect(routes).toEqual({ user: 'UserTarget', thing: 'ThingTarget' });
+    });
+
+    it('refuses a link type two modules both declare, naming it', () => {
+        expect(() =>
+            collectModuleRecordRoutes([
+                { ...makeModule('tasks'), recordRoutes: { user: 'UserTarget' } },
+                { ...makeModule('other'), recordRoutes: { user: 'OtherTarget' } }
+            ])
+        ).toThrow('Record link type "user" is declared by more than one module.');
     });
 });

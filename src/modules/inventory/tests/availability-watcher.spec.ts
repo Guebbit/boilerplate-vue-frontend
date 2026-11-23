@@ -8,7 +8,7 @@ import { describe, expect, it, afterEach, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { getInventoryLevel, listProductAvailability } from '@api';
-import { availabilityOf, clearAvailability, stockCountOf } from '@/kernel/availability.ts';
+import { availabilityOf, clearAvailability, stockCountOf } from '@/modules/products';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { aLevel } from '../../../../tests/support/unit/fixtures.ts';
 import AvailabilityWatcher from '../components/AvailabilityWatcher.vue';

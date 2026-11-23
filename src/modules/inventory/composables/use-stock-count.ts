@@ -1,12 +1,12 @@
 /**
  * @module
  * The shelf count a stock reader sees beside the availability signal, read from the inventory
- * level (`GET /inventory/levels/{id}`, the staff read) and written to `@/kernel/availability` for
+ * level (`GET /inventory/levels/{id}`, the staff read) and written to `availability.ts` in `products` for
  * the product page to show. Everyone else makes no request.
  */
 import { watch } from 'vue';
 import { getInventoryLevel } from '@api';
-import { recordStockCount } from '@/kernel/availability.ts';
+import { recordStockCount } from '@/modules/products';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { debug } from '@/infrastructure/utils/logger.ts';
 

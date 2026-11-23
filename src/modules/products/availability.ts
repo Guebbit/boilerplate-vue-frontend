@@ -3,13 +3,13 @@
  * What shoppers are told about each product's stock, held here so the screens that show it can read
  * it without importing the module that fills it.
  *
- * Why it is here and not in `products`: the product views (card, page) need the answer as
- * a VALUE (a badge, a stock label, a hint), which a slot cannot hand back to its host. Why it is not
- * in `products`' own store: `inventory` is the backend owner of the read (`GET /products/{id}/availability`)
- * and `inventory` already depends on `products`, so `products` importing it back would be a cycle.
- * So the state sits in the kernel, like `work-counts.ts`: one writer (`inventory`, through its
- * `AvailabilityWatcher` that a product view renders from the `availability-watch` slot), many
- * readers (`products`, `cart`, `stock-alerts`).
+ * Why a plain module-level store and not a slot: the product views (card, page) need the answer as
+ * a VALUE (a badge, a stock label, a hint), which a slot cannot hand back to its host. Why not in
+ * `products`' own Pinia store: `inventory` is the backend owner of the read
+ * (`GET /products/{id}/availability`) and depends on `products`, so `products` importing it back
+ * would be a cycle. So the state sits here, in `products`, and `inventory` writes into it through
+ * the barrel: one writer (`inventory`, through its `AvailabilityWatcher` that a product view renders
+ * from the `availability-watch` slot), many readers (`products`, `cart`, `stock-alerts`, `wishlist`).
  *
  * Kept apart from the product record on purpose: a product's details are cached for minutes while
  * its availability changes with every sale, and the toolkit's `addRecord` replaces a whole record,

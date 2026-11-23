@@ -21,11 +21,8 @@ import { Download } from 'lucide-vue-next';
 import { vFocusableScroll } from '@/ui/directives/focusable-scroll';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
-import {
-    formatBucketStart,
-    formatCurrency,
-    formatPercent
-} from '@/infrastructure/utils/formatters.ts';
+import { formatCurrency, formatPercent } from '@/infrastructure/utils/formatters.ts';
+import { formatBucketStart } from '../bucket-label.ts';
 import type { SalesCurrency, SalesFigures, SalesStats } from '@types';
 import { isFlat, percentChange, toCsv } from '../domain';
 import type { ChartModel } from '../domain';

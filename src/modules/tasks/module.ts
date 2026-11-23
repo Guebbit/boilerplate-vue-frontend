@@ -25,6 +25,8 @@ import { useTaskBadge } from './composables/use-task-badge';
 export default {
     name: 'tasks',
     loadingKeys: ['tasks'],
+    // The staff page a task linked to an account opens; `shop-tasks` declares the shop's records.
+    recordRoutes: { user: 'UserTarget' },
     routes,
     navigation: [
         {

@@ -21,7 +21,7 @@ import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aProduct } from '../../../../tests/support/unit/fixtures.ts';
 import type { Product, ProductAvailability } from '@types';
-import { clearAvailability, recordAvailability } from '@/kernel/availability.ts';
+import { clearAvailability, recordAvailability } from '../availability.ts';
 
 // The shop states the backorder promise; these cases are about the wording around it.
 vi.mock('@/modules/shop', async (importOriginal) => {

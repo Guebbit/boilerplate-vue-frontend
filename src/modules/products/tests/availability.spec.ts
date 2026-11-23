@@ -1,6 +1,6 @@
 /**
  * @module
- * The kernel's availability port: one writer records what the server answered, readers follow it,
+ * The availability port: one writer records what the server answered, readers follow it,
  * "left out" is not "never asked", and clearing empties everything.
  */
 import { afterEach, describe, expect, it } from 'vitest';
@@ -12,7 +12,7 @@ import {
     recordAvailability,
     recordStockCount,
     stockCountOf
-} from '@/kernel/availability.ts';
+} from '../availability.ts';
 
 afterEach(clearAvailability);
 

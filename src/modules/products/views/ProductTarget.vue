@@ -23,7 +23,7 @@ import { storeToRefs } from 'pinia';
 import { useProductsStore } from '../store';
 import { shelfStateOf } from '../domain';
 import { useSlot } from '@/kernel/slots';
-import { availabilityOf, stockCountOf } from '@/kernel/availability.ts';
+import { availabilityOf, stockCountOf } from '../availability.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { Calendar, Circle, Clock, Euro, FileText, Hash, Package, Tag } from 'lucide-vue-next';
@@ -115,7 +115,7 @@ watchProduct(() => id, { staleTime: 0, onError: onMissingRecord });
  * beside the details (`GET /products/{id}/availability`), with `staleTime: 0` too: this page is
  * where a stock number is read, so every open asks again, and coming back to the tab does as well.
  * A stock reader's shelf count rides along. A slot because `inventory` owns the read and `products`
- * cannot depend on it (`@/kernel/availability`).
+ * cannot depend on it (`availability.ts` in `products`).
  */
 const availabilityWatchers = useSlot('availability-watch');
 

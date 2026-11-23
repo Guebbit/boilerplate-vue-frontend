@@ -26,6 +26,8 @@ export default {
     name: 'shop-tasks',
     routes: [],
     notices: shopNotices,
+    // The staff pages a task linked to an order or a return opens, named like the notices' links.
+    recordRoutes: { order: 'OrderTarget', return: 'ReturnTarget' },
     responseSchemas: () => import('./response-schemas').then((m) => m.shopTasksResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),

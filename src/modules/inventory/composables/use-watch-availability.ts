@@ -5,18 +5,14 @@
  * becomes visible), the way the cart does (`use-cart-focus-refresh.ts`). Stock moves behind an open
  * screen; coming back is the cheap moment to catch up. Not a poll.
  *
- * The answers are written to `@/kernel/availability`, which the product views read. `inventory` is
+ * The answers are written to `availability.ts` in `products`, which the product views read. `inventory` is
  * the only writer, because it owns the backend read.
  *
  * @see docs/modules/products.md#availability
  */
 import { onScopeDispose, watch } from 'vue';
 import { listProductAvailability } from '@api';
-import {
-    availabilityAskedAt,
-    clearAvailability,
-    recordAvailability
-} from '@/kernel/availability.ts';
+import { availabilityAskedAt, clearAvailability, recordAvailability } from '@/modules/products';
 import { debug } from '@/infrastructure/utils/logger.ts';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 

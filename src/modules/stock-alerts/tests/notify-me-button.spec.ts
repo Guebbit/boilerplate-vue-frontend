@@ -13,7 +13,7 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { Product, ProductAvailability } from '@types';
-import { clearAvailability, recordAvailability } from '@/kernel/availability.ts';
+import { clearAvailability, recordAvailability } from '@/modules/products';
 import { aProduct } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();

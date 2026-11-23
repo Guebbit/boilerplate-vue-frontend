@@ -20,9 +20,8 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { useProductLines } from '@/modules/products';
+import { availabilityOf, useProductLines } from '@/modules/products';
 import { useSlot } from '@/kernel/slots.ts';
-import { availabilityOf } from '@/kernel/availability.ts';
 import { sumDecimals, multiplyDecimal } from '@/infrastructure/utils/money.ts';
 import { MAX_GUEST_LINE_QUANTITY } from '../domain';
 import type { GuestCartLine } from '../domain';
@@ -60,7 +59,7 @@ const { guestLines, guestQuantity } = storeToRefs(cartStore);
 /**
  * The availability watcher `inventory` contributes, read for the guest lines: the guest cart clamps
  * from this answer, so it must be loaded. A slot because `inventory` owns the read and this module
- * cannot depend on it (`@/kernel/availability`).
+ * cannot depend on it (`availability.ts` in `products`).
  */
 const availabilityWatchers = useSlot('availability-watch');
 

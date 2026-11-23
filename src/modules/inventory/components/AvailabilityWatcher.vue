@@ -4,7 +4,7 @@
  * Renders nothing: reads the availability of the products a product view shows, so that view can
  * show it. Contributed to the `availability-watch` slot by this module's manifest. `products` owns
  * the views and cannot import `inventory` (it would be a cycle), and the read is inventory's
- * (`GET /products/{id}/availability`); the answer comes back through `@/kernel/availability`.
+ * (`GET /products/{id}/availability`); the answer comes back through `availability.ts` in `products`.
  */
 import { useStockCount } from '../composables/use-stock-count';
 import { useWatchAvailability } from '../composables/use-watch-availability';

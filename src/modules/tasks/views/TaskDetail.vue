@@ -29,6 +29,7 @@ import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
+import { recordRouteOf } from '@/kernel/record-routes.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -100,14 +101,13 @@ const { run } = useRowActions({ report, clear });
 /**
  * The page a link to the task's record opens, when this build ships one.
  *
- * Only the record types that have a staff page are linked; the rest show as plain text.
+ * Only the record types a module declared a staff page for are linked (`recordRoutes`); the rest
+ * show as plain text.
  */
 const recordLink = computed(() => {
     const link = task.value?.link;
-    if (link?.type === 'order') return linkIfRouted(router, 'OrderTarget', { id: link.id });
-    if (link?.type === 'user') return linkIfRouted(router, 'UserTarget', { id: link.id });
-    if (link?.type === 'return') return linkIfRouted(router, 'ReturnTarget', { id: link.id });
-    return undefined;
+    const routeName = link ? recordRouteOf(link.type) : undefined;
+    return link && routeName ? linkIfRouted(router, routeName, { id: link.id }) : undefined;
 });
 
 /**

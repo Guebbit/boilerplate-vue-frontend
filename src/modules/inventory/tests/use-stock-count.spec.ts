@@ -8,7 +8,7 @@ import { defineComponent, h } from 'vue';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { getInventoryLevel } from '@api';
-import { clearAvailability, stockCountOf } from '@/kernel/availability.ts';
+import { clearAvailability, stockCountOf } from '@/modules/products';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { aLevel } from '../../../../tests/support/unit/fixtures.ts';
 import { useStockCount } from '../composables/use-stock-count';

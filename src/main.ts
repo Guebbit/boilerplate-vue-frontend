@@ -37,11 +37,13 @@ import { registerLocaleContributors } from '@/i18n';
 import {
     collectModuleLocales,
     collectModuleNotices,
+    collectModuleRecordRoutes,
     collectModuleResponseSchemas,
     collectModuleSlots,
     runModuleSetups
 } from '@/kernel/registry.ts';
 import { registerNotices } from '@/kernel/inbox-notices.ts';
+import { registerRecordRoutes } from '@/kernel/record-routes.ts';
 import { SLOTS_KEY } from '@/kernel/slots.ts';
 import { enabledModules } from '@/modules.ts';
 
@@ -67,6 +69,8 @@ registerLocaleContributors(collectModuleLocales(enabledModules));
 installHttpInterceptors();
 // How each notification code reads and links: declared by the module that owns the code.
 registerNotices(collectModuleNotices(enabledModules));
+// Which staff page each task link type opens: declared by the module that owns the record.
+registerRecordRoutes(collectModuleRecordRoutes(enabledModules));
 
 /**
  * Boots the Vue application: plugin registration, mount,

@@ -39,7 +39,8 @@ export const useShopTasksStore = defineStore('shop-tasks', () => {
             staleTime: BADGE_FRESH_MS,
             forced
         }).then((counts) => {
-            if (counts) setWorkCounts(counts);
+            // Spread: the kernel keeps a plain count per key, which an interface does not promise.
+            if (counts) setWorkCounts({ ...counts });
         });
 
     return { loadSummary };

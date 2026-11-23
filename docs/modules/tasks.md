@@ -59,6 +59,11 @@ answer in and never re-reads. "Take" assigns the task to the viewer and reads "T
 someone else holds it. The task's `#ref` (its id's last eight characters) is shown on the page and
 on the inbox row: the same text the support mailbox's mails carry in their subject.
 
+A task that names a record links to that record's staff page when a module declared one: each module
+lists the route of the pages it owns in `recordRoutes` on its manifest, keyed by the task link type
+(`tasks` declares `user`, `shop-tasks` declares `order` and `return`). A type nobody declares shows
+as plain text.
+
 A kind this build has no word for reads "Task" (`task-kind.unknown`), never a raw translation key.
 The badge on the menu entry comes from `GET /tasks/summary`.
 

@@ -25,7 +25,7 @@ const WEARS = {
 describe('the staff nav badges that read the shop summary', () => {
     it.each(Object.entries(WEARS))('%s wears the summary key %s', (name, key) => {
         const counts = aSummary();
-        setWorkCounts(counts);
+        setWorkCounts({ ...counts });
         const entry = collectModuleNavigation(enabledModules).find((one) => one.name === name);
 
         expect(entry?.badge?.().value).toBe(counts[key]);
@@ -37,7 +37,7 @@ describe('the staff nav badges that read the shop summary', () => {
         );
         const badge = entry?.badge?.();
 
-        setWorkCounts(aSummary({ salesOrders: 9 }));
+        setWorkCounts({ ...aSummary({ salesOrders: 9 }) });
 
         expect(badge?.value).toBe(9);
     });

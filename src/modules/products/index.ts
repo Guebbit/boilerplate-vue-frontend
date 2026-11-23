@@ -11,6 +11,7 @@
  * The rule: `docs/understand/strategic-ddd.md` §5.
  */
 
+export * from './availability';
 export * from './enums';
 export * from './release-date';
 export * from './store';

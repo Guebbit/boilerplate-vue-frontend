@@ -95,7 +95,7 @@ const {
  * this page for the cards' badges and buttons (read when the page changes and when the shopper
  * comes back to the tab, but not more often than every 30 s). Details change rarely, so the list
  * keeps its five minutes; stock changes with every sale. A slot because `inventory` owns the read
- * and `products` cannot depend on it (`@/kernel/availability`).
+ * and `products` cannot depend on it (`availability.ts` in `products`).
  */
 const availabilityWatchers = useSlot('availability-watch');
 

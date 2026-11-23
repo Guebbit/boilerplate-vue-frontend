@@ -88,7 +88,7 @@ export default {
         'product-create-extras': [
             defineAsyncComponent(() => import('./components/OpeningStockField.vue'))
         ],
-        // The availability reads behind the product views' badges: renders nothing, see `@/kernel/availability`.
+        // The availability reads behind the product views' badges: renders nothing, see `availability.ts` in `products`.
         'availability-watch': [
             defineAsyncComponent(() => import('./components/AvailabilityWatcher.vue'))
         ]

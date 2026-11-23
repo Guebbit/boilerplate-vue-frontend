@@ -276,6 +276,14 @@ export interface AppModule {
     notices?: Record<string, AppNotice>;
 
     /**
+     * The staff page for each kind of record a task can link to: the task link type
+     * (`order`) and the route name of the page that shows it (`OrderTarget`, taking `{ id }`).
+     * Declared by the module that owns the record, so `tasks` links it without knowing it.
+     * A type no enabled module declares shows as plain text.
+     */
+    recordRoutes?: Record<string, string>;
+
+    /**
      * Guided-tour steps this domain contributes, for screens it owns. Optional: most modules have
      * none.
      */
@@ -447,6 +455,23 @@ export const collectModuleNotices = (appModules: AppModule[]): Record<string, Ap
             if (code in merged)
                 throw new Error(`Notice code "${code}" is declared by more than one module.`);
             merged[code] = notice;
+        }
+    return merged;
+};
+
+/**
+ * Merge every enabled module's record routes, by task link type.
+ *
+ * @param appModules - the enabled module list
+ * @throws {Error} when two modules declare the same link type: one would silently shadow the other.
+ */
+export const collectModuleRecordRoutes = (appModules: AppModule[]): Record<string, string> => {
+    const merged: Record<string, string> = {};
+    for (const appModule of appModules)
+        for (const [type, routeName] of Object.entries(appModule.recordRoutes ?? {})) {
+            if (type in merged)
+                throw new Error(`Record link type "${type}" is declared by more than one module.`);
+            merged[type] = routeName;
         }
     return merged;
 };

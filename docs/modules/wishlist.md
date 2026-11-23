@@ -48,7 +48,7 @@ this module.
 ## Line availability
 
 Each saved line arrives as `{ productId }` only. What the product can do comes from the one
-availability store (`@/kernel/availability`), filled for the whole list through the
+availability store (`availability.ts` in `products`), filled for the whole list through the
 `availability-watch` slot (the batch read, 100 ids a call), and the page words it with the products
 module's labels: "Sold out", "Not available right now", "No longer available", and "Preorder ·
 ships {date}" (blue) for a product sold before its release date. "Move to cart" is

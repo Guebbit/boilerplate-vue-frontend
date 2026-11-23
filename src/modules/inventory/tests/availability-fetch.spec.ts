@@ -12,7 +12,7 @@ import {
     clearAvailability,
     isLeftOut,
     recordAvailability
-} from '@/kernel/availability.ts';
+} from '@/modules/products';
 import { fetchAvailability } from '../composables/use-watch-availability';
 
 vi.mock('@api', async (importOriginal) => ({

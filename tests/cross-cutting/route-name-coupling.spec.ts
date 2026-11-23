@@ -94,15 +94,20 @@ const declaresNotices = (source: string): boolean =>
     );
 
 /**
- * The text a route-name sweep reads. In a file that declares notices, `route: 'Name'` is not a
- * reference to guard: a notice target is guarded by construction (`AppNotice.target`, the inbox
- * store's `targetOf`, the bell, then `useNotificationLink` through `linkIfRouted`). Any OTHER
- * mention of the name in that file stays visible.
+ * The text a route-name sweep reads. Two declarations are not references to guard, because the
+ * reader guards them by construction:
+ * - In a file that declares notices, `route: 'Name'` (`AppNotice.target`, the inbox store's
+ *   `targetOf`, the bell, then `useNotificationLink` through `linkIfRouted`).
+ * - A manifest's `recordRoutes: { type: 'Name' }` (the task page, through `linkIfRouted`).
+ * Any OTHER mention of the name in the file stays visible.
  *
  * @param source - one file's full text.
  */
 const sweptText = (source: string): string =>
-    declaresNotices(source) ? source.replaceAll(/\broute:\s*["']\w+["']/g, '') : source;
+    (declaresNotices(source)
+        ? source.replaceAll(/\broute:\s*["']\w+["']/g, '')
+        : source
+    ).replaceAll(/\brecordRoutes:\s*\{[^}]*\}/g, '');
 
 /**
  * Every SINGLE/DOUBLE-quoted string literal in `source` naming a REAL route, deduplicated.

@@ -11,7 +11,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { listProductAvailability } from '@api';
 import { useWatchAvailability } from '../composables/use-watch-availability';
-import { availabilityOf, clearAvailability } from '@/kernel/availability.ts';
+import { availabilityOf, clearAvailability } from '@/modules/products';
 
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@api')>()),

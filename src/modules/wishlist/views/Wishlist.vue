@@ -27,9 +27,8 @@ import { Heart, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useWishlistStore } from '../store.ts';
-import { useProductLines } from '@/modules/products';
+import { availabilityOf, useProductLines } from '@/modules/products';
 import { useSlot } from '@/kernel/slots.ts';
-import { availabilityOf } from '@/kernel/availability.ts';
 import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
@@ -87,7 +86,7 @@ const { titleOf, loadProducts, lineLabel, statusOf, isRemoved } = useProductLine
 /**
  * The availability watcher `inventory` contributes, read for the saved lines: the list is one
  * batch of at most a hundred ids a call. A slot because `inventory` owns the read and this module
- * cannot depend on it (`@/kernel/availability`).
+ * cannot depend on it (`availability.ts` in `products`).
  */
 const availabilityWatchers = useSlot('availability-watch');
 

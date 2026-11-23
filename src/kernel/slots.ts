@@ -25,7 +25,7 @@ import type { Component, InjectionKey } from 'vue';
  * - `availability-watch`: a product view that shows stock (the list, the page) renders
  *   it so the availability of what is on screen is read; receives `{ productIds, staleTime,
  *   withStockCount }` and renders nothing. A slot, not an import, because `inventory` owns the read
- *   and `products` cannot depend on it; the value comes back through `@/kernel/availability`.
+ *   and `products` cannot depend on it; the value comes back through the state `products` publishes (`availability.ts`).
  * - `app-bar`: the shell's app bar, beside the account menu; receives nothing. A contribution
  *   owns its own visibility, because it is mounted for guests too.
  */

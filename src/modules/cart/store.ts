@@ -40,7 +40,7 @@ import {
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { invalidateProductsCache } from '@/modules/products';
+import { availabilityOf, invalidateProductsCache } from '@/modules/products';
 import {
     changedMergeLines,
     classifyCheckoutError,
@@ -48,7 +48,6 @@ import {
     emptyCart,
     subtractGuestLines
 } from './domain';
-import { availabilityOf } from '@/kernel/availability.ts';
 import type { GuestCartLine, MergeReportLine } from './domain';
 import { checkoutKeyFor, endCheckoutAttempt } from './checkout-attempt-storage';
 import { IDEMPOTENCY_KEY_HEADER, isMergeRefusedForGood, sendCheckout } from './idempotent-calls';
@@ -224,7 +223,7 @@ export const useCartStore = defineStore('cart', () => {
 
     /**
      * Adds units to the guest cart, up to what can be bought: the guest cart lives in this browser,
-     * so it clamps from the availability store (`@/kernel/availability`) the way the server clamps
+     * so it clamps from the availability store (`availability.ts` in `products`) the way the server clamps
      * the signed-in cart, and records the same warning. A product whose availability is not loaded
      * is not clamped: nothing is known, and checkout (after sign-in) is the gate.
      *

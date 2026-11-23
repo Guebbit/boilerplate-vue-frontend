@@ -14,7 +14,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Product } from '@types';
-import { availabilityOf } from '@/kernel/availability.ts';
+import { availabilityOf } from '@/modules/products';
 import { useStockAlertsStore } from '../store';
 
 /**

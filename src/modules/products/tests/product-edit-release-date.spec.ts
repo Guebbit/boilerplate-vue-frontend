@@ -10,7 +10,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import ProductEdit from '../views/ProductEdit.vue';
-import { clearAvailability, recordAvailability } from '@/kernel/availability.ts';
+import { clearAvailability, recordAvailability } from '../availability.ts';
 import { loadShop } from '@/modules/shop';
 import { resetShop } from '../../../../tests/support/unit/reset-shop.ts';
 import { aShop } from '../../../../tests/support/unit/fixtures.ts';

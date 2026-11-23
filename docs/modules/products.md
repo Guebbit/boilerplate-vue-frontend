@@ -23,8 +23,8 @@ The context map is drawn once, in [the whole map](./start.md#the-whole-map).
 - `inventory` → **customer-supplier** — Asks the products store to drop its cached catalogue after a recorded movement (`invalidateProductsCache`), and reads the ledger's titles through `useProductLines`.
 - `cart` → **customer-supplier** — Reads its lines' products through `useProductLines` and asks the cache to drop after a checkout (`invalidateProductsCache`).
 - `wishlist` → **conformist** — Joins its saved lines to their product records through `useProductLines`, read as they are.
-- `stock-alerts` → **conformist** — Reads the shelf state (`shelfStateOf`), the availability (`@/kernel/availability`) and the titles (`useProductLines`) as they are.
-- `cart` also reads the availability (`@/kernel/availability`, `shelfStateOf`) for its add-to-cart button.
+- `stock-alerts` → **conformist** — Reads the shelf state (`shelfStateOf`), the availability (`availability.ts`) and the titles (`useProductLines`) as they are.
+- `cart` also reads the availability (`availability.ts`, `shelfStateOf`) for its add-to-cart button.
 
 ## The story
 
@@ -76,16 +76,17 @@ answers `GET /products/{id}` and the lists carry the details; `availability` (`i
 `GET /products/{id}/availability` and `GET /products/availability?id=…`, which the backend caches
 for a minute and clears on every sale.
 
-They are held in `@/kernel/availability`, keyed by product id, and are never merged into the product
+They are held in `src/modules/products/availability.ts`, keyed by product id, and are never merged into the product
 record: the toolkit's `addRecord` replaces a whole record, so the next details fetch would wipe the
 availability and the two lifetimes would tangle. A reader joins the two:
 `shelfStateOf(product, availabilityOf(product.id))`.
 
-**Why the kernel.** The product views (card, page) need the answer as a value: a badge, a
+**Why it sits in `products`.** The product views (card, page) need the answer as a value: a badge, a
 stock label, a hint. A slot hands a host a component, never a value back. The read is
 [`inventory`](./inventory.md)'s, and `inventory` already depends on `products`, so `products`
-importing it would be a cycle. So the state sits in the kernel, the pattern of `@/kernel/work-counts`:
-one writer (`inventory`), many readers (`products`, `cart`, `stock-alerts`).
+importing it would be a cycle. So the state lives in `products` and `inventory` writes into it
+through the barrel: one writer (`inventory`), many readers (`products`, `cart`, `stock-alerts`,
+`wishlist`, all of which depend on `products`).
 
 **Who asks, and how fresh.** A host view renders the `availability-watch` slot, which `inventory`
 fills with a renderless `AvailabilityWatcher`; it reads, a card or button only reads the port:

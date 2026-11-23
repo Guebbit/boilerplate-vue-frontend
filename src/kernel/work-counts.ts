@@ -4,25 +4,29 @@
  * without importing the module that fills them.
  *
  * One writer (`shop-tasks`, from `GET /shop-tasks/summary`), many readers (the manifests of the
- * modules that own the five screens). The key names are the contract's `ShopWorkSummary` keys, so
- * the kernel names no shop code of its own. A key the caller may not open is simply absent.
+ * modules that own the screens). The keys are whatever the writer's summary names, so the kernel
+ * names no shop code of its own. A key the caller may not open is simply absent.
  */
 import { computed, ref } from 'vue';
 import type { ComputedRef } from 'vue';
-import type { ShopWorkSummary } from '@types';
+
+/**
+ * A summary of open work: a count per screen key; a key the caller may not open is absent.
+ */
+export type WorkCounts = Readonly<Record<string, number | undefined>>;
 
 /**
  * The last summary read, module-level so the readers and the writer share it.
  */
-const counts = ref<ShopWorkSummary>({});
+const counts = ref<WorkCounts>({});
 
 /**
  * One screen's count, reactive.
  *
- * @param key - A `ShopWorkSummary` key, e.g. `salesOrders`.
+ * @param key - A key of the writer's summary, e.g. `salesOrders`.
  * @returns The count, or `undefined` while nothing is read or the caller may not open that screen.
  */
-export const useWorkCount = (key: keyof ShopWorkSummary): ComputedRef<number | undefined> =>
+export const useWorkCount = (key: string): ComputedRef<number | undefined> =>
     computed(() => counts.value[key]);
 
 /**
@@ -30,7 +34,7 @@ export const useWorkCount = (key: keyof ShopWorkSummary): ComputedRef<number | u
  *
  * @param next - The summary the server answered.
  */
-export const setWorkCounts = (next: ShopWorkSummary): void => {
+export const setWorkCounts = (next: WorkCounts): void => {
     counts.value = next;
 };
 

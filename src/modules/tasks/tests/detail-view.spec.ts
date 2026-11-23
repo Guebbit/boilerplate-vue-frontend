@@ -83,14 +83,14 @@ describe('TaskDetail reference', () => {
 });
 
 describe('TaskDetail record link', () => {
-    it('opens the return page for a to-do linked to a return, worded with its own label', () =>
-        openDetail(aTask({ kind: 'return_refund_short', link: { type: 'return', id: 'r9' } })).then(
+    it('opens the account page for a to-do linked to an account, worded with its own label', () =>
+        openDetail(aTask({ kind: 'account_review', link: { type: 'user', id: 'u9' } })).then(
             (wrapper) => {
                 const link = wrapper.get('[data-test=task-link] a');
-                expect(link.text()).toBe('Return r9');
-                expect(link.attributes('href')).toBe('/en/returns/r9');
+                expect(link.text()).toBe('Account u9');
+                expect(link.attributes('href')).toBe('/en/users/u9');
                 expect(wrapper.get('[data-test=task-detail]').text()).toContain(
-                    'Return refund smaller than owed'
+                    'Account under review'
                 );
             }
         ));

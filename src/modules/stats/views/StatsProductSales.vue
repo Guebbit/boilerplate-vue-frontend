@@ -25,7 +25,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useStatsStore } from '../store.ts';
 import { periodFromQuery } from '../domain';
-import { formatBucketStart } from '@/infrastructure/utils/formatters.ts';
+import { formatBucketStart } from '../bucket-label.ts';
 import type { ChartModel, StatsPeriodChoice } from '../domain';
 import StatsPeriodForm from '../components/StatsPeriodForm.vue';
 import ChartWithTable from '../components/ChartWithTable.vue';

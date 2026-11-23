@@ -19,7 +19,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import Product from '../views/ProductTarget.vue';
 import { useProductsStore } from '../store';
-import { clearAvailability, recordAvailability, recordStockCount } from '@/kernel/availability.ts';
+import { clearAvailability, recordAvailability, recordStockCount } from '../availability.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';

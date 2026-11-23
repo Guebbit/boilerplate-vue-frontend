@@ -156,7 +156,7 @@ set to 20 instead of 25") until that line is written again, never only as a toas
 it in `lineWarnings`, apart from `cart`, so a background read does not wipe it.
 
 **The guest cart clamps from the same numbers.** It lives in this browser, so it reads
-`quantityAvailable` from the availability store (`@/kernel/availability`, filled by the
+`quantityAvailable` from the availability store (`availability.ts` in `products`, filled by the
 `availability-watch` slot the page renders) and applies the same rule: a raise stops at the number,
 a line above it is never raised, and the same warning shows. Nothing is clamped for a product whose
 availability has not loaded.
