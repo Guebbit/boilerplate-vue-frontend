@@ -357,7 +357,7 @@ describe('useOrdersStore', () => {
             useOrdersStore()
                 .fetchInvoice('o1')
                 .then((result) => {
-                    expect(getOrderInvoice).toHaveBeenCalledWith('o1');
+                    expect(getOrderInvoice).toHaveBeenCalledWith('o1', { timeout: 35_000 });
                     expect(result).toBe(INVOICE);
                 }));
     });
@@ -377,7 +377,9 @@ describe('useOrdersStore', () => {
             useOrdersStore()
                 .fetchCreditNote('o1', 'cn1')
                 .then((result) => {
-                    expect(getOrderCreditNote).toHaveBeenCalledExactlyOnceWith('o1', 'cn1');
+                    expect(getOrderCreditNote).toHaveBeenCalledExactlyOnceWith('o1', 'cn1', {
+                        timeout: 35_000
+                    });
                     expect(result).toBe(INVOICE);
                 }));
     });

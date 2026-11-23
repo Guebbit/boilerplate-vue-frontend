@@ -207,6 +207,13 @@ const listCreditNotes = (orderId: string): Promise<CreditNoteSummary[]> =>
 const REISSUE_SETTLE_MS = 2000;
 
 /**
+ * Per-call budget for a PDF download, in ms.
+ * The backend renders with a fresh Chromium inside a 30 s budget (BE `RENDER_TIMEOUT_MS`),
+ * so the client's 10 s default would give up first. 35 s is that budget plus margin.
+ */
+const PDF_DOWNLOAD_TIMEOUT_MS = 35_000;
+
+/**
  * Orders CRUD, paginated search and invoices.
  *
  * The CRUD half is declared; the invoice download is written against the toolkit primitives below,
@@ -491,7 +498,8 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param orderId - Identifier of the order to invoice.
      * @returns A promise resolving with the PDF bytes.
      */
-    const fetchInvoice = (orderId: string) => fetchAny(() => getOrderInvoice(orderId));
+    const fetchInvoice = (orderId: string) =>
+        fetchAny(() => getOrderInvoice(orderId, { timeout: PDF_DOWNLOAD_TIMEOUT_MS }));
 
     /**
      * Fetches one credit note's frozen PDF. Each download counts against the invoicing rate limit,
@@ -502,7 +510,9 @@ export const useOrdersStore = defineStore('orders', () => {
      * @returns A promise resolving with the PDF bytes.
      */
     const fetchCreditNote = (orderId: string, creditNoteId: string) =>
-        fetchAny(() => getOrderCreditNote(orderId, creditNoteId));
+        fetchAny(() =>
+            getOrderCreditNote(orderId, creditNoteId, { timeout: PDF_DOWNLOAD_TIMEOUT_MS })
+        );
 
     return {
         orders,
