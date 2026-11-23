@@ -531,8 +531,6 @@
         "welcome-menu-toggle-body": "Apri il menu per raggiungere le pagine che il tuo account può usare.",
         "welcome-admin-title": "Gestire il negozio",
         "welcome-admin-body": "Ordini, magazzino, pagamenti e il resto del back office del negozio sono in questo menu.",
-        "welcome-cart-title": "Il tuo carrello",
-        "welcome-cart-body": "I prodotti che aggiungi finiscono qui, con il totale aggiornato. Il checkout parte da questo pulsante.",
         "welcome-account-title": "Il tuo account",
         "welcome-account-body": "Profilo, ordini e impostazioni sono qui. Puoi riaprire questo giro da questo menu, alla voce \"Fammi fare un giro\"."
     }

@@ -109,12 +109,12 @@ beforeEach(() => {
 
 describe('Contact', () => {
     it('arrives filled in from an order page’s link', () =>
-        openContact('/en/contact?category=cancellation&order=ORD-1042')
+        openContact('/en/contact?category=account&order=ORD-1042')
             .then(({ wrapper, submit }) => fillAndSend(wrapper).then(() => submit))
             .then((submit) => {
                 const sent = vi.mocked(submit).mock.calls[0]?.[0];
 
-                expect(sent).toMatchObject({ category: 'cancellation', orderNumber: 'ORD-1042' });
+                expect(sent).toMatchObject({ category: 'account', orderNumber: 'ORD-1042' });
             }));
 
     it('ignores a category the contract does not know', () =>

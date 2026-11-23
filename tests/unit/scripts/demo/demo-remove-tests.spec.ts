@@ -6,11 +6,12 @@
  * a header or an import deletes, and which it leaves alone.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
     headerProblems,
+    pruneSpecSeconds,
     removeResidueSpecs,
     requiredModules
 } from '../../../../scripts/demo/demo-remove-tests';
@@ -113,5 +114,34 @@ describe('headerProblems', () => {
         write('tests/e2e/specs/keyboard.cy.ts', 'it("x")\n');
 
         expect(headerProblems(root, known)).toEqual([]);
+    });
+});
+
+describe('pruneSpecSeconds', () => {
+    it('drops the weight of a spec that is gone and keeps the others', () => {
+        write('tests/e2e/specs/kept.cy.ts', 'describe("k")\n');
+        write(
+            'scripts/e2e/spec-seconds.json',
+            JSON.stringify({ 'tests/e2e/specs/kept.cy.ts': 5, 'tests/e2e/specs/gone.cy.ts': 9 })
+        );
+
+        expect(pruneSpecSeconds(root)).toEqual(['tests/e2e/specs/gone.cy.ts']);
+        expect(
+            JSON.parse(readFileSync(path.join(root, 'scripts/e2e/spec-seconds.json'), 'utf8'))
+        ).toEqual({ 'tests/e2e/specs/kept.cy.ts': 5 });
+    });
+
+    it('leaves the file alone when every spec it names is still there', () => {
+        write('tests/e2e/specs/kept.cy.ts', 'describe("k")\n');
+        write('scripts/e2e/spec-seconds.json', '{"tests/e2e/specs/kept.cy.ts":5}');
+
+        expect(pruneSpecSeconds(root)).toEqual([]);
+        expect(readFileSync(path.join(root, 'scripts/e2e/spec-seconds.json'), 'utf8')).toBe(
+            '{"tests/e2e/specs/kept.cy.ts":5}'
+        );
+    });
+
+    it('has nothing to do when there is no weights file', () => {
+        expect(pruneSpecSeconds(root)).toEqual([]);
     });
 });

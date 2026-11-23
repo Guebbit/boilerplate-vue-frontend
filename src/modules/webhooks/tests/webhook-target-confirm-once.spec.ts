@@ -35,7 +35,7 @@ const SUBSCRIPTION: WebhookSubscription = {
     id: 'sub-1',
     url: 'https://hooks.example.com/in',
     description: 'Orders feed',
-    eventTypes: ['order.paid'],
+    eventTypes: ['example.published'],
     enabled: true,
     consecutiveFailures: 0,
     secretIds: ['sec-1', 'sec-2'],

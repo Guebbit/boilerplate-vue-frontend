@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { readShipLines, shipmentCount, shippableLines } from '../domain';
-import { aFulfillmentOrder, aShipment } from '../../../../tests/support/unit/fixtures.ts';
+import { aFulfillmentOrder, aShipment } from './delivery-fixtures.ts';
 
 /**
  * Two lines: p1 with 2 left, p2 fully shipped already.

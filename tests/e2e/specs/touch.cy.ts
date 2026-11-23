@@ -1,3 +1,4 @@
+// requires-module: none
 /**
  * The touch contract of the shell: what a finger can do that the keyboard spec cannot check.
  *
@@ -135,19 +136,6 @@ describe('touch', () => {
                         });
                     });
             });
-
-        it('goes to the cart by a tap on the pinned entry and leaves no tooltip behind', () => {
-            cy.loginAs('user');
-            cy.visit('/en');
-            applyViewport('phone');
-            cy.get('h1').should('exist');
-
-            cy.get('[data-test^=pinned-]').first().tap();
-
-            cy.location('pathname').should('match', /cart/);
-            cy.get('h1').should('exist');
-            cy.get(SHOWN_TOOLTIP).should('not.exist');
-        });
 
         it('switches the language by a tap at tablet width', () => {
             cy.visit('/en');

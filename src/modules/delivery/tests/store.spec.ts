@@ -14,14 +14,14 @@ import {
     parseOrvalFixture
 } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 import {
     aFulfillmentOrder,
     aPreorderFulfillmentOrder,
     aPreorderSummary,
-    aShipment,
-    aShop,
-    aProblem
-} from '../../../../tests/support/unit/fixtures.ts';
+    aShipment
+} from './delivery-fixtures.ts';
+import { aShop } from '@/modules/shop/tests/shop-fixtures.ts';
 
 import * as schemas from '@api/schemas';
 

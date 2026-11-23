@@ -14,7 +14,7 @@ import vuetify from '@/ui/vuetify';
 import type { Payment, PaymentMethodOption } from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
-import { aPayment } from '../../../../tests/support/unit/fixtures.ts';
+import { aPayment } from './payment-fixtures.ts';
 
 wireModulesIntoCore();
 

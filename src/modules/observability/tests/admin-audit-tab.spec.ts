@@ -206,13 +206,13 @@ const mountWith = (items: ReturnType<typeof rowOn>[]) => {
 
 describe('the target column', () => {
     it('shows the type and a short id, linked to the page of a record that has one', () => {
-        const wrapper = mountWith([rowOn('order', '6adc83737c230dfde46df72f')]);
+        const wrapper = mountWith([rowOn('user', '6adc83737c230dfde46df72f')]);
 
         return flushPromises().then(() => {
             const cell = wrapper.get('[data-test=audit-target]');
-            expect(cell.text()).toBe('order 6adc8373');
+            expect(cell.text()).toBe('user 6adc8373');
             expect(cell.element.tagName).toBe('A');
-            expect(cell.attributes('href')).toBe('/en/orders/6adc83737c230dfde46df72f');
+            expect(cell.attributes('href')).toBe('/en/users/6adc83737c230dfde46df72f');
         });
     });
 

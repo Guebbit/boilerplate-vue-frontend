@@ -14,7 +14,8 @@ import { createPinia, setActivePinia } from 'pinia';
 import { usePaymentsStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aPayment, aProblem } from '../../../../tests/support/unit/fixtures.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
+import { aPayment } from './payment-fixtures.ts';
 import * as schemas from '@api/schemas';
 import {
     contractRequest,

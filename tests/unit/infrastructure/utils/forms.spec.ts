@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import * as zod from 'zod';
 import * as schemas from '@api/schemas';
 import {
     omitNulls,
@@ -6,6 +7,26 @@ import {
     toRequestBody,
     uploadThenClear
 } from '@/infrastructure/utils/forms.ts';
+
+/**
+ * A body with the shape the generator gives a translated record: a map of locale to a nullable
+ * strict object whose own fields clear with `null`. Local, because the generic rule under test
+ * is the schema's shape, not any one module's body.
+ */
+const translated = zod.strictObject({
+    translations: zod
+        .record(
+            zod.string(),
+            zod.union([
+                zod.strictObject({
+                    title: zod.string().min(1).optional(),
+                    description: zod.string().min(1).nullish()
+                }),
+                zod.null()
+            ])
+        )
+        .optional()
+});
 
 describe('shapeBody', () => {
     /** The PATCH body schema the cases clear fields on. */
@@ -56,20 +77,26 @@ describe('shapeBody', () => {
         });
 
         it('compares arrays deeply', () => {
+            const update = schemas.UpdateWebhookSubscriptionBody;
+
             expect(
-                shapeBody(schemas.UpdateProductByIdBody, { tags: ['a'] }, { tags: ['a'] })
+                shapeBody(update, { eventTypes: ['user.erased'] }, { eventTypes: ['user.erased'] })
             ).toEqual({});
             expect(
-                shapeBody(schemas.UpdateProductByIdBody, { tags: ['a', 'b'] }, { tags: ['a'] })
-            ).toEqual({ tags: ['a', 'b'] });
+                shapeBody(
+                    update,
+                    { eventTypes: ['user.erased', 'user.updated'] },
+                    { eventTypes: ['user.erased'] }
+                )
+            ).toEqual({ eventTypes: ['user.erased', 'user.updated'] });
         });
     });
 
     describe('nested objects', () => {
-        const replace = schemas.ReplaceProductByIdBody;
-
         it('keeps a removed locale as null and a nullable child spelled per its own schema', () => {
-            expect(shapeBody(replace, { translations: { en: { title: 'a' }, it: null } })).toEqual({
+            expect(
+                shapeBody(translated, { translations: { en: { title: 'a' }, it: null } })
+            ).toEqual({
                 translations: { en: { title: 'a' }, it: null }
             });
         });
@@ -77,7 +104,7 @@ describe('shapeBody', () => {
         it('diffs a nested object against its own baseline and drops what did not change', () => {
             expect(
                 shapeBody(
-                    schemas.UpdateProductByIdBody,
+                    translated,
                     { translations: { en: { title: 'a' }, it: { title: 'b' } } },
                     { translations: { en: { title: 'a' }, it: { title: 'c' } } }
                 )

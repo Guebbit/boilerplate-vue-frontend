@@ -24,7 +24,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveStripModules } from '../module-manifest';
 import { removeModuleFolders, stripModuleRegistry } from './demo-remove-registry';
-import { removeResidueSpecs } from './demo-remove-tests';
+import { pruneSpecSeconds, removeResidueSpecs } from './demo-remove-tests';
 
 /** The repo root. `import.meta.url` rather than `__dirname`: this script runs as ESM. */
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -68,6 +68,12 @@ for (const folder of removeModuleFolders(REPO_ROOT, demoNames))
 
 console.info('\n[demo-remove] the module registry:');
 stripModuleRegistry(REPO_ROOT, demoNames);
+/**
+ * The line edit can leave a trailing comma behind the last entry, which this repo's Prettier config
+ * refuses. Prettier CLI: `--write` formats the file in place, with the repo's own config.
+ * https://prettier.io/docs/cli
+ */
+execFileSync('npx', ['prettier', '--write', 'src/modules.ts'], { cwd: REPO_ROOT, stdio: 'ignore' });
 console.info(`  src/modules.ts — removed ${demoNames.join(', ')}`);
 
 console.info('\n[demo-remove] cross-module specs:');
@@ -75,9 +81,18 @@ console.info('\n[demo-remove] cross-module specs:');
 for (const note of removeResidueSpecs(REPO_ROOT, demoNames))
     console.info(`  ${note.file} — ${note.detail}`);
 
+console.info('\n[demo-remove] spec weights:');
+// The committed median seconds name specs by path; the ones just deleted would linger.
+for (const spec of pruneSpecSeconds(REPO_ROOT))
+    console.info(`  scripts/e2e/spec-seconds.json — dropped ${spec}`);
+
 console.info('\n[demo-remove] done. Next:');
 console.info('  1. npm run type-check-only   — the module-owned specs are already gone');
 console.info('  2. npm run lint              — catches an import eslint-plugin-boundaries refused');
+console.info('  3. UPDATE_SITEMAP=1 npx vitest run tests/cross-cutting/sitemap-document.spec.ts');
+console.info(
+    '                               — rewrites docs/understand/sitemap.md for the routes left'
+);
 
 /** Files that still import a deleted module, found by grep. */
 const residue = findResidueTests(demoNames);

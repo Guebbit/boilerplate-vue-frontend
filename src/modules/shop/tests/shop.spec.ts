@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getShop } from '@api';
 import { loadShop, resetShop, shipToCountries, shopCurrency } from '../shop';
 import shopModule from '../module';
-import { aShop } from '../../../../tests/support/unit/fixtures.ts';
+import { aShop } from './shop-fixtures.ts';
 
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<object>()),

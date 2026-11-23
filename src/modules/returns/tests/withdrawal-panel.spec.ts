@@ -16,7 +16,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
+import { aReturn } from './return-fixtures.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { ReturnOptions, WithdrawBlockedReason } from '@types';
 

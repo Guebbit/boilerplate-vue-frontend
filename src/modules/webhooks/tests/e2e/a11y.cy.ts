@@ -51,7 +51,7 @@ sweepA11y(
                 sinkEndpoint(`/hook-a11y-${String(Date.now())}`).then((url) => {
                     cy.get('[data-test=webhook-url] input').type(url);
                 });
-                cy.pickOption('[data-test=webhook-event-types]', 'order.created');
+                cy.pickOption('[data-test=webhook-event-types]', 'example.published');
                 cy.get('body').type('{esc}');
                 cy.get('form').submit();
                 cy.get('[data-test=secret-reveal]').should('be.visible');

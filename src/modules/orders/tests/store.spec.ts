@@ -36,7 +36,8 @@ import {
     contractRequest,
     contractResponse
 } from '../../../../tests/support/unit/orval-fixture-schema.ts';
-import { anOrder, anOrderListItem } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrder } from '@/modules/cart/tests/cart-fixtures.ts';
+import { anOrderListItem } from './order-fixtures.ts';
 import type { OrderListItem } from '@api';
 
 /**

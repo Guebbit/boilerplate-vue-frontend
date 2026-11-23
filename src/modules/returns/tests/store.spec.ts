@@ -11,7 +11,7 @@ import * as schemas from '@api/schemas';
 import { orvalMutator } from '@/infrastructure/http';
 import { useReturnsStore } from '../store.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aReturn, aReturnListItem } from '../../../../tests/support/unit/fixtures.ts';
+import { aReturn, aReturnListItem } from './return-fixtures.ts';
 import {
     contractRequest,
     parseOrvalFixture

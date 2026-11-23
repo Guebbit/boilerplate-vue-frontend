@@ -16,7 +16,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aPayment } from '../../../../tests/support/unit/fixtures.ts';
+import { aPayment } from './payment-fixtures.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 
 wireModulesIntoCore();

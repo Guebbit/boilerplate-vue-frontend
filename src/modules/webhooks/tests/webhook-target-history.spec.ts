@@ -44,7 +44,7 @@ const openSubscription = () => {
                 contractBody<WebhookSubscription>(GetWebhookSubscriptionResponse, {
                     id: 's1',
                     url: 'https://example.com/hook',
-                    eventTypes: ['order.paid'],
+                    eventTypes: ['example.published'],
                     enabled: true,
                     consecutiveFailures: 0,
                     secretIds: ['k1'],

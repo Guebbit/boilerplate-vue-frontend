@@ -35,7 +35,7 @@ wireModulesIntoCore();
 const SUBSCRIPTION = {
     id: 'sub1',
     url: 'https://example.com/hook',
-    eventTypes: ['order.created'] as WebhookEventFilter[],
+    eventTypes: ['example.published'] as WebhookEventFilter[],
     enabled: true,
     consecutiveFailures: 0,
     secretIds: ['sec1'],
@@ -145,7 +145,7 @@ describe('useWebhooksStore', () => {
             useWebhooksStore()
                 .createSubscription({
                     url: 'https://example.com/hook',
-                    eventTypes: ['order.created']
+                    eventTypes: ['example.published']
                 })
                 .then(() => {
                     expect(lastRequest()).toMatchObject({
@@ -154,7 +154,7 @@ describe('useWebhooksStore', () => {
                     });
                     expect(lastBody(schemas.CreateWebhookSubscriptionBody)).toMatchObject({
                         url: 'https://example.com/hook',
-                        eventTypes: ['order.created']
+                        eventTypes: ['example.published']
                     });
                 }));
 
@@ -334,7 +334,7 @@ describe('useWebhooksStore', () => {
                 id: 'del1',
                 subscriptionId: 'sub1',
                 eventId: 'evt1',
-                eventType: 'order.created',
+                eventType: 'example.published',
                 attempt: 2,
                 status: 'succeeded',
                 responseCode: 200,
@@ -506,7 +506,7 @@ describe('useWebhooksStore', () => {
                 (config: { url?: string; method?: string }) =>
                     Promise.resolve(
                         parseOrvalFixture(config.method, config.url, {
-                            items: [{ name: 'order.created', actions: { subscribe: true } }]
+                            items: [{ name: 'example.published', actions: { subscribe: true } }]
                         })
                     )
             );
@@ -516,7 +516,7 @@ describe('useWebhooksStore', () => {
                 .then(() => {
                     expect(lastRequest()).toMatchObject({ url: '/webhooks/events', method: 'GET' });
                     expect(useWebhooksStore().eventCatalog).toEqual([
-                        { name: 'order.created', actions: { subscribe: true } }
+                        { name: 'example.published', actions: { subscribe: true } }
                     ]);
                 });
         });

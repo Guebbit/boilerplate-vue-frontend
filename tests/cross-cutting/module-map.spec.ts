@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { moduleDependsOn } from '../../scripts/module-manifest';
+import { moduleDependsOn, moduleFolderNames } from '../../scripts/module-manifest';
 
 /** One edge of the map: `from` depends on `to`, in the way `kind` names. */
 interface Edge {
@@ -75,22 +75,62 @@ const parseEdges = (mermaid: string): Edge[] => {
     });
 };
 
+/**
+ * The node ids and labels a flowchart declares, and the raw ids at the ends of its context-map
+ * edges, so a typo in an edge cannot hide behind the fallback that prints the id as the label.
+ *
+ * @param mermaid - The block body.
+ */
+const nodesAndEnds = (mermaid: string): { declared: Map<string, string>; ends: string[] } => {
+    const declared = new Map<string, string>();
+    for (const [, id, label] of mermaid.matchAll(NODE))
+        if (!declared.has(id)) declared.set(id, label);
+    const ends = mermaid.split('\n').flatMap((line) => {
+        const match = EDGE.exec(line);
+        return match ? [match[1], match[3]] : [];
+    });
+    return { declared, ends };
+};
+
 /** A stable text form of an edge. */
 const key = ({ from, to, kind }: Edge): string => `${from} → ${to} (${kind})`;
 
+/** The overview's Mermaid block. */
+const overviewMermaid = (): string =>
+    mermaidUnder(readFileSync(path.join(DOCS, 'start.md'), 'utf8'), 'The whole map');
+
 /** The overview's edges. */
-const overviewEdges = (): Edge[] =>
-    parseEdges(mermaidUnder(readFileSync(path.join(DOCS, 'start.md'), 'utf8'), 'The whole map'));
+const overviewEdges = (): Edge[] => parseEdges(overviewMermaid());
 
 describe('the context map in the overview', () => {
     it('reads some edges at all', () => {
         expect(overviewEdges().length).toBeGreaterThan(5);
     });
 
+    /**
+     * The map draws the full build. A build that left a module out has no `dependsOn` for it, so an
+     * edge with an end in a missing module is not this build's to judge: only edges between
+     * modules that are here are held to `dependsOn`.
+     */
     it('draws only edges dependsOn allows', () => {
+        const here = new Set(moduleFolderNames);
         const refused = overviewEdges()
+            .filter(({ from, to }) => here.has(from) && here.has(to))
             .filter(({ from, to }) => !(moduleDependsOn[from] ?? []).includes(to))
             .map((edge) => key(edge));
         expect(refused).toEqual([]);
+    });
+
+    it('ends every edge on a node the map declares', () => {
+        const { declared, ends } = nodesAndEnds(overviewMermaid());
+
+        expect(ends.filter((id) => !declared.has(id))).toEqual([]);
+    });
+
+    it('draws a node for every module there is', () => {
+        const { declared } = nodesAndEnds(overviewMermaid());
+        const labels = new Set(declared.values());
+
+        expect(moduleFolderNames.filter((name) => !labels.has(name))).toEqual([]);
     });
 });

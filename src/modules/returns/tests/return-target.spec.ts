@@ -12,7 +12,7 @@ import { useReturnsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aReturn, aReturnListItem } from '../../../../tests/support/unit/fixtures.ts';
+import { aReturn, aReturnListItem } from './return-fixtures.ts';
 import { parseOrvalFixture } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 wireModulesIntoCore();

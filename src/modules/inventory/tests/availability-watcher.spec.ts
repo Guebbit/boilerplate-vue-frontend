@@ -10,7 +10,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { getInventoryLevel, listProductAvailability } from '@api';
 import { availabilityOf, clearAvailability, stockCountOf } from '@/modules/products';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { aLevel } from '../../../../tests/support/unit/fixtures.ts';
+import { aLevel } from './inventory-fixtures.ts';
 import AvailabilityWatcher from '../components/AvailabilityWatcher.vue';
 
 vi.mock('@api', async (importOriginal) => ({

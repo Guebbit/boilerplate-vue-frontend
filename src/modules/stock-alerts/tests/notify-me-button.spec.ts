@@ -14,7 +14,7 @@ import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { Product, ProductAvailability } from '@types';
 import { clearAvailability, recordAvailability } from '@/modules/products';
-import { aProduct } from '../../../../tests/support/unit/fixtures.ts';
+import { aProduct } from '@/modules/products/tests/product-fixtures.ts';
 
 wireModulesIntoCore();
 

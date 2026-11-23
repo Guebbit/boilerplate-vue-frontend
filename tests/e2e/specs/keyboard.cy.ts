@@ -1,3 +1,4 @@
+// requires-module: none
 /**
  * The keyboard contract of the shell — what axe cannot see.
  *
@@ -125,46 +126,6 @@ describe('keyboard', () => {
         cy.focused().should('match', 'nav a').and('not.have.attr', 'aria-label');
         cy.focused().invoke('text').invoke('trim').should('not.be.empty');
         cy.get(SHOWN_TOOLTIP).should('not.exist');
-    });
-
-    /**
-     * A pinned entry — the one kind of icon-only control left on the bar — shows its name as a
-     * tooltip on focus, not only on hover (WCAG 1.4.13), and the tooltip says what the reader
-     * hears first (WCAG 2.5.3): the name may go on to the count and the detail, but it starts
-     * with the label.
-     */
-    it('shows the label of a pinned entry as a tooltip on focus', () => {
-        cy.loginAs('user');
-        cy.visit('/en');
-        cy.get('h1').should('exist');
-        /**
-         * What is asserted is that the tooltip OPENS, not how it animates in. With the transition
-         * live, this races it — and loses whenever the four e2e shards leave the browser short of
-         * CPU. After the visit, since a page load discards the injected style.
-         */
-        cy.freezeAnimations();
-
-        /**
-         * By a real keystroke, not `.focus()`: the tooltip opens on `:focus-visible`, which a
-         * script focus does not set. Tab away and Shift+Tab back lands on the same control
-         * with the keyboard's focus ring.
-         */
-        cy.get('[data-test^=pinned-]').first().focus();
-        cy.realPress('Tab');
-        cy.realPress(['Shift', 'Tab']);
-        cy.focused()
-            .should('have.attr', 'data-test')
-            .and('match', /^pinned-/);
-        cy.focused()
-            .invoke('attr', 'aria-label')
-            .then((label) => {
-                cy.get(SHOWN_TOOLTIP)
-                    .should('have.length', 1)
-                    .invoke('text')
-                    .then((tooltip) => {
-                        expect(String(label).startsWith(tooltip.trim())).to.equal(true);
-                    });
-            });
     });
 
     it('opens the administration menu with ArrowDown and closes it with Escape', () => {

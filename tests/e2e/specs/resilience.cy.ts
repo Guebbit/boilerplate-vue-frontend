@@ -1,3 +1,4 @@
+// requires-module: none
 /**
  * The assertions that hold whatever a FOUNDATION page happens to render — the shell-generic half
  * of what used to be one file. Every other spec asserts exact counts, titles and prices.

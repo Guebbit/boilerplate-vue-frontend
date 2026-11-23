@@ -27,7 +27,7 @@ import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
-import { aProduct } from '../../../../tests/support/unit/fixtures.ts';
+import { aProduct } from './product-fixtures.ts';
 import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
 import type { ProductActions } from '@types';

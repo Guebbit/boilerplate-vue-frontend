@@ -215,14 +215,14 @@ describe('unknown routes', () => {
         ));
 
     /**
-     * An address with no locale but a real page's name keeps its path: `/products` is the products
+     * An address with no locale but a real page's name keeps its path: `/contact` is the contact
      * page under the default locale, not an unsupported locale that falls back to Home.
      */
     it('keeps the path of a locale-less address for a page the app serves', () =>
         loadRouter().then((router) =>
-            router.push('/products?tag=a').then(() => {
-                expect(router.currentRoute.value.name).toBe('ProductsList');
-                expect(router.currentRoute.value.params.locale).not.toBe('products');
+            router.push('/contact?tag=a').then(() => {
+                expect(router.currentRoute.value.name).toBe('Contact');
+                expect(router.currentRoute.value.params.locale).not.toBe('contact');
                 expect(router.currentRoute.value.query.tag).toBe('a');
             })
         ));

@@ -41,7 +41,7 @@ const router = createRouter({
 const V_SELECT_STUB = {
     props: ['modelValue'],
     emits: ['update:modelValue'],
-    template: "<select multiple @change=\"$emit('update:modelValue', ['order.paid'])\" />"
+    template: "<select multiple @change=\"$emit('update:modelValue', ['example.published'])\" />"
 };
 
 /** The record every test loads and edits, carrying a description to clear. */
@@ -49,7 +49,7 @@ const SUBSCRIPTION: WebhookSubscription = {
     id: 'sub-1',
     url: 'https://hooks.example.com/in',
     description: 'Orders feed',
-    eventTypes: ['order.paid'],
+    eventTypes: ['example.published'],
     enabled: true,
     consecutiveFailures: 0,
     secretIds: ['sec-1'],

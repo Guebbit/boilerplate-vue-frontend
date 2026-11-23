@@ -162,7 +162,7 @@ describe('login', () => {
                     verified: false
                 });
                 expect(session.isAuth).toBe(true);
-                expect(session.can('delete', 'Product')).toBe(false);
+                expect(session.can('delete', 'Locale')).toBe(false);
             }));
 
     it('answers each rule an unrestricted caller was published, so their screens resolve', () => {
@@ -176,10 +176,10 @@ describe('login', () => {
         responses['POST /account/login'] = {
             token: 'jwt-token',
             account: accountView({ ...USER, role: 'admin' }, [
-                ['read', 'Product'],
-                ['create', 'Product'],
-                ['update', 'Product'],
-                ['delete', 'Product']
+                ['read', 'Locale'],
+                ['create', 'Locale'],
+                ['update', 'Locale'],
+                ['delete', 'Locale']
             ])
         };
 
@@ -188,8 +188,8 @@ describe('login', () => {
             .then(() => {
                 const session = useSessionStore();
 
-                expect(session.can('delete', 'Product')).toBe(true);
-                expect(session.can('update', 'Product')).toBe(true);
+                expect(session.can('delete', 'Locale')).toBe(true);
+                expect(session.can('update', 'Locale')).toBe(true);
                 /**
                  * Nothing published it, so it is refused — an unrestricted TENANT role is not a
                  * platform operator, and admin's superset stops at the scope boundary.
@@ -201,7 +201,7 @@ describe('login', () => {
     it('drops the rules when the session ends, so nothing stays unlocked', () => {
         responses['POST /account/login'] = {
             token: 'jwt-token',
-            account: accountView({ ...USER, role: 'admin' }, [['delete', 'Product']])
+            account: accountView({ ...USER, role: 'admin' }, [['delete', 'Locale']])
         };
 
         return useAccountAuthStore()
@@ -209,7 +209,7 @@ describe('login', () => {
             .then(() => {
                 const session = useSessionStore();
 
-                expect(session.can('delete', 'Product')).toBe(true);
+                expect(session.can('delete', 'Locale')).toBe(true);
                 session.clearSession();
 
                 /**
@@ -217,8 +217,8 @@ describe('login', () => {
                  * stranger has to be what a stranger is allowed, and the next viewer's rules
                  * arrive with the next fetch.
                  */
-                expect(session.can('delete', 'Product')).toBe(false);
-                expect(session.tenantAbility.can('delete', 'Product')).toBe(false);
+                expect(session.can('delete', 'Locale')).toBe(false);
+                expect(session.tenantAbility.can('delete', 'Locale')).toBe(false);
             });
     });
 

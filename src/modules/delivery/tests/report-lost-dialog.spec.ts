@@ -15,7 +15,7 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
-import { aShipment } from '../../../../tests/support/unit/fixtures.ts';
+import { aShipment } from './delivery-fixtures.ts';
 
 wireModulesIntoCore();
 

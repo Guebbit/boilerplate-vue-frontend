@@ -23,7 +23,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { anOrderListItem } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrderListItem } from './order-fixtures.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import type { Order as OrderType } from '@types';

@@ -19,7 +19,7 @@ import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { asStub } from '../../../../tests/support/stub';
 import type { StockMovement } from '@types';
-import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
+import { NO_PRODUCT_ACTIONS } from '@/modules/products/tests/product-fixtures.ts';
 
 wireModulesIntoCore();
 

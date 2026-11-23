@@ -39,7 +39,7 @@ describe('Webhook subscriptions', () => {
                 cy.wrap(url, { log: false }).as('createdUrl');
             });
             cy.get('[data-test=webhook-description] input').type('e2e coverage');
-            cy.pickOption('[data-test=webhook-event-types]', 'order.created');
+            cy.pickOption('[data-test=webhook-event-types]', 'example.published');
             // The multi-select stays open after one pick; close it before the submit below.
             cy.get('body').type('{esc}');
             cy.get('form').submit();
@@ -63,7 +63,7 @@ describe('Webhook subscriptions', () => {
                 .then((originalUrl) =>
                     cy.createWebhookSubscription({
                         url: originalUrl,
-                        eventTypes: ['order.created']
+                        eventTypes: ['example.published']
                     })
                 )
                 .then((subscription) => {
@@ -87,7 +87,7 @@ describe('Webhook subscriptions', () => {
     describe('Delete', () => {
         it('deletes a subscription after confirming, and it drops out of the list', () => {
             sinkEndpoint(unique()).then((url) => {
-                cy.createWebhookSubscription({ url, eventTypes: ['order.created'] });
+                cy.createWebhookSubscription({ url, eventTypes: ['example.published'] });
                 cy.visit('/en/webhooks/subscriptions');
                 cy.pickOption('[data-test=page-size]', '50');
 

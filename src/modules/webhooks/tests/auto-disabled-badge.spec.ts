@@ -79,7 +79,7 @@ describe('the webhooks badge', () => {
     });
 
     it('wears nothing, and asks nothing, for a session that may not read subscriptions', async () => {
-        signIn([['read', 'Order']]);
+        signIn([['read', 'Locale']]);
 
         const { result } = await wireBadge();
         await flushPromises();

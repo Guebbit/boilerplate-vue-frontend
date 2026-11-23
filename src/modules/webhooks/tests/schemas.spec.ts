@@ -10,7 +10,7 @@ import { webhookCreateSchema, webhookEditSchema } from '../schemas';
 /** A form payload that passes, for tests that vary one field away from valid. */
 const validSubscription = {
     url: 'https://example.com/hook',
-    eventTypes: ['order.created']
+    eventTypes: ['example.published']
 };
 
 describe('webhookCreateSchema', () => {
@@ -45,7 +45,7 @@ describe('webhookCreateSchema', () => {
         expect(
             webhookCreateSchema.safeParse({
                 ...validSubscription,
-                eventTypes: ['order.created', 'payment.succeeded']
+                eventTypes: ['example.published', 'user.erased']
             }).success
         ).toBe(true);
     });

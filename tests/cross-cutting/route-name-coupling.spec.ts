@@ -2,7 +2,7 @@
  * A route name is a dependency channel `dependsOn` cannot see.
  *
  * `eslint.config.ts`'s boundary rules stop a module `import`-ing a sibling it has no coupling
- * for — but `router.push({ name: 'OrderTarget' })` is a plain string, invisible to that check.
+ * for — but `router.push({ name: 'UserTarget' })` is a plain string, invisible to that check.
  * `vue-router` throws on an unresolved name, so a module naming a sibling's route without either
  * a declared `dependsOn` coupling or a `router.hasRoute` guard is one deleted module away from
  * throwing at runtime — `cart`'s empty state or `wishlist`'s own page, for a `products` this
@@ -182,16 +182,16 @@ describe('a notice target is guarded by construction', () => {
     const none = new Set<string>();
 
     it('lets a notice file name a route as its target', () => {
-        expect(unguardedIn(`${noticeImport}const t = { route: 'OrderTarget' };`, none)).toEqual([]);
+        expect(unguardedIn(`${noticeImport}const t = { route: 'UserTarget' };`, none)).toEqual([]);
     });
 
     it('refuses `route:` in a file that declares no notices', () => {
-        expect(unguardedIn("const t = { route: 'OrderTarget' };", none)).toEqual(['OrderTarget']);
+        expect(unguardedIn("const t = { route: 'UserTarget' };", none)).toEqual(['UserTarget']);
     });
 
     it('still refuses an unguarded `name:` for the same route in a notice file', () => {
-        const source = `${noticeImport}const t = { route: 'OrderTarget' };\nrouter.push({ name: 'OrderTarget' });`;
+        const source = `${noticeImport}const t = { route: 'UserTarget' };\nrouter.push({ name: 'UserTarget' });`;
 
-        expect(unguardedIn(source, none)).toEqual(['OrderTarget']);
+        expect(unguardedIn(source, none)).toEqual(['UserTarget']);
     });
 });

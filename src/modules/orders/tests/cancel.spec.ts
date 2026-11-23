@@ -17,7 +17,7 @@ import {
     contractRequest,
     parseOrvalFixture
 } from '../../../../tests/support/unit/orval-fixture-schema.ts';
-import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrder } from '@/modules/cart/tests/cart-fixtures.ts';
 
 wireModulesIntoCore();
 

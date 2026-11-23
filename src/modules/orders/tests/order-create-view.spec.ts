@@ -19,7 +19,8 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { anOrder, aProblem, aUser } from '../../../../tests/support/unit/fixtures.ts';
+import { aProblem, aUser } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrder } from '@/modules/cart/tests/cart-fixtures.ts';
 
 wireModulesIntoCore();
 

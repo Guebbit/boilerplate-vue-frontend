@@ -20,7 +20,7 @@ actionTable('webhooks', [
                 cy.get('[data-test=webhook-url] input').type(url);
             });
             cy.get('[data-test=webhook-description] input').type('typed before the fault');
-            cy.pickOption('[data-test=webhook-event-types]', 'order.created');
+            cy.pickOption('[data-test=webhook-event-types]', 'example.published');
             cy.get('body').type('{esc}');
             /**
              * The runner reads every input on the page as the form's typed values: the picker's list
@@ -45,7 +45,9 @@ actionTable('webhooks', [
         persona: 'admin',
         route: () =>
             sinkEndpoint(`/hook-${unique()}`)
-                .then((url) => cy.createWebhookSubscription({ url, eventTypes: ['order.created'] }))
+                .then((url) =>
+                    cy.createWebhookSubscription({ url, eventTypes: ['example.published'] })
+                )
                 .then((subscription) => `/en/webhooks/subscriptions/${subscription.id}/edit`),
         prepare: () => {
             cy.get('[data-test=webhook-url] input').should('not.have.value', '');
@@ -68,7 +70,9 @@ actionTable('webhooks', [
         persona: 'admin',
         route: () =>
             sinkEndpoint(`/hook-${unique()}`)
-                .then((url) => cy.createWebhookSubscription({ url, eventTypes: ['order.created'] }))
+                .then((url) =>
+                    cy.createWebhookSubscription({ url, eventTypes: ['example.published'] })
+                )
                 .then(() => '/en/webhooks/subscriptions'),
         trigger: () => {
             cy.get('[data-test=row-delete]').first().click();
@@ -89,7 +93,9 @@ actionTable('webhooks', [
         persona: 'admin',
         route: () =>
             sinkEndpoint(`/hook-${unique()}`)
-                .then((url) => cy.createWebhookSubscription({ url, eventTypes: ['order.created'] }))
+                .then((url) =>
+                    cy.createWebhookSubscription({ url, eventTypes: ['example.published'] })
+                )
                 .then((subscription) => `/en/webhooks/subscriptions/${subscription.id}/edit`),
         // The edit page reads the subscription by its own id.
         intercept: {

@@ -82,6 +82,8 @@
         "label-cart": "Cart"
     },
     "cart-tour": {
+        "welcome-title": "Your cart",
+        "welcome-body": "Products you add land here, with the running total. Checkout starts from this button.",
         "lines-title": "Your lines",
         "lines-body": "Change a quantity or remove a line here. A line marked unavailable has to go before you can order.",
         "summary-title": "Delivery and payment",

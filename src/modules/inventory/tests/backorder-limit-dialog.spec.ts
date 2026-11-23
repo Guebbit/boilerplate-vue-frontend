@@ -13,7 +13,7 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
-import { aLevel } from '../../../../tests/support/unit/fixtures.ts';
+import { aLevel } from './inventory-fixtures.ts';
 
 wireModulesIntoCore();
 

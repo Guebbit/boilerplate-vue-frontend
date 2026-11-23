@@ -237,7 +237,7 @@ describe('loadViewer', () => {
 
     /**
      * The verification banner keys on this, not on a shop permission — a platform-only
-     * operator with no `Cart` subject at all must still be told their address is unproven.
+     * operator with no shop subject at all must still be told their address is unproven.
      */
     it('projects verified true once verifiedAt is set', () => {
         getAccountMock.mockResolvedValue(
@@ -265,28 +265,28 @@ describe('loadViewer', () => {
      * never arrived is a screen that hides every control its visitor is entitled to.
      */
     it('takes the rules that go with the viewer from the same answer, not just the projection', () => {
-        getAccountMock.mockResolvedValue(viewOf([['delete', 'Product']], { role: 'admin' }));
+        getAccountMock.mockResolvedValue(viewOf([['delete', 'Locale']], { role: 'admin' }));
         const store = useSessionStore();
         store.setAccessToken('token');
 
         return store.loadViewer().then(() => {
-            expect(store.tenantAbility.can('delete', 'Product')).toBe(true);
-            expect(store.can('delete', 'Product')).toBe(true);
+            expect(store.tenantAbility.can('delete', 'Locale')).toBe(true);
+            expect(store.can('delete', 'Locale')).toBe(true);
             expect(getAccountMock).toHaveBeenCalledOnce();
         });
     });
 
     /**
-     * `checkout` is the one action beyond CRUD `can` accepts — `cart.checkout`'s action and
+     * `ban` is an action beyond CRUD `can` accepts — its own rule on `User`, and
      * nowhere else, see `PermissionAction`'s own docblock.
      */
-    it('answers a checkout ability the same way it answers a CRUD one', () => {
-        getAccountMock.mockResolvedValue(viewOf([['checkout', 'Cart']]));
+    it('answers a non-CRUD ability the same way it answers a CRUD one', () => {
+        getAccountMock.mockResolvedValue(viewOf([['ban', 'User']]));
         const store = useSessionStore();
         store.setAccessToken('token');
 
         return store.loadViewer().then(() => {
-            expect(store.can('checkout', 'Cart')).toBe(true);
+            expect(store.can('ban', 'User')).toBe(true);
         });
     });
 
@@ -298,14 +298,14 @@ describe('loadViewer', () => {
     it.each([
         [
             'an own-rows read answers read, not display',
-            [['read', 'Order', { userId: 'u1', tenantId: 't1' }]],
+            [['read', 'Example', { userId: 'u1', tenantId: 't1' }]],
             { read: true, display: false }
         ],
         [
             'a staff display (with its implied read) answers both',
             [
-                ['display', 'Order', { tenantId: 't1' }],
-                ['read', 'Order', { tenantId: 't1' }]
+                ['display', 'Example', { tenantId: 't1' }],
+                ['read', 'Example', { tenantId: 't1' }]
             ],
             { read: true, display: true }
         ],
@@ -315,8 +315,8 @@ describe('loadViewer', () => {
         store.setAbilities({ tenant: rules.map((rule) => [...rule]), platform: [] });
 
         expect({
-            read: store.can('read', 'Order'),
-            display: store.can('display', 'Order')
+            read: store.can('read', 'Example'),
+            display: store.can('display', 'Example')
         }).toEqual(expected);
     });
 
@@ -426,24 +426,24 @@ describe('secondFactorRequired', () => {
 
 describe('reloadAbilities', () => {
     it('replaces the rules and bumps the signal, so a taken-away right disappears', () => {
-        getAccountMock.mockResolvedValue(viewOf([['delete', 'Product']]));
+        getAccountMock.mockResolvedValue(viewOf([['delete', 'Locale']]));
         const store = signedIn();
 
         return store
             .reloadAbilities()
             .then(() => {
-                expect(store.can('delete', 'Product')).toBe(true);
+                expect(store.can('delete', 'Locale')).toBe(true);
                 getAccountMock.mockResolvedValue(viewOf([]));
                 return store.reloadAbilities();
             })
             .then(() => {
-                expect(store.can('delete', 'Product')).toBe(false);
+                expect(store.can('delete', 'Locale')).toBe(false);
                 expect(store.abilitiesSignal).toBe(2);
             });
     });
 
     it('keeps the rules it has when the read fails', () => {
-        getAccountMock.mockResolvedValue(viewOf([['delete', 'Product']]));
+        getAccountMock.mockResolvedValue(viewOf([['delete', 'Locale']]));
         const store = signedIn();
 
         return store
@@ -453,7 +453,7 @@ describe('reloadAbilities', () => {
                 return store.reloadAbilities();
             })
             .then(() => {
-                expect(store.can('delete', 'Product')).toBe(true);
+                expect(store.can('delete', 'Locale')).toBe(true);
                 expect(store.abilitiesSignal).toBe(1);
             });
     });
@@ -495,12 +495,12 @@ describe('reloadAbilities', () => {
     it('takes the abilities a refresh answered with, and bumps the signal', () => {
         refreshTokenMock.mockResolvedValue({
             token: 'renewed',
-            abilities: viewOf([['delete', 'Product']]).abilities
+            abilities: viewOf([['delete', 'Locale']]).abilities
         });
         const store = signedIn();
 
         return store.refreshToken().then(() => {
-            expect(store.can('delete', 'Product')).toBe(true);
+            expect(store.can('delete', 'Locale')).toBe(true);
             expect(store.abilitiesSignal).toBe(1);
         });
     });

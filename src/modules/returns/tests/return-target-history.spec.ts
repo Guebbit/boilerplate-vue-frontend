@@ -17,7 +17,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { server } from '../../../../tests/support/unit/msw-server.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
+import { aReturn } from './return-fixtures.ts';
 
 wireModulesIntoCore();
 

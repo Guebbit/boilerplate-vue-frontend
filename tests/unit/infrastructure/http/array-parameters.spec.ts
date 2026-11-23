@@ -6,12 +6,12 @@
  *          that mocks the transport passes every unit test while the real request is a 422.
  * Asserts: the URL the REAL generated client builds for an array parameter, read off the request
  *          axios hands its adapter.
- * Real:    the generated `listProductAvailability` and the shared axios instance with its defaults.
+ * Real:    the generated `listUsers` and the shared axios instance with its defaults.
  * Double:  the adapter, which captures the request instead of sending it.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import type { InternalAxiosRequestConfig } from 'axios';
-import { listProductAvailability } from '@api';
+import { listUsers } from '@api';
 import { instance } from '@/infrastructure/http/client.ts';
 
 const originalAdapter = instance.defaults.adapter;
@@ -42,9 +42,9 @@ const urlOf = (call: () => Promise<unknown>): Promise<string> => {
 
 describe('an array query parameter', () => {
     it('repeats the key, without brackets, as the contract declares and the backend reads', async () => {
-        const url = await urlOf(() => listProductAvailability({ id: ['a', 'b'] }));
+        const url = await urlOf(() => listUsers({ id: ['a', 'b'] }));
 
-        expect(url).toContain('/products/availability?id=a&id=b');
+        expect(url).toContain('/users?id=a&id=b');
         expect(url).not.toContain('%5B');
     });
 });

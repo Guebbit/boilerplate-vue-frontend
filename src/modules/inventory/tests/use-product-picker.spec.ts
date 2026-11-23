@@ -14,7 +14,7 @@ import {
 } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import type { Product } from '@types';
 import * as schemas from '@api/schemas';
-import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
+import { NO_PRODUCT_ACTIONS } from '@/modules/products/tests/product-fixtures.ts';
 
 vi.mock('@/infrastructure/http', () => ({ orvalMutator: vi.fn() }));
 

@@ -52,6 +52,7 @@ flowchart LR
         notifications["notifications"]
         payments["payments"]
         returns["returns"]
+        shop["shop"]
         shopTasks["shop-tasks"]
         stats["stats"]
         stockAlerts["stock-alerts"]
@@ -87,7 +88,7 @@ flowchart LR
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     class cart,orders,products core;
-    class delivery,inventory,notifications,payments,returns,shopTasks,stats,stockAlerts,wishlist supporting;
+    class delivery,inventory,notifications,payments,returns,shop,shopTasks,stats,stockAlerts,wishlist supporting;
     class account,apiKeys,tasks,locales,observability,users,webhooks generic;
     style CORE fill:#faf8ff,stroke:#cbd5e1
     style SUPPORTING fill:#f8fafc,stroke:#cbd5e1

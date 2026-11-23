@@ -1,11 +1,14 @@
 /**
- * Typed cart factory for the specs that interleave cart answers by hand.
+ * Typed cart factory for the specs that interleave cart answers by hand, and the order factory
+ * for what a checkout answers (`orders` and `wishlist` depend on the cart, so they reach it).
  *
  * A cart is built from its lines, so two carts in one test differ only by what the test changed,
  * and every total follows from the lines: a spec that asserts "this is the cart the server last
  * answered" compares whole carts, never a hand-copied number.
  */
-import type { CartResponse } from '@types';
+import { GetOrderByIdResponse } from '@api/schemas';
+import { contractBody } from '../../../../tests/support/unit/orval-fixture-schema.ts';
+import type { CartResponse, Order, OrderActions } from '@types';
 import { multiplyDecimal, sumDecimals } from '@/infrastructure/utils/money.ts';
 
 /**
@@ -66,3 +69,49 @@ export const aCart = (
         checkoutable: lines.length > 0 && short.length === 0
     };
 };
+
+/** Every `OrderActions` flag off: an order the caller may do nothing to. */
+export const NO_ORDER_ACTIONS: OrderActions = {
+    cancel: false,
+    pay: false,
+    recordPayment: false,
+    process: false,
+    overrideStatus: [],
+    correctAddress: false,
+    correctBilling: false,
+    withdraw: false,
+    delete: false,
+    hardDelete: false,
+    restore: false,
+    invoice: false
+};
+
+/**
+ * A valid, empty order — every required field the contract declares, all totals zero.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns an `Order` that parses against the generated schema
+ */
+export const anOrder = (overrides: Partial<Order> = {}): Order =>
+    contractBody<Order>(GetOrderByIdResponse, {
+        id: 'o1',
+        userId: 'u1',
+        email: 'ada@example.com',
+        items: [],
+        totalItems: 0,
+        totalQuantity: 0,
+        totalPrice: '0.00',
+        netTotal: '0.00',
+        taxTotal: '0.00',
+        shippingNetAmount: '0.00',
+        shippingTaxAmount: '0.00',
+        taxSummary: [],
+        status: 'pending',
+        paymentStatus: 'unpaid',
+        fulfillmentStatus: 'unfulfilled',
+        returnStatus: 'none',
+        currency: 'EUR',
+        orderNumber: '2026-000001',
+        actions: NO_ORDER_ACTIONS,
+        ...overrides
+    });

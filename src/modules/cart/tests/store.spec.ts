@@ -38,7 +38,8 @@ import {
     contractBody,
     contractResponse
 } from '../../../../tests/support/unit/orval-fixture-schema.ts';
-import { anOrder, aProblem } from '../../../../tests/support/unit/fixtures.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrder } from './cart-fixtures.ts';
 import { answered, type Answer } from '../../../../tests/support/unit/async-answers.ts';
 
 /**

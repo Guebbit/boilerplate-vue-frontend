@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { collectModuleNavigation } from '@/kernel/registry.ts';
 import { clearWorkCounts, setWorkCounts } from '@/kernel/work-counts.ts';
 import { enabledModules } from '@/modules';
-import { aSummary } from '../../../src/modules/shop-tasks/tests/summary-fixtures.ts';
+import { aSummary } from './summary-fixtures.ts';
 
 afterEach(clearWorkCounts);
 

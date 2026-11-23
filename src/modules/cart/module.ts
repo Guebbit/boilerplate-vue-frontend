@@ -102,6 +102,15 @@ export default {
         }
     ],
     tours: [
+        // The welcome tour's cart step: the shell has no cart of its own to point at.
+        {
+            tour: 'welcome',
+            id: 'cart',
+            target: 'pinned-Cart',
+            title: 'cart-tour.welcome-title',
+            body: 'cart-tour.welcome-body',
+            order: 30
+        },
         {
             tour: 'checkout',
             id: 'lines',

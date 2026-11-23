@@ -15,7 +15,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aLevel } from '../../../../tests/support/unit/fixtures.ts';
+import { aLevel } from './inventory-fixtures.ts';
 import type { InventoryLevel } from '@types';
 
 wireModulesIntoCore();

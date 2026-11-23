@@ -7,9 +7,9 @@ import { describe, expect, it } from 'vitest';
 import type { WebhookEventCatalogEntry } from '@types';
 import { eventOptionProps, isStreamLocked } from '../domain/event-options.ts';
 
-/** A catalogue as a manager sees it: orders readable, accounts not. */
+/** A catalogue as a manager sees it: examples readable, accounts not. */
 const CATALOGUE: WebhookEventCatalogEntry[] = [
-    { name: 'order.paid', actions: { subscribe: true } },
+    { name: 'example.published', actions: { subscribe: true } },
     { name: 'user.updated', actions: { subscribe: false } }
 ];
 
@@ -21,7 +21,7 @@ describe('eventOptionProps', () => {
 
 describe('isStreamLocked', () => {
     it('locks a filter naming an event the caller may not read', () => {
-        expect(isStreamLocked(['order.paid', 'user.updated'], CATALOGUE)).toBe(true);
+        expect(isStreamLocked(['example.published', 'user.updated'], CATALOGUE)).toBe(true);
     });
 
     it('locks `*`, which names every event', () => {
@@ -29,7 +29,7 @@ describe('isStreamLocked', () => {
     });
 
     it('leaves a filter of readable events open', () => {
-        expect(isStreamLocked(['order.paid'], CATALOGUE)).toBe(false);
+        expect(isStreamLocked(['example.published'], CATALOGUE)).toBe(false);
     });
 
     it('leaves `*` open for a caller who may read every event', () => {

@@ -16,7 +16,8 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aPreorderLevel, aPreorderSummary } from '../../../../tests/support/unit/fixtures.ts';
+import { aPreorderLevel } from './inventory-fixtures.ts';
+import { aPreorderSummary } from '@/modules/delivery/tests/delivery-fixtures.ts';
 import { parseOrvalFixture } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import type { PreorderLevel, PreorderProductSummary } from '@types';
 

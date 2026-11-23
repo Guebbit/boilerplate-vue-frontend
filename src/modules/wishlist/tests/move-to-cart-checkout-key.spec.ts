@@ -15,7 +15,7 @@ import { useCartStore } from '@/modules/cart';
 import { orvalMutator } from '@/infrastructure/http';
 import { aCart } from '@/modules/cart/tests/cart-fixtures.ts';
 import { lostAnswer } from '../../../../tests/support/unit/async-answers.ts';
-import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrder } from '@/modules/cart/tests/cart-fixtures.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();

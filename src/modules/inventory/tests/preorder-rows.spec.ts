@@ -5,7 +5,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { preorderRows } from '../domain';
-import { aPreorderLevel, aPreorderSummary } from '../../../../tests/support/unit/fixtures.ts';
+import { aPreorderLevel } from './inventory-fixtures.ts';
+import { aPreorderSummary } from '@/modules/delivery/tests/delivery-fixtures.ts';
 
 describe('preorderRows', () => {
     it('joins a product that has both reads into one row', () => {

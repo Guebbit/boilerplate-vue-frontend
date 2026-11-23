@@ -81,7 +81,7 @@ const routePermission: Record<string, RoutePermission | undefined> = {
     StaffThing: ['read', 'User'],
     GroupedFirst: ['assign', 'Role'],
     GroupedSecond: ['assign', 'Role'],
-    OthersThing: ['display', 'Order']
+    OthersThing: ['display', 'Example']
 };
 
 /** The live count behind the member entry's badge; `0` renders no badge at all. */
@@ -393,13 +393,13 @@ describe('Navigation', () => {
     describe('an entry that asks the staff action', () => {
         it('is hidden from someone who holds only the plain read of their own rows', () => {
             session.isAuth.value = true;
-            held.value = ['read Order'];
+            held.value = ['read Example'];
             expect(mountNav().text).not.toContain('navigation.label-others');
         });
 
         it('is shown to someone who holds the staff action', () => {
             session.isAuth.value = true;
-            held.value = ['read Order', 'display Order'];
+            held.value = ['read Example', 'display Example'];
             expect(mountNav().text).toContain('navigation.label-others');
         });
     });

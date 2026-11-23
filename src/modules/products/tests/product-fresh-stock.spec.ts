@@ -20,7 +20,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { asStub } from '../../../../tests/support/stub';
-import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
+import { NO_PRODUCT_ACTIONS } from './product-fixtures.ts';
 
 wireModulesIntoCore();
 

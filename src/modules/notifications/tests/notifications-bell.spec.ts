@@ -86,7 +86,7 @@ const signIn = () => {
 };
 
 /**
- * A router holding the one sibling route the bell may link to, as the real app's `orders` module
+ * A router holding the sibling route the bell may link to, as the real app's `webhooks` module
  * would register it.
  */
 const router = createRouter({
@@ -96,12 +96,6 @@ const router = createRouter({
             path: '/:locale/webhooks/subscriptions/:id',
             name: 'WebhookTarget',
             meta: { access: 'auth', can: ['read', 'WebhookSubscription'] },
-            component: { template: '<div />' }
-        },
-        {
-            path: '/:locale/orders/:id',
-            name: 'OrderTarget',
-            meta: { access: 'auth' },
             component: { template: '<div />' }
         }
     ]
@@ -354,35 +348,6 @@ const openWorkTab = async () => {
     document.body.querySelector<HTMLElement>('[data-test=notifications-tab-work]')!.click();
     await flushPromises();
 };
-
-/** A lost-parcel notice for one order. */
-const lostFor = (id: string, orderNumber: string): Notification => ({
-    id,
-    code: 'shop-tasks.shipment-lost',
-    params: { orderId: `order-${id}`, orderNumber, shipmentId: 's1', reason: 'lost' },
-    audience: 'own',
-    severity: 'warning',
-    createdAt: '2026-10-04T10:00:00.000Z'
-});
-
-describe('two notices about two orders', () => {
-    it('read as different links, since a link text must say where it goes', async () => {
-        signIn();
-        inboxOnServer = [lostFor('n1', '2026-000041'), lostFor('n2', '2026-000042')];
-        await mountBell();
-        await openPanel();
-
-        const texts = [
-            ...document.body.querySelectorAll('[data-test=notification-target-link]')
-        ].map((link) => link.textContent.trim());
-
-        // Not axe: it reports identical-links-same-purpose as "needs review", never a violation.
-        expect(texts).toHaveLength(2);
-        expect(texts[0]).toContain('2026-000041');
-        expect(texts[1]).toContain('2026-000042');
-        expect(new Set(texts).size).toBe(2);
-    });
-});
 
 describe('two notices of the same code about two records', () => {
     it('read as different links and carry different delete-button names', async () => {

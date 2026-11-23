@@ -31,7 +31,7 @@ import { lostAnswer, answered } from '../../../../tests/support/unit/async-answe
 import { ACTIONS, issue, signInAs, type CartStore } from './cart-interleave.ts';
 import { trackStores } from './track-stores.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrder } from './cart-fixtures.ts';
 
 wireModulesIntoCore();
 

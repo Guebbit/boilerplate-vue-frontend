@@ -71,17 +71,17 @@ const guest = visitor(false);
 /** A signed-in visitor with no rules. */
 const customer = visitor(true);
 
-/** A signed-in visitor who may update products and read translations. */
-const editor = visitor(true, 'update Product', 'read Translation');
+/** A signed-in visitor who may update locales and read translations. */
+const editor = visitor(true, 'update Locale', 'read Translation');
 
-/** A customer: reads orders, but only their own. */
-const shopper = visitor(true, 'read Order');
+/** A customer: reads examples, but only their own rows. */
+const rowReader = visitor(true, 'read Example');
 
-/** Staff: reads every order, so holds the staff action `display` beside the plain read. */
-const orderStaff = visitor(true, 'read Order', 'display Order');
+/** Staff: reads every row, so holds the staff action `display` beside the plain read. */
+const rowStaff = visitor(true, 'read Example', 'display Example');
 
 /** A signed-in visitor who may also read users. */
-const owner = visitor(true, 'update Product', 'read Translation', 'read User');
+const owner = visitor(true, 'update Locale', 'read Translation', 'read User');
 
 describe('canAccess', () => {
     /*
@@ -104,13 +104,13 @@ describe('canAccess', () => {
          * The permission half. A rule always implies a session: rules are published for a caller
          * the server identified, so a stranger is refused before the ability is consulted.
          */
-        ['product-write', { access: 'auth', can: ['update', 'Product'] }, guest, false],
-        ['product-write', { access: 'auth', can: ['update', 'Product'] }, customer, false],
-        ['product-write', { access: 'auth', can: ['update', 'Product'] }, editor, true],
-        ['product-write', { access: 'auth', can: ['update', 'Product'] }, owner, true],
+        ['locale-write', { access: 'auth', can: ['update', 'Locale'] }, guest, false],
+        ['locale-write', { access: 'auth', can: ['update', 'Locale'] }, customer, false],
+        ['locale-write', { access: 'auth', can: ['update', 'Locale'] }, editor, true],
+        ['locale-write', { access: 'auth', can: ['update', 'Locale'] }, owner, true],
         /**
          * The rule is the whole requirement, and holding a DIFFERENT one is not a partial answer:
-         * this is what the old coarse gate got wrong, letting anyone who could edit a product
+         * this is what the old coarse gate got wrong, letting anyone who could edit a locale
          * reach a screen about accounts.
          */
         ['user-read', { access: 'auth', can: ['read', 'User'] }, editor, false],
@@ -124,18 +124,18 @@ describe('canAccess', () => {
          */
         ['open', { access: 'open' }, guest, true],
         ['open', { access: 'open' }, customer, true],
-        ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, guest, true],
-        ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, customer, false],
-        ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, editor, true],
+        ['open-with-rule', { access: 'open', can: ['update', 'Locale'] }, guest, true],
+        ['open-with-rule', { access: 'open', can: ['update', 'Locale'] }, customer, false],
+        ['open-with-rule', { access: 'open', can: ['update', 'Locale'] }, editor, true],
         /**
          * The staff action: a customer's own-rows `read` opens the plain route and not the
          * `display` one; staff, who hold both, open either.
          */
-        ['own-orders', { access: 'auth', can: ['read', 'Order'] }, shopper, true],
-        ['staff-orders', { access: 'auth', can: ['display', 'Order'] }, shopper, false],
-        ['staff-orders', { access: 'auth', can: ['display', 'Order'] }, orderStaff, true],
-        ['staff-orders', { access: 'auth', can: ['display', 'Order'] }, guest, false],
-        ['staff-orders', { access: 'auth', can: ['display', 'Order'] }, customer, false]
+        ['own-rows', { access: 'auth', can: ['read', 'Example'] }, rowReader, true],
+        ['staff-rows', { access: 'auth', can: ['display', 'Example'] }, rowReader, false],
+        ['staff-rows', { access: 'auth', can: ['display', 'Example'] }, rowStaff, true],
+        ['staff-rows', { access: 'auth', can: ['display', 'Example'] }, guest, false],
+        ['staff-rows', { access: 'auth', can: ['display', 'Example'] }, customer, false]
     ] as const)('%s route -> %s', (_label, meta, who, expected) => {
         expect(canAccess(meta, who)).toBe(expected);
     });
@@ -188,7 +188,7 @@ describe('enforceRouteAccess', () => {
     });
 
     it('lets a guest into an open route, with no redirect and no toast', () => {
-        const result = enforceRouteAccess(route('open', ['checkout', 'Cart']), routerWithLogin);
+        const result = enforceRouteAccess(route('open', ['ban', 'User']), routerWithLogin);
 
         expect(result).toBeUndefined();
         expect(addMessageMock).not.toHaveBeenCalled();
@@ -197,7 +197,7 @@ describe('enforceRouteAccess', () => {
     it('sends a signed-in visitor without the rule home from an open route', () => {
         visitorStanding.isAuth.value = true;
 
-        const result = enforceRouteAccess(route('open', ['checkout', 'Cart']), routerWithLogin);
+        const result = enforceRouteAccess(route('open', ['ban', 'User']), routerWithLogin);
 
         expect(addMessageMock).toHaveBeenCalledWith('navigation.error-forbidden');
         expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
@@ -224,17 +224,17 @@ describe('enforceRouteAccess', () => {
 
     it('turns a customer away from a route that needs the staff action, staff through', () => {
         visitorStanding.isAuth.value = true;
-        held.add('read Order');
+        held.add('read Example');
 
-        expect(enforceRouteAccess(route('auth', ['display', 'Order']), routerWithLogin)).toEqual({
+        expect(enforceRouteAccess(route('auth', ['display', 'Example']), routerWithLogin)).toEqual({
             name: 'Home',
             params: { locale: 'en' }
         });
         expect(addMessageMock).toHaveBeenCalledWith('navigation.error-forbidden');
 
-        held.add('display Order');
+        held.add('display Example');
         expect(
-            enforceRouteAccess(route('auth', ['display', 'Order']), routerWithLogin)
+            enforceRouteAccess(route('auth', ['display', 'Example']), routerWithLogin)
         ).toBeUndefined();
     });
 

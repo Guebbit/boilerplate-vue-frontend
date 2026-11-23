@@ -98,7 +98,10 @@ describe('what the build contributes', () => {
         expect(Object.keys(itShell.tours).toSorted()).toEqual(
             Object.keys(enShell.tours).toSorted()
         );
-        for (const { title, body } of stepsOfTour('welcome'))
+        // The shell's own steps only: a module's step is worded in its own dictionary, checked above.
+        for (const { title, body } of stepsOfTour('welcome').filter(({ title }) =>
+            title.startsWith('tours.')
+        ))
             for (const key of [title, body]) expect(typeof lookup(enShell, key)).toBe('string');
     });
 

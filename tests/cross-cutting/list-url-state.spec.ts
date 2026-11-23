@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { enabledModules } from '@/modules';
 
 /** The repo root, two levels above this file. */
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -56,8 +57,11 @@ const pagedFiles = (): string[] =>
 
 describe('list state in the URL', () => {
     it('finds the paged lists it means to check', () => {
-        // A canary: a renamed pager would leave the sweep empty and passing.
-        expect(pagedFiles().length).toBeGreaterThanOrEqual(15);
+        // A canary: a renamed pager would leave the sweep empty and passing. Scaled to the modules
+        // this build serves, so a build with fewer of them is held to a smaller floor, not to none.
+        expect(pagedFiles().length).toBeGreaterThanOrEqual(
+            Math.max(1, Math.floor(enabledModules.length / 3))
+        );
     });
 
     it('has every paged list call `useListUrlState`, or say why not', () => {

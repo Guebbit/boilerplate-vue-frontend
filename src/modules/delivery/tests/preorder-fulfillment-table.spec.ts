@@ -15,7 +15,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aPreorderFulfillmentOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { aPreorderFulfillmentOrder } from './delivery-fixtures.ts';
 import type { PreorderFulfillmentOrder } from '@types';
 
 wireModulesIntoCore();

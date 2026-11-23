@@ -25,7 +25,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { asStub } from '../../../../tests/support/stub';
 import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import type { Product } from '@types';
-import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
+import { NO_PRODUCT_ACTIONS } from '@/modules/products/tests/product-fixtures.ts';
 
 wireModulesIntoCore();
 

@@ -31,7 +31,7 @@ import {
 import type { Product } from '@types';
 
 import * as schemas from '@api/schemas';
-import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
+import { NO_PRODUCT_ACTIONS } from './product-fixtures.ts';
 
 wireModulesIntoCore();
 

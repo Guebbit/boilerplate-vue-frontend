@@ -1,3 +1,4 @@
+// requires-module: none
 /**
  * The analytics consent banner, end to end: Umami's tag must not load before a yes, a decline
  * must keep it out, and the footer's "Privacy choices" link must let the visitor change their mind.

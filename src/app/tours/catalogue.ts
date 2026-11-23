@@ -47,8 +47,8 @@ export const isKnownTour = (tourId: string): boolean => Object.hasOwn(TOURS, tou
 
 /**
  * The app bar's own steps for the welcome tour. They point at `data-tour` anchors in
- * `AppNavigation.vue`; a step whose anchor is absent for this account (no admin menu, no cart,
- * a phone with no desktop bar) is dropped by {@link visibleSteps}.
+ * `AppNavigation.vue`; a step whose anchor is absent for this account (no admin menu, a phone
+ * with no desktop bar) is dropped by {@link visibleSteps}.
  */
 const SHELL_STEPS: AppTourStep[] = [
     {
@@ -74,14 +74,6 @@ const SHELL_STEPS: AppTourStep[] = [
         title: 'tours.welcome-admin-title',
         body: 'tours.welcome-admin-body',
         order: 20
-    },
-    {
-        tour: WELCOME_TOUR_ID,
-        id: 'cart',
-        target: 'pinned-Cart',
-        title: 'tours.welcome-cart-title',
-        body: 'tours.welcome-cart-body',
-        order: 30
     },
     {
         tour: WELCOME_TOUR_ID,

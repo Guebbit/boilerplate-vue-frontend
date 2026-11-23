@@ -8,8 +8,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { parse } from 'yaml';
-import { OrderFulfillmentFilter, OrderStatus } from '@/modules/orders';
-import { ReturnStatus } from '@/modules/returns';
+import { enabledModules } from '@/modules';
 
 /**
  * The router's guards are not under test: `resolve` never runs them, but importing the router
@@ -30,6 +29,45 @@ const rules = parse(
     links: Record<string, string>;
     staffPages: Record<string, string>;
     staticPages: string[];
+};
+
+/** The modules this build serves; a link into a module this build left out has no page to find. */
+const served = new Set(enabledModules.map(({ name }) => name));
+
+/**
+ * The module that owns the page of each backend link, where it is not a core one. The backend
+ * hands over every link the full build knows, so a build without that module skips the row
+ * instead of failing on a page it never had. A key missing from this table is core: it must
+ * resolve, so a new link cannot slip past the check by being left off.
+ */
+const OWNER: Record<string, string> = {
+    order: 'orders',
+    product: 'products',
+    products: 'products',
+    return: 'returns',
+    inventory: 'inventory',
+    salesPayments: 'payments',
+    transfersDue: 'payments',
+    staleRefunds: 'payments',
+    preordersLate: 'inventory',
+    lowStock: 'inventory',
+    deliveryHoldsOpen: 'orders',
+    unshipped: 'orders',
+    awaitingTracking: 'orders',
+    undelivered: 'orders',
+    returnsAwaitingGoods: 'returns',
+    returnsProofGoodsLate: 'returns',
+    returnsUndecided: 'returns'
+};
+
+/**
+ * Whether the build serves the module a link key belongs to.
+ *
+ * @param key - the key in `links:` or `staffPages:`, or a static page path
+ */
+const isServed = (key: string): boolean => {
+    const owner = OWNER[key];
+    return owner === undefined || served.has(owner);
 };
 
 /** Pay for the router's module graph once, outside any test's budget (see `router.spec.ts`). */
@@ -54,23 +92,23 @@ const resolvesToAPage = async (template: string): Promise<boolean> => {
 
 describe('backend links resolve on the router', () => {
     it('every link template is a real page', async () => {
-        const kinds = Object.keys(rules.links);
+        const kinds = Object.keys(rules.links).filter((key) => isServed(key));
         expect(kinds.length).toBeGreaterThan(0);
         for (const kind of kinds)
             expect([kind, await resolvesToAPage(rules.links[kind])]).toEqual([kind, true]);
     });
 
     it('every staff screen a notice mail links to is a real page', async () => {
-        const kinds = Object.keys(rules.staffPages);
+        const kinds = Object.keys(rules.staffPages).filter((key) => isServed(key));
         expect(kinds.length).toBeGreaterThan(0);
         for (const kind of kinds)
             expect([kind, await resolvesToAPage(rules.staffPages[kind])]).toEqual([kind, true]);
     });
 
     it('every static sitemap page is a real page', async () => {
-        expect(rules.staticPages.length).toBeGreaterThan(0);
-        for (const page of rules.staticPages)
-            expect([page, await resolvesToAPage(page)]).toEqual([page, true]);
+        const pages = rules.staticPages.filter((page) => isServed(page));
+        expect(pages.length).toBeGreaterThan(0);
+        for (const page of pages) expect([page, await resolvesToAPage(page)]).toEqual([page, true]);
     });
 });
 
@@ -100,22 +138,22 @@ const SUMMARY_READERS: Record<string, { file: string; declares: string[]; accept
     deliveryHoldsOpen: {
         file: 'orders/views/OrdersList.vue',
         declares: ['fulfillmentStatus:'],
-        accepts: [OrderFulfillmentFilter.on_hold]
+        accepts: ['on_hold']
     },
     returnsAwaitingGoods: {
         file: 'returns/views/ReturnsList.vue',
         declares: ['status:', "proofOfSending: 'boolean'"],
-        accepts: [ReturnStatus.approved, 'false']
+        accepts: ['approved', 'false']
     },
     returnsProofGoodsLate: {
         file: 'returns/views/ReturnsList.vue',
         declares: ['status:', "proofOfSending: 'boolean'"],
-        accepts: [ReturnStatus.approved, 'true']
+        accepts: ['approved', 'true']
     },
     returnsUndecided: {
         file: 'returns/views/ReturnsList.vue',
         declares: ['status:'],
-        accepts: [ReturnStatus.requested]
+        accepts: ['requested']
     },
     lowStock: {
         file: 'inventory/components/StockBoard.vue',
@@ -125,17 +163,17 @@ const SUMMARY_READERS: Record<string, { file: string; declares: string[]; accept
     unshipped: {
         file: 'orders/views/OrdersList.vue',
         declares: ['fulfillmentStatus:', 'deleted:'],
-        accepts: [OrderFulfillmentFilter.awaiting_shipment, 'false']
+        accepts: ['awaiting_shipment', 'false']
     },
     awaitingTracking: {
         file: 'orders/views/OrdersList.vue',
         declares: ['status:'],
-        accepts: [OrderStatus.shipped]
+        accepts: ['shipped']
     },
     undelivered: {
         file: 'orders/views/OrdersList.vue',
         declares: ['status:'],
-        accepts: [OrderStatus.shipped]
+        accepts: ['shipped']
     },
     staleRefunds: {
         file: 'payments/views/PaymentsList.vue',
@@ -146,13 +184,14 @@ const SUMMARY_READERS: Record<string, { file: string; declares: string[]; accept
 
 describe('the staff summary paths open the filtered list', () => {
     it('lists a reader for every summary path, so a new row cannot skip this check', () => {
-        const summaryKeys = Object.keys(rules.staffPages).filter((key) =>
-            rules.staffPages[key].includes('?')
+        const summaryKeys = Object.keys(rules.staffPages).filter(
+            (key) => rules.staffPages[key].includes('?') && isServed(key)
         );
-        expect(summaryKeys.toSorted()).toEqual(Object.keys(SUMMARY_READERS).toSorted());
+        const readers = Object.keys(SUMMARY_READERS).filter((key) => isServed(key));
+        expect(summaryKeys.toSorted()).toEqual(readers.toSorted());
     });
 
-    it.each(Object.entries(SUMMARY_READERS))(
+    it.each(Object.entries(SUMMARY_READERS).filter(([key]) => isServed(key)))(
         '%s: the list reads the query keys and values the path sets',
         (key, reader) => {
             const source = sourceOf(reader.file);

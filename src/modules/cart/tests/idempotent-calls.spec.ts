@@ -13,7 +13,7 @@ import {
     lostAnswer,
     answered
 } from '../../../../tests/support/unit/async-answers.ts';
-import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrder } from './cart-fixtures.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
 
 vi.mock('@api', () => ({ checkout: vi.fn() }));

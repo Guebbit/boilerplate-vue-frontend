@@ -1,3 +1,4 @@
+// requires-module: none
 /**
  * Image upload, end to end — the shell-generic half.
  *

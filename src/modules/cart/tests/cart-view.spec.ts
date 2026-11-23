@@ -29,7 +29,7 @@ import { AddressPickerStub, router } from './mount-cart-page.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { CartResponse, Order, Product } from '@types';
-import { NO_PRODUCT_ACTIONS, aProduct } from '../../../../tests/support/unit/fixtures.ts';
+import { NO_PRODUCT_ACTIONS, aProduct } from '@/modules/products/tests/product-fixtures.ts';
 
 wireModulesIntoCore();
 

@@ -18,7 +18,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
-import { aReturnListItem } from '../../../../tests/support/unit/fixtures.ts';
+import { aReturnListItem } from './return-fixtures.ts';
 import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 wireModulesIntoCore();

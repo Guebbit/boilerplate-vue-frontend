@@ -82,6 +82,8 @@
         "label-cart": "Carrello"
     },
     "cart-tour": {
+        "welcome-title": "Il tuo carrello",
+        "welcome-body": "I prodotti che aggiungi finiscono qui, con il totale aggiornato. Il checkout parte da questo pulsante.",
         "lines-title": "Le tue righe",
         "lines-body": "Cambia la quantità o rimuovi una riga qui. Una riga segnata come non disponibile va tolta prima di ordinare.",
         "summary-title": "Consegna e pagamento",

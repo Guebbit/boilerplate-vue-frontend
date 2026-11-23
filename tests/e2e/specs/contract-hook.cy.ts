@@ -1,3 +1,4 @@
+// requires-module: none
 /**
  * Positive control for the global `[contract]` hook (`tests/support/e2e/commands.ts`).
  *

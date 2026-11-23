@@ -10,12 +10,12 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import ProductCreate from '../views/ProductCreate.vue';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
-import { resetShop } from '../../../../tests/support/unit/reset-shop.ts';
+import { resetShop } from '@/modules/shop/tests/reset-shop.ts';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aShop } from '../../../../tests/support/unit/fixtures.ts';
+import { aShop } from '@/modules/shop/tests/shop-fixtures.ts';
 import { parseOrvalFixture } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 wireModulesIntoCore();

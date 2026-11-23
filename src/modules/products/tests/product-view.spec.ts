@@ -27,7 +27,7 @@ import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import type { Product as ProductType, ProductAvailability } from '@types';
-import { NO_PRODUCT_ACTIONS, aProduct } from '../../../../tests/support/unit/fixtures.ts';
+import { NO_PRODUCT_ACTIONS, aProduct } from './product-fixtures.ts';
 
 wireModulesIntoCore();
 

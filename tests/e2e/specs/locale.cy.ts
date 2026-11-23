@@ -1,3 +1,4 @@
+// requires-module: none
 /**
  * The locale route prefix, exercised end to end.
  *

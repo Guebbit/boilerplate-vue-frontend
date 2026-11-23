@@ -1,3 +1,4 @@
+// requires-module: none
 /**
  * Visual regression for the screens that belong to no module — the shell.
  *
@@ -47,21 +48,6 @@ sweepVisual('the shell', [
     ['faq', '/en/faq', '#static-page-faq'],
     ['not-found', '/en/this-route-does-not-exist', '#error-page']
 ]);
-
-// The signed-in header: the cart pinned beside the account menu, count and total on it.
-sweepVisual(
-    'the shell, signed in',
-    [
-        // The pinned cart and the account menu share 390 px on a phone.
-        {
-            name: 'home-signed-in',
-            route: '/en',
-            readySelector: '#home-page',
-            viewports: ['desktop', 'phone']
-        }
-    ],
-    'user'
-);
 
 // The longest drawer there is: every staff section on top of the shopper's.
 sweepVisual(

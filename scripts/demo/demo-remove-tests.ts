@@ -10,7 +10,7 @@
  * Whole, not edited: a walk through the shop that lost the shop has nothing left to assert.
  */
 
-import { existsSync, readdirSync, readFileSync, unlinkSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 /** One deleted file, as the report prints it. */
@@ -89,6 +89,30 @@ export const removeResidueSpecs = (repoRoot: string, names: readonly string[]): 
         file: path.relative(repoRoot, file),
         detail: 'deleted — requires or imports a removed module'
     }));
+};
+
+/** The committed median seconds per spec path, under the repo root. */
+const SPEC_SECONDS = path.join('scripts', 'e2e', 'spec-seconds.json');
+
+/**
+ * Drop every entry of the committed spec weights whose spec no longer exists, so the file names
+ * only specs the stripped tree still has (`spec-durations.spec.ts` checks exactly that).
+ *
+ * @param repoRoot - the checkout root
+ * @returns the spec paths dropped, in file order
+ */
+export const pruneSpecSeconds = (repoRoot: string): string[] => {
+    const file = path.join(repoRoot, SPEC_SECONDS);
+    if (!existsSync(file)) return [];
+
+    // Our own writer's output (`record-spec-durations`): spec path to median seconds.
+    const weights = JSON.parse(readFileSync(file, 'utf8')) as Record<string, number>;
+    const gone = Object.keys(weights).filter((spec) => !existsSync(path.join(repoRoot, spec)));
+    if (gone.length === 0) return [];
+
+    const kept = Object.entries(weights).filter(([spec]) => !gone.includes(spec));
+    writeFileSync(file, `${JSON.stringify(Object.fromEntries(kept), null, 4)}\n`);
+    return gone;
 };
 
 /**

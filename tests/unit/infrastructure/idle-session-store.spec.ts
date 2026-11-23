@@ -114,10 +114,10 @@ describe('the idle clock, carried by the answer that sets the viewer', () => {
 
     it('keeps the rules already held when an answer carries none', () => {
         const session = useSessionStore();
-        session.setAbilities({ tenant: [['read', 'Product']], platform: [] });
+        session.setAbilities({ tenant: [['read', 'Locale']], platform: [] });
         session.setViewer(viewer);
 
-        expect(session.tenantAbility.can('read', 'Product')).toBe(true);
+        expect(session.tenantAbility.can('read', 'Locale')).toBe(true);
     });
 });
 

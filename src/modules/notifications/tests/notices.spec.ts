@@ -147,8 +147,8 @@ describe('a task notice', () => {
     });
 
     it('names a system task by its kind alone, even when a category were sent', () => {
-        expect(said(opened({ kind: 'dispute', category: 'privacy' }))).toBe(
-            'notifications.staff.task-opened|what=task-kind.dispute|ref=t1'
+        expect(said(opened({ kind: 'export_failed', category: 'privacy' }))).toBe(
+            'notifications.staff.task-opened|what=task-kind.export_failed|ref=t1'
         );
     });
 
@@ -171,10 +171,10 @@ describe('a task notice', () => {
     ])('says %s the way the opener does, and opens the task page', (code) => {
         const notice = asStub<Notification>({
             code,
-            params: { taskId: 't2', kind: 'dispute' }
+            params: { taskId: 't2', kind: 'export_failed' }
         });
 
-        expect(said(notice)).toBe(`${code}|what=task-kind.dispute|ref=t2`);
+        expect(said(notice)).toBe(`${code}|what=task-kind.export_failed|ref=t2`);
         expect(entryOf(notice).target?.(notice)).toEqual({
             route: 'TaskDetail',
             params: { id: 't2' }
@@ -184,14 +184,16 @@ describe('a task notice', () => {
     it('links the screen the opener names for the work, query kept, over the task page', () => {
         const withWork = asStub<Notification>({
             code: 'notifications.staff.task-opened',
-            params: { taskId: 't1', kind: 'dispute', work: 'payments?tab=disputes' }
+            params: { taskId: 't1', kind: 'export_failed', work: 'tasks?tab=open' }
         });
 
-        expect(entryOf(withWork).target?.(withWork)).toEqual({ path: 'payments?tab=disputes' });
+        expect(entryOf(withWork).target?.(withWork)).toEqual({
+            path: 'tasks?tab=open'
+        });
     });
 
     it('falls back to the task page when the opener names no work screen', () => {
-        const notice = opened({ kind: 'dispute' });
+        const notice = opened({ kind: 'export_failed' });
 
         expect(entryOf(notice).target?.(notice)).toEqual({
             route: 'TaskDetail',

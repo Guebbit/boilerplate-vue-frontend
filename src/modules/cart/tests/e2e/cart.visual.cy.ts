@@ -66,3 +66,19 @@ sweepVisual(
     ],
     'user'
 );
+
+// The signed-in header: the cart pinned beside the account menu, count and total on it. Here
+// because the pinned entry is the cart's; the shell's own sweep photographs the header without it.
+sweepVisual(
+    'the shell, signed in',
+    [
+        // The pinned cart and the account menu share 390 px on a phone.
+        {
+            name: 'home-signed-in',
+            route: '/en',
+            readySelector: '#home-page',
+            viewports: ['desktop', 'phone']
+        }
+    ],
+    'user'
+);

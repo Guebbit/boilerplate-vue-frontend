@@ -16,7 +16,7 @@ import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
-import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
+import { aReturn } from './return-fixtures.ts';
 import type { CancelableFulfillmentOrder } from '@types';
 
 wireModulesIntoCore();

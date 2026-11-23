@@ -1,7 +1,7 @@
 /**
  * @module
  * The delivery log's rows carry a `data-test` of their own, with the event type in view — what a
- * spec reads to say "a delivery for `order.created` exists" without asserting on its status
+ * spec reads to say "a delivery for `example.published` exists" without asserting on its status
  * (which stays `pending` where no broker runs).
  */
 import { describe, expect, it } from 'vitest';
@@ -29,7 +29,7 @@ describe('WebhookDeliveriesFilters rows', () => {
     it('puts `webhook-delivery-row` on every row, event type included', async () => {
         const wrapper = mount(WebhookDeliveriesFilters, {
             props: {
-                deliveries: [delivery('d1', 'order.created'), delivery('d2', 'order.paid')],
+                deliveries: [delivery('d1', 'example.published'), delivery('d2', 'user.erased')],
                 total: 2,
                 pages: 1,
                 loading: false,
@@ -42,14 +42,14 @@ describe('WebhookDeliveriesFilters rows', () => {
 
         const rows = wrapper.findAll('[data-test=webhook-delivery-row]');
         expect(rows).toHaveLength(2);
-        expect(rows[0].text()).toContain('order.created');
-        expect(rows[1].text()).toContain('order.paid');
+        expect(rows[0].text()).toContain('example.published');
+        expect(rows[1].text()).toContain('user.erased');
     });
 
     it('offers Replay on an in-flight row too: the server answers a busy lease with a 409', async () => {
         const wrapper = mount(WebhookDeliveriesFilters, {
             props: {
-                deliveries: [{ ...delivery('d1', 'order.created'), status: 'in_flight' }],
+                deliveries: [{ ...delivery('d1', 'example.published'), status: 'in_flight' }],
                 total: 1,
                 pages: 1,
                 loading: false,
@@ -70,8 +70,8 @@ describe('WebhookDeliveriesFilters rows', () => {
         const wrapper = mount(WebhookDeliveriesFilters, {
             props: {
                 deliveries: [
-                    delivery('d1', 'order.created'),
-                    { ...delivery('d2', 'order.paid'), actions: { replay: false } }
+                    delivery('d1', 'example.published'),
+                    { ...delivery('d2', 'user.erased'), actions: { replay: false } }
                 ],
                 total: 2,
                 pages: 1,

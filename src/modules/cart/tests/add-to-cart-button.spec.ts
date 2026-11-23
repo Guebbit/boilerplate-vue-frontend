@@ -19,7 +19,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { CartResponse, Product, ProductAvailability } from '@types';
 import { clearAvailability, recordAvailability } from '@/modules/products';
-import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
+import { NO_PRODUCT_ACTIONS } from '@/modules/products/tests/product-fixtures.ts';
 
 // The shop states the backorder promise; these cases are about the wording around it.
 vi.mock('@/modules/shop', async (importOriginal) => {

@@ -13,7 +13,7 @@ import { usePaymentsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aPayment } from '../../../../tests/support/unit/fixtures.ts';
+import { aPayment } from './payment-fixtures.ts';
 import type { Dispute } from '@types';
 
 wireModulesIntoCore();

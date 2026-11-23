@@ -16,7 +16,8 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aPayment, aProblem } from '../../../../tests/support/unit/fixtures.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
+import { aPayment } from './payment-fixtures.ts';
 import type { Payment, Refund } from '@types';
 
 wireModulesIntoCore();

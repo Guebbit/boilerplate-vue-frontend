@@ -40,7 +40,7 @@ const router = createRouter({
 const V_SELECT_STUB = {
     props: ['modelValue'],
     emits: ['update:modelValue'],
-    template: "<select multiple @change=\"$emit('update:modelValue', ['order.paid'])\" />"
+    template: "<select multiple @change=\"$emit('update:modelValue', ['example.published'])\" />"
 };
 
 /**
@@ -51,7 +51,7 @@ const CREATED: WebhookSubscriptionCreated = {
     id: 'sub-1',
     url: 'https://hooks.example.com/in',
     description: 'Orders feed',
-    eventTypes: ['order.paid'],
+    eventTypes: ['example.published'],
     enabled: true,
     consecutiveFailures: 0,
     secretIds: ['sec-1'],
@@ -130,7 +130,7 @@ describe('WebhookCreate', () => {
             expect(create).toHaveBeenCalledWith({
                 url: 'https://hooks.example.com/in',
                 description: 'Orders feed',
-                eventTypes: ['order.paid']
+                eventTypes: ['example.published']
             });
             // Still here: the secret is shown once, and only `Done` moves on.
             expect(router.currentRoute.value.fullPath).toBe('/en/webhooks/subscriptions/create');

@@ -3,8 +3,10 @@
  * contract refuses fails at the factory, and what comes back is the object the test wrote, not
  * Zod's parse of it.
  */
+import * as zod from 'zod';
 import { describe, expect, it } from 'vitest';
-import { aProduct, aShop, aUser } from '../../support/unit/fixtures.ts';
+import { contractBody } from '../../support/unit/orval-fixture-schema.ts';
+import { aTask, aUser } from '../../support/unit/fixtures.ts';
 import { asStub } from '../../support/stub.ts';
 
 describe('fixture factories', () => {
@@ -20,12 +22,17 @@ describe('fixture factories', () => {
     });
 
     it('hand back what the test wrote, with no schema default filled in', () => {
-        const product = aProduct();
+        const schema = zod.strictObject({
+            id: zod.string(),
+            tags: zod.array(zod.string()).default([])
+        });
+        const body = contractBody<{ id: string }>(schema, { id: 'a' });
 
-        expect(Object.keys(product)).not.toContain('requiresShipping');
+        expect(Object.keys(body)).not.toContain('tags');
     });
 
     it('build every default fixture without an override', () => {
-        expect(aShop().currency).toBeTruthy();
+        expect(aUser().email).toBeTruthy();
+        expect(aTask().id).toBeTruthy();
     });
 });

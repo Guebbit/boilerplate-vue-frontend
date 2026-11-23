@@ -18,7 +18,7 @@ import {
 import { aCart } from './cart-fixtures.ts';
 import { gate, answered, type Answer } from '../../../../tests/support/unit/async-answers.ts';
 import { ACTIONS, issue } from './cart-interleave.ts';
-import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrder } from './cart-fixtures.ts';
 import { trackStores } from './track-stores.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
