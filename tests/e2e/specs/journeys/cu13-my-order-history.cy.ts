@@ -135,7 +135,7 @@ describe('CU13 · My order history', () => {
         cy.step('the invoice opens in a new tab');
         cy.stubWindowOpen();
         cy.get('[data-test=order-view-invoice]').click();
-        cy.get('@windowOpen').should('have.been.calledOnce');
+        cy.get('@windowOpen', { timeout: 40_000 }).should('have.been.calledOnce');
         cy.get('@windowOpen').should('have.been.calledWithMatch', /^blob:/, '_blank');
     });
 });

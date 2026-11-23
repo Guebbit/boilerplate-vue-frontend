@@ -255,7 +255,9 @@ describe('the credit notes', () => {
         await rows[1].get('[data-test=order-download-credit-note]').trigger('click');
         await flushPromises();
 
-        expect(getOrderCreditNote).toHaveBeenCalledExactlyOnceWith('o1', 'cn2');
+        expect(getOrderCreditNote).toHaveBeenCalledExactlyOnceWith('o1', 'cn2', {
+            timeout: 35_000
+        });
         expect(downloadBlob).toHaveBeenCalledExactlyOnceWith(
             expect.any(File),
             'credit-note-CN-2026-0002.pdf'
