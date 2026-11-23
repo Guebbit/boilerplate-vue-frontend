@@ -27,6 +27,9 @@ export default {
     name: 'users',
     loadingKeys: ['users'],
     routes,
+    // The staff page of an account, for the audit log and the bell. An erased account has no page.
+    auditTargets: { user: 'UserTarget' },
+    eventTargets: { user: 'UserTarget', 'user.erased': false },
     navigation: [
         {
             name: 'UsersList',

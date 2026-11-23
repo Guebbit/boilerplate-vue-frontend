@@ -284,6 +284,23 @@ export interface AppModule {
     recordRoutes?: Record<string, string>;
 
     /**
+     * The staff page for each kind of record an audit row can be about: the row's `targetType`
+     * (`order`) and the route name of the page that shows it (`OrderTarget`, taking `{ id }`).
+     * Declared by the module that owns the record, so the audit log links it without knowing it.
+     * A type no enabled module declares shows as plain text.
+     */
+    auditTargets?: Record<string, string>;
+
+    /**
+     * The staff page of the record a parked outbox event was about, by the event name's first
+     * segment (`order` for `order.paid`) or by the exact event name, which wins over its family.
+     * Declared by the module that owns the event family, so the bell links it without knowing it.
+     * An exact name declared `false` says its record is gone: no page, not a guess
+     * (`user.erased`). A family no enabled module declares links nowhere.
+     */
+    eventTargets?: Record<string, string | false>;
+
+    /**
      * Guided-tour steps this domain contributes, for screens it owns. Optional: most modules have
      * none.
      */
@@ -460,21 +477,56 @@ export const collectModuleNotices = (appModules: AppModule[]): Record<string, Ap
 };
 
 /**
+ * Merge one per-module map of keys to route names, refusing a key two modules both declare.
+ *
+ * @param appModules - the enabled module list
+ * @param declared - reads the map a module declares, if any
+ * @param label - what the key is, for the error ("Record link type")
+ * @throws {Error} when two modules declare the same key: one would silently shadow the other.
+ */
+const mergeDeclared = <TValue>(
+    appModules: AppModule[],
+    declared: (appModule: AppModule) => Record<string, TValue> | undefined,
+    label: string
+): Record<string, TValue> => {
+    const merged: Record<string, TValue> = {};
+    for (const appModule of appModules)
+        for (const [key, value] of Object.entries(declared(appModule) ?? {})) {
+            if (key in merged)
+                throw new Error(`${label} "${key}" is declared by more than one module.`);
+            merged[key] = value;
+        }
+    return merged;
+};
+
+/**
  * Merge every enabled module's record routes, by task link type.
  *
  * @param appModules - the enabled module list
  * @throws {Error} when two modules declare the same link type: one would silently shadow the other.
  */
-export const collectModuleRecordRoutes = (appModules: AppModule[]): Record<string, string> => {
-    const merged: Record<string, string> = {};
-    for (const appModule of appModules)
-        for (const [type, routeName] of Object.entries(appModule.recordRoutes ?? {})) {
-            if (type in merged)
-                throw new Error(`Record link type "${type}" is declared by more than one module.`);
-            merged[type] = routeName;
-        }
-    return merged;
-};
+export const collectModuleRecordRoutes = (appModules: AppModule[]): Record<string, string> =>
+    mergeDeclared(appModules, (appModule) => appModule.recordRoutes, 'Record link type');
+
+/**
+ * Merge every enabled module's audit targets, by the audit row's target type.
+ *
+ * @param appModules - the enabled module list
+ * @throws {Error} when two modules declare the same target type.
+ */
+export const collectModuleAuditTargets = (appModules: AppModule[]): Record<string, string> =>
+    mergeDeclared(appModules, (appModule) => appModule.auditTargets, 'Audit target type');
+
+/**
+ * Merge every enabled module's event targets, by event family or exact event name.
+ *
+ * @param appModules - the enabled module list
+ * @throws {Error} when two modules declare the same family or event name.
+ */
+export const collectModuleEventTargets = (
+    appModules: AppModule[]
+): Record<string, string | false> =>
+    mergeDeclared(appModules, (appModule) => appModule.eventTargets, 'Event target');
 
 /**
  * Sort navigation entries by `order`, entries without one going last.

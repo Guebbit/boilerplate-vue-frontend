@@ -28,6 +28,8 @@ export default {
     name: 'webhooks',
     loadingKeys: ['webhooks'],
     routes,
+    // The page of a webhook subscription, for the audit log.
+    auditTargets: { webhook_subscription: 'WebhookTarget' },
     navigation: [
         {
             name: 'WebhooksList',

@@ -46,6 +46,11 @@ A console that reached into three domains' stores to render its KPIs would not h
 that no single endpoint answers with, and those live beside the composable/store that build them
 rather than in the generated types, which only describe what the API actually returns.
 
+A row's target links to the record's staff page when a module declared one: each module lists the
+route of the records it owns in `auditTargets` on its manifest, keyed by the row's `targetType`
+(`orders` declares `order`, `users` declares `user`). A type nobody declares shows as plain text, and
+this module names none of them.
+
 The audit table is a read of somebody else's collection, and this client never writes to it. Every
 row it shows was written server-side by a module that had no idea a dashboard existed.
 

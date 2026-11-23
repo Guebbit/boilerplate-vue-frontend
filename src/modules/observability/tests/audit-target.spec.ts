@@ -3,13 +3,24 @@
  * `auditTargetLocation` — which audit targets link to a page: the types with a detail route, in a
  * build that ships the route, and nothing else.
  */
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { registerAuditTargets } from '@/kernel/record-routes.ts';
 import { auditTargetLocation, shortTargetId } from '../audit-target.ts';
 
 /** A router that knows exactly the route names it is given. */
 const routerWith = (...names: string[]) => ({ hasRoute: (name: string) => names.includes(name) });
 
 describe('auditTargetLocation', () => {
+    // What the owning modules declare; their own specs prove each declaration.
+    beforeEach(() => {
+        registerAuditTargets({
+            order: 'OrderTarget',
+            user: 'UserTarget',
+            product: 'ProductTarget',
+            webhook_subscription: 'WebhookTarget'
+        });
+    });
+
     it.each([
         ['order', 'OrderTarget'],
         ['user', 'UserTarget'],
@@ -24,6 +35,12 @@ describe('auditTargetLocation', () => {
 
     it('has nowhere to go for a type without a page', () => {
         expect(auditTargetLocation(routerWith('OrderTarget'), 'api_key', 'k1')).toBeUndefined();
+    });
+
+    it('has nowhere to go for a type no enabled module declared a page for', () => {
+        registerAuditTargets({});
+
+        expect(auditTargetLocation(routerWith('OrderTarget'), 'order', 'o1')).toBeUndefined();
     });
 
     it('has nowhere to go when this build ships no such route', () => {

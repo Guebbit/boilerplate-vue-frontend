@@ -44,6 +44,8 @@ export default {
     name: 'example',
     loadingKeys: ['example'],
     routes,
+    // The page of an example record, for the bell.
+    eventTargets: { example: 'ExampleTarget' },
     navigation: [
         {
             name: 'ExamplesList',

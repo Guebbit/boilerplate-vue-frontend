@@ -24,6 +24,8 @@ export default {
     name: 'stock-alerts',
     loadingKeys: ['stock-alerts'],
     routes,
+    // A stock alert is the shopper's: a parked one opens the account's page.
+    eventTargets: { stock_alert: 'UserTarget' },
     navigation: [
         {
             name: 'StockAlerts',

@@ -4,6 +4,8 @@ import {
     assertUniqueRoutes,
     collectModuleLoadingKeys,
     collectModuleNavigation,
+    collectModuleAuditTargets,
+    collectModuleEventTargets,
     collectModuleNotices,
     collectModuleRecordRoutes,
     collectModuleRoutes,
@@ -280,5 +282,54 @@ describe('collectModuleRecordRoutes', () => {
                 { ...makeModule('other'), recordRoutes: { user: 'OtherTarget' } }
             ])
         ).toThrow('Record link type "user" is declared by more than one module.');
+    });
+});
+
+describe('collectModuleAuditTargets', () => {
+    it('merges the audit targets of every module that declares some, by target type', () => {
+        const targets = collectModuleAuditTargets([
+            { ...makeModule('users'), auditTargets: { user: 'UserTarget' } },
+            makeModule('quiet'),
+            { ...makeModule('other'), auditTargets: { thing: 'ThingTarget' } }
+        ]);
+
+        expect(targets).toEqual({ user: 'UserTarget', thing: 'ThingTarget' });
+    });
+
+    it('refuses a target type two modules both declare, naming it', () => {
+        expect(() =>
+            collectModuleAuditTargets([
+                { ...makeModule('users'), auditTargets: { user: 'UserTarget' } },
+                { ...makeModule('other'), auditTargets: { user: 'OtherTarget' } }
+            ])
+        ).toThrow('Audit target type "user" is declared by more than one module.');
+    });
+});
+
+describe('collectModuleEventTargets', () => {
+    it('merges the event targets of every module, keeping a gone-record marker', () => {
+        const targets = collectModuleEventTargets([
+            {
+                ...makeModule('users'),
+                eventTargets: { user: 'UserTarget', 'user.erased': false }
+            },
+            makeModule('quiet'),
+            { ...makeModule('other'), eventTargets: { thing: 'ThingTarget' } }
+        ]);
+
+        expect(targets).toEqual({
+            user: 'UserTarget',
+            'user.erased': false,
+            thing: 'ThingTarget'
+        });
+    });
+
+    it('refuses a family two modules both declare, naming it', () => {
+        expect(() =>
+            collectModuleEventTargets([
+                { ...makeModule('users'), eventTargets: { user: 'UserTarget' } },
+                { ...makeModule('other'), eventTargets: { user: 'OtherTarget' } }
+            ])
+        ).toThrow('Event target "user" is declared by more than one module.');
     });
 });

@@ -27,9 +27,15 @@ import { loadResponseSchemas } from '@/infrastructure/http/response-schema-map';
 import { shouldValidateResponses } from '@/infrastructure/http/validate';
 import { registerLocaleContributors } from '@/i18n';
 import { registerNotices } from '@/kernel/inbox-notices';
-import { registerRecordRoutes } from '@/kernel/record-routes';
+import {
+    registerAuditTargets,
+    registerEventTargets,
+    registerRecordRoutes
+} from '@/kernel/record-routes';
 import {
     collectModuleLocales,
+    collectModuleAuditTargets,
+    collectModuleEventTargets,
     collectModuleNotices,
     collectModuleRecordRoutes,
     collectModuleResponseSchemas
@@ -41,6 +47,8 @@ export const wireModulesIntoCore = (): void => {
     registerLocaleContributors(collectModuleLocales(enabledModules));
     registerNotices(collectModuleNotices(enabledModules));
     registerRecordRoutes(collectModuleRecordRoutes(enabledModules));
+    registerAuditTargets(collectModuleAuditTargets(enabledModules));
+    registerEventTargets(collectModuleEventTargets(enabledModules));
     if (shouldValidateResponses()) {
         loadResponseSchemas(collectModuleResponseSchemas(enabledModules)).catch(
             (error: unknown) => {

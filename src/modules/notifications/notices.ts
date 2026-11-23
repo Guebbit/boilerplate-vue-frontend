@@ -4,6 +4,7 @@
  * says how it reads and which screen it links to, and the shell collects them. Nothing outside this
  * file names these codes' wording or routes.
  */
+import { eventTargetRouteOf } from '@/kernel/record-routes.ts';
 import { TaskCategory, TaskKind } from '@/modules/tasks';
 import type { AppNotice, NoticeContext, NoticeTarget } from '@/kernel/registry';
 import type { Notification } from '@types';
@@ -80,37 +81,18 @@ const taskTarget = (
 const taskNotice: AppNotice = { describe: describeTask, target: taskTarget };
 
 /**
- * The target each event family's aggregate opens. Written as `route:` literals, the shape the
- * route-name sweep recognises as a notice target (guarded when the notice is followed).
- */
-const OUTBOX_FAMILY_TARGETS = new Map<string, { route: string }>([
-    ['user', { route: 'UserTarget' }],
-    ['account', { route: 'UserTarget' }],
-    ['stock_alert', { route: 'UserTarget' }],
-    ['order', { route: 'OrderTarget' }],
-    ['payment', { route: 'OrderTarget' }],
-    ['return', { route: 'OrderTarget' }],
-    ['shipment', { route: 'OrderTarget' }],
-    ['fulfillment_order', { route: 'OrderTarget' }],
-    ['inventory', { route: 'OrderTarget' }],
-    ['product', { route: 'ProductTarget' }],
-    ['example', { route: 'ExampleTarget' }]
-]);
-
-/**
- * The screen of the record a parked event was about, by the event name's first segment. The
- * aggregate is the per-aggregate ordering key: money, returns, shipping and stock are ordered per
- * order, so those families key on the order id. A record that is gone (`user.erased`,
- * `product.deleted`) or a family this client does not know has no screen: a link to a guess is
+ * The screen of the record a parked event was about, as the module that owns the event's family
+ * declared it (`AppModule.eventTargets`). The aggregate is the per-aggregate ordering key: money,
+ * returns, shipping and stock are ordered per order, so those families key on the order id. A
+ * record that is gone or a family no enabled module declares has no screen: a link to a guess is
  * worse than none.
  *
  * @param eventName - The parked event, `<family>.<what happened>`.
  * @param id - What the event was about.
  */
 const outboxDeadTarget = (eventName: string, id: string): NoticeTarget | undefined => {
-    if (eventName === 'user.erased' || eventName === 'product.deleted') return undefined;
-    const target = OUTBOX_FAMILY_TARGETS.get(eventName.split('.', 1)[0] ?? '');
-    return target ? { ...target, params: { id } } : undefined;
+    const route = eventTargetRouteOf(eventName);
+    return route ? { route, params: { id } } : undefined;
 };
 
 /**

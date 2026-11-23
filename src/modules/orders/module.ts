@@ -24,6 +24,18 @@ export default {
     name: 'orders',
     loadingKeys: ['orders'],
     routes,
+    // The staff page of an order, for the audit log and the bell: an audit row about one, and the
+    // parked events of the money, returns, shipping and stock families, which are ordered per
+    // order and so key on the order id. Declared here because this module owns the route.
+    auditTargets: { order: 'OrderTarget' },
+    eventTargets: {
+        order: 'OrderTarget',
+        payment: 'OrderTarget',
+        return: 'OrderTarget',
+        shipment: 'OrderTarget',
+        fulfillment_order: 'OrderTarget',
+        inventory: 'OrderTarget'
+    },
     navigation: [
         {
             name: 'OrdersList',

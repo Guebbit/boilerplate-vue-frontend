@@ -121,6 +121,13 @@ a row never links where the reader would be refused, and an unopenable link show
 link at all. The `path` form is how a server-named `work` screen (`payments?tab=disputes`) is
 followed without this module knowing the screen.
 
+A dead-event notice (`notifications.staff.outbox-dead`) links the record the parked event was about,
+and this module names none of them: each module that owns an event family lists its page in
+`eventTargets` on its manifest, keyed by the event name's first segment (`orders` declares `order`,
+`payment`, `return`, `shipment`, `fulfillment_order` and `inventory`, all to `OrderTarget`, because
+those events are ordered per order). An exact event name wins over its family, and `false` on one says the record
+is gone (`user.erased`). A family nobody declares links nowhere.
+
 The code is its own dictionary key: `notifications.staff.webhook-disabled` is the entry
 `staff.webhook-disabled` inside the `notifications` group of `locales/*.json`; a module's codes live
 in its own group. The store hands each entry the reader's languages (current, then the shop's main

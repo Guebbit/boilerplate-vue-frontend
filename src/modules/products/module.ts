@@ -30,6 +30,9 @@ export default {
     name: 'products',
     loadingKeys: ['products'],
     routes,
+    // The staff page of a product, for the audit log and the bell. A deleted product has no page.
+    auditTargets: { product: 'ProductTarget' },
+    eventTargets: { product: 'ProductTarget', 'product.deleted': false },
     navigation: [
         {
             name: 'ProductsList',

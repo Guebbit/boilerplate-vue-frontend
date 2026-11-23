@@ -36,6 +36,8 @@ import { installHttpInterceptors } from '@/infrastructure/http/install.ts';
 import { registerLocaleContributors } from '@/i18n';
 import {
     collectModuleLocales,
+    collectModuleAuditTargets,
+    collectModuleEventTargets,
     collectModuleNotices,
     collectModuleRecordRoutes,
     collectModuleResponseSchemas,
@@ -43,7 +45,11 @@ import {
     runModuleSetups
 } from '@/kernel/registry.ts';
 import { registerNotices } from '@/kernel/inbox-notices.ts';
-import { registerRecordRoutes } from '@/kernel/record-routes.ts';
+import {
+    registerAuditTargets,
+    registerEventTargets,
+    registerRecordRoutes
+} from '@/kernel/record-routes.ts';
 import { SLOTS_KEY } from '@/kernel/slots.ts';
 import { enabledModules } from '@/modules.ts';
 
@@ -71,6 +77,9 @@ installHttpInterceptors();
 registerNotices(collectModuleNotices(enabledModules));
 // Which staff page each task link type opens: declared by the module that owns the record.
 registerRecordRoutes(collectModuleRecordRoutes(enabledModules));
+// Which page an audit row's target and a parked event's record open: declared by the module that owns them.
+registerAuditTargets(collectModuleAuditTargets(enabledModules));
+registerEventTargets(collectModuleEventTargets(enabledModules));
 
 /**
  * Boots the Vue application: plugin registration, mount,

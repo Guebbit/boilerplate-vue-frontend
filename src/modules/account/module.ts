@@ -35,6 +35,8 @@ export default {
     name: 'account',
     loadingKeys: ['account'],
     routes,
+    // Account events are about the account's own record, so a parked one opens its page.
+    eventTargets: { account: 'UserTarget' },
     navigation: [
         {
             name: 'Profile',

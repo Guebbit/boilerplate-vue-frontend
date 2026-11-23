@@ -98,7 +98,8 @@ const declaresNotices = (source: string): boolean =>
  * reader guards them by construction:
  * - In a file that declares notices, `route: 'Name'` (`AppNotice.target`, the inbox store's
  *   `targetOf`, the bell, then `useNotificationLink` through `linkIfRouted`).
- * - A manifest's `recordRoutes: { type: 'Name' }` (the task page, through `linkIfRouted`).
+ * - A manifest's `recordRoutes`, `auditTargets` or `eventTargets` map `{ type: 'Name' }` (the task
+ *   page, the audit link and the bell, each through `linkIfRouted`).
  * Any OTHER mention of the name in the file stays visible.
  *
  * @param source - one file's full text.
@@ -107,7 +108,7 @@ const sweptText = (source: string): string =>
     (declaresNotices(source)
         ? source.replaceAll(/\broute:\s*["']\w+["']/g, '')
         : source
-    ).replaceAll(/\brecordRoutes:\s*\{[^}]*\}/g, '');
+    ).replaceAll(/\b(?:recordRoutes|auditTargets|eventTargets):\s*\{[^}]*\}/g, '');
 
 /**
  * Every SINGLE/DOUBLE-quoted string literal in `source` naming a REAL route, deduplicated.

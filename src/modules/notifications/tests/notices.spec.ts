@@ -6,7 +6,8 @@
  * Driven with a stub translator that prints `key|name=value…`, so each case asserts the entry
  * reached, not the English wording.
  */
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { registerEventTargets } from '@/kernel/record-routes.ts';
 import { foundationNotices } from '../notices';
 import type { Notification } from '@types';
 import type { NoticeContext } from '@/kernel/registry';
@@ -91,6 +92,17 @@ const dead = (eventName: string) =>
     });
 
 describe('a dead event', () => {
+    // What the owning modules declare; their own specs prove each declaration.
+    beforeEach(() => {
+        registerEventTargets({
+            user: 'UserTarget',
+            'user.erased': false,
+            order: 'OrderTarget',
+            product: 'ProductTarget',
+            'product.deleted': false
+        });
+    });
+
     it('names the parked event, and opens the account it was about', () => {
         expect(entryOf(dead('user.registered')).describe(dead('user.registered'), context)).toBe(
             'notifications.staff.outbox-dead|event=user.registered|ref=x1'
@@ -103,16 +115,8 @@ describe('a dead event', () => {
 
     it.each([
         ['user.updated', 'UserTarget'],
-        ['account.deleted', 'UserTarget'],
-        ['stock_alert.sent', 'UserTarget'],
         ['order.paid', 'OrderTarget'],
-        ['payment.settled', 'OrderTarget'],
-        ['return.approved', 'OrderTarget'],
-        ['shipment.lost', 'OrderTarget'],
-        ['fulfillment_order.held', 'OrderTarget'],
-        ['inventory.reserved', 'OrderTarget'],
-        ['product.updated', 'ProductTarget'],
-        ['example.created', 'ExampleTarget']
+        ['product.updated', 'ProductTarget']
     ])('opens the record %s was about', (eventName, route) => {
         expect(entryOf(dead(eventName)).target?.(dead(eventName))).toEqual({
             route,
@@ -120,8 +124,23 @@ describe('a dead event', () => {
         });
     });
 
+    it('opens nothing when no module declared the family, even a familiar one', () => {
+        registerEventTargets({});
+
+        expect(entryOf(dead('order.paid')).target?.(dead('order.paid'))).toBeUndefined();
+    });
+
+    it('opens whatever a module declared, not a table of its own', () => {
+        registerEventTargets({ thing: 'ThingTarget' });
+
+        expect(entryOf(dead('thing.done')).target?.(dead('thing.done'))).toEqual({
+            route: 'ThingTarget',
+            params: { id: 'x1' }
+        });
+    });
+
     it.each(['user.erased', 'product.deleted', 'unknown.thing', 'constructor.x'])(
-        'opens nothing for %s: the record is gone or the family unknown',
+        'opens nothing for %s: the record is gone or no module declared the family',
         (eventName) => {
             expect(entryOf(dead(eventName)).target?.(dead(eventName))).toBeUndefined();
         }
