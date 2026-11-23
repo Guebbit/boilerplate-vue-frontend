@@ -47,60 +47,64 @@ describe('AC18 · A bot-shaped login meets the human check', () => {
     it('asks for the check only once the misses pile up, and signup and reset ask from the start', () => {
         cy.step('an account exists for the story');
         cy.accountOf('secondShopper').then(({ email, password }) => {
+            // The account is only known here: Cypress queues commands, so anything written
+            // outside this callback runs before it and would read the empty placeholders.
             OWNER.email = email;
             OWNER.password = password;
+
+            cy.step('the first wrong passwords are answered as wrong passwords, with no check');
+            cy.visit('/en/login');
+            attemptLogin(`${OWNER.password}-wrong`);
+            cy.get('[data-test=login-error]').should('be.visible');
+            attemptLogin(`${OWNER.password}-wrong`);
+            cy.get('[data-test=login-error]').should('be.visible');
+            attemptLogin(`${OWNER.password}-wrong`);
+            cy.get('[data-test=login-error]').should('be.visible');
+            cy.get('[data-test=human-check-altcha]').should('not.exist');
+
+            cy.step('the fourth wrong password is the one that is asked to prove itself');
+            attemptLogin(`${OWNER.password}-wrong`);
+            cy.get('[data-test=human-check-altcha]').should('exist');
+            cy.location('pathname').should('equal', '/en/login');
+
+            cy.step('solving the check lets the right password in');
+            solveHumanCheck();
+            attemptLogin(OWNER.password);
+            cy.url().should('not.include', '/login');
+            cy.get('[data-test=nav-login-link]').should('not.exist');
+            cy.logout();
+
+            cy.step(
+                'the reset request has the check from the start, and is refused without its token'
+            );
+            cy.intercept('POST', '**/account/password/reset').as('reset');
+            cy.visit('/en/password-reset');
+            cy.get('[data-test=human-check-altcha]').should('exist');
+            cy.get('[data-test=password-reset-email] input').type(OWNER.email);
+            cy.get('form').submit();
+            cy.wait('@reset').its('response.statusCode').should('equal', 403);
+            cy.get('[data-test=password-reset-request-error]').should('be.visible');
+
+            cy.step('solved, the same request is accepted');
+            solveHumanCheck();
+            cy.get('form').submit();
+            cy.wait('@reset').its('response.statusCode').should('be.within', 200, 299);
+            cy.get('[data-test=password-reset-request-error]').should('not.exist');
+
+            cy.step('signup has the check from the start, and is refused without its token');
+            cy.intercept('POST', '**/account/signup').as('signup');
+            cy.visit('/en/signup');
+            cy.get('[data-test=human-check-altcha]').should('exist');
+            fillSignupForm(NEWCOMER.email, NEWCOMER.password);
+            cy.wait('@signup').its('response.statusCode').should('equal', 403);
+            cy.get('[data-test=signup-error]').should('be.visible');
+            cy.location('pathname').should('equal', '/en/signup');
+
+            cy.step('solved, the same signup creates the account');
+            solveHumanCheck();
+            cy.get('#signup-page button[type="submit"]').click();
+            cy.wait('@signup').its('response.statusCode').should('be.within', 200, 299);
+            cy.get('#home-page').should('exist');
         });
-
-        cy.step('the first wrong passwords are answered as wrong passwords, with no check');
-        cy.visit('/en/login');
-        attemptLogin(`${OWNER.password}-wrong`);
-        cy.get('[data-test=login-error]').should('be.visible');
-        attemptLogin(`${OWNER.password}-wrong`);
-        cy.get('[data-test=login-error]').should('be.visible');
-        attemptLogin(`${OWNER.password}-wrong`);
-        cy.get('[data-test=login-error]').should('be.visible');
-        cy.get('[data-test=human-check-altcha]').should('not.exist');
-
-        cy.step('the fourth wrong password is the one that is asked to prove itself');
-        attemptLogin(`${OWNER.password}-wrong`);
-        cy.get('[data-test=human-check-altcha]').should('exist');
-        cy.location('pathname').should('equal', '/en/login');
-
-        cy.step('solving the check lets the right password in');
-        solveHumanCheck();
-        attemptLogin(OWNER.password);
-        cy.url().should('not.include', '/login');
-        cy.get('[data-test=nav-login-link]').should('not.exist');
-        cy.logout();
-
-        cy.step('the reset request has the check from the start, and is refused without its token');
-        cy.intercept('POST', '**/account/password/reset').as('reset');
-        cy.visit('/en/password-reset');
-        cy.get('[data-test=human-check-altcha]').should('exist');
-        cy.get('[data-test=password-reset-email] input').type(OWNER.email);
-        cy.get('form').submit();
-        cy.wait('@reset').its('response.statusCode').should('equal', 403);
-        cy.get('[data-test=password-reset-request-error]').should('be.visible');
-
-        cy.step('solved, the same request is accepted');
-        solveHumanCheck();
-        cy.get('form').submit();
-        cy.wait('@reset').its('response.statusCode').should('be.within', 200, 299);
-        cy.get('[data-test=password-reset-request-error]').should('not.exist');
-
-        cy.step('signup has the check from the start, and is refused without its token');
-        cy.intercept('POST', '**/account/signup').as('signup');
-        cy.visit('/en/signup');
-        cy.get('[data-test=human-check-altcha]').should('exist');
-        fillSignupForm(NEWCOMER.email, NEWCOMER.password);
-        cy.wait('@signup').its('response.statusCode').should('equal', 403);
-        cy.get('[data-test=signup-error]').should('be.visible');
-        cy.location('pathname').should('equal', '/en/signup');
-
-        cy.step('solved, the same signup creates the account');
-        solveHumanCheck();
-        cy.get('#signup-page button[type="submit"]').click();
-        cy.wait('@signup').its('response.statusCode').should('be.within', 200, 299);
-        cy.get('#home-page').should('exist');
     });
 });
