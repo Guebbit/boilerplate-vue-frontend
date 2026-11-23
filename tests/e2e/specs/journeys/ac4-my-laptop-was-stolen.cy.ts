@@ -62,7 +62,11 @@ describe('AC4 · My laptop was stolen', () => {
                 if (sessionMode === 'jwt')
                     cy.wait('@refresh').its('response.statusCode').should('equal', 401);
                 // A miss on the session cookie clears it, so the browser stops sending a dead one.
-                else cy.getCookie('__Host-session').should('not.exist');
+                // `cy.getCookie` reads once and does not retry: wait for the login page, which is shown after the 401 cleared it.
+                else
+                    cy.get('#login-page')
+                        .should('exist')
+                        .then(() => cy.getCookie('__Host-session').should('not.exist'));
             });
 
             cy.step('the tab says so and sends me to login, remembering where I was going');

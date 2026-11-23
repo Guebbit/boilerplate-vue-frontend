@@ -170,7 +170,8 @@ describe('AC16 · Two-factor, the awkward edges', () => {
         cy.get('#two-factor-challenge-page').should('exist');
         cy.get('[data-test=two-factor-challenge-back-to-login]').should('exist');
         // The countdown reads the browser's own clock, so that is the one to move.
-        cy.clock(Date.now(), ['Date']).as('browserClock');
+        // Read inside `cy.then`: a bare `Date.now()` is read when the test is queued, minutes before this step runs, so the tick would not pass the challenge.
+        cy.then(() => cy.clock(Date.now(), ['Date']).as('browserClock'));
         cy.get('@browserClock').invoke('tick', PAST_CHALLENGE_MS);
         cy.get('[data-test=two-factor-challenge-submit]').should('be.disabled');
         cy.get('[data-test=two-factor-challenge-back-to-login]').should('exist');

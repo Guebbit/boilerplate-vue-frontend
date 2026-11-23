@@ -85,8 +85,6 @@ export const loginTotpCode = (
      */
     const reading = now() - CLOCK_MARGIN_MS;
     const current = Math.floor(reading / 1000 / STEP_SECONDS);
-    // A mark from the future belongs to a clock that has since been put back (a restore): forget it.
-    if ((lastLoginStep.get(secret) ?? -Infinity) > current + 1) lastLoginStep.delete(secret);
     const used = Math.max(lastLoginStep.get(secret) ?? -Infinity, seededThrough);
     const step = [current, current + 1].find((candidate) => candidate > used);
 

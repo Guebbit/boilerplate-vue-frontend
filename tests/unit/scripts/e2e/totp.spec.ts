@@ -130,26 +130,4 @@ describe('loginTotpCodeFor', () => {
 
         expect(await loginTotpCodeFor(SECRET, 'http://api.test')).toMatch(/^\d{6}$/);
     });
-
-    it('forgets a mark left by a clock that has since been put back', async () => {
-        forgetLoginCodes();
-        const later = 200 * 30 * 1000;
-        await loginTotpCode(
-            SECRET,
-            () => later,
-            () => Promise.resolve()
-        );
-        const slept: number[] = [];
-
-        await loginTotpCode(
-            SECRET,
-            () => 100 * 30 * 1000 + 5000,
-            (ms) => {
-                slept.push(ms);
-                return Promise.resolve();
-            }
-        );
-
-        expect(slept).toEqual([]);
-    });
 });
