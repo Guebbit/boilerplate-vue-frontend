@@ -85,8 +85,8 @@ watch(
 );
 
 /**
- * Action-button size: `small` with a mouse, `large` (44px) under a finger, where `small` fails the
- * WCAG 2.5.8 target-size check.
+ * Action-button size: `small` (28px) with a mouse, `large` (44px) under a finger. `small` already
+ * clears the 24px WCAG 2.5.8 floor; 44px is WCAG 2.5.5's AAA target, our comfort tier.
  */
 const actionSize = useTouchFriendlySize();
 
@@ -290,7 +290,7 @@ const handleNote = () =>
                     data-test="task-note-draft"
                 />
                 <v-btn
-                    size="small"
+                    :size="actionSize"
                     variant="tonal"
                     :disabled="draft.trim().length === 0"
                     data-test="task-note-add"

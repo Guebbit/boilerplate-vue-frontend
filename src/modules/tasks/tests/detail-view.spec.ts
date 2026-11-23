@@ -212,3 +212,69 @@ describe('TaskDetail history', () => {
         });
     });
 });
+
+/**
+ * Resizes the window the way a phone would and tells Vuetify's display to re-read it.
+ *
+ * @param width - the viewport width in px
+ */
+const resizeTo = (width: number) => {
+    vi.stubGlobal('innerWidth', width);
+    vuetify.display.update();
+};
+
+/** A task with every action switched on, so every button renders. */
+const everyAction = () =>
+    aTask({
+        assigneeId: 'staff-2',
+        assigneeName: 'Ann',
+        actions: {
+            resolve: true,
+            markSpam: true,
+            reopen: true,
+            assign: true,
+            unassign: true,
+            note: true,
+            delete: true
+        }
+    });
+
+describe('TaskDetail touch sizing', () => {
+    /** Every action button the page renders for a viewer without audit-log access (no History link). */
+    const ACTIONS = [
+        'task-take',
+        'task-give-back',
+        'task-resolve',
+        'task-spam',
+        'task-reopen',
+        'task-note-add'
+    ];
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vuetify.display.update();
+    });
+
+    it('gives every action button the large touch size on a phone-width viewport', () => {
+        resizeTo(375);
+
+        return openDetail(everyAction()).then((wrapper) => {
+            const buttons = ACTIONS.map((name) => wrapper.get(`[data-test=${name}]`));
+
+            for (const button of buttons) {
+                expect(button.classes()).toContain('v-btn--size-large');
+            }
+        });
+    });
+
+    it('keeps them small on a wide viewport with a mouse', () => {
+        resizeTo(1280);
+
+        return openDetail(everyAction()).then((wrapper) => {
+            expect(wrapper.get('[data-test=task-take]').classes()).toContain('v-btn--size-small');
+            expect(wrapper.get('[data-test=task-note-add]').classes()).toContain(
+                'v-btn--size-small'
+            );
+        });
+    });
+});

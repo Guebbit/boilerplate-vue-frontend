@@ -12,7 +12,8 @@ import { useDisplay } from 'vuetify';
 import { useMediaQuery } from '@/ui/composables/use-media-query.ts';
 
 /**
- * The smallest comfortable tap target, in px (WCAG 2.5.5 and the layout check's comfort tier).
+ * The smallest comfortable tap target, in px: WCAG 2.5.5's AAA target, our comfort tier. The AA
+ * floor is 24px (2.5.8).
  */
 export const TOUCH_TARGET_PX = 44;
 
