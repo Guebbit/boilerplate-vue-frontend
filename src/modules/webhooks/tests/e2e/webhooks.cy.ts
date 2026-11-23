@@ -68,6 +68,8 @@ describe('Webhook subscriptions', () => {
                 )
                 .then((subscription) => {
                     cy.visit(`/en/webhooks/subscriptions/${subscription.id}/edit`);
+                    // The form disables its fields while the subscription loads; typing into a disabled one drops the keys.
+                    cy.get('[data-test=webhook-description] input').should('not.be.disabled');
                     cy.get('[data-test=webhook-description] input').clear();
                     cy.get('[data-test=webhook-description] input').type(editedDescription);
                     cy.get('form').submit();
